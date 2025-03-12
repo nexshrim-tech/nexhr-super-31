@@ -7,6 +7,7 @@ import EmployeeStats from "@/components/EmployeeStats";
 import ExpenseGraph from "@/components/ExpenseGraph";
 import EmployeeLocation from "@/components/EmployeeLocation";
 import EmployeeList from "@/components/EmployeeList";
+import TodaysAttendance from "@/components/TodaysAttendance";
 
 const Dashboard = () => {
   return (
@@ -21,7 +22,10 @@ const Dashboard = () => {
               <EmployeeStats />
             </div>
             <div className="grid gap-6 md:grid-cols-2">
-              <TaskReminders />
+              <div className="grid gap-6">
+                <TaskReminders />
+                <TodaysAttendance />
+              </div>
               <div className="grid gap-6">
                 <ExpenseGraph />
                 <EmployeeLocation />
