@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Send, User, Users, Search } from "lucide-react";
+import { Plus, Send, User, Users, Search, MessageSquare } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -388,7 +388,7 @@ const Messenger = () => {
                   <Card className="max-w-md mx-auto">
                     <CardContent className="py-10 text-center">
                       <div className="mx-auto my-4 bg-gray-100 h-20 w-20 rounded-full flex items-center justify-center">
-                        <Message className="h-10 w-10 text-gray-500" />
+                        <MessageSquare className="h-10 w-10 text-gray-500" />
                       </div>
                       <h3 className="text-lg font-medium mb-2">No chat selected</h3>
                       <p className="text-gray-500 mb-4">
