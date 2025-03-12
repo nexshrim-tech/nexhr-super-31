@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -143,7 +142,11 @@ const Attendance = () => {
       ? record.employeeId === selectedEmployee 
       : true;
     
-    return matchesSearch && matchesDate && matchesEmployee;
+    const matchesDepartment = filterDepartment !== "all" 
+      ? true
+      : true;
+    
+    return matchesSearch && matchesDate && matchesEmployee && matchesDepartment;
   });
 
   const handleEditRecord = (record: any) => {
@@ -246,6 +249,10 @@ const Attendance = () => {
     );
   };
 
+  const dateSelectedRecords = selectedDate 
+    ? filteredRecords.filter(record => record.date === format(selectedDate, 'yyyy-MM-dd'))
+    : [];
+
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
@@ -320,115 +327,141 @@ const Attendance = () => {
           </div>
 
           {calendarView ? (
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                  <CardTitle>Attendance Calendar</CardTitle>
-                  <div className="flex gap-3">
-                    <Select 
-                      value={selectedEmployee || "all"} 
-                      onValueChange={(value) => setSelectedEmployee(value === "all" ? null : value)}
-                    >
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="All Employees" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Employees</SelectItem>
-                        <SelectItem value="EMP001">Olivia Rhye</SelectItem>
-                        <SelectItem value="EMP002">Phoenix Baker</SelectItem>
-                        <SelectItem value="EMP003">Lana Steiner</SelectItem>
-                        <SelectItem value="EMP004">Demi Wilkinson</SelectItem>
-                        <SelectItem value="EMP005">Candice Wu</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select 
-                      value={filterDepartment} 
-                      onValueChange={setFilterDepartment}
-                    >
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="All Departments" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Departments</SelectItem>
-                        <SelectItem value="engineering">Engineering</SelectItem>
-                        <SelectItem value="design">Design</SelectItem>
-                        <SelectItem value="marketing">Marketing</SelectItem>
-                        <SelectItem value="sales">Sales</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-md p-4">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    className="mx-auto pointer-events-auto"
-                    components={{
-                      DayContent: renderDayContent
-                    }}
-                  />
-                </div>
-                
-                {selectedDate && (
-                  <div className="mt-6">
-                    <h3 className="text-lg font-medium mb-4">
-                      Attendance for {format(selectedDate, 'MMMM d, yyyy')}
-                    </h3>
-                    <div className="rounded-md border overflow-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Employee</TableHead>
-                            <TableHead>Check In</TableHead>
-                            <TableHead>Check Out</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Hours</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredRecords.map((record) => (
-                            <TableRow key={record.id}>
-                              <TableCell>
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src="" alt={record.employee.name} />
-                                    <AvatarFallback>{record.employee.avatar}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <div className="font-medium">{record.employee.name}</div>
-                                    <div className="text-xs text-gray-500">{record.employeeId}</div>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>{record.checkIn || "-"}</TableCell>
-                              <TableCell>{record.checkOut || "-"}</TableCell>
-                              <TableCell>{renderAttendanceStatus(record.status)}</TableCell>
-                              <TableCell>{record.workHours}</TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleEditRecord(record)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                    <span className="sr-only">Edit</span>
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-1">
+                <CardHeader>
+                  <div className="flex flex-col gap-4">
+                    <CardTitle>Attendance Calendar</CardTitle>
+                    <div className="flex flex-col gap-3">
+                      <Select 
+                        value={selectedEmployee || "all"} 
+                        onValueChange={(value) => setSelectedEmployee(value === "all" ? null : value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="All Employees" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Employees</SelectItem>
+                          <SelectItem value="EMP001">Olivia Rhye</SelectItem>
+                          <SelectItem value="EMP002">Phoenix Baker</SelectItem>
+                          <SelectItem value="EMP003">Lana Steiner</SelectItem>
+                          <SelectItem value="EMP004">Demi Wilkinson</SelectItem>
+                          <SelectItem value="EMP005">Candice Wu</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select 
+                        value={filterDepartment} 
+                        onValueChange={setFilterDepartment}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="All Departments" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Departments</SelectItem>
+                          <SelectItem value="engineering">Engineering</SelectItem>
+                          <SelectItem value="design">Design</SelectItem>
+                          <SelectItem value="marketing">Marketing</SelectItem>
+                          <SelectItem value="sales">Sales</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  <div className="border rounded-md p-4">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      className="mx-auto pointer-events-auto"
+                      components={{
+                        DayContent: renderDayContent
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>
+                      {selectedDate ? (
+                        `Attendance for ${format(selectedDate, 'MMMM d, yyyy')}`
+                      ) : (
+                        "Attendance Records"
+                      )}
+                    </CardTitle>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                      <Input
+                        type="search"
+                        placeholder="Search employees..."
+                        className="pl-8 w-[200px]"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border overflow-auto max-h-[500px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Employee</TableHead>
+                          <TableHead>Check In</TableHead>
+                          <TableHead>Check Out</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Hours</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {dateSelectedRecords.length > 0 ? dateSelectedRecords.map((record) => (
+                          <TableRow key={record.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src="" alt={record.employee.name} />
+                                  <AvatarFallback>{record.employee.avatar}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-medium">{record.employee.name}</div>
+                                  <div className="text-xs text-gray-500">{record.employeeId}</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{record.checkIn || "-"}</TableCell>
+                            <TableCell>{record.checkOut || "-"}</TableCell>
+                            <TableCell>{renderAttendanceStatus(record.status)}</TableCell>
+                            <TableCell>{record.workHours}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleEditRecord(record)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  <span className="sr-only">Edit</span>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )) : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                              No attendance records found for selected date
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           ) : (
             <Card>
               <CardHeader className="pb-3">
