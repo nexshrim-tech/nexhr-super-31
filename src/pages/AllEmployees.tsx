@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Download, Filter, Plus, Search } from "lucide-react";
@@ -108,6 +107,7 @@ const AllEmployees = () => {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const navigate = useNavigate();
 
   const filteredEmployees = employees.filter(
     (employee) => {
@@ -125,6 +125,11 @@ const AllEmployees = () => {
       return matchesSearch && matchesDepartment;
     }
   );
+
+  const handleViewEmployee = (employee: any) => {
+    // Navigate to employee details page instead of opening dialog
+    navigate(`/employee/${employee.id}`);
+  };
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -258,10 +263,7 @@ const AllEmployees = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => {
-                                setSelectedEmployee(employee);
-                                setIsViewDialogOpen(true);
-                              }}
+                              onClick={() => handleViewEmployee(employee)}
                             >
                               View
                             </Button>
@@ -295,63 +297,6 @@ const AllEmployees = () => {
               </div>
             </CardContent>
           </Card>
-
-          {/* View Employee Dialog */}
-          <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Employee Profile</DialogTitle>
-                <DialogDescription>View employee details</DialogDescription>
-              </DialogHeader>
-              {selectedEmployee && (
-                <div className="py-4">
-                  <div className="flex items-center gap-4 mb-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarFallback>{selectedEmployee.avatar}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-lg font-semibold">{selectedEmployee.name}</h3>
-                      <p className="text-sm text-muted-foreground">{selectedEmployee.email}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Employee ID</p>
-                      <p className="font-medium">{selectedEmployee.id}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Role</p>
-                      <p className="font-medium">{selectedEmployee.role}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Department</p>
-                      <p className="font-medium">{selectedEmployee.department}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Status</p>
-                      <Badge
-                        className={`${
-                          selectedEmployee.status === "Active"
-                            ? "bg-green-100 text-green-800"
-                            : selectedEmployee.status === "On Leave"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {selectedEmployee.status}
-                      </Badge>
-                    </div>
-                  </div>
-                  <DialogFooter className="mt-6">
-                    <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-                      Close
-                    </Button>
-                  </DialogFooter>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
 
           {/* Edit Employee Dialog */}
           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

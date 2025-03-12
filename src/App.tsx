@@ -9,6 +9,7 @@ import Track from "./pages/Track";
 import NotFound from "./pages/NotFound";
 import AddEmployee from "./pages/AddEmployee";
 import AllEmployees from "./pages/AllEmployees";
+import EmployeeDetails from "./pages/EmployeeDetails";
 import Attendance from "./pages/Attendance";
 import TasksReminders from "./pages/TasksReminders";
 import Expenses from "./pages/Expenses";
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/track" element={<Track />} />
           <Route path="/add-employee" element={<AddEmployee />} />
           <Route path="/all-employees" element={<AllEmployees />} />
+          <Route path="/employee/:id" element={<EmployeeDetails />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/tasks" element={<TasksReminders />} />
           <Route path="/expenses" element={<Expenses />} />
