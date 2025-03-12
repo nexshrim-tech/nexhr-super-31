@@ -7,7 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus } from "lucide-react";
+import { Plus, Download, FileText } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -29,6 +29,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 
 const initialLeaveApplications = [
   {
@@ -113,11 +114,20 @@ const leaveHistoryData = [
   },
 ];
 
+const leaveBalanceData = [
+  { type: "Annual Leave", total: 20, used: 5, balance: 15 },
+  { type: "Sick Leave", total: 12, used: 2, balance: 10 },
+  { type: "Personal Leave", total: 7, used: 2, balance: 5 },
+  { type: "Study Leave", total: 5, used: 2, balance: 3 },
+];
+
 const LeaveManagement = () => {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [activeTab, setActiveTab] = useState("all");
   const [leaveApplications, setLeaveApplications] = useState(initialLeaveApplications);
   const [showApplyLeaveDialog, setShowApplyLeaveDialog] = useState(false);
+  const [viewLeaveDetails, setViewLeaveDetails] = useState<any>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
   const { toast } = useToast();
 
   const handleApproveLeave = (id: number) => {
@@ -161,6 +171,11 @@ const LeaveManagement = () => {
       title: "Leave Application Submitted",
       description: "Your leave application has been submitted for approval.",
     });
+  };
+
+  const handleViewLeave = (application: any) => {
+    setViewLeaveDetails(application);
+    setShowViewDialog(true);
   };
 
   const calculateDuration = (startDate: string, endDate: string) => {
@@ -213,7 +228,7 @@ const LeaveManagement = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-base">Leave Balance</CardTitle>
+                  <CardTitle className="text-base">Leave Overview</CardTitle>
                   <Tabs defaultValue="balance" className="w-[200px]">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="balance">Balance</TabsTrigger>
@@ -223,22 +238,17 @@ const LeaveManagement = () => {
                 </CardHeader>
                 <CardContent>
                   <TabsContent value="balance" className="space-y-4 mt-0">
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-500">Annual Leave</div>
-                      <div className="font-medium">15 days</div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-500">Sick Leave</div>
-                      <div className="font-medium">10 days</div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-500">Personal Leave</div>
-                      <div className="font-medium">5 days</div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-500">Study Leave</div>
-                      <div className="font-medium">3 days</div>
-                    </div>
+                    {leaveBalanceData.map((item, index) => (
+                      <div key={index} className="flex justify-between items-center">
+                        <div className="text-sm text-gray-500">{item.type}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs text-gray-500">
+                            {item.used}/{item.total}
+                          </div>
+                          <div className="font-medium">{item.balance} days</div>
+                        </div>
+                      </div>
+                    ))}
                   </TabsContent>
                   <TabsContent value="history" className="mt-0">
                     <div className="space-y-4">
@@ -323,7 +333,11 @@ const LeaveManagement = () => {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
-                                <Button variant="outline" size="sm">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleViewLeave(application)}
+                                >
                                   View
                                 </Button>
                                 {application.status === "Pending" && (
@@ -435,6 +449,17 @@ const LeaveManagement = () => {
                   required
                 />
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="attachment" className="text-right">
+                  Attachment
+                </Label>
+                <Input
+                  id="attachment"
+                  name="attachment"
+                  type="file"
+                  className="col-span-3"
+                />
+              </div>
             </div>
             <DialogFooter>
               <DialogClose asChild>
@@ -445,6 +470,91 @@ const LeaveManagement = () => {
               <Button type="submit">Submit Application</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Leave Details Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Leave Details</DialogTitle>
+          </DialogHeader>
+          {viewLeaveDetails && (
+            <div className="py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Employee</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback>{viewLeaveDetails.employee.avatar}</AvatarFallback>
+                    </Avatar>
+                    <p className="font-medium">{viewLeaveDetails.employee.name}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Status</p>
+                  <Badge
+                    className={`mt-1 ${
+                      viewLeaveDetails.status === "Approved"
+                        ? "bg-green-100 text-green-800"
+                        : viewLeaveDetails.status === "Pending"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {viewLeaveDetails.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Leave Type</p>
+                  <p className="mt-1">{viewLeaveDetails.type}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Duration</p>
+                  <p className="mt-1">{viewLeaveDetails.duration}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Start Date</p>
+                  <p className="mt-1">{viewLeaveDetails.startDate}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">End Date</p>
+                  <p className="mt-1">{viewLeaveDetails.endDate}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm font-medium text-gray-500">Reason</p>
+                  <p className="mt-1 text-sm">
+                    Reason for leave request would be displayed here. This is placeholder text as the original data doesn't include reasons.
+                  </p>
+                </div>
+              </div>
+              {viewLeaveDetails.status === "Pending" && (
+                <div className="mt-6 flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600"
+                    onClick={() => {
+                      handleRejectLeave(viewLeaveDetails.id);
+                      setShowViewDialog(false);
+                    }}
+                  >
+                    Reject
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      handleApproveLeave(viewLeaveDetails.id);
+                      setShowViewDialog(false);
+                    }}
+                  >
+                    Approve
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
