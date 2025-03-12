@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import SidebarNav from "@/components/SidebarNav";
@@ -27,7 +26,6 @@ import {
 import { Link } from "react-router-dom";
 import LocationMap from "@/components/LocationMap";
 
-// Sample employee data - in a real app, you would fetch this from an API
 const employeeData = {
   name: "Chisom Chukwukwe",
   email: "work@email.com",
@@ -42,7 +40,7 @@ const employeeData = {
   expense: "$123.45",
   avatar: "CC",
   status: "Active",
-  location: { lat: 48.8606, lng: 2.3376 }, // Near Louvre Museum in Paris
+  location: { lat: 48.8606, lng: 2.3376 },
   tasks: [
     { id: 1, name: "Create Wireframes", deadline: "08/02/25", status: "Completed", action: "Active" },
     { id: 2, name: "Use dummy data in tasks", deadline: "08/02/25", status: "Completed", action: "Active" },
@@ -57,8 +55,6 @@ const EmployeeDetails = () => {
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState("current");
   
-  // In a real app, you would fetch the employee data based on the ID
-  // For now we'll use our sample data
   const employee = employeeData;
 
   const getStatusBadgeColor = (status: string) => {
@@ -88,7 +84,6 @@ const EmployeeDetails = () => {
       <SidebarNav />
       <div className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-2xl font-semibold">All Employees</h1>
@@ -102,11 +97,9 @@ const EmployeeDetails = () => {
             </Link>
           </div>
 
-          {/* Employee Details Section */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Details</h2>
             <div className="flex flex-col xl:flex-row gap-6">
-              {/* Left column - Details */}
               <div className="flex-1 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -151,7 +144,6 @@ const EmployeeDetails = () => {
                 </div>
               </div>
               
-              {/* Right column - User card */}
               <div className="w-full xl:w-80">
                 <Card className="relative overflow-hidden">
                   <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
@@ -201,7 +193,6 @@ const EmployeeDetails = () => {
             </div>
           </div>
 
-          {/* Tracking Section */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Track</h2>
             <Card className="overflow-hidden">
@@ -230,7 +221,6 @@ const EmployeeDetails = () => {
             </Card>
           </div>
 
-          {/* Tasks Section */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Tasks</h2>
             <div className="overflow-x-auto">
@@ -285,7 +275,6 @@ const EmployeeDetails = () => {
             </div>
           </div>
 
-          {/* Assets Section */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Assets</h2>
             <Card className="bg-white p-6 rounded-lg border shadow-sm">
@@ -301,7 +290,6 @@ const EmployeeDetails = () => {
             </Card>
           </div>
 
-          {/* Documents and Reports Section */}
           <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <div className="flex justify-between items-center mb-3">
@@ -335,14 +323,13 @@ const EmployeeDetails = () => {
               </div>
               <div className="flex justify-between items-center">
                 <h3 className="font-semibold">Salary details:</h3>
-                <Button variant="primary" size="sm">
+                <Button variant="default" size="sm">
                   Details
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Remove Button */}
           <div className="flex justify-center mt-8 mb-4">
             <Button variant="destructive" className="px-8">
               Remove
