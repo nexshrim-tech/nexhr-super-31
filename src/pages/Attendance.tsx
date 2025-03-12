@@ -2,176 +2,228 @@
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Download, Filter, UserCheck, Edit, CalendarIcon } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { Download, Filter, Search, Edit, Calendar as CalendarIcon } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
+// Sample data
 const attendanceData = [
   {
     id: 1,
-    employee: { id: "EMP001", name: "Olivia Rhye", avatar: "OR" },
-    date: "2023-08-01",
-    checkIn: "09:00 AM",
-    checkOut: "06:00 PM",
+    employeeId: "EMP001",
+    employee: { name: "Olivia Rhye", avatar: "OR" },
+    date: "2023-06-01",
+    checkIn: "09:05 AM",
+    checkOut: "05:30 PM",
     status: "Present",
-    workHours: "9h 00m",
+    workHours: "8h 25m",
+    notes: "",
   },
   {
     id: 2,
-    employee: { id: "EMP002", name: "Phoenix Baker", avatar: "PB" },
-    date: "2023-08-01",
-    checkIn: "09:15 AM",
-    checkOut: "06:30 PM",
+    employeeId: "EMP002",
+    employee: { name: "Phoenix Baker", avatar: "PB" },
+    date: "2023-06-01",
+    checkIn: "08:55 AM",
+    checkOut: "06:15 PM",
     status: "Present",
-    workHours: "9h 15m",
+    workHours: "9h 20m",
+    notes: "Worked on Project X deadline",
   },
   {
     id: 3,
-    employee: { id: "EMP003", name: "Lana Steiner", avatar: "LS" },
-    date: "2023-08-01",
-    checkIn: "08:45 AM",
-    checkOut: "05:30 PM",
-    status: "Present",
-    workHours: "8h 45m",
+    employeeId: "EMP003",
+    employee: { name: "Lana Steiner", avatar: "LS" },
+    date: "2023-06-01",
+    checkIn: "",
+    checkOut: "",
+    status: "Absent",
+    workHours: "-",
+    notes: "Sick leave",
   },
   {
     id: 4,
-    employee: { id: "EMP004", name: "Demi Wilkinson", avatar: "DW" },
-    date: "2023-08-01",
-    checkIn: "--:--",
-    checkOut: "--:--",
-    status: "Absent",
-    workHours: "0h 00m",
+    employeeId: "EMP004",
+    employee: { name: "Demi Wilkinson", avatar: "DW" },
+    date: "2023-06-01",
+    checkIn: "09:30 AM",
+    checkOut: "04:45 PM",
+    status: "Present",
+    workHours: "7h 15m",
+    notes: "Left early - doctor appointment",
   },
   {
     id: 5,
-    employee: { id: "EMP005", name: "Candice Wu", avatar: "CW" },
-    date: "2023-08-01",
-    checkIn: "10:00 AM",
-    checkOut: "06:00 PM",
+    employeeId: "EMP005",
+    employee: { name: "Candice Wu", avatar: "CW" },
+    date: "2023-06-01",
+    checkIn: "10:15 AM",
+    checkOut: "06:30 PM",
     status: "Late",
-    workHours: "8h 00m",
+    workHours: "8h 15m",
+    notes: "Traffic delay",
   },
   {
     id: 6,
-    employee: { id: "EMP006", name: "Natali Craig", avatar: "NC" },
-    date: "2023-08-01",
+    employeeId: "EMP001",
+    employee: { name: "Olivia Rhye", avatar: "OR" },
+    date: "2023-06-02",
     checkIn: "09:00 AM",
-    checkOut: "06:00 PM",
+    checkOut: "05:15 PM",
     status: "Present",
-    workHours: "9h 00m",
+    workHours: "8h 15m",
+    notes: "",
   },
   {
     id: 7,
-    employee: { id: "EMP007", name: "Drew Cano", avatar: "DC" },
-    date: "2023-08-01",
-    checkIn: "09:30 AM",
-    checkOut: "06:30 PM",
+    employeeId: "EMP002",
+    employee: { name: "Phoenix Baker", avatar: "PB" },
+    date: "2023-06-02",
+    checkIn: "08:50 AM",
+    checkOut: "05:30 PM",
     status: "Present",
-    workHours: "9h 00m",
+    workHours: "8h 40m",
+    notes: "",
   },
 ];
 
-// Generate dummy calendar data for visualization
+// Create a calendar data structure for visualization
 const generateCalendarData = () => {
-  const currentDate = new Date();
-  const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  const employees = [...new Set(attendanceData.map(record => record.employeeId))];
+  const calendarData: Record<string, Record<string, string>> = {};
   
-  const data = {};
-  for (let day = 1; day <= endDate.getDate(); day++) {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    const random = Math.random();
-    let status;
+  employees.forEach(empId => {
+    calendarData[empId] = {};
     
-    if (random > 0.9) {
-      status = "absent";
-    } else if (random > 0.8) {
-      status = "late";
-    } else {
-      status = "present";
-    }
+    // Get all records for this employee
+    const empRecords = attendanceData.filter(record => record.employeeId === empId);
     
-    data[format(date, 'yyyy-MM-dd')] = status;
-  }
+    // Add status for each date
+    empRecords.forEach(record => {
+      calendarData[empId][record.date] = record.status;
+    });
+  });
   
-  return data;
+  return calendarData;
 };
 
 const calendarData = generateCalendarData();
 
 const Attendance = () => {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [calendarView, setCalendarView] = useState(true);
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<any>(null);
-  const [editForm, setEditForm] = useState({
+  const [editFormData, setEditFormData] = useState({
     date: "",
     checkIn: "",
     checkOut: "",
-    status: ""
+    status: "",
+    notes: "",
   });
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("daily");
 
-  // Handler for opening the edit dialog
-  const handleOpenEditDialog = (record) => {
+  // Filter attendance records based on search and selected date
+  const filteredRecords = attendanceData.filter(record => {
+    const matchesSearch = 
+      record.employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.status.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesDate = selectedDate 
+      ? record.date === format(selectedDate, 'yyyy-MM-dd') 
+      : true;
+    
+    const matchesEmployee = selectedEmployee 
+      ? record.employeeId === selectedEmployee 
+      : true;
+    
+    return matchesSearch && matchesDate && matchesEmployee;
+  });
+
+  const handleEditRecord = (record: any) => {
     setCurrentRecord(record);
-    setEditForm({
+    setEditFormData({
       date: record.date,
       checkIn: record.checkIn,
       checkOut: record.checkOut,
-      status: record.status
+      status: record.status,
+      notes: record.notes,
     });
     setIsEditDialogOpen(true);
   };
 
-  // Handler for editing attendance record
-  const handleEditAttendance = () => {
-    // In a real app, this would update the database
+  const handleSaveEdit = () => {
     toast({
-      title: "Attendance record updated",
-      description: `Updated attendance record for ${currentRecord.employee.name}`,
+      title: "Record updated",
+      description: `Attendance record for ${currentRecord.employee.name} has been updated.`
     });
     setIsEditDialogOpen(false);
   };
 
-  // Custom day rendering for calendar with attendance status
-  const handleDayClick = (day: Date) => {
-    const formattedDate = format(day, 'yyyy-MM-dd');
-    toast({
-      title: "Attendance for " + format(day, 'PPP'),
-      description: `Status: ${calendarData[formattedDate] || 'No record'}`,
+  const renderAttendanceStatus = (status: string) => {
+    let badgeClass = "";
+    
+    switch (status.toLowerCase()) {
+      case "present":
+        badgeClass = "bg-green-100 text-green-800";
+        break;
+      case "absent":
+        badgeClass = "bg-red-100 text-red-800";
+        break;
+      case "late":
+        badgeClass = "bg-yellow-100 text-yellow-800";
+        break;
+      case "half day":
+        badgeClass = "bg-purple-100 text-purple-800";
+        break;
+      default:
+        badgeClass = "bg-gray-100 text-gray-800";
+    }
+    
+    return <Badge className={badgeClass}>{status}</Badge>;
+  };
+
+  const renderDayContent = (day: Date) => {
+    const dateString = format(day, 'yyyy-MM-dd');
+    const employees = Object.keys(calendarData);
+    
+    // Count statuses for this date
+    let present = 0;
+    let absent = 0;
+    let late = 0;
+    
+    employees.forEach(emp => {
+      const status = calendarData[emp][dateString];
+      if (status === 'Present') present++;
+      else if (status === 'Absent') absent++;
+      else if (status === 'Late') late++;
     });
+    
+    const total = present + absent + late;
+    
+    if (total === 0) return null;
+    
+    return (
+      <div className="absolute bottom-0 left-0 right-0 flex justify-center text-[8px] gap-1">
+        {present > 0 && <span className="text-green-600">{present}P</span>}
+        {absent > 0 && <span className="text-red-600">{absent}A</span>}
+        {late > 0 && <span className="text-yellow-600">{late}L</span>}
+      </div>
+    );
   };
 
   return (
@@ -179,297 +231,330 @@ const Attendance = () => {
       <SidebarNav />
       <div className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <h1 className="text-2xl font-semibold">Attendance Management</h1>
-              <p className="text-gray-500">Manage and track employee attendance</p>
+              <p className="text-gray-500">Track employee attendance and hours</p>
             </div>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Export Report
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={() => setCalendarView(!calendarView)}
+              >
+                <CalendarIcon className="h-4 w-4" />
+                {calendarView ? "List View" : "Calendar View"}
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="md:col-span-1 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Calendar</CardTitle>
-                </CardHeader>
-                <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Present Today</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold text-green-600">24</div>
+                <p className="text-sm text-gray-500">Out of 28 employees</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Absent Today</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold text-red-600">2</div>
+                <p className="text-sm text-gray-500">7.1% of workforce</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Late Arrivals</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold text-yellow-600">2</div>
+                <p className="text-sm text-gray-500">7.1% of workforce</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Avg. Working Hours</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold">8h 15m</div>
+                <p className="text-sm text-gray-500">+5% from last week</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {calendarView ? (
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                  <CardTitle>Attendance Calendar</CardTitle>
+                  <div className="flex gap-3">
+                    <Select 
+                      value={selectedEmployee || ""} 
+                      onValueChange={(value) => setSelectedEmployee(value || null)}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="All Employees" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Employees</SelectItem>
+                        <SelectItem value="EMP001">Olivia Rhye</SelectItem>
+                        <SelectItem value="EMP002">Phoenix Baker</SelectItem>
+                        <SelectItem value="EMP003">Lana Steiner</SelectItem>
+                        <SelectItem value="EMP004">Demi Wilkinson</SelectItem>
+                        <SelectItem value="EMP005">Candice Wu</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md p-4">
                   <Calendar
                     mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    className="rounded-md border"
-                    modifiers={{
-                      present: (date) => calendarData[format(date, 'yyyy-MM-dd')] === 'present',
-                      absent: (date) => calendarData[format(date, 'yyyy-MM-dd')] === 'absent',
-                      late: (date) => calendarData[format(date, 'yyyy-MM-dd')] === 'late',
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    className="mx-auto"
+                    components={{
+                      DayContent: (props) => (
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          <div>{props.day.getDate()}</div>
+                          {renderDayContent(props.day)}
+                        </div>
+                      ),
                     }}
-                    modifiersStyles={{
-                      present: { backgroundColor: '#d1fae5', color: '#059669' },
-                      absent: { backgroundColor: '#fee2e2', color: '#dc2626' },
-                      late: { backgroundColor: '#fef3c7', color: '#d97706' },
-                    }}
-                    onDayClick={handleDayClick}
                   />
-                  <div className="mt-4 flex gap-2 justify-center">
-                    <div className="flex items-center gap-1">
-                      <div className="h-3 w-3 bg-green-200 rounded-full"></div>
-                      <span className="text-xs">Present</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="h-3 w-3 bg-red-200 rounded-full"></div>
-                      <span className="text-xs">Absent</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="h-3 w-3 bg-yellow-200 rounded-full"></div>
-                      <span className="text-xs">Late</span>
+                </div>
+                
+                {selectedDate && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium mb-4">
+                      Attendance for {format(selectedDate, 'MMMM d, yyyy')}
+                    </h3>
+                    <div className="rounded-md border overflow-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Employee</TableHead>
+                            <TableHead>Check In</TableHead>
+                            <TableHead>Check Out</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Hours</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredRecords.map((record) => (
+                            <TableRow key={record.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src="" alt={record.employee.name} />
+                                    <AvatarFallback>{record.employee.avatar}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="font-medium">{record.employee.name}</div>
+                                    <div className="text-xs text-gray-500">{record.employeeId}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>{record.checkIn || "-"}</TableCell>
+                              <TableCell>{record.checkOut || "-"}</TableCell>
+                              <TableCell>{renderAttendanceStatus(record.status)}</TableCell>
+                              <TableCell>{record.workHours}</TableCell>
+                              <TableCell className="text-right">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleEditRecord(record)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Attendance Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-green-100 p-2 rounded-full">
-                        <UserCheck className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-500">Present</div>
-                        <div className="font-medium">87%</div>
-                      </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                  <CardTitle>Attendance Records</CardTitle>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                      <Input
+                        type="search"
+                        placeholder="Search..."
+                        className="pl-8 w-full sm:w-[250px]"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
                     </div>
-                    <div className="text-lg font-medium">26</div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-red-100 p-2 rounded-full">
-                        <UserCheck className="h-5 w-5 text-red-600" />
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-500">Absent</div>
-                        <div className="font-medium">7%</div>
-                      </div>
-                    </div>
-                    <div className="text-lg font-medium">2</div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-yellow-100 p-2 rounded-full">
-                        <Clock className="h-5 w-5 text-yellow-600" />
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-500">Late</div>
-                        <div className="font-medium">6%</div>
-                      </div>
-                    </div>
-                    <div className="text-lg font-medium">2</div>
-                  </div>
-
-                  <div className="pt-2">
-                    <Button className="w-full">Mark Attendance</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="md:col-span-2">
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <CardTitle className="text-base">Attendance Records</CardTitle>
-                      <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList>
-                          <TabsTrigger value="daily">Daily</TabsTrigger>
-                          <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                          <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                        </TabsList>
-                      </Tabs>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="icon" className="h-8 w-8">
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="icon" className="h-9 w-9">
                         <Filter className="h-4 w-4" />
                       </Button>
-                      <Select>
-                        <SelectTrigger className="w-[130px]">
-                          <SelectValue placeholder="All Departments" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Departments</SelectItem>
-                          <SelectItem value="design">Design</SelectItem>
-                          <SelectItem value="engineering">Engineering</SelectItem>
-                          <SelectItem value="product">Product</SelectItem>
-                          <SelectItem value="marketing">Marketing</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-[160px] justify-start">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {selectedDate ? format(selectedDate, 'PPP') : "Select date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={setSelectedDate}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border overflow-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[250px]">Employee</TableHead>
-                          <TableHead>Employee ID</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Check In</TableHead>
-                          <TableHead>Check Out</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Work Hours</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {attendanceData.map((record) => (
-                          <TableRow key={record.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarImage src="" alt={record.employee.name} />
-                                  <AvatarFallback>{record.employee.avatar}</AvatarFallback>
-                                </Avatar>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Check In</TableHead>
+                        <TableHead>Check Out</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Hours</TableHead>
+                        <TableHead>Notes</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredRecords.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src="" alt={record.employee.name} />
+                                <AvatarFallback>{record.employee.avatar}</AvatarFallback>
+                              </Avatar>
+                              <div>
                                 <div className="font-medium">{record.employee.name}</div>
+                                <div className="text-xs text-gray-500">{record.employeeId}</div>
                               </div>
-                            </TableCell>
-                            <TableCell>{record.employee.id}</TableCell>
-                            <TableCell>{record.date}</TableCell>
-                            <TableCell>{record.checkIn}</TableCell>
-                            <TableCell>{record.checkOut}</TableCell>
-                            <TableCell>
-                              <Badge
-                                className={`${
-                                  record.status === "Present"
-                                    ? "bg-green-100 text-green-800"
-                                    : record.status === "Late"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {record.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{record.workHours}</TableCell>
-                            <TableCell>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 w-8 p-0"
-                                onClick={() => handleOpenEditDialog(record)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{record.date}</TableCell>
+                          <TableCell>{record.checkIn || "-"}</TableCell>
+                          <TableCell>{record.checkOut || "-"}</TableCell>
+                          <TableCell>{renderAttendanceStatus(record.status)}</TableCell>
+                          <TableCell>{record.workHours}</TableCell>
+                          <TableCell>
+                            <span className="text-sm text-gray-500">
+                              {record.notes || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleEditRecord(record)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
-      {/* Edit Attendance Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Attendance Record</DialogTitle>
             <DialogDescription>
-              Update attendance information for {currentRecord?.employee?.name}
+              {currentRecord?.employee?.name} • {currentRecord?.date}
             </DialogDescription>
           </DialogHeader>
-          {currentRecord && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="date" className="text-right">
-                  Date
-                </Label>
-                <div className="col-span-3">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {editForm.date}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={(date) => {
-                          setDate(date);
-                          setEditForm(prev => ({
-                            ...prev,
-                            date: date ? format(date, 'yyyy-MM-dd') : prev.date
-                          }));
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="checkIn" className="text-right">
-                  Check In
-                </Label>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="checkIn">Check In Time</Label>
                 <Input
                   id="checkIn"
-                  value={editForm.checkIn}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, checkIn: e.target.value }))}
-                  className="col-span-3"
+                  value={editFormData.checkIn}
+                  onChange={(e) => setEditFormData({...editFormData, checkIn: e.target.value})}
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="checkOut" className="text-right">
-                  Check Out
-                </Label>
+              <div>
+                <Label htmlFor="checkOut">Check Out Time</Label>
                 <Input
                   id="checkOut"
-                  value={editForm.checkOut}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, checkOut: e.target.value }))}
-                  className="col-span-3"
+                  value={editFormData.checkOut}
+                  onChange={(e) => setEditFormData({...editFormData, checkOut: e.target.value})}
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">
-                  Status
-                </Label>
-                <Select 
-                  value={editForm.status} 
-                  onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value }))}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Present">Present</SelectItem>
-                    <SelectItem value="Late">Late</SelectItem>
-                    <SelectItem value="Absent">Absent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
-          )}
+            
+            <div>
+              <Label htmlFor="status">Attendance Status</Label>
+              <Select
+                value={editFormData.status}
+                onValueChange={(value) => setEditFormData({...editFormData, status: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Present">Present</SelectItem>
+                  <SelectItem value="Absent">Absent</SelectItem>
+                  <SelectItem value="Late">Late</SelectItem>
+                  <SelectItem value="Half Day">Half Day</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={editFormData.notes}
+                onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                placeholder="Add any additional notes here"
+              />
+            </div>
+          </div>
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleEditAttendance}>Save changes</Button>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const employees = [
   {
-    id: 1,
+    id: "EMP001",
     name: "Olivia Rhye",
     email: "olivia@nexhr.com",
     department: "Design",
@@ -29,7 +29,7 @@ const employees = [
     avatar: "OR",
   },
   {
-    id: 2,
+    id: "EMP002",
     name: "Phoenix Baker",
     email: "phoenix@nexhr.com",
     department: "Product",
@@ -38,7 +38,7 @@ const employees = [
     avatar: "PB",
   },
   {
-    id: 3,
+    id: "EMP003",
     name: "Lana Steiner",
     email: "lana@nexhr.com",
     department: "Engineering",
@@ -47,7 +47,7 @@ const employees = [
     avatar: "LS",
   },
   {
-    id: 4,
+    id: "EMP004",
     name: "Demi Wilkinson",
     email: "demi@nexhr.com",
     department: "Engineering",
@@ -56,7 +56,7 @@ const employees = [
     avatar: "DW",
   },
   {
-    id: 5,
+    id: "EMP005",
     name: "Candice Wu",
     email: "candice@nexhr.com",
     department: "Engineering",
@@ -65,7 +65,7 @@ const employees = [
     avatar: "CW",
   },
   {
-    id: 6,
+    id: "EMP006",
     name: "Natali Craig",
     email: "natali@nexhr.com",
     department: "Design",
@@ -74,7 +74,7 @@ const employees = [
     avatar: "NC",
   },
   {
-    id: 7,
+    id: "EMP007",
     name: "Drew Cano",
     email: "drew@nexhr.com",
     department: "Marketing",
@@ -83,7 +83,7 @@ const employees = [
     avatar: "DC",
   },
   {
-    id: 8,
+    id: "EMP008",
     name: "Orlando Diggs",
     email: "orlando@nexhr.com",
     department: "Sales",
@@ -101,7 +101,8 @@ const AllEmployees = () => {
       employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.role.toLowerCase().includes(searchTerm.toLowerCase())
+      employee.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -169,6 +170,7 @@ const AllEmployees = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Employee ID</TableHead>
                       <TableHead className="w-[300px]">Name</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Role</TableHead>
@@ -179,6 +181,7 @@ const AllEmployees = () => {
                   <TableBody>
                     {filteredEmployees.map((employee) => (
                       <TableRow key={employee.id}>
+                        <TableCell className="font-medium">{employee.id}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">

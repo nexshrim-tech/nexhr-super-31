@@ -39,6 +39,7 @@ const SidebarNav: React.FC = () => {
     { name: 'Assets', icon: <BarChart2 className="w-5 h-5" />, path: '/assets' },
     { name: 'Department', icon: <Users className="w-5 h-5" />, path: '/department' },
     { name: 'Help desk', icon: <HelpCircle className="w-5 h-5" />, path: '/help-desk' },
+    { name: 'Documents', icon: <FileText className="w-5 h-5" />, path: '/documents' },
   ];
 
   const toggleSidebar = () => {
@@ -90,11 +91,15 @@ const SidebarNav: React.FC = () => {
                     key={item.name}
                     to={item.path}
                     className={`flex items-center space-x-3 rounded-md py-3 px-3 text-sm font-medium hover:bg-gray-100 ${
-                      isActive(item.path) ? 'bg-gray-100 text-nexhr-primary' : 'text-gray-700'
+                      isActive(item.path) 
+                        ? 'bg-nexhr-primary/10 text-nexhr-primary font-semibold' 
+                        : 'text-gray-700'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    {item.icon}
+                    <span className={isActive(item.path) ? 'text-nexhr-primary' : ''}>
+                      {item.icon}
+                    </span>
                     <span>{item.name}</span>
                   </Link>
                 ))}
@@ -143,11 +148,15 @@ const SidebarNav: React.FC = () => {
             key={item.name}
             to={item.path}
             className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium hover:bg-gray-100 ${
-              isActive(item.path) ? 'bg-gray-100 text-nexhr-primary' : 'text-gray-700'
+              isActive(item.path) 
+                ? 'bg-nexhr-primary/10 text-nexhr-primary font-semibold' 
+                : 'text-gray-700'
             }`}
             title={collapsed ? item.name : ''}
           >
-            {item.icon}
+            <span className={isActive(item.path) ? 'text-nexhr-primary' : ''}>
+              {item.icon}
+            </span>
             {!collapsed && <span>{item.name}</span>}
           </Link>
         ))}

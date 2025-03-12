@@ -20,6 +20,7 @@ import HelpDesk from "./pages/HelpDesk";
 import Login from "./pages/Login";
 import Landing from "./pages/Landing";
 import DocumentGenerator from "./pages/DocumentGenerator";
+import Logout from "./pages/Logout";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/landing" element={<Landing />} />
+          <Route path="/logout" element={<Logout />} />
           <Route path="/" element={<Index />} />
           <Route path="/track" element={<Track />} />
           <Route path="/add-employee" element={<AddEmployee />} />

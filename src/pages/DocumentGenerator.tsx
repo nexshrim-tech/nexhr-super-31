@@ -2,124 +2,241 @@
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Download, Search, Printer, CheckCircle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Search, FileText, Download, ChevronRight, FileDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+const employeeData = [
+  {
+    id: "EMP001",
+    name: "Olivia Rhye",
+    email: "olivia@nexhr.com",
+    department: "Design",
+    role: "UI Designer",
+    status: "Active",
+    avatar: "OR",
+    salary: "$85,000",
+    startDate: "2022-03-15",
+    address: "123 Main St, San Francisco, CA 94105",
+    phone: "(555) 123-4567",
+    manager: "Phoenix Baker",
+  },
+  {
+    id: "EMP002",
+    name: "Phoenix Baker",
+    email: "phoenix@nexhr.com",
+    department: "Product",
+    role: "Product Manager",
+    status: "Active",
+    avatar: "PB",
+    salary: "$95,000",
+    startDate: "2021-06-10",
+    address: "456 Market St, San Francisco, CA 94105",
+    phone: "(555) 987-6543",
+    manager: "Drew Cano",
+  },
+  {
+    id: "EMP003",
+    name: "Lana Steiner",
+    email: "lana@nexhr.com",
+    department: "Engineering",
+    role: "Frontend Developer",
+    status: "On Leave",
+    avatar: "LS",
+    salary: "$92,000",
+    startDate: "2022-01-05",
+    address: "789 Howard St, San Francisco, CA 94105",
+    phone: "(555) 567-8901",
+    manager: "Phoenix Baker",
+  },
+];
 
 const documentTemplates = [
   {
-    id: 1,
-    title: "Offer Letter",
-    description: "Employment offer letter with terms and conditions",
-    category: "Recruitment",
-    lastUpdated: "2023-03-15",
-  },
-  {
-    id: 2,
-    title: "Employment Contract",
-    description: "Formal employment agreement",
-    category: "Recruitment",
-    lastUpdated: "2023-02-20",
-  },
-  {
-    id: 3,
-    title: "Termination Letter",
-    description: "Employee termination notification",
-    category: "Offboarding",
-    lastUpdated: "2023-04-10",
-  },
-  {
-    id: 4,
-    title: "Salary Increment Letter",
-    description: "Notification of salary increase",
-    category: "Compensation",
-    lastUpdated: "2023-03-05",
-  },
-  {
-    id: 5,
-    title: "Warning Letter",
-    description: "Employee warning for policy violation",
-    category: "Discipline",
-    lastUpdated: "2023-01-25",
-  },
-  {
-    id: 6,
-    title: "Salary Slip",
-    description: "Monthly salary statement",
-    category: "Compensation",
-    lastUpdated: "2023-06-01",
-  },
-  {
-    id: 7,
-    title: "Experience Certificate",
-    description: "Work experience verification",
-    category: "Offboarding",
-    lastUpdated: "2023-05-12",
-  },
-  {
-    id: 8,
-    title: "Promotion Letter",
-    description: "Employee promotion notification",
-    category: "Career Development",
-    lastUpdated: "2023-04-28",
-  },
-];
+    id: "offer-letter",
+    name: "Offer Letter",
+    description: "Employment offer letter for new employees",
+    icon: <FileText className="w-8 h-8 text-blue-500" />,
+    color: "bg-blue-100",
+    fields: ["name", "role", "department", "salary", "startDate", "manager"],
+    template: `
+Dear {{name}},
 
-const employees = [
-  { id: "EMP001", name: "Olivia Rhye", department: "Design", avatar: "OR" },
-  { id: "EMP002", name: "Phoenix Baker", department: "Engineering", avatar: "PB" },
-  { id: "EMP003", name: "Lana Steiner", department: "Product", avatar: "LS" },
-  { id: "EMP004", name: "Demi Wilkinson", department: "Marketing", avatar: "DW" },
-  { id: "EMP005", name: "Candice Wu", department: "Customer Success", avatar: "CW" },
-  { id: "EMP006", name: "Natali Craig", department: "Operations", avatar: "NC" },
-  { id: "EMP007", name: "Drew Cano", department: "Finance", avatar: "DC" },
+We are pleased to offer you the position of {{role}} in our {{department}} department at NexHR Inc. 
+
+Your annual salary will be {{salary}}, paid on a bi-weekly basis. Your anticipated start date is {{startDate}}, contingent upon successful completion of background checks.
+
+You will be reporting to {{manager}}. We believe your skills and experience are an excellent match for our company.
+
+We look forward to welcoming you to the team!
+
+Sincerely,
+HR Department
+NexHR Inc.
+    `
+  },
+  {
+    id: "termination-letter",
+    name: "Termination Letter",
+    description: "Employment termination notice",
+    icon: <FileText className="w-8 h-8 text-red-500" />,
+    color: "bg-red-100",
+    fields: ["name", "role", "department", "startDate", "manager"],
+    template: `
+Dear {{name}},
+
+This letter is to inform you that your employment with NexHR Inc. as {{role}} in the {{department}} department will end effective [End Date].
+
+Your final paycheck will include all earned but unpaid wages and accrued but unused vacation time, minus applicable deductions.
+
+All company property must be returned to your manager, {{manager}}, by your last day.
+
+We wish you the best in your future endeavors.
+
+Sincerely,
+HR Department
+NexHR Inc.
+    `
+  },
+  {
+    id: "salary-slip",
+    name: "Salary Slip",
+    description: "Monthly salary statement",
+    icon: <FileText className="w-8 h-8 text-green-500" />,
+    color: "bg-green-100",
+    fields: ["name", "id", "role", "department", "salary"],
+    template: `
+SALARY SLIP
+Employee: {{name}}
+Employee ID: {{id}}
+Position: {{role}}
+Department: {{department}}
+
+Basic Salary: {{salary}}
+Allowances: [Amount]
+Deductions: [Amount]
+Net Pay: [Amount]
+
+Payment Date: [Date]
+Payment Method: Direct Deposit
+
+This is a computer-generated document and does not require a signature.
+    `
+  },
+  {
+    id: "certificate",
+    name: "Employment Certificate",
+    description: "Employment verification certificate",
+    icon: <FileText className="w-8 h-8 text-purple-500" />,
+    color: "bg-purple-100",
+    fields: ["name", "id", "role", "department", "startDate"],
+    template: `
+CERTIFICATE OF EMPLOYMENT
+
+This is to certify that {{name}} (Employee ID: {{id}}) is employed at NexHR Inc. as a {{role}} in the {{department}} department since {{startDate}}.
+
+This certification is issued upon the request of the employee for whatever legal purpose it may serve.
+
+Issued on: [Current Date]
+
+HR Director
+NexHR Inc.
+    `
+  },
 ];
 
 const DocumentGenerator = () => {
-  const [activeTab, setActiveTab] = useState("create");
-  const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [customFields, setCustomFields] = useState<Record<string, string>>({});
+  const [generatedContent, setGeneratedContent] = useState("");
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const filteredTemplates = documentTemplates.filter(
-    (template) =>
-      template.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.category.toLowerCase().includes(searchQuery.toLowerCase())
+    (template) => 
+      template.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      template.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleEmployeeSelect = (value: string) => {
-    setSelectedEmployee(value);
+  const handleTemplateSelect = (template: any) => {
+    setSelectedTemplate(template);
+    setCustomFields({});
+    setGeneratedContent("");
   };
 
-  const handleTemplateSelect = (id: number) => {
-    setSelectedTemplate(id);
+  const handleEmployeeChange = (employeeId: string) => {
+    setSelectedEmployee(employeeId);
+    
+    if (employeeId && selectedTemplate) {
+      const employee = employeeData.find(emp => emp.id === employeeId);
+      
+      if (employee) {
+        const newCustomFields: Record<string, string> = {};
+        
+        selectedTemplate.fields.forEach((field: string) => {
+          if (field in employee) {
+            newCustomFields[field] = employee[field as keyof typeof employee] as string;
+          }
+        });
+        
+        setCustomFields(newCustomFields);
+      }
+    }
+  };
+
+  const handleCustomFieldChange = (field: string, value: string) => {
+    setCustomFields(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const generateDocument = () => {
-    if (!selectedTemplate || !selectedEmployee) {
-      toast({
-        title: "Missing information",
-        description: "Please select both a template and an employee",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const template = documentTemplates.find((t) => t.id === selectedTemplate);
-    const employee = employees.find((e) => e.id === selectedEmployee);
-
-    toast({
-      title: "Document generated",
-      description: `${template?.title} generated for ${employee?.name}`,
+    if (!selectedTemplate) return;
+    
+    let content = selectedTemplate.template;
+    
+    Object.entries(customFields).forEach(([field, value]) => {
+      content = content.replace(new RegExp(`{{${field}}}`, 'g'), value);
     });
+    
+    setGeneratedContent(content);
+    setIsPreviewDialogOpen(true);
+  };
+
+  const downloadAsPDF = () => {
+    toast({
+      title: "Download started",
+      description: "Your document is being downloaded as PDF.",
+    });
+    
+    // In a real application, this would convert to PDF and trigger download
+    setTimeout(() => {
+      setIsPreviewDialogOpen(false);
+    }, 1000);
   };
 
   return (
@@ -127,100 +244,89 @@ const DocumentGenerator = () => {
       <SidebarNav />
       <div className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-semibold">Document Generator</h1>
-              <p className="text-gray-500">Create and manage HR documents</p>
-            </div>
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold">Document Generator</h1>
+            <p className="text-gray-500">Generate HR documents and letters with automatic data filling</p>
           </div>
 
-          <Tabs defaultValue="create" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="create">Create Document</TabsTrigger>
-              <TabsTrigger value="templates">Document Templates</TabsTrigger>
-              <TabsTrigger value="history">Generation History</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="create">
-              <div className="grid md:grid-cols-3 gap-6">
-                <Card className="md:col-span-1">
-                  <CardHeader>
-                    <CardTitle>Select Template</CardTitle>
-                    <CardDescription>Choose a document template to generate</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                        <Input
-                          type="search"
-                          placeholder="Search templates..."
-                          className="pl-8"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="border rounded-md divide-y max-h-[400px] overflow-y-auto">
-                        {filteredTemplates.map((template) => (
-                          <div
-                            key={template.id}
-                            className={`p-3 cursor-pointer transition-colors ${
-                              selectedTemplate === template.id
-                                ? "bg-nexhr-primary bg-opacity-10"
-                                : "hover:bg-gray-50"
-                            }`}
-                            onClick={() => handleTemplateSelect(template.id)}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="font-medium">{template.title}</div>
-                                <div className="text-sm text-gray-500 mt-1">
-                                  {template.description}
-                                </div>
-                              </div>
-                              {selectedTemplate === template.id && (
-                                <CheckCircle className="text-nexhr-primary h-5 w-5" />
-                              )}
-                            </div>
-                            <div className="flex items-center justify-between mt-2">
-                              <Badge variant="outline" className="text-xs">
-                                {template.category}
-                              </Badge>
-                              <span className="text-xs text-gray-500">
-                                Updated: {template.lastUpdated}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-1">
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-base">Document Templates</CardTitle>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                      <Input
+                        type="search"
+                        placeholder="Search templates..."
+                        className="pl-8 w-[180px]"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {filteredTemplates.map((template) => (
+                      <div 
+                        key={template.id}
+                        className={`p-3 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${
+                          selectedTemplate?.id === template.id 
+                            ? 'bg-nexhr-primary/10 border border-nexhr-primary/30' 
+                            : `${template.color} hover:bg-gray-100`
+                        }`}
+                        onClick={() => handleTemplateSelect(template)}
+                      >
+                        <div className="flex-shrink-0">
+                          {template.icon}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-medium">{template.name}</h3>
+                          <p className="text-sm text-gray-500">{template.description}</p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-gray-400" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                <Card className="md:col-span-2">
-                  <CardHeader>
-                    <CardTitle>Document Details</CardTitle>
-                    <CardDescription>
-                      Fill in the required information for the document
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
+            <div className="md:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {selectedTemplate 
+                      ? `Generate ${selectedTemplate.name}` 
+                      : "Select a document template"
+                    }
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!selectedTemplate ? (
+                    <div className="text-center py-10">
+                      <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-700 mb-2">No Template Selected</h3>
+                      <p className="text-gray-500 max-w-md mx-auto">
+                        Please select a document template from the list to get started with document generation.
+                      </p>
+                    </div>
+                  ) : (
                     <div className="space-y-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="employee">Employee</Label>
-                        <Select onValueChange={handleEmployeeSelect} value={selectedEmployee}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select employee" />
+                      <div>
+                        <Label htmlFor="employee">Select Employee</Label>
+                        <Select value={selectedEmployee} onValueChange={handleEmployeeChange}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Choose an employee..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {employees.map((employee) => (
+                            {employeeData.map((employee) => (
                               <SelectItem key={employee.id} value={employee.id}>
                                 <div className="flex items-center gap-2">
                                   <span>{employee.name}</span>
-                                  <span className="text-gray-500 text-xs">
-                                    ({employee.department})
-                                  </span>
+                                  <span className="text-gray-500 text-xs">({employee.id})</span>
                                 </div>
                               </SelectItem>
                             ))}
@@ -228,197 +334,89 @@ const DocumentGenerator = () => {
                         </Select>
                       </div>
 
-                      {selectedTemplate && selectedEmployee && (
-                        <div className="border p-4 rounded-md bg-gray-50 space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-semibold">
-                              {documentTemplates.find((t) => t.id === selectedTemplate)?.title}
-                            </h3>
-                            <FileText className="h-5 w-5 text-gray-500" />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="issueDate">Issue Date</Label>
-                              <Input
-                                id="issueDate"
-                                type="date"
-                                defaultValue={new Date().toISOString().split("T")[0]}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="effectiveDate">Effective Date</Label>
-                              <Input
-                                id="effectiveDate"
-                                type="date"
-                                defaultValue={new Date().toISOString().split("T")[0]}
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="additionalNotes">Additional Notes</Label>
-                            <Input
-                              id="additionalNotes"
-                              placeholder="Add any special instructions or notes..."
-                            />
-                          </div>
-
-                          <div className="pt-2">
-                            <Label>Document Preview</Label>
-                            <div className="border rounded-md p-4 mt-2 bg-white min-h-[200px] flex items-center justify-center">
-                              <div className="text-center text-gray-500">
-                                <FileText className="h-12 w-12 mx-auto mb-2 opacity-40" />
-                                <p>
-                                  Preview will be available after generating the document
-                                </p>
+                      {selectedEmployee && (
+                        <>
+                          <div className="p-4 border rounded-lg bg-gray-50">
+                            <h3 className="font-medium mb-3">Employee Information</h3>
+                            <div className="flex items-center gap-3 mb-4">
+                              <Avatar>
+                                <AvatarFallback>
+                                  {employeeData.find(emp => emp.id === selectedEmployee)?.avatar}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium">
+                                  {employeeData.find(emp => emp.id === selectedEmployee)?.name}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {employeeData.find(emp => emp.id === selectedEmployee)?.role} • {employeeData.find(emp => emp.id === selectedEmployee)?.department}
+                                </div>
                               </div>
+                              <Badge className="ml-auto bg-green-100 text-green-800">
+                                {employeeData.find(emp => emp.id === selectedEmployee)?.status}
+                              </Badge>
                             </div>
                           </div>
-                        </div>
+
+                          <div className="space-y-4">
+                            <h3 className="font-medium">Customize Document Fields</h3>
+                            
+                            {selectedTemplate.fields.map((field: string) => (
+                              <div key={field} className="space-y-2">
+                                <Label htmlFor={field} className="capitalize">
+                                  {field.replace(/([A-Z])/g, ' $1').trim()}
+                                </Label>
+                                <Input
+                                  id={field}
+                                  value={customFields[field] || ''}
+                                  onChange={(e) => handleCustomFieldChange(field, e.target.value)}
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                          <Button 
+                            className="w-full" 
+                            onClick={generateDocument}
+                            disabled={!selectedEmployee || Object.values(customFields).some(value => !value)}
+                          >
+                            Generate Document
+                          </Button>
+                        </>
                       )}
                     </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline">Cancel</Button>
-                    <div className="space-x-2">
-                      <Button
-                        variant="outline"
-                        disabled={!selectedTemplate || !selectedEmployee}
-                        onClick={() => {
-                          toast({
-                            title: "Document preview",
-                            description: "Preview opened in a new tab",
-                          });
-                        }}
-                      >
-                        <Printer className="h-4 w-4 mr-2" />
-                        Preview
-                      </Button>
-                      <Button
-                        disabled={!selectedTemplate || !selectedEmployee}
-                        onClick={generateDocument}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Generate Document
-                      </Button>
-                    </div>
-                  </CardFooter>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="templates">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Document Templates</CardTitle>
-                  <CardDescription>Manage your document templates</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Template Name</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Last Updated</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {documentTemplates.map((template) => (
-                          <TableRow key={template.id}>
-                            <TableCell className="font-medium">{template.title}</TableCell>
-                            <TableCell>{template.description}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{template.category}</Badge>
-                            </TableCell>
-                            <TableCell>{template.lastUpdated}</TableCell>
-                            <TableCell className="text-right">
-                              <Button variant="ghost" size="sm">
-                                Edit
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="history">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Generation History</CardTitle>
-                  <CardDescription>Recent documents generated by you</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Document</TableHead>
-                          <TableHead>Employee</TableHead>
-                          <TableHead>Generated On</TableHead>
-                          <TableHead>Generated By</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell className="font-medium">Offer Letter</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback>OR</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div>Olivia Rhye</div>
-                                <div className="text-xs text-gray-500">EMP001</div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>2023-06-15</TableCell>
-                          <TableCell>Admin User</TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">Salary Slip</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback>PB</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div>Phoenix Baker</div>
-                                <div className="text-xs text-gray-500">EMP002</div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>2023-06-01</TableCell>
-                          <TableCell>Admin User</TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </div>
       </div>
+
+      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Document Preview</DialogTitle>
+            <DialogDescription>
+              Review your generated document before downloading
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="bg-white border rounded-md p-6 max-h-[500px] overflow-y-auto whitespace-pre-line">
+            {generatedContent}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPreviewDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={downloadAsPDF} className="gap-2">
+              <FileDown className="h-4 w-4" />
+              Download PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
