@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -210,20 +211,19 @@ const LeaveManagement = () => {
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <CardTitle className="text-base">All Tasks</CardTitle>
-                      <Tabs 
-                        defaultValue="all" 
-                        onValueChange={setActiveTab}
-                      >
-                        <TabsList>
-                          <TabsTrigger value="all">All</TabsTrigger>
-                          <TabsTrigger value="pending">Pending</TabsTrigger>
-                          <TabsTrigger value="approved">Approved</TabsTrigger>
-                          <TabsTrigger value="rejected">Rejected</TabsTrigger>
-                        </TabsList>
-                      </Tabs>
-                    </div>
+                    <CardTitle className="text-base">Leave Applications</CardTitle>
+                    <Tabs 
+                      defaultValue="all" 
+                      onValueChange={setActiveTab}
+                      className="w-full max-w-[400px]"
+                    >
+                      <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger value="pending">Pending</TabsTrigger>
+                        <TabsTrigger value="approved">Approved</TabsTrigger>
+                        <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
                   </div>
                 </CardHeader>
                 <CardContent>

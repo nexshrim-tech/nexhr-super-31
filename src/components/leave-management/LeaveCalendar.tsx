@@ -10,16 +10,16 @@ interface LeaveCalendarProps {
 
 const LeaveCalendar = ({ date, setDate }: LeaveCalendarProps) => {
   return (
-    <Card>
+    <Card className="rounded-lg">
       <CardHeader>
         <CardTitle className="text-base">Calendar</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Calendar
           mode="single"
           selected={date}
           onSelect={setDate}
-          className="rounded-md border"
+          className="rounded-md"
         />
       </CardContent>
     </Card>
