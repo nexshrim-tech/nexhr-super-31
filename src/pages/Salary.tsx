@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
+import { format } from "date-fns";
 
 const salaryData = [
   { month: "Jan", amount: 250000 },
@@ -89,6 +90,14 @@ const employeeSalaries = [
   },
 ];
 
+// Sample payslip history data
+const payslipHistory = [
+  { id: "PS-2023-08", employee: "Olivia Rhye", period: "August 2023", amount: 6250, date: "2023-08-31" },
+  { id: "PS-2023-07", employee: "Olivia Rhye", period: "July 2023", amount: 6250, date: "2023-07-31" },
+  { id: "PS-2023-06", employee: "Olivia Rhye", period: "June 2023", amount: 6250, date: "2023-06-30" },
+  { id: "PS-2023-05", employee: "Olivia Rhye", period: "May 2023", amount: 6000, date: "2023-05-31" },
+];
+
 const Salary = () => {
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,6 +105,12 @@ const Salary = () => {
   const [showPayslipDialog, setShowPayslipDialog] = useState(false);
   const [showEmployeeProfile, setShowEmployeeProfile] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [showPayslipHistory, setShowPayslipHistory] = useState(false);
+  const [editSalaryDialog, setEditSalaryDialog] = useState(false);
+  const [editSalaryData, setEditSalaryData] = useState({
+    salary: "",
+    effectiveDate: ""
+  });
   const { toast } = useToast();
 
   const filteredEmployees = employeeSalaries.filter((employee) => {
@@ -126,11 +141,40 @@ const Salary = () => {
 
   const handleEditSalary = (employee: any) => {
     setSelectedEmployee(employee);
-    // Open edit dialog or implement inline editing logic
-    toast({
-      title: "Edit Salary",
-      description: `You can now edit ${employee.employee.name}'s salary details.`,
+    setEditSalaryData({
+      salary: employee.salary.toString(),
+      effectiveDate: format(new Date(), 'yyyy-MM-dd')
     });
+    setEditSalaryDialog(true);
+  };
+
+  const handleUpdateSalary = () => {
+    if (!selectedEmployee) return;
+    
+    const updatedSalaries = employeeSalaries.map(emp => {
+      if (emp.id === selectedEmployee.id) {
+        return {
+          ...emp,
+          salary: parseFloat(editSalaryData.salary),
+          lastIncrement: editSalaryData.effectiveDate
+        };
+      }
+      return emp;
+    });
+    
+    // This is just for demo. In a real app, you'd update the state and database
+    toast({
+      title: "Salary Updated",
+      description: `${selectedEmployee.employee.name}'s salary has been updated to $${parseFloat(editSalaryData.salary).toLocaleString()}.`,
+    });
+    
+    setEditSalaryDialog(false);
+  };
+
+  const handleViewPayslipHistory = () => {
+    if (selectedEmployee) {
+      setShowPayslipHistory(true);
+    }
   };
 
   const handleExportData = () => {
@@ -290,7 +334,6 @@ const Salary = () => {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
-                              <AvatarImage src="" alt={item.employee.name} />
                               <AvatarFallback>{item.employee.avatar}</AvatarFallback>
                             </Avatar>
                             <div className="font-medium">{item.employee.name}</div>
@@ -423,11 +466,14 @@ const Salary = () => {
         <DialogContent className="sm:max-w-[650px]">
           <DialogHeader>
             <DialogTitle>Employee Payslip</DialogTitle>
+            <DialogDescription>
+              Detailed breakdown of employee's salary for the current period
+            </DialogDescription>
           </DialogHeader>
           {selectedEmployee && (
             <div className="py-4">
               <div className="border-b pb-4 mb-4">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-wrap justify-between items-center gap-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarFallback>{selectedEmployee.employee.avatar}</AvatarFallback>
@@ -438,13 +484,25 @@ const Salary = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">Pay Period</p>
-                    <p className="text-sm text-gray-500">August 1-31, 2023</p>
+                    <div className="flex items-center gap-4 flex-wrap justify-end">
+                      <div>
+                        <p className="text-sm font-medium">Pay Period</p>
+                        <p className="text-sm text-gray-500">August 1-31, 2023</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Payslip ID</p>
+                        <p className="text-sm text-gray-500">PS-2023-08-{selectedEmployee.id}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Generation Date</p>
+                        <p className="text-sm text-gray-500">{format(new Date(), 'MMM dd, yyyy')}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <h4 className="font-medium mb-2">Earnings</h4>
                   <div className="space-y-2">
@@ -490,24 +548,142 @@ const Salary = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end mt-6 gap-2">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  Download PDF
+              <div className="flex flex-wrap justify-between mt-6 gap-2">
+                <Button variant="outline" onClick={handleViewPayslipHistory}>
+                  View Payslip History
                 </Button>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Print
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Download PDF
+                  </Button>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Print
+                  </Button>
+                </div>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
+      {/* Payslip History Dialog */}
+      <Dialog open={showPayslipHistory} onOpenChange={setShowPayslipHistory}>
+        <DialogContent className="sm:max-w-[650px]">
+          <DialogHeader>
+            <DialogTitle>Payslip History</DialogTitle>
+            <DialogDescription>
+              View past payslips for {selectedEmployee?.employee.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Payslip ID</TableHead>
+                    <TableHead>Period</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {payslipHistory.map((slip) => (
+                    <TableRow key={slip.id}>
+                      <TableCell className="font-medium">{slip.id}</TableCell>
+                      <TableCell>{slip.period}</TableCell>
+                      <TableCell>${slip.amount.toFixed(2)}</TableCell>
+                      <TableCell>{slip.date}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm">
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Salary Dialog */}
+      <Dialog open={editSalaryDialog} onOpenChange={setEditSalaryDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Salary</DialogTitle>
+            <DialogDescription>
+              Update salary information for {selectedEmployee?.employee.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="currentSalary" className="text-right">
+                Current Salary
+              </Label>
+              <div className="col-span-3 flex h-10 items-center">
+                ${selectedEmployee?.salary.toLocaleString()}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="newSalary" className="text-right">
+                New Salary
+              </Label>
+              <Input
+                id="newSalary"
+                type="number"
+                value={editSalaryData.salary}
+                onChange={(e) => setEditSalaryData({...editSalaryData, salary: e.target.value})}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="effectiveDate" className="text-right">
+                Effective Date
+              </Label>
+              <Input
+                id="effectiveDate"
+                type="date"
+                value={editSalaryData.effectiveDate}
+                onChange={(e) => setEditSalaryData({...editSalaryData, effectiveDate: e.target.value})}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="reason" className="text-right">
+                Reason
+              </Label>
+              <select
+                id="reason"
+                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="promotion">Promotion</option>
+                <option value="annual-increment">Annual Increment</option>
+                <option value="performance">Performance Based</option>
+                <option value="market-adjustment">Market Adjustment</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditSalaryDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateSalary}>
+              Update Salary
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Employee Profile Dialog */}
       <Sheet open={showEmployeeProfile} onOpenChange={setShowEmployeeProfile}>
-        <SheetContent className="w-[400px] sm:w-[540px]">
+        <SheetContent className="w-full sm:max-w-md md:max-w-lg">
           <SheetHeader>
             <SheetTitle>Employee Profile</SheetTitle>
           </SheetHeader>
@@ -524,7 +700,7 @@ const Salary = () => {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium mb-2">Personal Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Email</p>
                       <p className="font-medium">{selectedEmployee.employee.name.toLowerCase().replace(' ', '.')}@example.com</p>
@@ -546,7 +722,7 @@ const Salary = () => {
 
                 <div>
                   <h3 className="text-lg font-medium mb-2">Salary Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Basic Salary</p>
                       <p className="font-medium">${selectedEmployee.salary.toLocaleString()}/year</p>

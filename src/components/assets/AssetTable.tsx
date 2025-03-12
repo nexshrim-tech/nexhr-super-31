@@ -83,7 +83,6 @@ const AssetTable: React.FC<AssetTableProps> = ({
                     {asset.assignedTo ? (
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src="" alt={asset.assignedTo.name} />
                           <AvatarFallback>{asset.assignedTo.avatar}</AvatarFallback>
                         </Avatar>
                         <span className="text-sm">{asset.assignedTo.name}</span>
