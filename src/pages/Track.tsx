@@ -1,10 +1,12 @@
 
-import React from "react";
+import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Map, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import LocationMap from "@/components/LocationMap";
+import { useToast } from "@/hooks/use-toast";
 
 const employees = [
   {
@@ -50,6 +52,22 @@ const employees = [
 ];
 
 const Track = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [trackingEmployeeId, setTrackingEmployeeId] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  const handleTrackLocation = (employeeId: number) => {
+    setTrackingEmployeeId(employeeId);
+    toast({
+      title: "Location tracking activated",
+      description: `Now tracking employee ${employeeId}'s location in real-time.`,
+    });
+  };
+
+  const filteredEmployees = employees.filter(
+    (employee) => employee.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
@@ -77,10 +95,12 @@ const Track = () => {
                   type="search" 
                   className="block w-full p-2 pl-10 text-sm border border-gray-300 rounded-md bg-gray-50 focus:ring-blue-500 focus:border-blue-500" 
                   placeholder="Search" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               
-              {employees.map(employee => (
+              {filteredEmployees.map(employee => (
                 <div key={employee.id} className="border rounded-md overflow-hidden bg-white">
                   <div className="h-20 bg-cover bg-center" style={{ backgroundImage: "url('/lovable-uploads/3a6054a9-39e7-4102-a2fe-44732c6d2f92.png')" }}></div>
                   <div className="relative flex justify-center">
@@ -137,9 +157,17 @@ const Track = () => {
                       </Button>
                     </div>
                     
-                    <Button className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white" size="sm">
+                    <Button 
+                      className={`w-full mt-4 ${
+                        trackingEmployeeId === employee.id 
+                          ? "bg-green-500 hover:bg-green-600" 
+                          : "bg-blue-500 hover:bg-blue-600"
+                      } text-white`} 
+                      size="sm"
+                      onClick={() => handleTrackLocation(employee.id)}
+                    >
                       <MapPin className="h-4 w-4 mr-2" />
-                      Track Location
+                      {trackingEmployeeId === employee.id ? "Tracking..." : "Track Location"}
                     </Button>
                   </div>
                 </div>
@@ -147,19 +175,7 @@ const Track = () => {
             </div>
             
             <div className="md:col-span-2">
-              <div className="bg-white p-4 border rounded-md h-full min-h-[600px] relative">
-                <img 
-                  src="/lovable-uploads/5f84f812-bedb-480e-ac18-b71a9a3e45e8.png" 
-                  alt="Map with employee locations" 
-                  className="w-full h-full object-cover rounded-md"
-                />
-                <div className="absolute bottom-4 right-4">
-                  <Button variant="outline" className="bg-white">
-                    <Map className="h-4 w-4 mr-2" />
-                    View full map
-                  </Button>
-                </div>
-              </div>
+              <LocationMap employeeId={trackingEmployeeId || undefined} />
             </div>
           </div>
         </div>

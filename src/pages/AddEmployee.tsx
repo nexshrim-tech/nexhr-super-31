@@ -7,15 +7,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronLeft, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AddEmployee = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
   const { toast } = useToast();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    department: "",
+    jobTitle: "",
+    employeeId: "",
+    joinDate: "",
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [formProgress, setFormProgress] = useState(0);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,12 +41,55 @@ const AddEmployee = () => {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+    
+    // Calculate form progress
+    const totalFields = Object.keys(formData).length;
+    const filledFields = Object.values(formData).filter(val => val.trim() !== "").length;
+    setFormProgress(Math.floor((filledFields / totalFields) * 100));
+  };
+
+  const handleSelectChange = (value: string, field: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!formData.firstName) errors.firstName = "First name is required";
+    if (!formData.lastName) errors.lastName = "Last name is required";
+    if (!formData.email) errors.email = "Email is required";
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Email is invalid";
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Employee information saved",
-      description: "The employee has been successfully added to the system.",
-    });
+    
+    if (validateForm()) {
+      // In a real app, this would send the data to a server
+      toast({
+        title: "Employee information saved",
+        description: "The employee has been successfully added to the system.",
+      });
+      
+      // Redirect to employees list after successful submission
+      setTimeout(() => {
+        navigate("/all-employees");
+      }, 2000);
+    } else {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields correctly.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -91,9 +147,16 @@ const AddEmployee = () => {
                   <div className="mt-6 space-y-4">
                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                       <h4 className="font-medium text-blue-800">Saving Progress</h4>
+                      <div className="mt-2">
+                        <div className="h-2 bg-blue-100 rounded-full">
+                          <div 
+                            className="h-2 bg-blue-600 rounded-full" 
+                            style={{ width: `${formProgress}%` }}
+                          ></div>
+                        </div>
+                      </div>
                       <div className="mt-2 text-sm text-blue-600">
-                        Fill out the form sections to complete the employee profile. All sections
-                        are required.
+                        {formProgress}% complete
                       </div>
                     </div>
                   </div>
@@ -118,20 +181,38 @@ const AddEmployee = () => {
                     <TabsContent value="personal" className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="first-name">First Name</Label>
-                          <Input id="first-name" placeholder="Enter first name" />
+                          <Label htmlFor="firstName" className={formErrors.firstName ? "text-red-500" : ""}>First Name</Label>
+                          <Input 
+                            id="firstName" 
+                            placeholder="Enter first name" 
+                            value={formData.firstName}
+                            onChange={handleInputChange}
+                            className={formErrors.firstName ? "border-red-500" : ""}
+                          />
+                          {formErrors.firstName && (
+                            <p className="text-xs text-red-500">{formErrors.firstName}</p>
+                          )}
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="last-name">Last Name</Label>
-                          <Input id="last-name" placeholder="Enter last name" />
+                          <Label htmlFor="lastName" className={formErrors.lastName ? "text-red-500" : ""}>Last Name</Label>
+                          <Input 
+                            id="lastName" 
+                            placeholder="Enter last name" 
+                            value={formData.lastName}
+                            onChange={handleInputChange}
+                            className={formErrors.lastName ? "border-red-500" : ""}
+                          />
+                          {formErrors.lastName && (
+                            <p className="text-xs text-red-500">{formErrors.lastName}</p>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="dob">Date of Birth</Label>
-                          <Input id="dob" type="date" />
+                          <Input id="dob" type="date" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="gender">Gender</Label>
-                          <Select>
+                          <Select onValueChange={(value) => handleSelectChange(value, "gender")}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select gender" />
                             </SelectTrigger>
@@ -144,11 +225,11 @@ const AddEmployee = () => {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="nationality">Nationality</Label>
-                          <Input id="nationality" placeholder="Enter nationality" />
+                          <Input id="nationality" placeholder="Enter nationality" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="marital-status">Marital Status</Label>
-                          <Select>
+                          <Select onValueChange={(value) => handleSelectChange(value, "maritalStatus")}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select status" />
                             </SelectTrigger>
@@ -170,16 +251,26 @@ const AddEmployee = () => {
                     <TabsContent value="employment" className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="employee-id">Employee ID</Label>
-                          <Input id="employee-id" placeholder="Enter employee ID" />
+                          <Label htmlFor="employeeId">Employee ID</Label>
+                          <Input 
+                            id="employeeId" 
+                            placeholder="Enter employee ID" 
+                            value={formData.employeeId}
+                            onChange={handleInputChange}
+                          />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="job-title">Job Title</Label>
-                          <Input id="job-title" placeholder="Enter job title" />
+                          <Label htmlFor="jobTitle">Job Title</Label>
+                          <Input 
+                            id="jobTitle" 
+                            placeholder="Enter job title" 
+                            value={formData.jobTitle}
+                            onChange={handleInputChange}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="department">Department</Label>
-                          <Select>
+                          <Select onValueChange={(value) => handleSelectChange(value, "department")}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select department" />
                             </SelectTrigger>
@@ -193,12 +284,17 @@ const AddEmployee = () => {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="join-date">Join Date</Label>
-                          <Input id="join-date" type="date" />
+                          <Label htmlFor="joinDate">Join Date</Label>
+                          <Input 
+                            id="joinDate" 
+                            type="date" 
+                            value={formData.joinDate}
+                            onChange={handleInputChange}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="employment-type">Employment Type</Label>
-                          <Select>
+                          <Select onValueChange={(value) => handleSelectChange(value, "employmentType")}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select type" />
                             </SelectTrigger>
@@ -212,7 +308,7 @@ const AddEmployee = () => {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="work-location">Work Location</Label>
-                          <Input id="work-location" placeholder="Enter work location" />
+                          <Input id="work-location" placeholder="Enter work location" onChange={handleInputChange} />
                         </div>
                       </div>
                       <div className="flex justify-end space-x-2 pt-4">
@@ -224,32 +320,48 @@ const AddEmployee = () => {
                     <TabsContent value="contact" className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="email">Email Address</Label>
-                          <Input id="email" type="email" placeholder="Enter email address" />
+                          <Label htmlFor="email" className={formErrors.email ? "text-red-500" : ""}>Email Address</Label>
+                          <Input 
+                            id="email" 
+                            type="email" 
+                            placeholder="Enter email address" 
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            className={formErrors.email ? "border-red-500" : ""}
+                          />
+                          {formErrors.email && (
+                            <p className="text-xs text-red-500">{formErrors.email}</p>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="phone">Phone Number</Label>
-                          <Input id="phone" type="tel" placeholder="Enter phone number" />
+                          <Input 
+                            id="phone" 
+                            type="tel" 
+                            placeholder="Enter phone number" 
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="address">Address</Label>
-                          <Input id="address" placeholder="Enter address" />
+                          <Input id="address" placeholder="Enter address" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="city">City</Label>
-                          <Input id="city" placeholder="Enter city" />
+                          <Input id="city" placeholder="Enter city" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="state">State/Province</Label>
-                          <Input id="state" placeholder="Enter state or province" />
+                          <Input id="state" placeholder="Enter state or province" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="zip">Zip/Postal Code</Label>
-                          <Input id="zip" placeholder="Enter zip or postal code" />
+                          <Input id="zip" placeholder="Enter zip or postal code" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="country">Country</Label>
-                          <Input id="country" placeholder="Enter country" />
+                          <Input id="country" placeholder="Enter country" onChange={handleInputChange} />
                         </div>
                       </div>
                       <div className="flex justify-end space-x-2 pt-4">
@@ -262,19 +374,19 @@ const AddEmployee = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="bank-name">Bank Name</Label>
-                          <Input id="bank-name" placeholder="Enter bank name" />
+                          <Input id="bank-name" placeholder="Enter bank name" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="account-number">Account Number</Label>
-                          <Input id="account-number" placeholder="Enter account number" />
+                          <Input id="account-number" placeholder="Enter account number" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="routing-number">Routing Number</Label>
-                          <Input id="routing-number" placeholder="Enter routing number" />
+                          <Input id="routing-number" placeholder="Enter routing number" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="account-type">Account Type</Label>
-                          <Select>
+                          <Select onValueChange={(value) => handleSelectChange(value, "accountType")}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select account type" />
                             </SelectTrigger>

@@ -1,11 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus } from "lucide-react";
 import {
@@ -16,8 +16,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 
-const leaveApplications = [
+const initialLeaveApplications = [
   {
     id: 1,
     employee: { name: "Olivia Rhye", avatar: "OR" },
@@ -67,6 +68,46 @@ const leaveApplications = [
 
 const LeaveManagement = () => {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [activeTab, setActiveTab] = useState("all");
+  const [leaveApplications, setLeaveApplications] = useState(initialLeaveApplications);
+  const { toast } = useToast();
+
+  const handleApproveLeave = (id: number) => {
+    setLeaveApplications(prevApplications => 
+      prevApplications.map(app => 
+        app.id === id ? { ...app, status: "Approved" } : app
+      )
+    );
+    toast({
+      title: "Leave Approved",
+      description: "The leave application has been approved successfully.",
+    });
+  };
+
+  const handleRejectLeave = (id: number) => {
+    setLeaveApplications(prevApplications => 
+      prevApplications.map(app => 
+        app.id === id ? { ...app, status: "Rejected" } : app
+      )
+    );
+    toast({
+      title: "Leave Rejected",
+      description: "The leave application has been rejected.",
+    });
+  };
+
+  const handleCreateLeave = () => {
+    toast({
+      title: "Leave Application",
+      description: "Opening leave application form...",
+    });
+    // In a real app, this would open a modal or navigate to a form
+  };
+
+  const filteredApplications = leaveApplications.filter(app => {
+    if (activeTab === "all") return true;
+    return app.status.toLowerCase() === activeTab.toLowerCase();
+  });
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -78,7 +119,7 @@ const LeaveManagement = () => {
               <h1 className="text-2xl font-semibold">Leave Management</h1>
               <p className="text-gray-500">Track and manage employee leave applications</p>
             </div>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" onClick={handleCreateLeave}>
               <Plus className="h-4 w-4" />
               Apply for Leave
             </Button>
@@ -130,7 +171,7 @@ const LeaveManagement = () => {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">Leave Applications</CardTitle>
-                    <Tabs defaultValue="all">
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
                       <TabsList>
                         <TabsTrigger value="all">All</TabsTrigger>
                         <TabsTrigger value="pending">Pending</TabsTrigger>
@@ -153,7 +194,7 @@ const LeaveManagement = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {leaveApplications.map((application) => (
+                        {filteredApplications.map((application) => (
                           <TableRow key={application.id}>
                             <TableCell>
                               <div className="flex items-center gap-2">
@@ -191,10 +232,20 @@ const LeaveManagement = () => {
                                 </Button>
                                 {application.status === "Pending" && (
                                   <>
-                                    <Button variant="outline" size="sm" className="text-green-600">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-green-600"
+                                      onClick={() => handleApproveLeave(application.id)}
+                                    >
                                       Approve
                                     </Button>
-                                    <Button variant="outline" size="sm" className="text-red-600">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-red-600"
+                                      onClick={() => handleRejectLeave(application.id)}
+                                    >
                                       Reject
                                     </Button>
                                   </>

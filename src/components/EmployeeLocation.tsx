@@ -1,9 +1,17 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const EmployeeLocation = () => {
+  const [isLive, setIsLive] = useState(false);
+  
+  const toggleLiveTracking = () => {
+    setIsLive(!isLive);
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -24,6 +32,31 @@ const EmployeeLocation = () => {
             alt="Employee Location Map" 
             className="absolute w-full h-full object-cover"
           />
+          
+          {isLive && (
+            <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs flex items-center">
+              <span className="animate-pulse mr-1 inline-block h-2 w-2 rounded-full bg-white"></span>
+              Live
+            </div>
+          )}
+          
+          <div className="absolute bottom-2 left-2 right-2 flex justify-between">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="bg-white shadow-sm"
+              onClick={toggleLiveTracking}
+            >
+              {isLive ? "Pause Tracking" : "Start Live Tracking"}
+            </Button>
+            
+            <Link to="/track">
+              <Button size="sm" className="flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                View All Locations
+              </Button>
+            </Link>
+          </div>
         </div>
       </CardContent>
     </Card>
