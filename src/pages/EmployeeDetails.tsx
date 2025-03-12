@@ -21,10 +21,31 @@ import {
   Calendar, 
   DollarSign, 
   Clock,
-  Briefcase
+  Briefcase,
+  Info,
+  Trash,
+  Eye
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import LocationMap from "@/components/LocationMap";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const employeeData = {
   name: "Chisom Chukwukwe",
@@ -54,6 +75,8 @@ const EmployeeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState("current");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { toast } = useToast();
   
   const employee = employeeData;
 
@@ -77,6 +100,39 @@ const EmployeeDetails = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const handleDownload = (documentType: string) => {
+    toast({
+      title: "Download initiated",
+      description: `${documentType} is being downloaded.`,
+    });
+  };
+
+  const handleViewDetails = (type: string) => {
+    toast({
+      title: `${type} details`,
+      description: `Viewing ${type.toLowerCase()} details for ${employee.name}.`,
+    });
+  };
+
+  const handleRemoveEmployee = () => {
+    setShowDeleteDialog(false);
+    toast({
+      title: "Employee removed",
+      description: `${employee.name} has been removed from the system.`,
+      variant: "destructive",
+    });
+    setTimeout(() => {
+      navigate("/all-employees");
+    }, 1500);
+  };
+
+  const handleEditProfile = () => {
+    toast({
+      title: "Edit mode",
+      description: "You can now edit the employee profile.",
+    });
   };
 
   return (
@@ -185,7 +241,10 @@ const EmployeeDetails = () => {
                     </div>
                     
                     <div className="mt-6">
-                      <Button className="w-full">Edit</Button>
+                      <Button className="w-full" onClick={handleEditProfile}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
                     </div>
                   </div>
                 </Card>
@@ -294,21 +353,36 @@ const EmployeeDetails = () => {
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-semibold">Attendance Report:</h3>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => handleDownload('Attendance Report')}
+                >
                   <Download className="h-4 w-4" />
                   Download Excel Report
                 </Button>
               </div>
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-semibold">Aadhar Card:</h3>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => handleDownload('Aadhar Card')}
+                >
                   <Download className="h-4 w-4" />
                   Download Aadhar
                 </Button>
               </div>
               <div className="flex justify-between items-center">
                 <h3 className="font-semibold">Pan Card:</h3>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={() => handleDownload('Pan Card')}
+                >
                   <Download className="h-4 w-4" />
                   Download pan card
                 </Button>
@@ -323,17 +397,63 @@ const EmployeeDetails = () => {
               </div>
               <div className="flex justify-between items-center">
                 <h3 className="font-semibold">Salary details:</h3>
-                <Button variant="default" size="sm">
-                  Details
-                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="default" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      Details
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Salary Information</h4>
+                      <div className="grid grid-cols-2 gap-1">
+                        <span className="text-sm text-gray-500">Basic:</span>
+                        <span className="text-sm font-medium">$3,000</span>
+                        <span className="text-sm text-gray-500">HRA:</span>
+                        <span className="text-sm font-medium">$500</span>
+                        <span className="text-sm text-gray-500">DA:</span>
+                        <span className="text-sm font-medium">$200</span>
+                        <span className="text-sm text-gray-500">Total:</span>
+                        <span className="text-sm font-medium">$3,700</span>
+                      </div>
+                      <div className="pt-2 border-t">
+                        <span className="text-xs text-gray-500">
+                          Last revised on: 01/01/2023
+                        </span>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           </div>
 
           <div className="flex justify-center mt-8 mb-4">
-            <Button variant="destructive" className="px-8">
-              Remove
-            </Button>
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" className="px-8">
+                  <Trash className="h-4 w-4 mr-2" />
+                  Remove
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Remove Employee</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to remove {employee.name} from the system? This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4">
+                  <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="destructive" onClick={handleRemoveEmployee}>
+                    Remove
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
