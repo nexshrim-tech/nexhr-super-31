@@ -39,6 +39,7 @@ const initialLeaveApplications = [
     endDate: "2023-08-20",
     duration: "5 days",
     status: "Approved",
+    reason: "Family vacation in Hawaii",
   },
   {
     id: 2,
@@ -48,6 +49,7 @@ const initialLeaveApplications = [
     endDate: "2023-08-11",
     duration: "2 days",
     status: "Pending",
+    reason: "Recovering from flu",
   },
   {
     id: 3,
@@ -57,6 +59,7 @@ const initialLeaveApplications = [
     endDate: "2023-08-26",
     duration: "2 days",
     status: "Pending",
+    reason: "Family emergency",
   },
   {
     id: 4,
@@ -66,6 +69,7 @@ const initialLeaveApplications = [
     endDate: "2023-12-01",
     duration: "3 months",
     status: "Approved",
+    reason: "Maternity leave for first child",
   },
   {
     id: 5,
@@ -75,6 +79,7 @@ const initialLeaveApplications = [
     endDate: "2023-08-07",
     duration: "3 days",
     status: "Rejected",
+    reason: "Planned international trip",
   },
 ];
 
@@ -121,7 +126,7 @@ const leaveBalanceData = [
 ];
 
 const LeaveManagement = () => {
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [activeTab, setActiveTab] = useState("all");
   const [leaveApplications, setLeaveApplications] = useState(initialLeaveApplications);
   const [showApplyLeaveDialog, setShowApplyLeaveDialog] = useState(false);
@@ -162,6 +167,7 @@ const LeaveManagement = () => {
       endDate: formData.endDate,
       duration: calculateDuration(formData.startDate, formData.endDate),
       status: "Pending",
+      reason: formData.reason,
     };
     
     setLeaveApplications([...leaveApplications, newLeave]);
@@ -191,7 +197,7 @@ const LeaveManagement = () => {
   });
 
   return (
-    <div className="flex h-full bg-gray-50">
+    <div className="flex h-screen bg-gray-50">
       <SidebarNav />
       <div className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
@@ -463,11 +469,9 @@ const LeaveManagement = () => {
               </div>
             </div>
             <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  Cancel
-                </Button>
-              </DialogClose>
+              <Button type="button" variant="outline" onClick={() => setShowApplyLeaveDialog(false)}>
+                Cancel
+              </Button>
               <Button type="submit">Submit Application</Button>
             </DialogFooter>
           </form>
@@ -525,7 +529,7 @@ const LeaveManagement = () => {
                 <div className="col-span-2">
                   <p className="text-sm font-medium text-gray-500">Reason</p>
                   <p className="mt-1 text-sm">
-                    Reason for leave request would be displayed here. This is placeholder text as the original data doesn't include reasons.
+                    {viewLeaveDetails.reason || "No reason provided."}
                   </p>
                 </div>
               </div>
