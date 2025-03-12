@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   BarChart2,
   Calendar,
@@ -23,20 +23,22 @@ const SidebarNav: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   const menu = [
-    { name: 'Overview', icon: <LayoutDashboard className="w-5 h-5" />, active: false, path: '/' },
-    { name: 'Add employee', icon: <Users className="w-5 h-5" />, active: false, path: '/add-employee' },
-    { name: 'All Employee', icon: <Users className="w-5 h-5" />, active: false, path: '/all-employees' },
-    { name: 'Attendance', icon: <Calendar className="w-5 h-5" />, active: false, path: '/attendance' },
-    { name: 'Task & reminders', icon: <FileText className="w-5 h-5" />, active: false, path: '/tasks' },
-    { name: 'Expenses', icon: <DollarSign className="w-5 h-5" />, active: false, path: '/expenses' },
-    { name: 'Leave management', icon: <Calendar className="w-5 h-5" />, active: false, path: '/leave-management' },
-    { name: 'Salary', icon: <DollarSign className="w-5 h-5" />, active: false, path: '/salary' },
-    { name: 'Track', icon: <Map className="w-5 h-5" />, active: true, path: '/track' },
-    { name: 'Assets', icon: <BarChart2 className="w-5 h-5" />, active: false, path: '/assets' },
-    { name: 'Department', icon: <Users className="w-5 h-5" />, active: false, path: '/department' },
-    { name: 'Help desk', icon: <HelpCircle className="w-5 h-5" />, active: false, path: '/help-desk' },
+    { name: 'Overview', icon: <LayoutDashboard className="w-5 h-5" />, path: '/' },
+    { name: 'Add employee', icon: <Users className="w-5 h-5" />, path: '/add-employee' },
+    { name: 'All Employee', icon: <Users className="w-5 h-5" />, path: '/all-employees' },
+    { name: 'Attendance', icon: <Calendar className="w-5 h-5" />, path: '/attendance' },
+    { name: 'Task & reminders', icon: <FileText className="w-5 h-5" />, path: '/tasks' },
+    { name: 'Expenses', icon: <DollarSign className="w-5 h-5" />, path: '/expenses' },
+    { name: 'Leave management', icon: <Calendar className="w-5 h-5" />, path: '/leave-management' },
+    { name: 'Salary', icon: <DollarSign className="w-5 h-5" />, path: '/salary' },
+    { name: 'Track', icon: <Map className="w-5 h-5" />, path: '/track' },
+    { name: 'Assets', icon: <BarChart2 className="w-5 h-5" />, path: '/assets' },
+    { name: 'Department', icon: <Users className="w-5 h-5" />, path: '/department' },
+    { name: 'Help desk', icon: <HelpCircle className="w-5 h-5" />, path: '/help-desk' },
   ];
 
   const toggleSidebar = () => {
@@ -45,6 +47,12 @@ const SidebarNav: React.FC = () => {
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const isActive = (path: string) => {
+    if (path === '/' && currentPath === '/') return true;
+    if (path !== '/' && currentPath.startsWith(path)) return true;
+    return false;
   };
 
   if (isMobile) {
@@ -82,7 +90,7 @@ const SidebarNav: React.FC = () => {
                     key={item.name}
                     to={item.path}
                     className={`flex items-center space-x-3 rounded-md py-3 px-3 text-sm font-medium hover:bg-gray-100 ${
-                      item.active ? 'bg-gray-100 text-nexhr-primary' : 'text-gray-700'
+                      isActive(item.path) ? 'bg-gray-100 text-nexhr-primary' : 'text-gray-700'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -135,7 +143,7 @@ const SidebarNav: React.FC = () => {
             key={item.name}
             to={item.path}
             className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium hover:bg-gray-100 ${
-              item.active ? 'bg-gray-100 text-nexhr-primary' : 'text-gray-700'
+              isActive(item.path) ? 'bg-gray-100 text-nexhr-primary' : 'text-gray-700'
             }`}
             title={collapsed ? item.name : ''}
           >

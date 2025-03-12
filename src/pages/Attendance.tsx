@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Download, Filter, UserCheck } from "lucide-react";
+import { Clock, Download, Filter, UserCheck, Edit, CalendarIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -17,11 +17,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 const attendanceData = [
   {
     id: 1,
-    employee: { name: "Olivia Rhye", avatar: "OR" },
+    employee: { id: "EMP001", name: "Olivia Rhye", avatar: "OR" },
     date: "2023-08-01",
     checkIn: "09:00 AM",
     checkOut: "06:00 PM",
@@ -30,7 +48,7 @@ const attendanceData = [
   },
   {
     id: 2,
-    employee: { name: "Phoenix Baker", avatar: "PB" },
+    employee: { id: "EMP002", name: "Phoenix Baker", avatar: "PB" },
     date: "2023-08-01",
     checkIn: "09:15 AM",
     checkOut: "06:30 PM",
@@ -39,7 +57,7 @@ const attendanceData = [
   },
   {
     id: 3,
-    employee: { name: "Lana Steiner", avatar: "LS" },
+    employee: { id: "EMP003", name: "Lana Steiner", avatar: "LS" },
     date: "2023-08-01",
     checkIn: "08:45 AM",
     checkOut: "05:30 PM",
@@ -48,7 +66,7 @@ const attendanceData = [
   },
   {
     id: 4,
-    employee: { name: "Demi Wilkinson", avatar: "DW" },
+    employee: { id: "EMP004", name: "Demi Wilkinson", avatar: "DW" },
     date: "2023-08-01",
     checkIn: "--:--",
     checkOut: "--:--",
@@ -57,7 +75,7 @@ const attendanceData = [
   },
   {
     id: 5,
-    employee: { name: "Candice Wu", avatar: "CW" },
+    employee: { id: "EMP005", name: "Candice Wu", avatar: "CW" },
     date: "2023-08-01",
     checkIn: "10:00 AM",
     checkOut: "06:00 PM",
@@ -66,7 +84,7 @@ const attendanceData = [
   },
   {
     id: 6,
-    employee: { name: "Natali Craig", avatar: "NC" },
+    employee: { id: "EMP006", name: "Natali Craig", avatar: "NC" },
     date: "2023-08-01",
     checkIn: "09:00 AM",
     checkOut: "06:00 PM",
@@ -75,7 +93,7 @@ const attendanceData = [
   },
   {
     id: 7,
-    employee: { name: "Drew Cano", avatar: "DC" },
+    employee: { id: "EMP007", name: "Drew Cano", avatar: "DC" },
     date: "2023-08-01",
     checkIn: "09:30 AM",
     checkOut: "06:30 PM",
@@ -84,8 +102,77 @@ const attendanceData = [
   },
 ];
 
+// Generate dummy calendar data for visualization
+const generateCalendarData = () => {
+  const currentDate = new Date();
+  const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  
+  const data = {};
+  for (let day = 1; day <= endDate.getDate(); day++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const random = Math.random();
+    let status;
+    
+    if (random > 0.9) {
+      status = "absent";
+    } else if (random > 0.8) {
+      status = "late";
+    } else {
+      status = "present";
+    }
+    
+    data[format(date, 'yyyy-MM-dd')] = status;
+  }
+  
+  return data;
+};
+
+const calendarData = generateCalendarData();
+
 const Attendance = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [currentRecord, setCurrentRecord] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    date: "",
+    checkIn: "",
+    checkOut: "",
+    status: ""
+  });
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("daily");
+
+  // Handler for opening the edit dialog
+  const handleOpenEditDialog = (record) => {
+    setCurrentRecord(record);
+    setEditForm({
+      date: record.date,
+      checkIn: record.checkIn,
+      checkOut: record.checkOut,
+      status: record.status
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  // Handler for editing attendance record
+  const handleEditAttendance = () => {
+    // In a real app, this would update the database
+    toast({
+      title: "Attendance record updated",
+      description: `Updated attendance record for ${currentRecord.employee.name}`,
+    });
+    setIsEditDialogOpen(false);
+  };
+
+  // Custom day rendering for calendar with attendance status
+  const handleDayClick = (day: Date) => {
+    const formattedDate = format(day, 'yyyy-MM-dd');
+    toast({
+      title: "Attendance for " + format(day, 'PPP'),
+      description: `Status: ${calendarData[formattedDate] || 'No record'}`,
+    });
+  };
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -115,7 +202,32 @@ const Attendance = () => {
                     selected={date}
                     onSelect={setDate}
                     className="rounded-md border"
+                    modifiers={{
+                      present: (date) => calendarData[format(date, 'yyyy-MM-dd')] === 'present',
+                      absent: (date) => calendarData[format(date, 'yyyy-MM-dd')] === 'absent',
+                      late: (date) => calendarData[format(date, 'yyyy-MM-dd')] === 'late',
+                    }}
+                    modifiersStyles={{
+                      present: { backgroundColor: '#d1fae5', color: '#059669' },
+                      absent: { backgroundColor: '#fee2e2', color: '#dc2626' },
+                      late: { backgroundColor: '#fef3c7', color: '#d97706' },
+                    }}
+                    onDayClick={handleDayClick}
                   />
+                  <div className="mt-4 flex gap-2 justify-center">
+                    <div className="flex items-center gap-1">
+                      <div className="h-3 w-3 bg-green-200 rounded-full"></div>
+                      <span className="text-xs">Present</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="h-3 w-3 bg-red-200 rounded-full"></div>
+                      <span className="text-xs">Absent</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="h-3 w-3 bg-yellow-200 rounded-full"></div>
+                      <span className="text-xs">Late</span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -176,7 +288,7 @@ const Attendance = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <CardTitle className="text-base">Attendance Records</CardTitle>
-                      <Tabs defaultValue="daily">
+                      <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList>
                           <TabsTrigger value="daily">Daily</TabsTrigger>
                           <TabsTrigger value="weekly">Weekly</TabsTrigger>
@@ -204,16 +316,18 @@ const Attendance = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border">
+                  <div className="rounded-md border overflow-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-[250px]">Employee</TableHead>
+                          <TableHead>Employee ID</TableHead>
                           <TableHead>Date</TableHead>
                           <TableHead>Check In</TableHead>
                           <TableHead>Check Out</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Work Hours</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -228,6 +342,7 @@ const Attendance = () => {
                                 <div className="font-medium">{record.employee.name}</div>
                               </div>
                             </TableCell>
+                            <TableCell>{record.employee.id}</TableCell>
                             <TableCell>{record.date}</TableCell>
                             <TableCell>{record.checkIn}</TableCell>
                             <TableCell>{record.checkOut}</TableCell>
@@ -245,6 +360,16 @@ const Attendance = () => {
                               </Badge>
                             </TableCell>
                             <TableCell>{record.workHours}</TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleOpenEditDialog(record)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -256,6 +381,98 @@ const Attendance = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Attendance Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Attendance Record</DialogTitle>
+            <DialogDescription>
+              Update attendance information for {currentRecord?.employee?.name}
+            </DialogDescription>
+          </DialogHeader>
+          {currentRecord && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="date" className="text-right">
+                  Date
+                </Label>
+                <div className="col-span-3">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {editForm.date}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={(date) => {
+                          setDate(date);
+                          setEditForm(prev => ({
+                            ...prev,
+                            date: date ? format(date, 'yyyy-MM-dd') : prev.date
+                          }));
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="checkIn" className="text-right">
+                  Check In
+                </Label>
+                <Input
+                  id="checkIn"
+                  value={editForm.checkIn}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, checkIn: e.target.value }))}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="checkOut" className="text-right">
+                  Check Out
+                </Label>
+                <Input
+                  id="checkOut"
+                  value={editForm.checkOut}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, checkOut: e.target.value }))}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="status" className="text-right">
+                  Status
+                </Label>
+                <Select 
+                  value={editForm.status} 
+                  onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Present">Present</SelectItem>
+                    <SelectItem value="Late">Late</SelectItem>
+                    <SelectItem value="Absent">Absent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditAttendance}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

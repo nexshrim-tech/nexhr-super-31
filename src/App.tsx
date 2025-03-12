@@ -17,6 +17,9 @@ import Salary from "./pages/Salary";
 import Assets from "./pages/Assets";
 import Department from "./pages/Department";
 import HelpDesk from "./pages/HelpDesk";
+import Login from "./pages/Login";
+import Landing from "./pages/Landing";
+import DocumentGenerator from "./pages/DocumentGenerator";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +30,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/landing" element={<Landing />} />
           <Route path="/" element={<Index />} />
           <Route path="/track" element={<Track />} />
           <Route path="/add-employee" element={<AddEmployee />} />
@@ -39,6 +44,7 @@ const App = () => (
           <Route path="/assets" element={<Assets />} />
           <Route path="/department" element={<Department />} />
           <Route path="/help-desk" element={<HelpDesk />} />
+          <Route path="/documents" element={<DocumentGenerator />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
