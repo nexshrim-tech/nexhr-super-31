@@ -17,6 +17,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogClose 
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const initialLeaveApplications = [
   {
@@ -66,10 +78,46 @@ const initialLeaveApplications = [
   },
 ];
 
+const leaveHistoryData = [
+  {
+    id: 1,
+    type: "Annual Leave",
+    startDate: "2023-01-10",
+    endDate: "2023-01-15",
+    duration: "5 days",
+    status: "Completed",
+  },
+  {
+    id: 2,
+    type: "Sick Leave",
+    startDate: "2023-03-22",
+    endDate: "2023-03-23",
+    duration: "2 days",
+    status: "Completed",
+  },
+  {
+    id: 3,
+    type: "Personal Leave",
+    startDate: "2023-05-15",
+    endDate: "2023-05-16",
+    duration: "2 days",
+    status: "Completed",
+  },
+  {
+    id: 4,
+    type: "Annual Leave",
+    startDate: "2023-07-05",
+    endDate: "2023-07-10",
+    duration: "5 days",
+    status: "Completed",
+  },
+];
+
 const LeaveManagement = () => {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [activeTab, setActiveTab] = useState("all");
   const [leaveApplications, setLeaveApplications] = useState(initialLeaveApplications);
+  const [showApplyLeaveDialog, setShowApplyLeaveDialog] = useState(false);
   const { toast } = useToast();
 
   const handleApproveLeave = (id: number) => {
@@ -96,12 +144,31 @@ const LeaveManagement = () => {
     });
   };
 
-  const handleCreateLeave = () => {
+  const handleCreateLeave = (formData: any) => {
+    const newLeave = {
+      id: leaveApplications.length + 1,
+      employee: { name: "Current User", avatar: "CU" },
+      type: formData.leaveType,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      duration: calculateDuration(formData.startDate, formData.endDate),
+      status: "Pending",
+    };
+    
+    setLeaveApplications([...leaveApplications, newLeave]);
+    setShowApplyLeaveDialog(false);
     toast({
-      title: "Leave Application",
-      description: "Opening leave application form...",
+      title: "Leave Application Submitted",
+      description: "Your leave application has been submitted for approval.",
     });
-    // In a real app, this would open a modal or navigate to a form
+  };
+
+  const calculateDuration = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays === 1 ? "1 day" : `${diffDays} days`;
   };
 
   const filteredApplications = leaveApplications.filter(app => {
@@ -119,7 +186,10 @@ const LeaveManagement = () => {
               <h1 className="text-2xl font-semibold">Leave Management</h1>
               <p className="text-gray-500">Track and manage employee leave applications</p>
             </div>
-            <Button className="flex items-center gap-2" onClick={handleCreateLeave}>
+            <Button 
+              className="flex items-center gap-2" 
+              onClick={() => setShowApplyLeaveDialog(true)}
+            >
               <Plus className="h-4 w-4" />
               Apply for Leave
             </Button>
@@ -142,26 +212,52 @@ const LeaveManagement = () => {
               </Card>
 
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-base">Leave Balance</CardTitle>
+                  <Tabs defaultValue="balance" className="w-[200px]">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="balance">Balance</TabsTrigger>
+                      <TabsTrigger value="history">History</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-gray-500">Annual Leave</div>
-                    <div className="font-medium">15 days</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-gray-500">Sick Leave</div>
-                    <div className="font-medium">10 days</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-gray-500">Personal Leave</div>
-                    <div className="font-medium">5 days</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-gray-500">Study Leave</div>
-                    <div className="font-medium">3 days</div>
-                  </div>
+                <CardContent>
+                  <TabsContent value="balance" className="space-y-4 mt-0">
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-500">Annual Leave</div>
+                      <div className="font-medium">15 days</div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-500">Sick Leave</div>
+                      <div className="font-medium">10 days</div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-500">Personal Leave</div>
+                      <div className="font-medium">5 days</div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-500">Study Leave</div>
+                      <div className="font-medium">3 days</div>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="history" className="mt-0">
+                    <div className="space-y-4">
+                      {leaveHistoryData.map((leave) => (
+                        <div key={leave.id} className="border-b pb-2">
+                          <div className="flex justify-between">
+                            <div className="font-medium">{leave.type}</div>
+                            <div className="text-sm">{leave.duration}</div>
+                          </div>
+                          <div className="flex justify-between text-sm text-gray-500">
+                            <div>{leave.startDate} to {leave.endDate}</div>
+                            <Badge className="bg-gray-100 text-gray-800">
+                              {leave.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
                 </CardContent>
               </Card>
             </div>
@@ -263,6 +359,94 @@ const LeaveManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Apply for Leave Dialog */}
+      <Dialog open={showApplyLeaveDialog} onOpenChange={setShowApplyLeaveDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Apply for Leave</DialogTitle>
+            <DialogDescription>
+              Fill in the details to submit your leave application.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const data = {
+              leaveType: formData.get('leaveType') as string,
+              startDate: formData.get('startDate') as string,
+              endDate: formData.get('endDate') as string,
+              reason: formData.get('reason') as string,
+            };
+            handleCreateLeave(data);
+          }}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="leaveType" className="text-right">
+                  Leave Type
+                </Label>
+                <select
+                  id="leaveType"
+                  name="leaveType"
+                  className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  required
+                >
+                  <option value="Annual Leave">Annual Leave</option>
+                  <option value="Sick Leave">Sick Leave</option>
+                  <option value="Personal Leave">Personal Leave</option>
+                  <option value="Study Leave">Study Leave</option>
+                  <option value="Maternity Leave">Maternity Leave</option>
+                  <option value="Paternity Leave">Paternity Leave</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="startDate" className="text-right">
+                  Start Date
+                </Label>
+                <Input
+                  id="startDate"
+                  name="startDate"
+                  type="date"
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="endDate" className="text-right">
+                  End Date
+                </Label>
+                <Input
+                  id="endDate"
+                  name="endDate"
+                  type="date"
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="reason" className="text-right">
+                  Reason
+                </Label>
+                <Textarea
+                  id="reason"
+                  name="reason"
+                  className="col-span-3"
+                  rows={3}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit">Submit Application</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

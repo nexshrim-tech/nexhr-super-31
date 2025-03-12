@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,8 +14,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Download, Plus } from "lucide-react";
+import { Download, FileImage, FilePdf, Plus, Upload } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogClose 
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const expensesData = [
   { name: "Jan", amount: 12000 },
@@ -28,7 +41,7 @@ const expensesData = [
   { name: "Aug", amount: 18000 },
 ];
 
-const expenses = [
+const initialExpenses = [
   {
     id: 1,
     description: "Office Supplies",
@@ -37,6 +50,7 @@ const expenses = [
     submittedBy: { name: "Olivia Rhye", avatar: "OR" },
     date: "2023-08-01",
     status: "Approved",
+    attachmentType: "image", // can be "image" or "pdf"
   },
   {
     id: 2,
@@ -46,6 +60,7 @@ const expenses = [
     submittedBy: { name: "Phoenix Baker", avatar: "PB" },
     date: "2023-08-02",
     status: "Pending",
+    attachmentType: "pdf",
   },
   {
     id: 3,
@@ -55,6 +70,7 @@ const expenses = [
     submittedBy: { name: "Lana Steiner", avatar: "LS" },
     date: "2023-08-03",
     status: "Approved",
+    attachmentType: "pdf",
   },
   {
     id: 4,
@@ -64,6 +80,7 @@ const expenses = [
     submittedBy: { name: "Demi Wilkinson", avatar: "DW" },
     date: "2023-08-04",
     status: "Rejected",
+    attachmentType: "image",
   },
   {
     id: 5,
@@ -73,10 +90,76 @@ const expenses = [
     submittedBy: { name: "Candice Wu", avatar: "CW" },
     date: "2023-08-05",
     status: "Approved",
+    attachmentType: "image",
   },
 ];
 
 const Expenses = () => {
+  const [expenses, setExpenses] = useState(initialExpenses);
+  const [activeTab, setActiveTab] = useState("all");
+  const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
+  const [showExpenseAttachment, setShowExpenseAttachment] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  const { toast } = useToast();
+
+  const handleExport = () => {
+    toast({
+      title: "Exporting Data",
+      description: "Your expense data is being exported as CSV file.",
+    });
+    // In a real app, this would handle actual CSV export
+  };
+
+  const handleAddExpense = (formData: any) => {
+    const newExpense = {
+      id: expenses.length + 1,
+      description: formData.description,
+      category: formData.category,
+      amount: parseFloat(formData.amount),
+      submittedBy: { name: "Current User", avatar: "CU" },
+      date: new Date().toISOString().split('T')[0],
+      status: "Pending",
+      attachmentType: formData.receipt ? "image" : "",
+    };
+    
+    setExpenses([...expenses, newExpense]);
+    setShowAddExpenseDialog(false);
+    toast({
+      title: "Expense Added",
+      description: "Your expense has been submitted for approval.",
+    });
+  };
+
+  const handleViewExpense = (expense: any) => {
+    setSelectedExpense(expense);
+    setShowExpenseAttachment(true);
+  };
+
+  const handleApproveExpense = (id: number) => {
+    setExpenses(expenses.map(exp => 
+      exp.id === id ? { ...exp, status: "Approved" } : exp
+    ));
+    toast({
+      title: "Expense Approved",
+      description: "The expense has been approved successfully.",
+    });
+  };
+
+  const handleRejectExpense = (id: number) => {
+    setExpenses(expenses.map(exp => 
+      exp.id === id ? { ...exp, status: "Rejected" } : exp
+    ));
+    toast({
+      title: "Expense Rejected",
+      description: "The expense has been rejected.",
+    });
+  };
+
+  const filteredExpenses = expenses.filter(expense => {
+    if (activeTab === "all") return true;
+    return expense.status.toLowerCase() === activeTab.toLowerCase();
+  });
+
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
@@ -88,11 +171,18 @@ const Expenses = () => {
               <p className="text-gray-500">Track and manage company expenses</p>
             </div>
             <div className="flex gap-2">
-              <Button className="flex items-center gap-2">
+              <Button 
+                className="flex items-center gap-2" 
+                onClick={() => setShowAddExpenseDialog(true)}
+              >
                 <Plus className="h-4 w-4" />
                 Add Expense
               </Button>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={handleExport}
+              >
                 <Download className="h-4 w-4" />
                 Export
               </Button>
@@ -248,7 +338,7 @@ const Expenses = () => {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Recent Expenses</CardTitle>
-                <Tabs defaultValue="all">
+                <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
                   <TabsList>
                     <TabsTrigger value="all">All</TabsTrigger>
                     <TabsTrigger value="pending">Pending</TabsTrigger>
@@ -273,7 +363,7 @@ const Expenses = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {expenses.map((expense) => (
+                    {filteredExpenses.map((expense) => (
                       <TableRow key={expense.id}>
                         <TableCell className="font-medium">{expense.description}</TableCell>
                         <TableCell>{expense.category}</TableCell>
@@ -302,9 +392,35 @@ const Expenses = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="outline" size="sm">
-                            View
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewExpense(expense)}
+                            >
+                              View
+                            </Button>
+                            {expense.status === "Pending" && (
+                              <>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-green-600"
+                                  onClick={() => handleApproveExpense(expense.id)}
+                                >
+                                  Approve
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-red-600"
+                                  onClick={() => handleRejectExpense(expense.id)}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -315,6 +431,122 @@ const Expenses = () => {
           </Card>
         </div>
       </div>
+
+      {/* Add Expense Dialog */}
+      <Dialog open={showAddExpenseDialog} onOpenChange={setShowAddExpenseDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Expense</DialogTitle>
+            <DialogDescription>
+              Enter the details of your expense for reimbursement.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const data = {
+              description: formData.get('description') as string,
+              category: formData.get('category') as string,
+              amount: formData.get('amount') as string,
+              receipt: formData.get('receipt') as File,
+            };
+            handleAddExpense(data);
+          }}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <Input
+                  id="description"
+                  name="description"
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="category" className="text-right">
+                  Category
+                </Label>
+                <Input
+                  id="category"
+                  name="category"
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="amount" className="text-right">
+                  Amount ($)
+                </Label>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="receipt" className="text-right">
+                  Receipt
+                </Label>
+                <Input
+                  id="receipt"
+                  name="receipt"
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit">Submit Expense</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Expense Attachment Dialog */}
+      <Dialog open={showExpenseAttachment} onOpenChange={setShowExpenseAttachment}>
+        <DialogContent className="sm:max-w-[625px]">
+          <DialogHeader>
+            <DialogTitle>Expense Receipt</DialogTitle>
+            <DialogDescription>
+              {selectedExpense?.description} - ${selectedExpense?.amount.toFixed(2)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center p-4 bg-gray-100 rounded-md min-h-[300px] items-center">
+            {selectedExpense?.attachmentType === "image" ? (
+              <div className="flex flex-col items-center">
+                <FileImage className="h-24 w-24 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-500">Image Preview (Placeholder)</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <FilePdf className="h-24 w-24 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-500">PDF Document (Placeholder)</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline">
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </Button>
+            <DialogClose asChild>
+              <Button>Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
