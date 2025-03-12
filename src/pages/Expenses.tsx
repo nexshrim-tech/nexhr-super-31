@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Download, FileImage, FilePdf, Plus, Upload } from "lucide-react";
+import { Download, FileImage, FileText, Plus, Upload } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -531,7 +531,7 @@ const Expenses = () => {
               </div>
             ) : (
               <div className="flex flex-col items-center">
-                <FilePdf className="h-24 w-24 text-gray-400" />
+                <FileText className="h-24 w-24 text-gray-400" />
                 <p className="mt-2 text-sm text-gray-500">PDF Document (Placeholder)</p>
               </div>
             )}
