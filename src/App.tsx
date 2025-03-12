@@ -7,6 +7,16 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Track from "./pages/Track";
 import NotFound from "./pages/NotFound";
+import AddEmployee from "./pages/AddEmployee";
+import AllEmployees from "./pages/AllEmployees";
+import Attendance from "./pages/Attendance";
+import TasksReminders from "./pages/TasksReminders";
+import Expenses from "./pages/Expenses";
+import LeaveManagement from "./pages/LeaveManagement";
+import Salary from "./pages/Salary";
+import Assets from "./pages/Assets";
+import Department from "./pages/Department";
+import HelpDesk from "./pages/HelpDesk";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +29,16 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/track" element={<Track />} />
+          <Route path="/add-employee" element={<AddEmployee />} />
+          <Route path="/all-employees" element={<AllEmployees />} />
+          <Route path="/attendance" element={<Attendance />} />
+          <Route path="/tasks" element={<TasksReminders />} />
+          <Route path="/expenses" element={<Expenses />} />
+          <Route path="/leave-management" element={<LeaveManagement />} />
+          <Route path="/salary" element={<Salary />} />
+          <Route path="/assets" element={<Assets />} />
+          <Route path="/department" element={<Department />} />
+          <Route path="/help-desk" element={<HelpDesk />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
