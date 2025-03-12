@@ -17,6 +17,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import TodaysAttendance from "@/components/TodaysAttendance";
 
 const employees = [
   {
@@ -95,14 +104,26 @@ const employees = [
 
 const AllEmployees = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [departmentFilter, setDepartmentFilter] = useState("all");
 
   const filteredEmployees = employees.filter(
-    (employee) =>
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.id.toLowerCase().includes(searchTerm.toLowerCase())
+    (employee) => {
+      const matchesSearch = 
+        employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.id.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesDepartment = 
+        departmentFilter === "all" || 
+        employee.department.toLowerCase() === departmentFilter.toLowerCase();
+      
+      return matchesSearch && matchesDepartment;
+    }
   );
 
   return (
@@ -129,6 +150,11 @@ const AllEmployees = () => {
             </div>
           </div>
 
+          {/* Today's Attendance Widget */}
+          <div className="mb-6">
+            <TodaysAttendance />
+          </div>
+
           <Card>
             <CardHeader className="pb-3">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -145,10 +171,18 @@ const AllEmployees = () => {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="icon" className="h-9 w-9">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-9 w-9"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setDepartmentFilter("all");
+                      }}
+                    >
                       <Filter className="h-4 w-4" />
                     </Button>
-                    <Select>
+                    <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                       <SelectTrigger className="w-[130px]">
                         <SelectValue placeholder="All Departments" />
                       </SelectTrigger>
@@ -211,10 +245,24 @@ const AllEmployees = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedEmployee(employee);
+                                setIsEditDialogOpen(true);
+                              }}
+                            >
                               Edit
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedEmployee(employee);
+                                setIsViewDialogOpen(true);
+                              }}
+                            >
                               View
                             </Button>
                           </div>
@@ -247,6 +295,138 @@ const AllEmployees = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* View Employee Dialog */}
+          <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Employee Profile</DialogTitle>
+                <DialogDescription>View employee details</DialogDescription>
+              </DialogHeader>
+              {selectedEmployee && (
+                <div className="py-4">
+                  <div className="flex items-center gap-4 mb-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarFallback>{selectedEmployee.avatar}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-lg font-semibold">{selectedEmployee.name}</h3>
+                      <p className="text-sm text-muted-foreground">{selectedEmployee.email}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Employee ID</p>
+                      <p className="font-medium">{selectedEmployee.id}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Role</p>
+                      <p className="font-medium">{selectedEmployee.role}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Department</p>
+                      <p className="font-medium">{selectedEmployee.department}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Status</p>
+                      <Badge
+                        className={`${
+                          selectedEmployee.status === "Active"
+                            ? "bg-green-100 text-green-800"
+                            : selectedEmployee.status === "On Leave"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {selectedEmployee.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <DialogFooter className="mt-6">
+                    <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                      Close
+                    </Button>
+                  </DialogFooter>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Employee Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Employee</DialogTitle>
+                <DialogDescription>Make changes to employee information</DialogDescription>
+              </DialogHeader>
+              {selectedEmployee && (
+                <div className="py-4 space-y-4">
+                  <div className="flex items-center gap-4 mb-2">
+                    <Avatar className="h-16 w-16">
+                      <AvatarFallback>{selectedEmployee.avatar}</AvatarFallback>
+                    </Avatar>
+                    <Button variant="outline" size="sm">Change Photo</Button>
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Name</label>
+                      <Input defaultValue={selectedEmployee.name} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Email</label>
+                      <Input defaultValue={selectedEmployee.email} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Role</label>
+                      <Input defaultValue={selectedEmployee.role} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Department</label>
+                      <Select defaultValue={selectedEmployee.department.toLowerCase()}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="design">Design</SelectItem>
+                          <SelectItem value="engineering">Engineering</SelectItem>
+                          <SelectItem value="product">Product</SelectItem>
+                          <SelectItem value="marketing">Marketing</SelectItem>
+                          <SelectItem value="sales">Sales</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Status</label>
+                      <Select defaultValue={selectedEmployee.status.toLowerCase()}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="on leave">On Leave</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={() => {
+                      // Here we would save the changes to the employee
+                      setIsEditDialogOpen(false);
+                    }}>
+                      Save Changes
+                    </Button>
+                  </DialogFooter>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
