@@ -14,7 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
-// Import new asset components
+// Import asset components
 import AssetForm from "@/components/assets/AssetForm";
 import AssetDetails from "@/components/assets/AssetDetails";
 import AssetStats from "@/components/assets/AssetStats";
