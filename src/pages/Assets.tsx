@@ -2,19 +2,7 @@
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Download, Plus, Search, Edit, Trash2, Eye, FilePlus, Calendar } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Download, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,24 +10,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+
+// Import new asset components
+import AssetForm from "@/components/assets/AssetForm";
+import AssetDetails from "@/components/assets/AssetDetails";
+import AssetStats from "@/components/assets/AssetStats";
+import AssetTable from "@/components/assets/AssetTable";
 
 const initialAssetData = [
   {
@@ -308,129 +287,12 @@ const Assets = () => {
     }
   };
 
-  const renderAssetForm = () => (
-    <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Asset Name *</Label>
-          <Input
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            placeholder="Enter asset name"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="type">Asset Type *</Label>
-          <Select 
-            value={formData.type} 
-            onValueChange={(value) => handleSelectChange("type", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select asset type" />
-            </SelectTrigger>
-            <SelectContent>
-              {assetTypes.map(type => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="serialNumber">Serial Number *</Label>
-          <Input
-            id="serialNumber"
-            name="serialNumber"
-            value={formData.serialNumber}
-            onChange={handleInputChange}
-            placeholder="Enter serial number"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="value">Value ($) *</Label>
-          <Input
-            id="value"
-            name="value"
-            type="number"
-            step="0.01"
-            min="0"
-            value={formData.value}
-            onChange={handleInputChange}
-            placeholder="Enter asset value"
-            required
-          />
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="purchaseDate">Purchase Date *</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left"
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP") : "Select date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <CalendarComponent
-                mode="single"
-                selected={date}
-                onSelect={handleDateSelect}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">Status *</Label>
-          <Select 
-            value={formData.status} 
-            onValueChange={(value) => handleSelectChange("status", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Available">Available</SelectItem>
-              <SelectItem value="Assigned">Assigned</SelectItem>
-              <SelectItem value="In Maintenance">In Maintenance</SelectItem>
-              <SelectItem value="Disposed">Disposed</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="assignedTo">Assigned To</Label>
-        <Select 
-          value={formData.assignedTo || ""} 
-          onValueChange={(value) => handleSelectChange("assignedTo", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select employee" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Not Assigned</SelectItem>
-            {employees.map(employee => (
-              <SelectItem key={employee.id} value={employee.id.toString()}>
-                {employee.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-  );
+  const handleExport = () => {
+    toast({
+      title: "Export started",
+      description: "Your asset inventory is being exported to CSV"
+    });
+  };
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -447,148 +309,22 @@ const Assets = () => {
                 <Plus className="h-4 w-4" />
                 Add Asset
               </Button>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2" onClick={handleExport}>
                 <Download className="h-4 w-4" />
                 Export
               </Button>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6 mb-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Total Assets</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-semibold">{assetData.length}</div>
-                <p className="text-sm text-gray-500">
-                  ${assetData.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)} value
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Assigned</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-semibold">
-                  {assetData.filter(asset => asset.status === "Assigned").length}
-                </div>
-                <p className="text-sm text-gray-500">
-                  {Math.round((assetData.filter(asset => asset.status === "Assigned").length / assetData.length) * 100)}% of total
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Available</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-semibold">
-                  {assetData.filter(asset => asset.status === "Available").length}
-                </div>
-                <p className="text-sm text-gray-500">
-                  {Math.round((assetData.filter(asset => asset.status === "Available").length / assetData.length) * 100)}% of total
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Maintenance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-semibold">
-                  {assetData.filter(asset => asset.status === "In Maintenance").length}
-                </div>
-                <p className="text-sm text-gray-500">
-                  {Math.round((assetData.filter(asset => asset.status === "In Maintenance").length / assetData.length) * 100)}% of total
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <AssetStats assets={assetData} />
 
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Asset Inventory</CardTitle>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input
-                    type="search"
-                    placeholder="Search assets..."
-                    className="pl-8 w-[250px]"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border overflow-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Asset Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Serial Number</TableHead>
-                      <TableHead>Purchase Date</TableHead>
-                      <TableHead>Value</TableHead>
-                      <TableHead>Assigned To</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAssets.map((asset) => (
-                      <TableRow key={asset.id}>
-                        <TableCell className="font-medium">{asset.name}</TableCell>
-                        <TableCell>{asset.type}</TableCell>
-                        <TableCell>{asset.serialNumber}</TableCell>
-                        <TableCell>{asset.purchaseDate}</TableCell>
-                        <TableCell>${asset.value.toFixed(2)}</TableCell>
-                        <TableCell>
-                          {asset.assignedTo ? (
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-6 w-6">
-                                <AvatarImage src="" alt={asset.assignedTo.name} />
-                                <AvatarFallback>{asset.assignedTo.avatar}</AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm">{asset.assignedTo.name}</span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-500">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            className={`${
-                              asset.status === "Assigned"
-                                ? "bg-blue-100 text-blue-800"
-                                : asset.status === "Available"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {asset.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleEditAssetOpen(asset)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleViewAsset(asset)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <AssetTable 
+            assets={filteredAssets}
+            searchTerm={searchTerm}
+            onSearchChange={(e) => setSearchTerm(e.target.value)}
+            onEdit={handleEditAssetOpen}
+            onView={handleViewAsset}
+          />
         </div>
       </div>
 
@@ -601,7 +337,15 @@ const Assets = () => {
               Enter the details for the new asset.
             </DialogDescription>
           </DialogHeader>
-          {renderAssetForm()}
+          <AssetForm 
+            formData={formData} 
+            handleInputChange={handleInputChange}
+            handleSelectChange={handleSelectChange}
+            handleDateSelect={handleDateSelect}
+            date={date}
+            assetTypes={assetTypes}
+            employees={employees}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddAssetDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddAsset}>Add Asset</Button>
@@ -618,7 +362,15 @@ const Assets = () => {
               Update the details for this asset.
             </DialogDescription>
           </DialogHeader>
-          {renderAssetForm()}
+          <AssetForm 
+            formData={formData} 
+            handleInputChange={handleInputChange}
+            handleSelectChange={handleSelectChange}
+            handleDateSelect={handleDateSelect}
+            date={date}
+            assetTypes={assetTypes}
+            employees={employees}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditAssetDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleEditAsset}>Update Asset</Button>
@@ -633,86 +385,14 @@ const Assets = () => {
             <DialogTitle>Asset Details</DialogTitle>
           </DialogHeader>
           {currentAsset && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Asset Name</p>
-                  <p className="font-medium">{currentAsset.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Asset Type</p>
-                  <p className="font-medium">{currentAsset.type}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Serial Number</p>
-                  <p className="font-medium">{currentAsset.serialNumber}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Value</p>
-                  <p className="font-medium">${currentAsset.value.toFixed(2)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Purchase Date</p>
-                  <p className="font-medium">{currentAsset.purchaseDate}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Status</p>
-                  <Badge
-                    className={`${
-                      currentAsset.status === "Assigned"
-                        ? "bg-blue-100 text-blue-800"
-                        : currentAsset.status === "Available"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {currentAsset.status}
-                  </Badge>
-                </div>
-              </div>
-              
-              <div>
-                <p className="text-sm text-gray-500 mb-2">Assigned To</p>
-                {currentAsset.assignedTo ? (
-                  <div className="flex items-center gap-3 p-3 border rounded-md">
-                    <Avatar>
-                      <AvatarFallback>{currentAsset.assignedTo.avatar}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{currentAsset.assignedTo.name}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">Not assigned to any employee</p>
-                )}
-              </div>
-              
-              <div className="pt-4 flex justify-between">
-                <Button 
-                  variant="outline" 
-                  className="gap-2"
-                  onClick={() => {
-                    setIsViewAssetDialogOpen(false);
-                    handleEditAssetOpen(currentAsset);
-                  }}
-                >
-                  <Edit className="h-4 w-4" />
-                  Edit Asset
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    toast({
-                      title: "Asset report generated",
-                      description: `Report for ${currentAsset.name} has been generated.`
-                    });
-                  }}
-                >
-                  <FilePlus className="h-4 w-4 mr-2" />
-                  Generate Report
-                </Button>
-              </div>
-            </div>
+            <AssetDetails 
+              asset={currentAsset}
+              onEdit={() => {
+                setIsViewAssetDialogOpen(false);
+                handleEditAssetOpen(currentAsset);
+              }}
+              onClose={() => setIsViewAssetDialogOpen(false)}
+            />
           )}
         </DialogContent>
       </Dialog>

@@ -21,6 +21,7 @@ import Login from "./pages/Login";
 import Landing from "./pages/Landing";
 import DocumentGenerator from "./pages/DocumentGenerator";
 import Logout from "./pages/Logout";
+import Messenger from "./pages/Messenger";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/department" element={<Department />} />
           <Route path="/help-desk" element={<HelpDesk />} />
           <Route path="/documents" element={<DocumentGenerator />} />
+          <Route path="/messenger" element={<Messenger />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
