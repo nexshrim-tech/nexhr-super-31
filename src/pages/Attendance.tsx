@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -7,14 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { Download, Filter, Search, Edit, Calendar as CalendarIcon } from "lucide-react";
+import { Download, Filter, Search, Edit, Calendar as CalendarIcon, FileText, UserPlus, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const attendanceData = [
   {
@@ -96,24 +98,10 @@ const attendanceData = [
   },
 ];
 
-const generateCalendarData = () => {
-  const employees = [...new Set(attendanceData.map(record => record.employeeId))];
-  const calendarData: Record<string, Record<string, string>> = {};
-  
-  employees.forEach(empId => {
-    calendarData[empId] = {};
-    
-    const empRecords = attendanceData.filter(record => record.employeeId === empId);
-    
-    empRecords.forEach(record => {
-      calendarData[empId][record.date] = record.status;
-    });
-  });
-  
-  return calendarData;
-};
-
-const calendarData = generateCalendarData();
+interface DayContentProps {
+  date: Date; 
+  displayMonth: Date;
+}
 
 const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -121,12 +109,22 @@ const Attendance = () => {
   const [calendarView, setCalendarView] = useState(true);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddAttendanceOpen, setIsAddAttendanceOpen] = useState(false);
+  const [filterDepartment, setFilterDepartment] = useState("all");
   const [currentRecord, setCurrentRecord] = useState<any>(null);
   const [editFormData, setEditFormData] = useState({
     date: "",
     checkIn: "",
     checkOut: "",
     status: "",
+    notes: "",
+  });
+  const [newAttendanceData, setNewAttendanceData] = useState({
+    employeeId: "",
+    date: format(new Date(), 'yyyy-MM-dd'),
+    checkIn: "",
+    checkOut: "",
+    status: "Present",
     notes: "",
   });
   const { toast } = useToast();
@@ -168,6 +166,29 @@ const Attendance = () => {
     setIsEditDialogOpen(false);
   };
 
+  const handleAddAttendance = () => {
+    toast({
+      title: "Attendance added",
+      description: "New attendance record has been added successfully."
+    });
+    setIsAddAttendanceOpen(false);
+    setNewAttendanceData({
+      employeeId: "",
+      date: format(new Date(), 'yyyy-MM-dd'),
+      checkIn: "",
+      checkOut: "",
+      status: "Present",
+      notes: "",
+    });
+  };
+
+  const handleExportReport = () => {
+    toast({
+      title: "Report generated",
+      description: "Attendance report has been generated and is ready for download."
+    });
+  };
+
   const renderAttendanceStatus = (status: string) => {
     let badgeClass = "";
     
@@ -191,19 +212,22 @@ const Attendance = () => {
     return <Badge className={badgeClass}>{status}</Badge>;
   };
 
-  const renderDayContent = (props: { date: Date; displayMonth: Date }) => {
+  const renderDayContent = (props: DayContentProps) => {
     const dateString = format(props.date, 'yyyy-MM-dd');
-    const employees = Object.keys(calendarData);
+    const employees = [...new Set(attendanceData.map(record => record.employeeId))];
     
     let present = 0;
     let absent = 0;
     let late = 0;
     
     employees.forEach(emp => {
-      const status = calendarData[emp][dateString];
-      if (status === 'Present') present++;
-      else if (status === 'Absent') absent++;
-      else if (status === 'Late') late++;
+      const records = attendanceData.filter(r => r.employeeId === emp && r.date === dateString);
+      if (records.length > 0) {
+        const status = records[0].status;
+        if (status === 'Present') present++;
+        else if (status === 'Absent') absent++;
+        else if (status === 'Late') late++;
+      }
     });
     
     const total = present + absent + late;
@@ -241,9 +265,17 @@ const Attendance = () => {
                 <CalendarIcon className="h-4 w-4" />
                 {calendarView ? "List View" : "Calendar View"}
               </Button>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={handleExportReport}
+              >
                 <Download className="h-4 w-4" />
-                Export
+                Export Report
+              </Button>
+              <Button className="flex items-center gap-2" onClick={() => setIsAddAttendanceOpen(true)}>
+                <UserPlus className="h-4 w-4" />
+                Add Attendance
               </Button>
             </div>
           </div>
@@ -294,19 +326,34 @@ const Attendance = () => {
                   <CardTitle>Attendance Calendar</CardTitle>
                   <div className="flex gap-3">
                     <Select 
-                      value={selectedEmployee || ""} 
-                      onValueChange={(value) => setSelectedEmployee(value || null)}
+                      value={selectedEmployee || "all"} 
+                      onValueChange={(value) => setSelectedEmployee(value === "all" ? null : value)}
                     >
                       <SelectTrigger className="w-[200px]">
                         <SelectValue placeholder="All Employees" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Employees</SelectItem>
+                        <SelectItem value="all">All Employees</SelectItem>
                         <SelectItem value="EMP001">Olivia Rhye</SelectItem>
                         <SelectItem value="EMP002">Phoenix Baker</SelectItem>
                         <SelectItem value="EMP003">Lana Steiner</SelectItem>
                         <SelectItem value="EMP004">Demi Wilkinson</SelectItem>
                         <SelectItem value="EMP005">Candice Wu</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select 
+                      value={filterDepartment} 
+                      onValueChange={setFilterDepartment}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="All Departments" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Departments</SelectItem>
+                        <SelectItem value="engineering">Engineering</SelectItem>
+                        <SelectItem value="design">Design</SelectItem>
+                        <SelectItem value="marketing">Marketing</SelectItem>
+                        <SelectItem value="sales">Sales</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -362,14 +409,16 @@ const Attendance = () => {
                               <TableCell>{renderAttendanceStatus(record.status)}</TableCell>
                               <TableCell>{record.workHours}</TableCell>
                               <TableCell className="text-right">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => handleEditRecord(record)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleEditRecord(record)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                    <span className="sr-only">Edit</span>
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -397,9 +446,50 @@ const Attendance = () => {
                       />
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="icon" className="h-9 w-9">
-                        <Filter className="h-4 w-4" />
-                      </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-9 w-9">
+                            <Filter className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[200px]">
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>Department</Label>
+                              <Select 
+                                value={filterDepartment} 
+                                onValueChange={setFilterDepartment}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="All Departments" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">All Departments</SelectItem>
+                                  <SelectItem value="engineering">Engineering</SelectItem>
+                                  <SelectItem value="design">Design</SelectItem>
+                                  <SelectItem value="marketing">Marketing</SelectItem>
+                                  <SelectItem value="sales">Sales</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Status</Label>
+                              <Select defaultValue="all">
+                                <SelectTrigger>
+                                  <SelectValue placeholder="All Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">All Status</SelectItem>
+                                  <SelectItem value="present">Present</SelectItem>
+                                  <SelectItem value="absent">Absent</SelectItem>
+                                  <SelectItem value="late">Late</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <Button className="w-full">Apply Filters</Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="w-[160px] justify-start">
@@ -413,6 +503,7 @@ const Attendance = () => {
                             selected={selectedDate}
                             onSelect={setSelectedDate}
                             initialFocus
+                            className="pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
@@ -461,14 +552,15 @@ const Attendance = () => {
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-8 w-8 p-0"
-                              onClick={() => handleEditRecord(record)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditRecord(record)}
+                              >
+                                Edit
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -549,6 +641,114 @@ const Attendance = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Sheet open={isAddAttendanceOpen} onOpenChange={setIsAddAttendanceOpen}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Add Attendance Record</SheetTitle>
+            <SheetDescription>
+              Create a new attendance record for an employee
+            </SheetDescription>
+          </SheetHeader>
+          <div className="grid gap-4 py-4">
+            <div>
+              <Label htmlFor="employee">Employee</Label>
+              <Select 
+                value={newAttendanceData.employeeId} 
+                onValueChange={(value) => setNewAttendanceData({...newAttendanceData, employeeId: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EMP001">Olivia Rhye</SelectItem>
+                  <SelectItem value="EMP002">Phoenix Baker</SelectItem>
+                  <SelectItem value="EMP003">Lana Steiner</SelectItem>
+                  <SelectItem value="EMP004">Demi Wilkinson</SelectItem>
+                  <SelectItem value="EMP005">Candice Wu</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="date">Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newAttendanceData.date || "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={new Date(newAttendanceData.date)}
+                    onSelect={(date) => setNewAttendanceData({
+                      ...newAttendanceData, 
+                      date: date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
+                    })}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="checkIn">Check In</Label>
+                <Input
+                  id="checkIn"
+                  value={newAttendanceData.checkIn}
+                  onChange={(e) => setNewAttendanceData({...newAttendanceData, checkIn: e.target.value})}
+                  placeholder="09:00 AM"
+                />
+              </div>
+              <div>
+                <Label htmlFor="checkOut">Check Out</Label>
+                <Input
+                  id="checkOut"
+                  value={newAttendanceData.checkOut}
+                  onChange={(e) => setNewAttendanceData({...newAttendanceData, checkOut: e.target.value})}
+                  placeholder="05:00 PM"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={newAttendanceData.status}
+                onValueChange={(value) => setNewAttendanceData({...newAttendanceData, status: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Present">Present</SelectItem>
+                  <SelectItem value="Absent">Absent</SelectItem>
+                  <SelectItem value="Late">Late</SelectItem>
+                  <SelectItem value="Half Day">Half Day</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={newAttendanceData.notes}
+                onChange={(e) => setNewAttendanceData({...newAttendanceData, notes: e.target.value})}
+                placeholder="Add any additional notes here"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setIsAddAttendanceOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddAttendance}>
+              Save Record
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
