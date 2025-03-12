@@ -1,14 +1,38 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
-const Index = () => {
+import SidebarNav from "@/components/SidebarNav";
+import UserHeader from "@/components/UserHeader";
+import QuickLinks from "@/components/QuickLinks";
+import TaskReminders from "@/components/TaskReminders";
+import EmployeeStats from "@/components/EmployeeStats";
+import ExpenseGraph from "@/components/ExpenseGraph";
+import EmployeeLocation from "@/components/EmployeeLocation";
+import EmployeeList from "@/components/EmployeeList";
+
+const Dashboard = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="flex h-full bg-gray-50">
+      <SidebarNav />
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
+          <UserHeader />
+          <div className="grid gap-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              <QuickLinks />
+              <EmployeeStats />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2">
+              <TaskReminders />
+              <div className="grid gap-6">
+                <ExpenseGraph />
+                <EmployeeLocation />
+              </div>
+            </div>
+            <EmployeeList />
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Index;
+export default Dashboard;
