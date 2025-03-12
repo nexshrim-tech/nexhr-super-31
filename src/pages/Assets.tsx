@@ -240,6 +240,10 @@ const Assets = () => {
   };
 
   const handleEditAssetOpen = (asset: any) => {
+    const employeeId = asset.assignedTo 
+      ? employees.find(e => e.name === asset.assignedTo.name)?.id.toString() 
+      : null;
+      
     setCurrentAsset(asset);
     setFormData({
       name: asset.name,
@@ -247,12 +251,14 @@ const Assets = () => {
       serialNumber: asset.serialNumber,
       purchaseDate: asset.purchaseDate,
       value: asset.value.toString(),
-      assignedTo: asset.assignedTo ? employees.find(e => e.name === asset.assignedTo.name)?.id.toString() || null : null,
+      assignedTo: employeeId,
       status: asset.status
     });
     
-    // Set date for date picker
-    setDate(new Date(asset.purchaseDate));
+    // Set date for date picker if purchaseDate exists
+    if (asset.purchaseDate) {
+      setDate(new Date(asset.purchaseDate));
+    }
     
     setIsEditAssetDialogOpen(true);
   };
@@ -330,7 +336,7 @@ const Assets = () => {
 
       {/* Add Asset Dialog */}
       <Dialog open={isAddAssetDialogOpen} onOpenChange={setIsAddAssetDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md md:max-w-lg mx-auto">
           <DialogHeader>
             <DialogTitle>Add New Asset</DialogTitle>
             <DialogDescription>
@@ -346,16 +352,16 @@ const Assets = () => {
             assetTypes={assetTypes}
             employees={employees}
           />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddAssetDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddAsset}>Add Asset</Button>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsAddAssetDialogOpen(false)} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={handleAddAsset} className="w-full sm:w-auto">Add Asset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit Asset Dialog */}
       <Dialog open={isEditAssetDialogOpen} onOpenChange={setIsEditAssetDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md md:max-w-lg mx-auto">
           <DialogHeader>
             <DialogTitle>Edit Asset</DialogTitle>
             <DialogDescription>
@@ -371,16 +377,16 @@ const Assets = () => {
             assetTypes={assetTypes}
             employees={employees}
           />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditAssetDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleEditAsset}>Update Asset</Button>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setIsEditAssetDialogOpen(false)} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={handleEditAsset} className="w-full sm:w-auto">Update Asset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* View Asset Dialog */}
       <Dialog open={isViewAssetDialogOpen} onOpenChange={setIsViewAssetDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md md:max-w-lg mx-auto">
           <DialogHeader>
             <DialogTitle>Asset Details</DialogTitle>
           </DialogHeader>
