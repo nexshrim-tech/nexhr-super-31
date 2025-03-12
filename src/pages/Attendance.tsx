@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
-// Sample data
 const attendanceData = [
   {
     id: 1,
@@ -98,7 +96,6 @@ const attendanceData = [
   },
 ];
 
-// Create a calendar data structure for visualization
 const generateCalendarData = () => {
   const employees = [...new Set(attendanceData.map(record => record.employeeId))];
   const calendarData: Record<string, Record<string, string>> = {};
@@ -106,10 +103,8 @@ const generateCalendarData = () => {
   employees.forEach(empId => {
     calendarData[empId] = {};
     
-    // Get all records for this employee
     const empRecords = attendanceData.filter(record => record.employeeId === empId);
     
-    // Add status for each date
     empRecords.forEach(record => {
       calendarData[empId][record.date] = record.status;
     });
@@ -136,7 +131,6 @@ const Attendance = () => {
   });
   const { toast } = useToast();
 
-  // Filter attendance records based on search and selected date
   const filteredRecords = attendanceData.filter(record => {
     const matchesSearch = 
       record.employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -197,11 +191,10 @@ const Attendance = () => {
     return <Badge className={badgeClass}>{status}</Badge>;
   };
 
-  const renderDayContent = (day: Date) => {
-    const dateString = format(day, 'yyyy-MM-dd');
+  const renderDayContent = (props: { date: Date; displayMonth: Date }) => {
+    const dateString = format(props.date, 'yyyy-MM-dd');
     const employees = Object.keys(calendarData);
     
-    // Count statuses for this date
     let present = 0;
     let absent = 0;
     let late = 0;
@@ -218,10 +211,13 @@ const Attendance = () => {
     if (total === 0) return null;
     
     return (
-      <div className="absolute bottom-0 left-0 right-0 flex justify-center text-[8px] gap-1">
-        {present > 0 && <span className="text-green-600">{present}P</span>}
-        {absent > 0 && <span className="text-red-600">{absent}A</span>}
-        {late > 0 && <span className="text-yellow-600">{late}L</span>}
+      <div className="relative w-full h-full flex items-center justify-center">
+        <div>{props.date.getDate()}</div>
+        <div className="absolute bottom-0 left-0 right-0 flex justify-center text-[8px] gap-1">
+          {present > 0 && <span className="text-green-600">{present}P</span>}
+          {absent > 0 && <span className="text-red-600">{absent}A</span>}
+          {late > 0 && <span className="text-yellow-600">{late}L</span>}
+        </div>
       </div>
     );
   };
@@ -322,14 +318,9 @@ const Attendance = () => {
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    className="mx-auto"
+                    className="mx-auto pointer-events-auto"
                     components={{
-                      DayContent: (props) => (
-                        <div className="relative w-full h-full flex items-center justify-center">
-                          <div>{props.day.getDate()}</div>
-                          {renderDayContent(props.day)}
-                        </div>
-                      ),
+                      DayContent: renderDayContent
                     }}
                   />
                 </div>
