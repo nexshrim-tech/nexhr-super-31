@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
-import { Map, MapPin, Search } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LocationMap from "@/components/LocationMap";
@@ -11,6 +11,38 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { 
+  FileText, 
+  Map, 
+  MapPin, 
+  Search, 
+  Filter, 
+  Download,
+  Printer
+} from "lucide-react";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const employees = [
   {
@@ -22,6 +54,7 @@ const employees = [
     email: "work@email.com",
     employeeId: "5278429811",
     status: "Online",
+    department: "Design",
     location: { lat: 48.8606, lng: 2.3376 } // Near Louvre Museum in Paris
   },
   {
@@ -33,6 +66,7 @@ const employees = [
     email: "david@email.com",
     employeeId: "4278429812",
     status: "Online",
+    department: "Management",
     location: { lat: 48.8622, lng: 2.3330 }
   },
   {
@@ -44,6 +78,7 @@ const employees = [
     email: "sarah@email.com",
     employeeId: "3278429813",
     status: "Away",
+    department: "Engineering",
     location: { lat: 48.8599, lng: 2.3409 }
   },
   {
@@ -55,6 +90,7 @@ const employees = [
     email: "michael@email.com",
     employeeId: "2278429814",
     status: "Offline",
+    department: "Engineering",
     location: { lat: 48.8576, lng: 2.3353 }
   }
 ];
@@ -62,6 +98,14 @@ const employees = [
 const Track = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [trackingEmployeeId, setTrackingEmployeeId] = useState<number | null>(null);
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(),
+  });
+  const [isGeneratingDocument, setIsGeneratingDocument] = useState(false);
+  const [selectedDocType, setSelectedDocType] = useState("tracking");
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -73,8 +117,35 @@ const Track = () => {
     });
   };
 
+  const handleGenerateDocument = () => {
+    setIsGeneratingDocument(true);
+    // Simulate document generation
+    setTimeout(() => {
+      setIsGeneratingDocument(false);
+      toast({
+        title: "Document generated",
+        description: `${selectedDocType.charAt(0).toUpperCase() + selectedDocType.slice(1)} report has been generated successfully.`,
+      });
+    }, 1500);
+  };
+
   const filteredEmployees = employees.filter(
-    (employee) => employee.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (employee) => {
+      // Apply search filter
+      const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         employee.employeeId.includes(searchTerm) ||
+                         employee.email.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Apply department filter
+      const matchesDepartment = departmentFilter === "all" || 
+                              employee.department.toLowerCase() === departmentFilter.toLowerCase();
+      
+      // Apply status filter
+      const matchesStatus = statusFilter === "all" || 
+                          employee.status.toLowerCase() === statusFilter.toLowerCase();
+      
+      return matchesSearch && matchesDepartment && matchesStatus;
+    }
   );
 
   const getStatusColor = (status: string) => {
@@ -100,7 +171,7 @@ const Track = () => {
               <h1 className="text-2xl font-semibold">Employee Tracking</h1>
               <p className="text-gray-500">Monitor employee locations in real-time</p>
             </div>
-            <div className="flex gap-3 w-full md:w-auto">
+            <div className="flex flex-wrap gap-3 w-full md:w-auto">
               <div className="relative flex-1 md:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                 <Input 
@@ -111,10 +182,230 @@ const Track = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "LLL dd")} -{" "}
+                          {format(dateRange.to, "LLL dd")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "LLL dd")
+                      )
+                    ) : (
+                      <span>Date range</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    Generate Report
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Generate Tracking Report</DialogTitle>
+                    <DialogDescription>
+                      Create a document with employee tracking data.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Tabs defaultValue="tracking" onValueChange={setSelectedDocType}>
+                        <TabsList className="grid w-full grid-cols-3">
+                          <TabsTrigger value="tracking">Tracking</TabsTrigger>
+                          <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                          <TabsTrigger value="summary">Summary</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="tracking" className="space-y-4 pt-4">
+                          <p className="text-sm text-gray-500">Generate a detailed tracking report showing employee locations for the selected date range.</p>
+                        </TabsContent>
+                        <TabsContent value="attendance" className="space-y-4 pt-4">
+                          <p className="text-sm text-gray-500">Create an attendance report based on tracking data for the selected date range.</p>
+                        </TabsContent>
+                        <TabsContent value="summary" className="space-y-4 pt-4">
+                          <p className="text-sm text-gray-500">Generate a summary of all employee movements and locations.</p>
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Date Range</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            {dateRange?.from ? (
+                              dateRange.to ? (
+                                <>
+                                  {format(dateRange.from, "PPP")} -{" "}
+                                  {format(dateRange.to, "PPP")}
+                                </>
+                              ) : (
+                                format(dateRange.from, "PPP")
+                              )
+                            ) : (
+                              <span>Pick a date range</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            initialFocus
+                            mode="range"
+                            defaultMonth={dateRange?.from}
+                            selected={dateRange}
+                            onSelect={setDateRange}
+                            numberOfMonths={2}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Include Employees</label>
+                      <Select defaultValue="all">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select employees" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Employees</SelectItem>
+                          <SelectItem value="selected">Selected Employees</SelectItem>
+                          <SelectItem value="department">By Department</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Format</label>
+                      <Select defaultValue="pdf">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select format" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pdf">PDF</SelectItem>
+                          <SelectItem value="excel">Excel</SelectItem>
+                          <SelectItem value="csv">CSV</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    <Button variant="outline">Cancel</Button>
+                    <Button 
+                      className="gap-2" 
+                      onClick={handleGenerateDocument}
+                      disabled={isGeneratingDocument}
+                    >
+                      {isGeneratingDocument ? (
+                        <>Generating...</>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4" />
+                          Generate Document
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Link to="/">
                 <Button variant="outline">Back to Dashboard</Button>
               </Link>
             </div>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-4 mb-4">
+            <Card className="w-full lg:w-auto flex-1">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Filter Options</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  <div className="w-full sm:w-auto flex-1 min-w-[200px]">
+                    <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Departments</SelectItem>
+                        <SelectItem value="design">Design</SelectItem>
+                        <SelectItem value="engineering">Engineering</SelectItem>
+                        <SelectItem value="management">Management</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="w-full sm:w-auto flex-1 min-w-[200px]">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="online">Online</SelectItem>
+                        <SelectItem value="away">Away</SelectItem>
+                        <SelectItem value="offline">Offline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button variant="outline" className="flex-1 sm:flex-none gap-2" onClick={() => {
+                    setSearchTerm("");
+                    setDepartmentFilter("all");
+                    setStatusFilter("all");
+                  }}>
+                    <Filter className="h-4 w-4" />
+                    Reset Filters
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="w-full lg:w-auto">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setTrackingEmployeeId(null)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Map className="h-4 w-4 mr-2" />
+                    View All
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 sm:flex-none"
+                    onClick={() => {
+                      toast({
+                        title: "Printed",
+                        description: "Current map view has been sent to printer."
+                      });
+                    }}
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print Map
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
@@ -172,18 +463,63 @@ const Track = () => {
                               </div>
                             </div>
                             
-                            <Button 
-                              className={`w-full mt-4 ${
-                                trackingEmployeeId === employee.id 
-                                  ? "bg-green-500 hover:bg-green-600" 
-                                  : ""
-                              }`} 
-                              size="sm"
-                              onClick={() => handleTrackLocation(employee.id)}
-                            >
-                              <MapPin className="h-4 w-4 mr-2" />
-                              {trackingEmployeeId === employee.id ? "Tracking..." : "Track Location"}
-                            </Button>
+                            <div className="flex gap-2 mt-4">
+                              <Button 
+                                className={`flex-1 ${
+                                  trackingEmployeeId === employee.id 
+                                    ? "bg-green-500 hover:bg-green-600" 
+                                    : ""
+                                }`} 
+                                size="sm"
+                                onClick={() => handleTrackLocation(employee.id)}
+                              >
+                                <MapPin className="h-4 w-4 mr-2" />
+                                {trackingEmployeeId === employee.id ? "Tracking..." : "Track"}
+                              </Button>
+                              
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm" className="flex-1">
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    View Profile
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Employee Profile</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4 py-4">
+                                    <div className="flex items-center gap-4">
+                                      <Avatar className="h-16 w-16">
+                                        <AvatarFallback>{employee.avatar}</AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <h3 className="text-lg font-semibold">{employee.name}</h3>
+                                        <p className="text-gray-500">{employee.role}</p>
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                        <p className="text-sm text-gray-500">Employee ID</p>
+                                        <p className="font-medium">{employee.employeeId}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-gray-500">Department</p>
+                                        <p className="font-medium">{employee.department}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-gray-500">Phone</p>
+                                        <p className="font-medium">{employee.phone}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-sm text-gray-500">Email</p>
+                                        <p className="font-medium">{employee.email}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
                           </div>
                         </div>
                       ))

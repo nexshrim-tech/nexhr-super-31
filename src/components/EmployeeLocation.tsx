@@ -2,17 +2,39 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, MapPin, Users } from "lucide-react";
+import { Download, Filter, MapPin, Settings, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const EmployeeLocation = () => {
   const [isLive, setIsLive] = useState(false);
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   
   const toggleLiveTracking = () => {
     setIsLive(!isLive);
+    
+    toast({
+      title: isLive ? "Live tracking stopped" : "Live tracking started",
+      description: isLive 
+        ? "You have stopped tracking employee locations in real-time." 
+        : "You are now tracking employee locations in real-time."
+    });
+  };
+
+  const handleExportMap = () => {
+    toast({
+      title: "Map exported",
+      description: "The current map view has been exported.",
+    });
   };
 
   return (
@@ -28,9 +50,28 @@ const EmployeeLocation = () => {
               </Badge>
             )}
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Settings className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportMap}>
+                <Download className="h-4 w-4 mr-2" />
+                Export Map
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                toast({
+                  title: "Filter applied",
+                  description: "Location filter has been applied."
+                });
+              }}>
+                <Filter className="h-4 w-4 mr-2" />
+                Filter View
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -41,21 +82,45 @@ const EmployeeLocation = () => {
             className="absolute w-full h-full object-cover"
           />
           
-          {/* Map markers */}
-          <div className="absolute left-[25%] top-[45%]">
-            <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
+          {/* Map markers with tooltips */}
+          <div className="absolute left-[25%] top-[45%] group cursor-pointer">
+            <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse flex items-center justify-center">
+              <div className="w-2 h-2 bg-blue-100 rounded-full"></div>
+            </div>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white shadow-md rounded-md px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              <p className="font-medium">Chisom Chukwukwe</p>
+              <p>Main Office, Floor 2</p>
+            </div>
           </div>
           
-          <div className="absolute left-[45%] top-[30%]">
-            <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+          <div className="absolute left-[45%] top-[30%] group cursor-pointer">
+            <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse flex items-center justify-center">
+              <div className="w-2 h-2 bg-green-100 rounded-full"></div>
+            </div>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white shadow-md rounded-md px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              <p className="font-medium">David Cooper</p>
+              <p>Conference Room A</p>
+            </div>
           </div>
           
-          <div className="absolute left-[65%] top-[50%]">
-            <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
+          <div className="absolute left-[65%] top-[50%] group cursor-pointer">
+            <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse flex items-center justify-center">
+              <div className="w-2 h-2 bg-yellow-100 rounded-full"></div>
+            </div>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white shadow-md rounded-md px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              <p className="font-medium">Sarah Miller</p>
+              <p>Cafeteria</p>
+            </div>
           </div>
           
-          <div className="absolute left-[35%] top-[65%]">
-            <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse"></div>
+          <div className="absolute left-[35%] top-[65%] group cursor-pointer">
+            <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse flex items-center justify-center">
+              <div className="w-2 h-2 bg-purple-100 rounded-full"></div>
+            </div>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white shadow-md rounded-md px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              <p className="font-medium">Michael Johnson</p>
+              <p>Reception Area</p>
+            </div>
           </div>
           
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent h-20 pointer-events-none"></div>
