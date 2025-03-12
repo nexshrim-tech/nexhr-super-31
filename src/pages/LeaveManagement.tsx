@@ -7,7 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Download, FileText } from "lucide-react";
+import { Plus, Download, FileText, Check, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -29,7 +29,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 
 const initialLeaveApplications = [
   {
@@ -348,6 +347,7 @@ const LeaveManagement = () => {
                                       className="text-green-600"
                                       onClick={() => handleApproveLeave(application.id)}
                                     >
+                                      <Check className="h-4 w-4 mr-1" />
                                       Approve
                                     </Button>
                                     <Button 
@@ -356,6 +356,7 @@ const LeaveManagement = () => {
                                       className="text-red-600"
                                       onClick={() => handleRejectLeave(application.id)}
                                     >
+                                      <X className="h-4 w-4 mr-1" />
                                       Reject
                                     </Button>
                                   </>
@@ -539,9 +540,11 @@ const LeaveManagement = () => {
                       setShowViewDialog(false);
                     }}
                   >
+                    <X className="h-4 w-4 mr-1" />
                     Reject
                   </Button>
                   <Button
+                    variant="default"
                     size="sm"
                     className="bg-green-600 hover:bg-green-700"
                     onClick={() => {
@@ -549,6 +552,7 @@ const LeaveManagement = () => {
                       setShowViewDialog(false);
                     }}
                   >
+                    <Check className="h-4 w-4 mr-1" />
                     Approve
                   </Button>
                 </div>
