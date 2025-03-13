@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import SidebarNav from "@/components/SidebarNav";
@@ -24,6 +23,7 @@ import {
   Plus,
   Search,
   Send,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -36,10 +36,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 // Sample ticket data
 const tickets = [
@@ -52,6 +59,24 @@ const tickets = [
     requestedBy: "John Doe",
     requestedAt: "2 hours ago",
     avatar: "JD",
+    description: "My computer won't start after the recent software update. I've tried restarting multiple times but it gets stuck on the loading screen.",
+    assignedTo: "Alex Martin",
+    comments: [
+      {
+        id: 1,
+        user: "Alex Martin",
+        avatar: "AM",
+        message: "Have you tried unplugging all peripherals and starting again?",
+        timestamp: "1 hour ago"
+      },
+      {
+        id: 2,
+        user: "John Doe",
+        avatar: "JD",
+        message: "Yes, I tried that but it didn't work. Still stuck on the loading screen.",
+        timestamp: "45 minutes ago"
+      }
+    ]
   },
   {
     id: "HD-1002",
@@ -62,6 +87,17 @@ const tickets = [
     requestedBy: "Jane Smith",
     requestedAt: "1 day ago",
     avatar: "JS",
+    description: "I need access to the HR portal to update my personal information and tax details. My current credentials don't allow me to access it.",
+    assignedTo: "Mark Wilson",
+    comments: [
+      {
+        id: 1,
+        user: "Mark Wilson",
+        avatar: "MW",
+        message: "I've submitted an access request to the HR team. Waiting for their approval.",
+        timestamp: "6 hours ago"
+      }
+    ]
   },
   {
     id: "HD-1003",
@@ -72,6 +108,9 @@ const tickets = [
     requestedBy: "Mike Johnson",
     requestedAt: "2 days ago",
     avatar: "MJ",
+    description: "My email is not syncing on my mobile device. I've checked the settings but can't figure out what's wrong.",
+    assignedTo: "Sarah Lee",
+    comments: []
   },
   {
     id: "HD-1004",
@@ -82,6 +121,17 @@ const tickets = [
     requestedBy: "Sarah Williams",
     requestedAt: "3 days ago",
     avatar: "SW",
+    description: "There's a discrepancy in my latest payroll. The amount is less than what I expected.",
+    assignedTo: "David Brown",
+    comments: [
+      {
+        id: 1,
+        user: "David Brown",
+        avatar: "DB",
+        message: "I've checked your payroll and found a deduction error. It has been corrected and will reflect in your next pay.",
+        timestamp: "1 day ago"
+      }
+    ]
   },
   {
     id: "HD-1005",
@@ -92,17 +142,45 @@ const tickets = [
     requestedBy: "Robert Brown",
     requestedAt: "4 days ago",
     avatar: "RB",
+    description: "I need a new monitor for my workstation. The current one is too small for my work requirements.",
+    assignedTo: null,
+    comments: []
   },
 ];
+
+// Define the form schema
+const newTicketSchema = z.object({
+  title: z.string().min(5, "Title must be at least 5 characters"),
+  department: z.string().min(1, "Please select a department"),
+  priority: z.string().min(1, "Please select a priority"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+});
+
+type NewTicketFormValues = z.infer<typeof newTicketSchema>;
 
 const HelpDesk = () => {
   const [replyTicket, setReplyTicket] = useState<any>(null);
   const [replyMessage, setReplyMessage] = useState("");
   const [quickChatOpen, setQuickChatOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [newTicketOpen, setNewTicketOpen] = useState(false);
+  const [viewTicketOpen, setViewTicketOpen] = useState(false);
+  const [currentTicket, setCurrentTicket] = useState<any>(null);
+  const [ticketComment, setTicketComment] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  // New ticket form
+  const newTicketForm = useForm<NewTicketFormValues>({
+    resolver: zodResolver(newTicketSchema),
+    defaultValues: {
+      title: "",
+      department: "",
+      priority: "",
+      description: "",
+    },
+  });
 
   const handleQuickReply = (ticket: any) => {
     setReplyTicket(ticket);
@@ -131,6 +209,158 @@ const HelpDesk = () => {
     });
   };
 
+  const openNewTicketDialog = () => {
+    newTicketForm.reset();
+    setNewTicketOpen(true);
+  };
+
+  const viewTicket = (ticket: any) => {
+    setCurrentTicket(ticket);
+    setViewTicketOpen(true);
+  };
+
+  const handleNewTicketSubmit = (values: NewTicketFormValues) => {
+    // In a real app, you would submit this to your backend
+    // For now, we'll just show a toast
+    console.log("New ticket values:", values);
+    
+    toast({
+      title: "Ticket created",
+      description: `Ticket "${values.title}" has been created successfully`
+    });
+    
+    setNewTicketOpen(false);
+    
+    // Reset form
+    newTicketForm.reset();
+  };
+
+  const handleSendComment = () => {
+    if (!ticketComment.trim()) return;
+    
+    // In a real app, you would add this comment to the ticket in your backend
+    toast({
+      title: "Comment added",
+      description: `Your comment has been added to ticket ${currentTicket.id}`
+    });
+    
+    setTicketComment("");
+  };
+
+  const renderTicketItem = (ticket: any) => (
+    <Card key={ticket.id}>
+      <CardContent className="p-0">
+        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
+          <div className="flex items-center space-x-4 mb-4 md:mb-0">
+            <Avatar>
+              <AvatarImage src="" />
+              <AvatarFallback>{ticket.avatar}</AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-medium">{ticket.title}</h3>
+                <Badge
+                  variant={
+                    ticket.status === "Open"
+                      ? "destructive"
+                      : ticket.status === "In Progress"
+                      ? "default"
+                      : ticket.status === "Pending"
+                      ? "secondary"
+                      : "outline"
+                  }
+                  className={
+                    ticket.status === "Resolved"
+                      ? "bg-green-100 text-green-800 hover:bg-green-100"
+                      : ""
+                  }
+                >
+                  {ticket.status}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={
+                    ticket.priority === "High"
+                      ? "border-red-300 text-red-800"
+                      : ticket.priority === "Medium"
+                      ? "border-yellow-300 text-yellow-800"
+                      : "border-green-300 text-green-800"
+                  }
+                >
+                  {ticket.priority}
+                </Badge>
+              </div>
+              <div className="text-sm text-gray-500">
+                {ticket.id} • {ticket.department} • Requested by {ticket.requestedBy} {ticket.requestedAt}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {isMobile ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    Reply
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-4">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium text-sm">Quick Reply</h4>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Send a quick message to {ticket.requestedBy}
+                      </p>
+                    </div>
+                    <Textarea 
+                      placeholder="Type your reply..." 
+                      className="min-h-[100px]" 
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                    />
+                    <div className="flex justify-between">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleNavigateToChatWithEmployee(ticket)}
+                      >
+                        Open Full Chat
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={handleSendReply}
+                        disabled={!replyMessage.trim()}
+                      >
+                        <Send className="h-3 w-3 mr-1" />
+                        Send
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => handleQuickReply(ticket)}
+              >
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Reply
+              </Button>
+            )}
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => viewTicket(ticket)}
+            >
+              View
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
@@ -158,7 +388,10 @@ const HelpDesk = () => {
                   className="pl-10"
                 />
               </div>
-              <Button className="bg-blue-500 hover:bg-blue-600">
+              <Button 
+                className="bg-blue-500 hover:bg-blue-600"
+                onClick={openNewTicketDialog}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 New Ticket
               </Button>
@@ -192,115 +425,7 @@ const HelpDesk = () => {
 
             <TabsContent value="all" className="space-y-4">
               <div className="grid gap-4">
-                {tickets.map((ticket) => (
-                  <Card key={ticket.id}>
-                    <CardContent className="p-0">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
-                        <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                          <Avatar>
-                            <AvatarImage src="" />
-                            <AvatarFallback>{ticket.avatar}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="font-medium">{ticket.title}</h3>
-                              <Badge
-                                variant={
-                                  ticket.status === "Open"
-                                    ? "destructive"
-                                    : ticket.status === "In Progress"
-                                    ? "default"
-                                    : ticket.status === "Pending"
-                                    ? "secondary"
-                                    : "outline"
-                                }
-                                className={
-                                  ticket.status === "Resolved"
-                                    ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                    : ""
-                                }
-                              >
-                                {ticket.status}
-                              </Badge>
-                              <Badge
-                                variant="outline"
-                                className={
-                                  ticket.priority === "High"
-                                    ? "border-red-300 text-red-800"
-                                    : ticket.priority === "Medium"
-                                    ? "border-yellow-300 text-yellow-800"
-                                    : "border-green-300 text-green-800"
-                                }
-                              >
-                                {ticket.priority}
-                              </Badge>
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {ticket.id} • {ticket.department} • Requested by {ticket.requestedBy} {ticket.requestedAt}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {isMobile ? (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button size="sm" variant="outline">
-                                  <MessageSquare className="h-4 w-4 mr-1" />
-                                  Reply
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-72 p-4">
-                                <div className="space-y-4">
-                                  <div>
-                                    <h4 className="font-medium text-sm">Quick Reply</h4>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Send a quick message to {ticket.requestedBy}
-                                    </p>
-                                  </div>
-                                  <Textarea 
-                                    placeholder="Type your reply..." 
-                                    className="min-h-[100px]" 
-                                    value={replyMessage}
-                                    onChange={(e) => setReplyMessage(e.target.value)}
-                                  />
-                                  <div className="flex justify-between">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => handleNavigateToChatWithEmployee(ticket)}
-                                    >
-                                      Open Full Chat
-                                    </Button>
-                                    <Button 
-                                      size="sm"
-                                      onClick={handleSendReply}
-                                      disabled={!replyMessage.trim()}
-                                    >
-                                      <Send className="h-3 w-3 mr-1" />
-                                      Send
-                                    </Button>
-                                  </div>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleQuickReply(ticket)}
-                            >
-                              <MessageSquare className="h-4 w-4 mr-1" />
-                              Reply
-                            </Button>
-                          )}
-                          <Button size="sm" variant="outline">
-                            View
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                {tickets.map(renderTicketItem)}
               </div>
             </TabsContent>
 
@@ -308,100 +433,7 @@ const HelpDesk = () => {
               <div className="grid gap-4">
                 {tickets
                   .filter((t) => t.status === "Open")
-                  .map((ticket) => (
-                    <Card key={ticket.id}>
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
-                          <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                            <Avatar>
-                              <AvatarImage src="" />
-                              <AvatarFallback>{ticket.avatar}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-medium">{ticket.title}</h3>
-                                <Badge variant="destructive">
-                                  {ticket.status}
-                                </Badge>
-                                <Badge
-                                  variant="outline"
-                                  className={
-                                    ticket.priority === "High"
-                                      ? "border-red-300 text-red-800"
-                                      : ticket.priority === "Medium"
-                                      ? "border-yellow-300 text-yellow-800"
-                                      : "border-green-300 text-green-800"
-                                  }
-                                >
-                                  {ticket.priority}
-                                </Badge>
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {ticket.id} • {ticket.department} • Requested by {ticket.requestedBy} {ticket.requestedAt}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {isMobile ? (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button size="sm" variant="outline">
-                                    <MessageSquare className="h-4 w-4 mr-1" />
-                                    Reply
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-72 p-4">
-                                  <div className="space-y-4">
-                                    <div>
-                                      <h4 className="font-medium text-sm">Quick Reply</h4>
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        Send a quick message to {ticket.requestedBy}
-                                      </p>
-                                    </div>
-                                    <Textarea 
-                                      placeholder="Type your reply..." 
-                                      className="min-h-[100px]" 
-                                      value={replyMessage}
-                                      onChange={(e) => setReplyMessage(e.target.value)}
-                                    />
-                                    <div className="flex justify-between">
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={() => handleNavigateToChatWithEmployee(ticket)}
-                                      >
-                                        Open Full Chat
-                                      </Button>
-                                      <Button 
-                                        size="sm"
-                                        onClick={handleSendReply}
-                                        disabled={!replyMessage.trim()}
-                                      >
-                                        <Send className="h-3 w-3 mr-1" />
-                                        Send
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            ) : (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleQuickReply(ticket)}
-                              >
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                Reply
-                              </Button>
-                            )}
-                            <Button size="sm" variant="outline">
-                              View
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  .map(renderTicketItem)}
               </div>
             </TabsContent>
 
@@ -409,100 +441,7 @@ const HelpDesk = () => {
               <div className="grid gap-4">
                 {tickets
                   .filter((t) => t.status === "In Progress")
-                  .map((ticket) => (
-                    <Card key={ticket.id}>
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
-                          <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                            <Avatar>
-                              <AvatarImage src="" />
-                              <AvatarFallback>{ticket.avatar}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-medium">{ticket.title}</h3>
-                                <Badge>
-                                  {ticket.status}
-                                </Badge>
-                                <Badge
-                                  variant="outline"
-                                  className={
-                                    ticket.priority === "High"
-                                      ? "border-red-300 text-red-800"
-                                      : ticket.priority === "Medium"
-                                      ? "border-yellow-300 text-yellow-800"
-                                      : "border-green-300 text-green-800"
-                                  }
-                                >
-                                  {ticket.priority}
-                                </Badge>
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {ticket.id} • {ticket.department} • Requested by {ticket.requestedBy} {ticket.requestedAt}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {isMobile ? (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button size="sm" variant="outline">
-                                    <MessageSquare className="h-4 w-4 mr-1" />
-                                    Reply
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-72 p-4">
-                                  <div className="space-y-4">
-                                    <div>
-                                      <h4 className="font-medium text-sm">Quick Reply</h4>
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        Send a quick message to {ticket.requestedBy}
-                                      </p>
-                                    </div>
-                                    <Textarea 
-                                      placeholder="Type your reply..." 
-                                      className="min-h-[100px]" 
-                                      value={replyMessage}
-                                      onChange={(e) => setReplyMessage(e.target.value)}
-                                    />
-                                    <div className="flex justify-between">
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={() => handleNavigateToChatWithEmployee(ticket)}
-                                      >
-                                        Open Full Chat
-                                      </Button>
-                                      <Button 
-                                        size="sm"
-                                        onClick={handleSendReply}
-                                        disabled={!replyMessage.trim()}
-                                      >
-                                        <Send className="h-3 w-3 mr-1" />
-                                        Send
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            ) : (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleQuickReply(ticket)}
-                              >
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                Reply
-                              </Button>
-                            )}
-                            <Button size="sm" variant="outline">
-                              View
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  .map(renderTicketItem)}
               </div>
             </TabsContent>
 
@@ -510,100 +449,7 @@ const HelpDesk = () => {
               <div className="grid gap-4">
                 {tickets
                   .filter((t) => t.status === "Pending")
-                  .map((ticket) => (
-                    <Card key={ticket.id}>
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
-                          <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                            <Avatar>
-                              <AvatarImage src="" />
-                              <AvatarFallback>{ticket.avatar}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-medium">{ticket.title}</h3>
-                                <Badge variant="secondary">
-                                  {ticket.status}
-                                </Badge>
-                                <Badge
-                                  variant="outline"
-                                  className={
-                                    ticket.priority === "High"
-                                      ? "border-red-300 text-red-800"
-                                      : ticket.priority === "Medium"
-                                      ? "border-yellow-300 text-yellow-800"
-                                      : "border-green-300 text-green-800"
-                                  }
-                                >
-                                  {ticket.priority}
-                                </Badge>
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {ticket.id} • {ticket.department} • Requested by {ticket.requestedBy} {ticket.requestedAt}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {isMobile ? (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button size="sm" variant="outline">
-                                    <MessageSquare className="h-4 w-4 mr-1" />
-                                    Reply
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-72 p-4">
-                                  <div className="space-y-4">
-                                    <div>
-                                      <h4 className="font-medium text-sm">Quick Reply</h4>
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        Send a quick message to {ticket.requestedBy}
-                                      </p>
-                                    </div>
-                                    <Textarea 
-                                      placeholder="Type your reply..." 
-                                      className="min-h-[100px]" 
-                                      value={replyMessage}
-                                      onChange={(e) => setReplyMessage(e.target.value)}
-                                    />
-                                    <div className="flex justify-between">
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={() => handleNavigateToChatWithEmployee(ticket)}
-                                      >
-                                        Open Full Chat
-                                      </Button>
-                                      <Button 
-                                        size="sm"
-                                        onClick={handleSendReply}
-                                        disabled={!replyMessage.trim()}
-                                      >
-                                        <Send className="h-3 w-3 mr-1" />
-                                        Send
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            ) : (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleQuickReply(ticket)}
-                              >
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                Reply
-                              </Button>
-                            )}
-                            <Button size="sm" variant="outline">
-                              View
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  .map(renderTicketItem)}
               </div>
             </TabsContent>
 
@@ -611,103 +457,7 @@ const HelpDesk = () => {
               <div className="grid gap-4">
                 {tickets
                   .filter((t) => t.status === "Resolved")
-                  .map((ticket) => (
-                    <Card key={ticket.id}>
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
-                          <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                            <Avatar>
-                              <AvatarImage src="" />
-                              <AvatarFallback>{ticket.avatar}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-medium">{ticket.title}</h3>
-                                <Badge
-                                  variant="outline"
-                                  className="bg-green-100 text-green-800 hover:bg-green-100"
-                                >
-                                  {ticket.status}
-                                </Badge>
-                                <Badge
-                                  variant="outline"
-                                  className={
-                                    ticket.priority === "High"
-                                      ? "border-red-300 text-red-800"
-                                      : ticket.priority === "Medium"
-                                      ? "border-yellow-300 text-yellow-800"
-                                      : "border-green-300 text-green-800"
-                                  }
-                                >
-                                  {ticket.priority}
-                                </Badge>
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {ticket.id} • {ticket.department} • Requested by {ticket.requestedBy} {ticket.requestedAt}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {isMobile ? (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button size="sm" variant="outline">
-                                    <MessageSquare className="h-4 w-4 mr-1" />
-                                    Reply
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-72 p-4">
-                                  <div className="space-y-4">
-                                    <div>
-                                      <h4 className="font-medium text-sm">Quick Reply</h4>
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        Send a quick message to {ticket.requestedBy}
-                                      </p>
-                                    </div>
-                                    <Textarea 
-                                      placeholder="Type your reply..." 
-                                      className="min-h-[100px]" 
-                                      value={replyMessage}
-                                      onChange={(e) => setReplyMessage(e.target.value)}
-                                    />
-                                    <div className="flex justify-between">
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm"
-                                        onClick={() => handleNavigateToChatWithEmployee(ticket)}
-                                      >
-                                        Open Full Chat
-                                      </Button>
-                                      <Button 
-                                        size="sm"
-                                        onClick={handleSendReply}
-                                        disabled={!replyMessage.trim()}
-                                      >
-                                        <Send className="h-3 w-3 mr-1" />
-                                        Send
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            ) : (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleQuickReply(ticket)}
-                              >
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                Reply
-                              </Button>
-                            )}
-                            <Button size="sm" variant="outline">
-                              View
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  .map(renderTicketItem)}
               </div>
             </TabsContent>
           </Tabs>
@@ -755,6 +505,221 @@ const HelpDesk = () => {
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Send Reply
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* New Ticket Dialog */}
+          <Dialog open={newTicketOpen} onOpenChange={setNewTicketOpen}>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Create New Support Ticket</DialogTitle>
+              </DialogHeader>
+              <Form {...newTicketForm}>
+                <form onSubmit={newTicketForm.handleSubmit(handleNewTicketSubmit)} className="space-y-4 py-2">
+                  <FormField
+                    control={newTicketForm.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ticket Title</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter a descriptive title" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={newTicketForm.control}
+                      name="department"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Department</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select department" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="IT Support">IT Support</SelectItem>
+                              <SelectItem value="HR">HR</SelectItem>
+                              <SelectItem value="Finance">Finance</SelectItem>
+                              <SelectItem value="Operations">Operations</SelectItem>
+                              <SelectItem value="Sales">Sales</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={newTicketForm.control}
+                      name="priority"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Priority</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select priority" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Low">Low</SelectItem>
+                              <SelectItem value="Medium">Medium</SelectItem>
+                              <SelectItem value="High">High</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={newTicketForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe your issue in detail..." 
+                            className="min-h-[150px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter className="pt-4">
+                    <Button type="submit" className="w-full md:w-auto">
+                      Submit Ticket
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+
+          {/* View Ticket Dialog */}
+          <Dialog open={viewTicketOpen} onOpenChange={setViewTicketOpen}>
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
+              <DialogHeader>
+                <div className="flex items-center gap-2">
+                  <DialogTitle>{currentTicket?.title}</DialogTitle>
+                  <Badge
+                    variant={
+                      currentTicket?.status === "Open"
+                        ? "destructive"
+                        : currentTicket?.status === "In Progress"
+                        ? "default"
+                        : currentTicket?.status === "Pending"
+                        ? "secondary"
+                        : "outline"
+                    }
+                    className={
+                      currentTicket?.status === "Resolved"
+                        ? "bg-green-100 text-green-800 hover:bg-green-100"
+                        : ""
+                    }
+                  >
+                    {currentTicket?.status}
+                  </Badge>
+                </div>
+              </DialogHeader>
+              
+              <ScrollArea className="pr-4 max-h-[60vh]">
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">
+                      Ticket ID: {currentTicket?.id}
+                    </div>
+                    <div className="flex flex-wrap gap-6">
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500">REQUESTED BY</h4>
+                        <p className="text-sm">{currentTicket?.requestedBy}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500">DEPARTMENT</h4>
+                        <p className="text-sm">{currentTicket?.department}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500">PRIORITY</h4>
+                        <p className="text-sm">{currentTicket?.priority}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500">ASSIGNED TO</h4>
+                        <p className="text-sm">{currentTicket?.assignedTo || 'Unassigned'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">Description</h3>
+                    <div className="bg-gray-50 p-3 rounded-md text-sm">
+                      {currentTicket?.description}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-3">Comments</h3>
+                    <div className="space-y-4">
+                      {currentTicket?.comments && currentTicket.comments.length > 0 ? (
+                        currentTicket.comments.map((comment: any) => (
+                          <div key={comment.id} className="flex gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>{comment.avatar}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="font-medium text-sm">{comment.user}</span>
+                                <span className="text-xs text-gray-500">{comment.timestamp}</span>
+                              </div>
+                              <p className="text-sm">{comment.message}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">No comments yet</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
+              
+              <div className="border-t pt-4">
+                <h3 className="font-medium mb-2 text-sm">Add Comment</h3>
+                <div className="flex gap-3">
+                  <Textarea 
+                    placeholder="Type your comment..." 
+                    className="min-h-[80px]"
+                    value={ticketComment}
+                    onChange={(e) => setTicketComment(e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end mt-3">
+                  <Button 
+                    onClick={handleSendComment}
+                    disabled={!ticketComment.trim()}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Send Comment
                   </Button>
                 </div>
               </div>
