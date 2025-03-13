@@ -292,13 +292,19 @@ const Salary = () => {
   // Calculate total earnings and deductions
   const calculateNetPay = (employee: any) => {
     if (!employee || !employee.allowances || !employee.deductions) return { 
-      totalEarnings: employee.salary / 12, 
-      totalDeductions: (employee.salary / 12) * 0.2,
-      netPay: (employee.salary / 12) * 0.8
+      totalEarnings: employee?.salary ? employee.salary / 12 : 0, 
+      totalDeductions: employee?.salary ? (employee.salary / 12) * 0.2 : 0,
+      netPay: employee?.salary ? (employee.salary / 12) * 0.8 : 0
     };
     
-    const totalEarnings = Object.values(employee.allowances).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
-    const totalDeductions = Object.values(employee.deductions).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+    // Convert all values to numbers before arithmetic operations
+    const totalEarnings = Object.entries(employee.allowances).reduce((sum: number, [key, val]: [string, any]) => {
+      return sum + (typeof val === 'number' ? val : parseFloat(val) || 0);
+    }, 0);
+    
+    const totalDeductions = Object.entries(employee.deductions).reduce((sum: number, [key, val]: [string, any]) => {
+      return sum + (typeof val === 'number' ? val : parseFloat(val) || 0);
+    }, 0);
     
     return {
       totalEarnings: totalEarnings / 12,
