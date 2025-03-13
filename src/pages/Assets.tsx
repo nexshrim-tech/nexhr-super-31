@@ -240,11 +240,15 @@ const Assets = () => {
   };
 
   const handleEditAssetOpen = (asset: any) => {
+    // First set the current asset
+    setCurrentAsset(asset);
+    
+    // Find the employee ID if assigned
     const employeeId = asset.assignedTo 
       ? employees.find(e => e.name === asset.assignedTo.name)?.id.toString() 
       : null;
-      
-    setCurrentAsset(asset);
+    
+    // Then set the form data
     setFormData({
       name: asset.name,
       type: asset.type,
@@ -260,6 +264,7 @@ const Assets = () => {
       setDate(new Date(asset.purchaseDate));
     }
     
+    // Finally open the dialog
     setIsEditAssetDialogOpen(true);
   };
 
@@ -368,19 +373,23 @@ const Assets = () => {
               Update the details for this asset.
             </DialogDescription>
           </DialogHeader>
-          <AssetForm 
-            formData={formData} 
-            handleInputChange={handleInputChange}
-            handleSelectChange={handleSelectChange}
-            handleDateSelect={handleDateSelect}
-            date={date}
-            assetTypes={assetTypes}
-            employees={employees}
-          />
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setIsEditAssetDialogOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-            <Button onClick={handleEditAsset} className="w-full sm:w-auto">Update Asset</Button>
-          </DialogFooter>
+          {currentAsset && (
+            <>
+              <AssetForm 
+                formData={formData} 
+                handleInputChange={handleInputChange}
+                handleSelectChange={handleSelectChange}
+                handleDateSelect={handleDateSelect}
+                date={date}
+                assetTypes={assetTypes}
+                employees={employees}
+              />
+              <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => setIsEditAssetDialogOpen(false)} className="w-full sm:w-auto">Cancel</Button>
+                <Button onClick={handleEditAsset} className="w-full sm:w-auto">Update Asset</Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
