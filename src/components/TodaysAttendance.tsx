@@ -1,7 +1,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, UserCheck } from "lucide-react";
+import { Calendar as CalendarIcon, UserCheck } from "lucide-react";
+import { useState } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const TodaysAttendance = () => {
   // Today's date
@@ -14,11 +22,14 @@ const TodaysAttendance = () => {
   const absentCount = 2;
   const lateCount = 1;
   
+  // State for calendar
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-primary" />
+          <CalendarIcon className="h-5 w-5 text-primary" />
           Today's Attendance
         </CardTitle>
         <p className="text-sm text-muted-foreground">{formattedDate}</p>
@@ -39,10 +50,22 @@ const TodaysAttendance = () => {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
-          <Button variant="outline" size="sm" className="w-full gap-1">
-            <Calendar className="h-4 w-4" />
-            View Calendar
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full gap-1">
+                <CalendarIcon className="h-4 w-4" />
+                {date ? format(date, 'PPP') : "View Calendar"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                className="border border-gray-200 rounded-md bg-white shadow-sm"
+              />
+            </PopoverContent>
+          </Popover>
           <Button variant="outline" size="sm" className="w-full gap-1">
             <UserCheck className="h-4 w-4" />
             Mark Attendance

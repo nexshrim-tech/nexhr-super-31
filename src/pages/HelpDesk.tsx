@@ -1,877 +1,703 @@
+
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  MessageSquare,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Plus,
-  Search,
-  Send,
-  X,
-} from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Search, Filter, Plus, Eye, MoreHorizontal, Upload, MessageSquare, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-// Sample ticket data
-const tickets = [
+// Sample data for tickets
+const ticketsData = [
   {
     id: "HD-1001",
-    title: "Computer not starting",
+    title: "Computer won't turn on",
     status: "Open",
     priority: "High",
-    department: "IT Support",
-    requestedBy: "John Doe",
-    requestedAt: "2 hours ago",
-    avatar: "JD",
-    description: "My computer won't start after the recent software update. I've tried restarting multiple times but it gets stuck on the loading screen.",
-    assignedTo: "Alex Martin",
+    category: "Hardware",
+    createdBy: {
+      name: "Olivia Rhye",
+      avatar: "OR"
+    },
+    assignedTo: {
+      name: "Technical Support",
+      avatar: "TS"
+    },
+    created: "2023-05-10T09:00:00",
+    updated: "2023-05-10T09:00:00",
+    description: "My computer suddenly stopped turning on. The power light doesn't come on at all.",
     comments: [
       {
         id: 1,
-        user: "Alex Martin",
-        avatar: "AM",
-        message: "Have you tried unplugging all peripherals and starting again?",
-        timestamp: "1 hour ago"
+        user: {
+          name: "Technical Support",
+          avatar: "TS"
+        },
+        text: "Have you checked if the computer is plugged in and if the power outlet is working?",
+        timestamp: "2023-05-10T10:30:00"
       },
       {
         id: 2,
-        user: "John Doe",
-        avatar: "JD",
-        message: "Yes, I tried that but it didn't work. Still stuck on the loading screen.",
-        timestamp: "45 minutes ago"
+        user: {
+          name: "Olivia Rhye",
+          avatar: "OR"
+        },
+        text: "Yes, I've checked both. The outlet is working fine as other devices work when plugged in there.",
+        timestamp: "2023-05-10T11:15:00"
       }
     ]
   },
   {
     id: "HD-1002",
-    title: "Access to HR portal",
+    title: "Need access to financial reports",
     status: "In Progress",
     priority: "Medium",
-    department: "IT Support",
-    requestedBy: "Jane Smith",
-    requestedAt: "1 day ago",
-    avatar: "JS",
-    description: "I need access to the HR portal to update my personal information and tax details. My current credentials don't allow me to access it.",
-    assignedTo: "Mark Wilson",
+    category: "Access Request",
+    createdBy: {
+      name: "Phoenix Baker",
+      avatar: "PB"
+    },
+    assignedTo: {
+      name: "IT Security",
+      avatar: "IS"
+    },
+    created: "2023-05-09T14:30:00",
+    updated: "2023-05-09T16:45:00",
+    description: "I need access to the financial reports directory for my quarterly reporting tasks.",
     comments: [
       {
         id: 1,
-        user: "Mark Wilson",
-        avatar: "MW",
-        message: "I've submitted an access request to the HR team. Waiting for their approval.",
-        timestamp: "6 hours ago"
+        user: {
+          name: "IT Security",
+          avatar: "IS"
+        },
+        text: "We've received your request and are processing it. We need manager approval for this access.",
+        timestamp: "2023-05-09T15:00:00"
       }
     ]
   },
   {
     id: "HD-1003",
     title: "Email not syncing on mobile",
-    status: "Pending",
-    priority: "Low",
-    department: "IT Support",
-    requestedBy: "Mike Johnson",
-    requestedAt: "2 days ago",
-    avatar: "MJ",
-    description: "My email is not syncing on my mobile device. I've checked the settings but can't figure out what's wrong.",
-    assignedTo: "Sarah Lee",
-    comments: []
-  },
-  {
-    id: "HD-1004",
-    title: "Payroll discrepancy",
     status: "Resolved",
-    priority: "Medium",
-    department: "Finance",
-    requestedBy: "Sarah Williams",
-    requestedAt: "3 days ago",
-    avatar: "SW",
-    description: "There's a discrepancy in my latest payroll. The amount is less than what I expected.",
-    assignedTo: "David Brown",
+    priority: "Low",
+    category: "Software",
+    createdBy: {
+      name: "Lana Steiner",
+      avatar: "LS"
+    },
+    assignedTo: {
+      name: "Email Support",
+      avatar: "ES"
+    },
+    created: "2023-05-08T10:15:00",
+    updated: "2023-05-08T13:20:00",
+    description: "My work email is not syncing on my mobile device. It was working fine until yesterday.",
     comments: [
       {
         id: 1,
-        user: "David Brown",
-        avatar: "DB",
-        message: "I've checked your payroll and found a deduction error. It has been corrected and will reflect in your next pay.",
-        timestamp: "1 day ago"
+        user: {
+          name: "Email Support",
+          avatar: "ES"
+        },
+        text: "Could you try removing and re-adding your email account on the mobile device?",
+        timestamp: "2023-05-08T10:45:00"
+      },
+      {
+        id: 2,
+        user: {
+          name: "Lana Steiner",
+          avatar: "LS"
+        },
+        text: "That worked! Thank you for the quick solution.",
+        timestamp: "2023-05-08T11:30:00"
+      },
+      {
+        id: 3,
+        user: {
+          name: "Email Support",
+          avatar: "ES"
+        },
+        text: "Great! I'll mark this ticket as resolved. Feel free to reopen if you encounter any further issues.",
+        timestamp: "2023-05-08T13:15:00"
       }
     ]
   },
   {
-    id: "HD-1005",
-    title: "New monitor request",
+    id: "HD-1004",
+    title: "Printer not connecting",
     status: "Open",
-    priority: "Low",
-    department: "IT Support",
-    requestedBy: "Robert Brown",
-    requestedAt: "4 days ago",
-    avatar: "RB",
-    description: "I need a new monitor for my workstation. The current one is too small for my work requirements.",
-    assignedTo: null,
+    priority: "Medium",
+    category: "Hardware",
+    createdBy: {
+      name: "Demi Wilkinson",
+      avatar: "DW"
+    },
+    assignedTo: {
+      name: "Technical Support",
+      avatar: "TS"
+    },
+    created: "2023-05-07T11:00:00",
+    updated: "2023-05-07T11:00:00",
+    description: "I'm unable to connect to the shared printer in our department. My computer doesn't detect it.",
     comments: []
   },
+  {
+    id: "HD-1005",
+    title: "Need software installation",
+    status: "Closed",
+    priority: "Low",
+    category: "Software",
+    createdBy: {
+      name: "Candice Wu",
+      avatar: "CW"
+    },
+    assignedTo: {
+      name: "Software Support",
+      avatar: "SS"
+    },
+    created: "2023-05-06T09:30:00",
+    updated: "2023-05-06T14:20:00",
+    description: "I need Adobe Photoshop installed on my workstation for the upcoming marketing project.",
+    comments: [
+      {
+        id: 1,
+        user: {
+          name: "Software Support",
+          avatar: "SS"
+        },
+        text: "We've processed your request. A technician will install the software remotely today.",
+        timestamp: "2023-05-06T10:15:00"
+      },
+      {
+        id: 2,
+        user: {
+          name: "Software Support",
+          avatar: "SS"
+        },
+        text: "The software has been installed successfully. Please try it and let us know if you encounter any issues.",
+        timestamp: "2023-05-06T14:15:00"
+      }
+    ]
+  }
 ];
 
-// Define the form schema
-const newTicketSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  department: z.string().min(1, "Please select a department"),
-  priority: z.string().min(1, "Please select a priority"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-});
-
-type NewTicketFormValues = z.infer<typeof newTicketSchema>;
-
 const HelpDesk = () => {
-  const [replyTicket, setReplyTicket] = useState<any>(null);
-  const [replyMessage, setReplyMessage] = useState("");
-  const [quickChatOpen, setQuickChatOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
-  const [newTicketOpen, setNewTicketOpen] = useState(false);
-  const [viewTicketOpen, setViewTicketOpen] = useState(false);
-  const [currentTicket, setCurrentTicket] = useState<any>(null);
-  const [ticketComment, setTicketComment] = useState("");
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
-
-  // New ticket form
-  const newTicketForm = useForm<NewTicketFormValues>({
-    resolver: zodResolver(newTicketSchema),
-    defaultValues: {
-      title: "",
-      department: "",
-      priority: "",
-      description: "",
-    },
+  const [tickets, setTickets] = useState(ticketsData);
+  const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
+  const [isTicketDetailOpen, setIsTicketDetailOpen] = useState(false);
+  const [newTicket, setNewTicket] = useState({
+    title: "",
+    description: "",
+    priority: "Medium",
+    category: "Hardware"
   });
+  const [currentTicket, setCurrentTicket] = useState<any>(null);
+  const [newComment, setNewComment] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
 
-  const handleQuickReply = (ticket: any) => {
-    setReplyTicket(ticket);
-    setQuickChatOpen(true);
-  };
-
-  const handleSendReply = () => {
-    if (!replyMessage.trim()) return;
+  const handleNewTicketSubmit = () => {
+    const ticket = {
+      id: `HD-${1000 + tickets.length + 1}`,
+      title: newTicket.title,
+      description: newTicket.description,
+      priority: newTicket.priority,
+      category: newTicket.category,
+      status: "Open",
+      createdBy: {
+        name: "Current User",
+        avatar: "CU"
+      },
+      assignedTo: {
+        name: "Unassigned",
+        avatar: "UA"
+      },
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+      comments: []
+    };
     
-    toast({
-      title: "Reply sent",
-      description: `Your reply to ticket ${replyTicket.id} has been sent`
+    setTickets([ticket, ...tickets]);
+    setNewTicket({
+      title: "",
+      description: "",
+      priority: "Medium",
+      category: "Hardware"
     });
-    
-    setReplyMessage("");
-    setQuickChatOpen(false);
-  };
-
-  const handleNavigateToChatWithEmployee = (ticket: any) => {
-    // In a real app, you would navigate to the chat with this employee
-    // For now, we'll just navigate to the messenger page
-    navigate('/messenger');
-    toast({
-      title: "Opening chat",
-      description: `Starting conversation with ${ticket.requestedBy}`
-    });
-  };
-
-  const openNewTicketDialog = () => {
-    newTicketForm.reset();
-    setNewTicketOpen(true);
-  };
-
-  const viewTicket = (ticket: any) => {
-    setCurrentTicket(ticket);
-    setViewTicketOpen(true);
-  };
-
-  const handleNewTicketSubmit = (values: NewTicketFormValues) => {
-    // In a real app, you would submit this to your backend
-    // For now, we'll just show a toast
-    console.log("New ticket values:", values);
+    setIsNewTicketOpen(false);
     
     toast({
       title: "Ticket created",
-      description: `Ticket "${values.title}" has been created successfully`
+      description: `Ticket #${ticket.id} has been created successfully.`
     });
-    
-    setNewTicketOpen(false);
-    
-    // Reset form
-    newTicketForm.reset();
   };
 
-  const handleSendComment = () => {
-    if (!ticketComment.trim()) return;
+  const handleViewTicket = (ticket: any) => {
+    setCurrentTicket(ticket);
+    setIsTicketDetailOpen(true);
+  };
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) return;
     
-    // In a real app, you would add this comment to the ticket in your backend
+    const comment = {
+      id: currentTicket.comments.length + 1,
+      user: {
+        name: "Current User",
+        avatar: "CU"
+      },
+      text: newComment,
+      timestamp: new Date().toISOString()
+    };
+    
+    const updatedTicket = {
+      ...currentTicket,
+      comments: [...currentTicket.comments, comment],
+      updated: new Date().toISOString()
+    };
+    
+    setCurrentTicket(updatedTicket);
+    setNewComment("");
+    
+    // Update ticket in the list
+    const updatedTickets = tickets.map(t => 
+      t.id === updatedTicket.id ? updatedTicket : t
+    );
+    setTickets(updatedTickets);
+    
     toast({
       title: "Comment added",
-      description: `Your comment has been added to ticket ${currentTicket.id}`
+      description: "Your comment has been added to the ticket."
     });
-    
-    setTicketComment("");
   };
 
-  const renderTicketItem = (ticket: any) => (
-    <Card key={ticket.id}>
-      <CardContent className="p-0">
-        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
-          <div className="flex items-center space-x-4 mb-4 md:mb-0">
-            <Avatar>
-              <AvatarImage src="" />
-              <AvatarFallback>{ticket.avatar}</AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-medium">{ticket.title}</h3>
-                <Badge
-                  variant={
-                    ticket.status === "Open"
-                      ? "destructive"
-                      : ticket.status === "In Progress"
-                      ? "default"
-                      : ticket.status === "Pending"
-                      ? "secondary"
-                      : "outline"
-                  }
-                  className={
-                    ticket.status === "Resolved"
-                      ? "bg-green-100 text-green-800 hover:bg-green-100"
-                      : ""
-                  }
-                >
-                  {ticket.status}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className={
-                    ticket.priority === "High"
-                      ? "border-red-300 text-red-800"
-                      : ticket.priority === "Medium"
-                      ? "border-yellow-300 text-yellow-800"
-                      : "border-green-300 text-green-800"
-                  }
-                >
-                  {ticket.priority}
-                </Badge>
-              </div>
-              <div className="text-sm text-gray-500">
-                {ticket.id} • {ticket.department} • Requested by {ticket.requestedBy} {ticket.requestedAt}
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {isMobile ? (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    <MessageSquare className="h-4 w-4 mr-1" />
-                    Reply
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 p-4">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium text-sm">Quick Reply</h4>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Send a quick message to {ticket.requestedBy}
-                      </p>
-                    </div>
-                    <Textarea 
-                      placeholder="Type your reply..." 
-                      className="min-h-[100px]" 
-                      value={replyMessage}
-                      onChange={(e) => setReplyMessage(e.target.value)}
-                    />
-                    <div className="flex justify-between">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleNavigateToChatWithEmployee(ticket)}
-                      >
-                        Open Full Chat
-                      </Button>
-                      <Button 
-                        size="sm"
-                        onClick={handleSendReply}
-                        disabled={!replyMessage.trim()}
-                      >
-                        <Send className="h-3 w-3 mr-1" />
-                        Send
-                      </Button>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            ) : (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => handleQuickReply(ticket)}
-              >
-                <MessageSquare className="h-4 w-4 mr-1" />
-                Reply
-              </Button>
-            )}
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => viewTicket(ticket)}
-            >
-              View
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const changeTicketStatus = (ticketId: string, newStatus: string) => {
+    // Update ticket in the list
+    const updatedTickets = tickets.map(ticket => 
+      ticket.id === ticketId ? { ...ticket, status: newStatus, updated: new Date().toISOString() } : ticket
+    );
+    
+    setTickets(updatedTickets);
+    
+    // If the current ticket is open, update it too
+    if (currentTicket && currentTicket.id === ticketId) {
+      setCurrentTicket({ ...currentTicket, status: newStatus, updated: new Date().toISOString() });
+    }
+    
+    toast({
+      title: "Status updated",
+      description: `Ticket #${ticketId} status changed to ${newStatus}.`
+    });
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "Open":
+        return <Badge className="bg-blue-100 text-blue-800">Open</Badge>;
+      case "In Progress":
+        return <Badge className="bg-yellow-100 text-yellow-800">In Progress</Badge>;
+      case "Resolved":
+        return <Badge className="bg-green-100 text-green-800">Resolved</Badge>;
+      case "Closed":
+        return <Badge className="bg-gray-100 text-gray-800">Closed</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case "High":
+        return <Badge className="bg-red-100 text-red-800">High</Badge>;
+      case "Medium":
+        return <Badge className="bg-orange-100 text-orange-800">Medium</Badge>;
+      case "Low":
+        return <Badge className="bg-green-100 text-green-800">Low</Badge>;
+      default:
+        return <Badge>{priority}</Badge>;
+    }
+  };
+
+  const filteredTickets = tickets.filter(ticket => {
+    // Filter by tab
+    if (activeTab !== "all" && ticket.status.toLowerCase() !== activeTab) {
+      return false;
+    }
+    
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        ticket.title.toLowerCase().includes(searchLower) ||
+        ticket.id.toLowerCase().includes(searchLower) ||
+        ticket.description.toLowerCase().includes(searchLower) ||
+        ticket.category.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return true;
+  });
 
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
       <div className="flex-1 overflow-auto">
-        <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-          <div className="flex justify-between items-center mb-6">
+        <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div>
               <h1 className="text-2xl font-semibold">Help Desk</h1>
-              <p className="text-gray-500">Manage support tickets and requests</p>
+              <p className="text-gray-500">Manage and track support tickets</p>
             </div>
-            <Link to="/">
-              <Button>Back</Button>
-            </Link>
+            <Button onClick={() => setIsNewTicketOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Ticket
+            </Button>
           </div>
 
-          <div className="mb-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="relative max-w-md w-full">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Search className="h-4 w-4 text-gray-400" />
-                </div>
-                <Input
-                  type="text"
-                  placeholder="Search tickets..."
-                  className="pl-10"
-                />
-              </div>
-              <Button 
-                className="bg-blue-500 hover:bg-blue-600"
-                onClick={openNewTicketDialog}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Ticket
-              </Button>
-            </div>
-          </div>
-
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-              <TabsList className="flex-wrap">
-                <TabsTrigger value="all" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">All</TabsTrigger>
-                <TabsTrigger value="open" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Open</TabsTrigger>
-                <TabsTrigger value="in-progress" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">In Progress</TabsTrigger>
-                <TabsTrigger value="pending" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Pending</TabsTrigger>
-                <TabsTrigger value="resolved" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Resolved</TabsTrigger>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <TabsList>
+                <TabsTrigger value="all">All Tickets</TabsTrigger>
+                <TabsTrigger value="open">Open</TabsTrigger>
+                <TabsTrigger value="in progress">In Progress</TabsTrigger>
+                <TabsTrigger value="resolved">Resolved</TabsTrigger>
+                <TabsTrigger value="closed">Closed</TabsTrigger>
               </TabsList>
-              <div className="flex flex-wrap gap-3 text-sm">
-                <div className="flex items-center">
-                  <div className="h-3 w-3 rounded-full bg-red-500 mr-1"></div>
-                  <span>High</span>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                  <Input
+                    type="search"
+                    placeholder="Search tickets..."
+                    className="pl-8 w-[200px] md:w-[300px]"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
-                <div className="flex items-center">
-                  <div className="h-3 w-3 rounded-full bg-yellow-500 mr-1"></div>
-                  <span>Medium</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="h-3 w-3 rounded-full bg-green-500 mr-1"></div>
-                  <span>Low</span>
-                </div>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
-            <TabsContent value="all" className="space-y-4">
-              <div className="grid gap-4">
-                {tickets.map(renderTicketItem)}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="open" className="space-y-4">
-              <div className="grid gap-4">
-                {tickets
-                  .filter((t) => t.status === "Open")
-                  .map(renderTicketItem)}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="in-progress" className="space-y-4">
-              <div className="grid gap-4">
-                {tickets
-                  .filter((t) => t.status === "In Progress")
-                  .map(renderTicketItem)}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="pending" className="space-y-4">
-              <div className="grid gap-4">
-                {tickets
-                  .filter((t) => t.status === "Pending")
-                  .map(renderTicketItem)}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="resolved" className="space-y-4">
-              <div className="grid gap-4">
-                {tickets
-                  .filter((t) => t.status === "Resolved")
-                  .map(renderTicketItem)}
-              </div>
+            <TabsContent value={activeTab} className="space-y-4">
+              <Card>
+                <CardContent className="p-0">
+                  <div className="rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px]">Ticket ID</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Priority</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredTickets.length > 0 ? (
+                          filteredTickets.map((ticket) => (
+                            <TableRow key={ticket.id}>
+                              <TableCell className="font-medium">{ticket.id}</TableCell>
+                              <TableCell>{ticket.title}</TableCell>
+                              <TableCell>{getStatusBadge(ticket.status)}</TableCell>
+                              <TableCell>{getPriorityBadge(ticket.priority)}</TableCell>
+                              <TableCell>{ticket.category}</TableCell>
+                              <TableCell>{formatDate(ticket.created)}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end items-center gap-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleViewTicket(ticket)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                    <span className="sr-only md:not-sr-only md:ml-2">View</span>
+                                  </Button>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="pointer-events-auto">
+                                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                      <DropdownMenuSeparator />
+                                      {ticket.status !== "Open" && (
+                                        <DropdownMenuItem onClick={() => changeTicketStatus(ticket.id, "Open")}>
+                                          Mark as Open
+                                        </DropdownMenuItem>
+                                      )}
+                                      {ticket.status !== "In Progress" && (
+                                        <DropdownMenuItem onClick={() => changeTicketStatus(ticket.id, "In Progress")}>
+                                          Mark as In Progress
+                                        </DropdownMenuItem>
+                                      )}
+                                      {ticket.status !== "Resolved" && (
+                                        <DropdownMenuItem onClick={() => changeTicketStatus(ticket.id, "Resolved")}>
+                                          Mark as Resolved
+                                        </DropdownMenuItem>
+                                      )}
+                                      {ticket.status !== "Closed" && (
+                                        <DropdownMenuItem onClick={() => changeTicketStatus(ticket.id, "Closed")}>
+                                          Mark as Closed
+                                        </DropdownMenuItem>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                              No tickets found
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
-
-          {/* Reply dialog for desktop */}
-          <Dialog open={quickChatOpen} onOpenChange={setQuickChatOpen}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>
-                  Reply to {replyTicket?.requestedBy}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div>
-                  <p className="text-sm text-gray-500 mb-2">
-                    Ticket: {replyTicket?.title} ({replyTicket?.id})
-                  </p>
-                  <Textarea 
-                    placeholder="Type your reply..." 
-                    className="min-h-[150px]" 
-                    value={replyMessage}
-                    onChange={(e) => setReplyMessage(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-between">
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    if (replyTicket) {
-                      handleNavigateToChatWithEmployee(replyTicket);
-                      setQuickChatOpen(false);
-                    }
-                  }}
-                >
-                  Open Full Chat
-                </Button>
-                <div className="flex gap-2">
-                  <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                  </DialogClose>
-                  <Button 
-                    onClick={handleSendReply}
-                    disabled={!replyMessage.trim()}
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Reply
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* New Ticket Dialog */}
-          <Dialog open={newTicketOpen} onOpenChange={setNewTicketOpen}>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create New Support Ticket</DialogTitle>
-              </DialogHeader>
-              <Form {...newTicketForm}>
-                <form onSubmit={newTicketForm.handleSubmit(handleNewTicketSubmit)} className="space-y-4 py-2">
-                  <FormField
-                    control={newTicketForm.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ticket Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter a descriptive title" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={newTicketForm.control}
-                      name="department"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Department</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select department" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="IT Support">IT Support</SelectItem>
-                              <SelectItem value="HR">HR</SelectItem>
-                              <SelectItem value="Finance">Finance</SelectItem>
-                              <SelectItem value="Operations">Operations</SelectItem>
-                              <SelectItem value="Sales">Sales</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={newTicketForm.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Priority</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select priority" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Low">Low</SelectItem>
-                              <SelectItem value="Medium">Medium</SelectItem>
-                              <SelectItem value="High">High</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <FormField
-                    control={newTicketForm.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Describe your issue in detail..." 
-                            className="min-h-[150px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <DialogFooter className="pt-4">
-                    <Button type="submit" className="w-full md:w-auto">
-                      Submit Ticket
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-
-          {/* View Ticket Dialog */}
-          <Dialog open={viewTicketOpen} onOpenChange={setViewTicketOpen}>
-            <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
-              <DialogHeader>
-                <div className="flex items-center gap-2">
-                  <DialogTitle>{currentTicket?.title}</DialogTitle>
-                  <Badge
-                    variant={
-                      currentTicket?.status === "Open"
-                        ? "destructive"
-                        : currentTicket?.status === "In Progress"
-                        ? "default"
-                        : currentTicket?.status === "Pending"
-                        ? "secondary"
-                        : "outline"
-                    }
-                    className={
-                      currentTicket?.status === "Resolved"
-                        ? "bg-green-100 text-green-800 hover:bg-green-100"
-                        : ""
-                    }
-                  >
-                    {currentTicket?.status}
-                  </Badge>
-                </div>
-              </DialogHeader>
-              
-              <ScrollArea className="pr-4 max-h-[60vh]">
-                <div className="space-y-6">
-                  <div>
-                    <div className="text-sm text-gray-500 mb-1">
-                      Ticket ID: {currentTicket?.id}
-                    </div>
-                    <div className="flex flex-wrap gap-6">
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500">REQUESTED BY</h4>
-                        <p className="text-sm">{currentTicket?.requestedBy}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500">DEPARTMENT</h4>
-                        <p className="text-sm">{currentTicket?.department}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500">PRIORITY</h4>
-                        <p className="text-sm">{currentTicket?.priority}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500">ASSIGNED TO</h4>
-                        <p className="text-sm">{currentTicket?.assignedTo || 'Unassigned'}</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-2">Description</h3>
-                    <div className="bg-gray-50 p-3 rounded-md text-sm">
-                      {currentTicket?.description}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-3">Comments</h3>
-                    <div className="space-y-4">
-                      {currentTicket?.comments && currentTicket.comments.length > 0 ? (
-                        currentTicket.comments.map((comment: any) => (
-                          <div key={comment.id} className="flex gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback>{comment.avatar}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="font-medium text-sm">{comment.user}</span>
-                                <span className="text-xs text-gray-500">{comment.timestamp}</span>
-                              </div>
-                              <p className="text-sm">{comment.message}</p>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-gray-500">No comments yet</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </ScrollArea>
-              
-              <div className="border-t pt-4">
-                <h3 className="font-medium mb-2 text-sm">Add Comment</h3>
-                <div className="flex gap-3">
-                  <Textarea 
-                    placeholder="Type your comment..." 
-                    className="min-h-[80px]"
-                    value={ticketComment}
-                    onChange={(e) => setTicketComment(e.target.value)}
-                  />
-                </div>
-                <div className="flex justify-end mt-3">
-                  <Button 
-                    onClick={handleSendComment}
-                    disabled={!ticketComment.trim()}
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Comment
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Ticket Statistics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="h-9 w-9 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3">
-                        <AlertCircle className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Open</p>
-                        <p className="font-semibold">{tickets.filter(t => t.status === 'Open').length}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-500">30%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3">
-                        <Clock className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">In Progress</p>
-                        <p className="font-semibold">{tickets.filter(t => t.status === 'In Progress').length}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-500">20%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="h-9 w-9 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 mr-3">
-                        <Clock className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Pending</p>
-                        <p className="font-semibold">{tickets.filter(t => t.status === 'Pending').length}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-500">20%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="h-9 w-9 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3">
-                        <CheckCircle2 className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Resolved</p>
-                        <p className="font-semibold">{tickets.filter(t => t.status === 'Resolved').length}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-500">30%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Response Time</CardTitle>
-                <CardDescription>Average time to first response</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center h-32">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">2.5 hrs</div>
-                    <p className="text-sm text-gray-500">Average time</p>
-                  </div>
-                </div>
-                <div className="pt-6 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>IT Support</span>
-                    <span className="font-medium">1.8 hrs</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>HR Department</span>
-                    <span className="font-medium">3.2 hrs</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Finance</span>
-                    <span className="font-medium">4.0 hrs</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Frequent Issues</CardTitle>
-                <CardDescription>Most common support topics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Computer Issues</span>
-                      <span>35%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: "35%" }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Software Access</span>
-                      <span>25%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: "25%" }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Network Issues</span>
-                      <span>20%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: "20%" }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>HR Inquiries</span>
-                      <span>15%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: "15%" }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Other</span>
-                      <span>5%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: "5%" }}></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
+
+      {/* New Ticket Dialog */}
+      <Dialog open={isNewTicketOpen} onOpenChange={setIsNewTicketOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Create New Ticket</DialogTitle>
+            <DialogDescription>
+              Submit a new support ticket for technical assistance.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Title</Label>
+              <Input 
+                id="title" 
+                placeholder="Brief description of the issue"
+                value={newTicket.title}
+                onChange={(e) => setNewTicket({...newTicket, title: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="priority">Priority</Label>
+                <Select 
+                  value={newTicket.priority} 
+                  onValueChange={(value) => setNewTicket({...newTicket, priority: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent className="pointer-events-auto">
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="category">Category</Label>
+                <Select 
+                  value={newTicket.category} 
+                  onValueChange={(value) => setNewTicket({...newTicket, category: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent className="pointer-events-auto">
+                    <SelectItem value="Hardware">Hardware</SelectItem>
+                    <SelectItem value="Software">Software</SelectItem>
+                    <SelectItem value="Network">Network</SelectItem>
+                    <SelectItem value="Access Request">Access Request</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                placeholder="Provide details about the issue you're experiencing"
+                rows={5}
+                value={newTicket.description}
+                onChange={(e) => setNewTicket({...newTicket, description: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="attachments">Attachments (optional)</Label>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" className="w-full" type="button">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Files
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500">Max file size: 5MB. Supported formats: PDF, JPG, PNG</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewTicketOpen(false)}>Cancel</Button>
+            <Button onClick={handleNewTicketSubmit}>Submit Ticket</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ticket Detail Dialog */}
+      <Dialog open={isTicketDetailOpen} onOpenChange={setIsTicketDetailOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-auto">
+          {currentTicket && (
+            <>
+              <DialogHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <DialogTitle className="text-xl">{currentTicket.title}</DialogTitle>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-sm font-medium">{currentTicket.id}</span>
+                      <span>•</span>
+                      {getStatusBadge(currentTicket.status)}
+                    </div>
+                  </div>
+                  <div>
+                    <Select 
+                      value={currentTicket.status} 
+                      onValueChange={(value) => changeTicketStatus(currentTicket.id, value)}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Change status" />
+                      </SelectTrigger>
+                      <SelectContent className="pointer-events-auto">
+                        <SelectItem value="Open">Open</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Resolved">Resolved</SelectItem>
+                        <SelectItem value="Closed">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </DialogHeader>
+              
+              <div className="py-4">
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Reported by</h4>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback>{currentTicket.createdBy.avatar}</AvatarFallback>
+                      </Avatar>
+                      <span>{currentTicket.createdBy.name}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Assigned to</h4>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback>{currentTicket.assignedTo.avatar}</AvatarFallback>
+                      </Avatar>
+                      <span>{currentTicket.assignedTo.name}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Created</h4>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span>{formatDate(currentTicket.created)}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">Priority</h4>
+                    <div>{getPriorityBadge(currentTicket.priority)}</div>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium mb-2">Description</h3>
+                  <div className="bg-gray-50 p-3 rounded-md border text-sm">
+                    {currentTicket.description}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Comments ({currentTicket.comments.length})</h3>
+                  <div className="space-y-4 max-h-[300px] overflow-auto">
+                    {currentTicket.comments.map((comment: any) => (
+                      <div key={comment.id} className="flex gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>{comment.user.avatar}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-medium">{comment.user.name}</span>
+                            <span className="text-xs text-gray-500">{formatDate(comment.timestamp)}</span>
+                          </div>
+                          <p className="text-sm">{comment.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {currentTicket.comments.length === 0 && (
+                      <div className="text-sm text-gray-500 py-3 text-center">
+                        No comments yet
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="mt-6">
+                  <h3 className="text-sm font-medium mb-2">Add Comment</h3>
+                  <div className="flex gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>CU</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 space-y-2">
+                      <Textarea 
+                        placeholder="Type your comment here..." 
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                      />
+                      <div className="flex justify-end">
+                        <Button onClick={handleAddComment}>
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Post Comment
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

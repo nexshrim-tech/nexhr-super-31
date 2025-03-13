@@ -18,6 +18,23 @@ export interface TemplateData {
   content: string;
 }
 
+export interface SalaryAllowances {
+  basicSalary: number;
+  hra: number;
+  conveyanceAllowance: number;
+  medicalAllowance: number;
+  specialAllowance: number;
+  otherAllowances: number;
+}
+
+export interface SalaryDeductions {
+  incomeTax: number;
+  providentFund: number;
+  professionalTax: number;
+  loanDeduction: number;
+  otherDeductions: number;
+}
+
 export const generateOfferLetter = (employee: EmployeeData, additionalData: any = {}) => {
   const { name, position, department, salary, joiningDate, manager } = employee;
   const { offerExpiryDate = "14 days from today", startDate = joiningDate } = additionalData;
@@ -82,21 +99,61 @@ export const generateTerminationLetter = (employee: EmployeeData, additionalData
 
 export const generateSalarySlip = (employee: EmployeeData, additionalData: any = {}) => {
   const { name, id, position, department, salary } = employee;
+  
+  // Default allowances (60% of salary as basic)
+  const defaultAllowances: SalaryAllowances = {
+    basicSalary: salary * 0.6,
+    hra: salary * 0.3,
+    conveyanceAllowance: salary * 0.05,
+    medicalAllowance: salary * 0.05,
+    specialAllowance: 0,
+    otherAllowances: 0
+  };
+  
+  // Default deductions
+  const defaultDeductions: SalaryDeductions = {
+    incomeTax: salary * 0.1,
+    providentFund: salary * 0.05,
+    professionalTax: 200,
+    loanDeduction: 0,
+    otherDeductions: 0
+  };
+  
+  // Get custom allowances and deductions or use defaults
+  const allowances: SalaryAllowances = {
+    ...defaultAllowances,
+    ...(additionalData.allowances || {})
+  };
+  
+  const deductions: SalaryDeductions = {
+    ...defaultDeductions,
+    ...(additionalData.deductions || {})
+  };
+  
+  const { 
+    basicSalary,
+    hra,
+    conveyanceAllowance,
+    medicalAllowance,
+    specialAllowance,
+    otherAllowances
+  } = allowances;
+  
+  const {
+    incomeTax,
+    providentFund,
+    professionalTax,
+    loanDeduction,
+    otherDeductions
+  } = deductions;
+  
   const { 
     month = new Date().toLocaleString('default', { month: 'long' }), 
     year = new Date().getFullYear(),
-    basicSalary = salary * 0.6,
-    hra = salary * 0.3,
-    conveyanceAllowance = salary * 0.05,
-    medicalAllowance = salary * 0.05,
-    incomeTax = salary * 0.1,
-    providentFund = salary * 0.05,
-    professionalTax = 200,
-    loanDeduction = 0
   } = additionalData;
   
-  const totalEarnings = basicSalary + hra + conveyanceAllowance + medicalAllowance;
-  const totalDeductions = incomeTax + providentFund + professionalTax + loanDeduction;
+  const totalEarnings = basicSalary + hra + conveyanceAllowance + medicalAllowance + specialAllowance + otherAllowances;
+  const totalDeductions = incomeTax + providentFund + professionalTax + loanDeduction + otherDeductions;
   const netSalary = totalEarnings - totalDeductions;
   
   return `
@@ -117,6 +174,8 @@ export const generateSalarySlip = (employee: EmployeeData, additionalData: any =
     HRA: $${hra.toFixed(2)}
     Conveyance Allowance: $${conveyanceAllowance.toFixed(2)}
     Medical Allowance: $${medicalAllowance.toFixed(2)}
+    Special Allowance: $${specialAllowance.toFixed(2)}
+    Other Allowances: $${otherAllowances.toFixed(2)}
     Total Earnings: $${totalEarnings.toFixed(2)}
     
     Deductions:
@@ -124,6 +183,7 @@ export const generateSalarySlip = (employee: EmployeeData, additionalData: any =
     Provident Fund: $${providentFund.toFixed(2)}
     Professional Tax: $${professionalTax.toFixed(2)}
     Loan Deduction: $${loanDeduction.toFixed(2)}
+    Other Deductions: $${otherDeductions.toFixed(2)}
     Total Deductions: $${totalDeductions.toFixed(2)}
     
     Net Salary: $${netSalary.toFixed(2)}
