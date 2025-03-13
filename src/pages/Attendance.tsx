@@ -6,18 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Download, Filter, Search, Edit, Calendar as CalendarIcon, FileText, UserPlus, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
+// Sample attendance data
 const attendanceData = [
   {
     id: 1,
@@ -74,31 +74,9 @@ const attendanceData = [
     workHours: "8h 15m",
     notes: "Traffic delay",
   },
+  // Today's data
   {
     id: 6,
-    employeeId: "EMP001",
-    employee: { name: "Olivia Rhye", avatar: "OR" },
-    date: "2023-06-02",
-    checkIn: "09:00 AM",
-    checkOut: "05:15 PM",
-    status: "Present",
-    workHours: "8h 15m",
-    notes: "",
-  },
-  {
-    id: 7,
-    employeeId: "EMP002",
-    employee: { name: "Phoenix Baker", avatar: "PB" },
-    date: "2023-06-02",
-    checkIn: "08:50 AM",
-    checkOut: "05:30 PM",
-    status: "Present",
-    workHours: "8h 40m",
-    notes: "",
-  },
-  // Add today's date records to show data when clicking on current day
-  {
-    id: 8,
     employeeId: "EMP001",
     employee: { name: "Olivia Rhye", avatar: "OR" },
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -109,7 +87,7 @@ const attendanceData = [
     notes: "",
   },
   {
-    id: 9,
+    id: 7,
     employeeId: "EMP002",
     employee: { name: "Phoenix Baker", avatar: "PB" },
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -120,7 +98,7 @@ const attendanceData = [
     notes: "",
   },
   {
-    id: 10,
+    id: 8,
     employeeId: "EMP003",
     employee: { name: "Lana Steiner", avatar: "LS" },
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -132,15 +110,14 @@ const attendanceData = [
   },
 ];
 
-interface DayContentProps {
-  date: Date; 
-  displayMonth: Date;
-}
+const months = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
 
 const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [calendarView, setCalendarView] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddAttendanceOpen, setIsAddAttendanceOpen] = useState(false);
@@ -161,7 +138,61 @@ const Attendance = () => {
     status: "Present",
     notes: "",
   });
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const { toast } = useToast();
+
+  // Generate calendar days for the current month
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (year: number, month: number) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  const generateCalendarDays = () => {
+    const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+    const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
+    const calendarDays = [];
+
+    // Add empty cells for days before the 1st of the month
+    for (let i = 0; i < firstDay; i++) {
+      calendarDays.push(null);
+    }
+
+    // Add days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+      calendarDays.push(i);
+    }
+
+    return calendarDays;
+  };
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  const handleDateClick = (day: number) => {
+    if (day) {
+      const newDate = new Date(currentYear, currentMonth, day);
+      setSelectedDate(newDate);
+    }
+  };
 
   const filteredRecords = attendanceData.filter(record => {
     const matchesSearch = 
@@ -169,16 +200,14 @@ const Attendance = () => {
       record.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.status.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesDate = selectedDate 
-      ? record.date === format(selectedDate, 'yyyy-MM-dd') 
-      : true;
+    const matchesDate = record.date === format(selectedDate, 'yyyy-MM-dd');
     
     const matchesEmployee = selectedEmployee 
       ? record.employeeId === selectedEmployee 
       : true;
     
     const matchesDepartment = filterDepartment !== "all" 
-      ? true
+      ? true // In a real app, you would check the department
       : true;
     
     return matchesSearch && matchesDate && matchesEmployee && matchesDepartment;
@@ -250,43 +279,39 @@ const Attendance = () => {
     return <Badge className={badgeClass}>{status}</Badge>;
   };
 
-  const renderDayContent = ({ date, displayMonth }: DayContentProps) => {
-    const dateString = format(date, 'yyyy-MM-dd');
-    const employees = [...new Set(attendanceData.map(record => record.employeeId))];
+  // Get attendance data for a specific day
+  const getDayAttendance = (day: number | null) => {
+    if (!day) return null;
     
-    let present = 0;
-    let absent = 0;
-    let late = 0;
+    const date = format(new Date(currentYear, currentMonth, day), 'yyyy-MM-dd');
+    const records = attendanceData.filter(r => r.date === date);
     
-    employees.forEach(emp => {
-      const records = attendanceData.filter(r => r.employeeId === emp && r.date === dateString);
-      if (records.length > 0) {
-        const status = records[0].status;
-        if (status === 'Present') present++;
-        else if (status === 'Absent') absent++;
-        else if (status === 'Late') late++;
-      }
-    });
+    const present = records.filter(r => r.status === 'Present').length;
+    const absent = records.filter(r => r.status === 'Absent').length;
+    const late = records.filter(r => r.status === 'Late').length;
     
-    const total = present + absent + late;
-    
-    if (total === 0) return null;
-    
-    return (
-      <div className="relative w-full h-full flex items-center justify-center">
-        <div>{date.getDate()}</div>
-        <div className="absolute bottom-0 left-0 right-0 flex justify-center text-[8px] gap-1">
-          {present > 0 && <span className="text-green-600">{present}P</span>}
-          {absent > 0 && <span className="text-red-600">{absent}A</span>}
-          {late > 0 && <span className="text-yellow-600">{late}L</span>}
-        </div>
-      </div>
-    );
+    return { present, absent, late, total: records.length };
   };
 
-  const dateSelectedRecords = selectedDate 
-    ? filteredRecords.filter(record => record.date === format(selectedDate, 'yyyy-MM-dd'))
-    : [];
+  // Check if a day is the selected day
+  const isSelectedDay = (day: number | null) => {
+    if (!day) return false;
+    
+    const dateObj = new Date(currentYear, currentMonth, day);
+    return dateObj.getDate() === selectedDate.getDate() &&
+           dateObj.getMonth() === selectedDate.getMonth() &&
+           dateObj.getFullYear() === selectedDate.getFullYear();
+  };
+
+  // Check if a day is today
+  const isToday = (day: number | null) => {
+    if (!day) return false;
+    
+    const today = new Date();
+    return day === today.getDate() && 
+           currentMonth === today.getMonth() && 
+           currentYear === today.getFullYear();
+  };
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -302,14 +327,6 @@ const Attendance = () => {
               <Button 
                 variant="outline" 
                 className="gap-2"
-                onClick={() => setCalendarView(!calendarView)}
-              >
-                <CalendarIcon className="h-4 w-4" />
-                {calendarView ? "List View" : "Calendar View"}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex items-center gap-2"
                 onClick={handleExportReport}
               >
                 <Download className="h-4 w-4" />
@@ -361,240 +378,144 @@ const Attendance = () => {
             </Card>
           </div>
 
-          {calendarView ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-1">
-                <CardHeader>
-                  <div className="flex flex-col gap-4">
-                    <CardTitle>Attendance Calendar</CardTitle>
-                    <div className="flex flex-col gap-3">
-                      <Select 
-                        value={selectedEmployee || "all"} 
-                        onValueChange={(value) => setSelectedEmployee(value === "all" ? null : value)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="All Employees" />
-                        </SelectTrigger>
-                        <SelectContent className="pointer-events-auto">
-                          <SelectItem value="all">All Employees</SelectItem>
-                          <SelectItem value="EMP001">Olivia Rhye</SelectItem>
-                          <SelectItem value="EMP002">Phoenix Baker</SelectItem>
-                          <SelectItem value="EMP003">Lana Steiner</SelectItem>
-                          <SelectItem value="EMP004">Demi Wilkinson</SelectItem>
-                          <SelectItem value="EMP005">Candice Wu</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select 
-                        value={filterDepartment} 
-                        onValueChange={setFilterDepartment}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="All Departments" />
-                        </SelectTrigger>
-                        <SelectContent className="pointer-events-auto">
-                          <SelectItem value="all">All Departments</SelectItem>
-                          <SelectItem value="engineering">Engineering</SelectItem>
-                          <SelectItem value="design">Design</SelectItem>
-                          <SelectItem value="marketing">Marketing</SelectItem>
-                          <SelectItem value="sales">Sales</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="border rounded-md p-4">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      className="mx-auto"
-                      components={{
-                        DayContent: renderDayContent
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>
-                      {selectedDate ? (
-                        `Attendance for ${format(selectedDate, 'MMMM d, yyyy')}`
-                      ) : (
-                        "Attendance Records"
-                      )}
-                    </CardTitle>
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                      <Input
-                        type="search"
-                        placeholder="Search employees..."
-                        className="pl-8 w-[200px]"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border overflow-auto max-h-[500px]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Employee</TableHead>
-                          <TableHead>Check In</TableHead>
-                          <TableHead>Check Out</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Hours</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {dateSelectedRecords.length > 0 ? dateSelectedRecords.map((record) => (
-                          <TableRow key={record.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarImage src="" alt={record.employee.name} />
-                                  <AvatarFallback>{record.employee.avatar}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="font-medium">{record.employee.name}</div>
-                                  <div className="text-xs text-gray-500">{record.employeeId}</div>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>{record.checkIn || "-"}</TableCell>
-                            <TableCell>{record.checkOut || "-"}</TableCell>
-                            <TableCell>{renderAttendanceStatus(record.status)}</TableCell>
-                            <TableCell>{record.workHours}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleEditRecord(record)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                  <span className="sr-only">Edit</span>
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )) : (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-4 text-gray-500">
-                              No attendance records found for selected date
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                  <CardTitle>Attendance Records</CardTitle>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                      <Input
-                        type="search"
-                        placeholder="Search..."
-                        className="pl-8 w-full sm:w-[250px]"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-9 w-9">
-                            <Filter className="h-4 w-4" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[200px] pointer-events-auto">
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label>Department</Label>
-                              <Select 
-                                value={filterDepartment} 
-                                onValueChange={setFilterDepartment}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="All Departments" />
-                                </SelectTrigger>
-                                <SelectContent className="pointer-events-auto">
-                                  <SelectItem value="all">All Departments</SelectItem>
-                                  <SelectItem value="engineering">Engineering</SelectItem>
-                                  <SelectItem value="design">Design</SelectItem>
-                                  <SelectItem value="marketing">Marketing</SelectItem>
-                                  <SelectItem value="sales">Sales</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Status</Label>
-                              <Select defaultValue="all">
-                                <SelectTrigger>
-                                  <SelectValue placeholder="All Status" />
-                                </SelectTrigger>
-                                <SelectContent className="pointer-events-auto">
-                                  <SelectItem value="all">All Status</SelectItem>
-                                  <SelectItem value="present">Present</SelectItem>
-                                  <SelectItem value="absent">Absent</SelectItem>
-                                  <SelectItem value="late">Late</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <Button className="w-full">Apply Filters</Button>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-[160px] justify-start">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {selectedDate ? format(selectedDate, 'PPP') : "Select date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={setSelectedDate}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <div className="flex flex-col gap-4">
+                  <CardTitle>Attendance Calendar</CardTitle>
+                  <div className="flex flex-col gap-3">
+                    <Select 
+                      value={selectedEmployee || "all"} 
+                      onValueChange={(value) => setSelectedEmployee(value === "all" ? null : value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="All Employees" />
+                      </SelectTrigger>
+                      <SelectContent className="pointer-events-auto">
+                        <SelectItem value="all">All Employees</SelectItem>
+                        <SelectItem value="EMP001">Olivia Rhye</SelectItem>
+                        <SelectItem value="EMP002">Phoenix Baker</SelectItem>
+                        <SelectItem value="EMP003">Lana Steiner</SelectItem>
+                        <SelectItem value="EMP004">Demi Wilkinson</SelectItem>
+                        <SelectItem value="EMP005">Candice Wu</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select 
+                      value={filterDepartment} 
+                      onValueChange={setFilterDepartment}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="All Departments" />
+                      </SelectTrigger>
+                      <SelectContent className="pointer-events-auto">
+                        <SelectItem value="all">All Departments</SelectItem>
+                        <SelectItem value="engineering">Engineering</SelectItem>
+                        <SelectItem value="design">Design</SelectItem>
+                        <SelectItem value="marketing">Marketing</SelectItem>
+                        <SelectItem value="sales">Sales</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border overflow-auto">
+                {/* Custom Calendar Implementation */}
+                <div className="border rounded-md p-4 bg-white">
+                  <div className="flex justify-between items-center mb-4">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handlePrevMonth}
+                    >
+                      &lt;
+                    </Button>
+                    <div className="text-lg font-medium">
+                      {months[currentMonth]} {currentYear}
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleNextMonth}
+                    >
+                      &gt;
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                    <div className="text-xs font-medium text-gray-500">Sun</div>
+                    <div className="text-xs font-medium text-gray-500">Mon</div>
+                    <div className="text-xs font-medium text-gray-500">Tue</div>
+                    <div className="text-xs font-medium text-gray-500">Wed</div>
+                    <div className="text-xs font-medium text-gray-500">Thu</div>
+                    <div className="text-xs font-medium text-gray-500">Fri</div>
+                    <div className="text-xs font-medium text-gray-500">Sat</div>
+                  </div>
+                  
+                  <div className="grid grid-cols-7 gap-1">
+                    {generateCalendarDays().map((day, index) => {
+                      const attendance = getDayAttendance(day);
+                      const isSelected = isSelectedDay(day);
+                      const todayClass = isToday(day) ? "border-blue-500 border-2" : "";
+                      
+                      return (
+                        <div 
+                          key={index} 
+                          className={`h-12 p-1 rounded-md ${day ? 'cursor-pointer hover:bg-gray-100' : ''} ${isSelected ? 'bg-blue-50' : ''} ${todayClass}`}
+                          onClick={() => day && handleDateClick(day)}
+                        >
+                          {day && (
+                            <>
+                              <div className="text-xs text-center">{day}</div>
+                              {attendance && attendance.total > 0 && (
+                                <div className="flex justify-center mt-1 text-[8px] gap-1">
+                                  {attendance.present > 0 && <span className="text-green-600">{attendance.present}P</span>}
+                                  {attendance.absent > 0 && <span className="text-red-600">{attendance.absent}A</span>}
+                                  {attendance.late > 0 && <span className="text-yellow-600">{attendance.late}L</span>}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>
+                    Attendance for {format(selectedDate, 'MMMM d, yyyy')}
+                  </CardTitle>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                      type="search"
+                      placeholder="Search employees..."
+                      className="pl-8 w-[200px]"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border overflow-auto max-h-[500px]">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Employee</TableHead>
-                        <TableHead>Date</TableHead>
                         <TableHead>Check In</TableHead>
                         <TableHead>Check Out</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Hours</TableHead>
-                        <TableHead>Notes</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredRecords.map((record) => (
+                      {filteredRecords.length > 0 ? filteredRecords.map((record) => (
                         <TableRow key={record.id}>
                           <TableCell>
                             <div className="flex items-center gap-3">
@@ -608,16 +529,10 @@ const Attendance = () => {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>{record.date}</TableCell>
                           <TableCell>{record.checkIn || "-"}</TableCell>
                           <TableCell>{record.checkOut || "-"}</TableCell>
                           <TableCell>{renderAttendanceStatus(record.status)}</TableCell>
                           <TableCell>{record.workHours}</TableCell>
-                          <TableCell>
-                            <span className="text-sm text-gray-500">
-                              {record.notes || "-"}
-                            </span>
-                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button 
@@ -625,18 +540,25 @@ const Attendance = () => {
                                 size="sm"
                                 onClick={() => handleEditRecord(record)}
                               >
-                                Edit
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
                               </Button>
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                            No attendance records found for selected date
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
               </CardContent>
             </Card>
-          )}
+          </div>
         </div>
       </div>
 
@@ -738,25 +660,12 @@ const Attendance = () => {
             </div>
             <div>
               <Label htmlFor="date">Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {newAttendanceData.date || "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={new Date(newAttendanceData.date)}
-                    onSelect={(date) => setNewAttendanceData({
-                      ...newAttendanceData, 
-                      date: date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
-                    })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="date"
+                type="date"
+                value={newAttendanceData.date}
+                onChange={(e) => setNewAttendanceData({...newAttendanceData, date: e.target.value})}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

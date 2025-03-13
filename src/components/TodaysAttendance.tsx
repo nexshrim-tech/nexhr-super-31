@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, UserCheck } from "lucide-react";
 import { useState } from "react";
-import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import {
   Popover,
@@ -22,8 +21,84 @@ const TodaysAttendance = () => {
   const absentCount = 2;
   const lateCount = 1;
   
-  // State for calendar
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  // State for current date
+  const [date, setDate] = useState<Date>(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
+  
+  // Generate calendar days for the current month
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (year: number, month: number) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const currentMonth = date.getMonth();
+  const currentYear = date.getFullYear();
+
+  const generateCalendarDays = () => {
+    const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+    const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
+    const calendarDays = [];
+
+    // Add empty cells for days before the 1st of the month
+    for (let i = 0; i < firstDay; i++) {
+      calendarDays.push(null);
+    }
+
+    // Add days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+      calendarDays.push(i);
+    }
+
+    return calendarDays;
+  };
+
+  const handlePrevMonth = () => {
+    const newDate = new Date(date);
+    newDate.setMonth(newDate.getMonth() - 1);
+    setDate(newDate);
+  };
+
+  const handleNextMonth = () => {
+    const newDate = new Date(date);
+    newDate.setMonth(newDate.getMonth() + 1);
+    setDate(newDate);
+  };
+
+  const handleDateClick = (day: number | null) => {
+    if (day) {
+      const newDate = new Date(currentYear, currentMonth, day);
+      setDate(newDate);
+      setShowCalendar(false);
+    }
+  };
+
+  // Check if a day is the selected day
+  const isSelectedDay = (day: number | null) => {
+    if (!day) return false;
+    
+    const dateObj = new Date(currentYear, currentMonth, day);
+    return dateObj.getDate() === date.getDate() &&
+           dateObj.getMonth() === date.getMonth() &&
+           dateObj.getFullYear() === date.getFullYear();
+  };
+
+  // Check if a day is today
+  const isToday = (day: number | null) => {
+    if (!day) return false;
+    
+    const today = new Date();
+    return day === today.getDate() && 
+           currentMonth === today.getMonth() && 
+           currentYear === today.getFullYear();
+  };
   
   return (
     <Card className="h-full">
@@ -50,20 +125,62 @@ const TodaysAttendance = () => {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
-          <Popover>
+          <Popover open={showCalendar} onOpenChange={setShowCalendar}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full gap-1">
                 <CalendarIcon className="h-4 w-4" />
-                {date ? format(date, 'PPP') : "View Calendar"}
+                {format(date, 'PP')}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="border border-gray-200 rounded-md bg-white shadow-sm"
-              />
+            <PopoverContent className="w-auto p-4 pointer-events-auto" align="start">
+              <div className="flex justify-between items-center mb-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handlePrevMonth}
+                >
+                  &lt;
+                </Button>
+                <div className="text-lg font-medium">
+                  {months[currentMonth]} {currentYear}
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleNextMonth}
+                >
+                  &gt;
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                <div className="text-xs font-medium text-gray-500">Su</div>
+                <div className="text-xs font-medium text-gray-500">Mo</div>
+                <div className="text-xs font-medium text-gray-500">Tu</div>
+                <div className="text-xs font-medium text-gray-500">We</div>
+                <div className="text-xs font-medium text-gray-500">Th</div>
+                <div className="text-xs font-medium text-gray-500">Fr</div>
+                <div className="text-xs font-medium text-gray-500">Sa</div>
+              </div>
+              
+              <div className="grid grid-cols-7 gap-1">
+                {generateCalendarDays().map((day, index) => {
+                  const isSelected = isSelectedDay(day);
+                  const todayClass = isToday(day) ? "border-blue-500 border-2" : "";
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className={`h-8 w-8 flex items-center justify-center rounded-md ${day ? 'cursor-pointer hover:bg-gray-100' : ''} ${isSelected ? 'bg-blue-50' : ''} ${todayClass}`}
+                      onClick={() => day && handleDateClick(day)}
+                    >
+                      {day && (
+                        <div className="text-xs">{day}</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </PopoverContent>
           </Popover>
           <Button variant="outline" size="sm" className="w-full gap-1">

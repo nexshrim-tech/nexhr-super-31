@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, FileText, Plus, Search, User } from "lucide-react";
+import { Download, FileText, Plus, Search, User, Edit, DollarSign } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -30,6 +30,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { format } from "date-fns";
+import SalaryDetailsForm from "@/components/SalaryDetailsForm";
 
 const salaryData = [
   { month: "Jan", amount: 250000 },
@@ -42,6 +43,7 @@ const salaryData = [
   { month: "Aug", amount: 290000 },
 ];
 
+// Sample employee salary data with allowances and deductions
 const employeeSalaries = [
   {
     id: 1,
@@ -51,6 +53,22 @@ const employeeSalaries = [
     salary: 75000,
     lastIncrement: "2023-01-15",
     status: "Paid",
+    allowances: {
+      basicSalary: 45000,
+      hra: 22500,
+      conveyanceAllowance: 3750,
+      medicalAllowance: 3750,
+      specialAllowance: 0,
+      otherAllowances: 0
+    },
+    deductions: {
+      incomeTax: 7500,
+      providentFund: 3750,
+      professionalTax: 200,
+      loanDeduction: 0,
+      otherDeductions: 0,
+      esi: 750
+    }
   },
   {
     id: 2,
@@ -60,6 +78,22 @@ const employeeSalaries = [
     salary: 85000,
     lastIncrement: "2023-02-10",
     status: "Paid",
+    allowances: {
+      basicSalary: 51000,
+      hra: 25500,
+      conveyanceAllowance: 4250,
+      medicalAllowance: 4250,
+      specialAllowance: 0,
+      otherAllowances: 0
+    },
+    deductions: {
+      incomeTax: 8500,
+      providentFund: 4250,
+      professionalTax: 200,
+      loanDeduction: 0,
+      otherDeductions: 0,
+      esi: 850
+    }
   },
   {
     id: 3,
@@ -69,6 +103,22 @@ const employeeSalaries = [
     salary: 80000,
     lastIncrement: "2023-03-20",
     status: "Paid",
+    allowances: {
+      basicSalary: 48000,
+      hra: 24000,
+      conveyanceAllowance: 4000,
+      medicalAllowance: 4000,
+      specialAllowance: 0,
+      otherAllowances: 0
+    },
+    deductions: {
+      incomeTax: 8000,
+      providentFund: 4000,
+      professionalTax: 200,
+      loanDeduction: 0,
+      otherDeductions: 0,
+      esi: 800
+    }
   },
   {
     id: 4,
@@ -78,6 +128,22 @@ const employeeSalaries = [
     salary: 82000,
     lastIncrement: "2023-02-15",
     status: "Pending",
+    allowances: {
+      basicSalary: 49200,
+      hra: 24600,
+      conveyanceAllowance: 4100,
+      medicalAllowance: 4100,
+      specialAllowance: 0,
+      otherAllowances: 0
+    },
+    deductions: {
+      incomeTax: 8200,
+      providentFund: 4100,
+      professionalTax: 200,
+      loanDeduction: 0,
+      otherDeductions: 0,
+      esi: 820
+    }
   },
   {
     id: 5,
@@ -87,6 +153,22 @@ const employeeSalaries = [
     salary: 90000,
     lastIncrement: "2023-01-05",
     status: "Paid",
+    allowances: {
+      basicSalary: 54000,
+      hra: 27000,
+      conveyanceAllowance: 4500,
+      medicalAllowance: 4500,
+      specialAllowance: 0,
+      otherAllowances: 0
+    },
+    deductions: {
+      incomeTax: 9000,
+      providentFund: 4500,
+      professionalTax: 200,
+      loanDeduction: 0,
+      otherDeductions: 0,
+      esi: 900
+    }
   },
 ];
 
@@ -107,6 +189,7 @@ const Salary = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [showPayslipHistory, setShowPayslipHistory] = useState(false);
   const [editSalaryDialog, setEditSalaryDialog] = useState(false);
+  const [editSalaryDetailsDialog, setEditSalaryDetailsDialog] = useState(false);
   const [editSalaryData, setEditSalaryData] = useState({
     salary: "",
     effectiveDate: ""
@@ -148,6 +231,11 @@ const Salary = () => {
     setEditSalaryDialog(true);
   };
 
+  const handleEditSalaryDetails = (employee: any) => {
+    setSelectedEmployee(employee);
+    setEditSalaryDetailsDialog(true);
+  };
+
   const handleUpdateSalary = () => {
     if (!selectedEmployee) return;
     
@@ -171,6 +259,22 @@ const Salary = () => {
     setEditSalaryDialog(false);
   };
 
+  const handleSaveSalaryDetails = (allowances: any, deductions: any) => {
+    if (!selectedEmployee) return;
+    
+    // In a real app, you would save these to a database
+    console.log("Updated salary details:", { allowances, deductions });
+    
+    // Update the selected employee with new allowances and deductions
+    const updatedEmployee = {
+      ...selectedEmployee,
+      allowances,
+      deductions
+    };
+    
+    setSelectedEmployee(updatedEmployee);
+  };
+
   const handleViewPayslipHistory = () => {
     if (selectedEmployee) {
       setShowPayslipHistory(true);
@@ -183,6 +287,24 @@ const Salary = () => {
       description: "Salary data is being exported to CSV. It will be downloaded shortly.",
     });
     // In a real app, this would trigger a file download
+  };
+
+  // Calculate total earnings and deductions
+  const calculateNetPay = (employee: any) => {
+    if (!employee || !employee.allowances || !employee.deductions) return { 
+      totalEarnings: employee.salary / 12, 
+      totalDeductions: (employee.salary / 12) * 0.2,
+      netPay: (employee.salary / 12) * 0.8
+    };
+    
+    const totalEarnings = Object.values(employee.allowances).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+    const totalDeductions = Object.values(employee.deductions).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+    
+    return {
+      totalEarnings: totalEarnings / 12,
+      totalDeductions: totalDeductions / 12,
+      netPay: (totalEarnings - totalDeductions) / 12
+    };
   };
 
   return (
@@ -366,6 +488,13 @@ const Salary = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
+                              onClick={() => handleEditSalaryDetails(item)}
+                            >
+                              Details
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
                               onClick={() => handleViewProfile(item)}
                             >
                               Profile
@@ -504,19 +633,42 @@ const Salary = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <h4 className="font-medium mb-2">Earnings</h4>
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-medium">Earnings</h4>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2 text-xs"
+                      onClick={() => handleEditSalaryDetails(selectedEmployee)}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm">Basic Salary</span>
-                      <span className="text-sm">${(selectedEmployee.salary / 12).toFixed(2)}</span>
+                      <span className="text-sm">${(selectedEmployee.allowances?.basicSalary / 12).toFixed(2) || (selectedEmployee.salary * 0.5 / 12).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Bonus</span>
-                      <span className="text-sm">$1,000.00</span>
+                      <span className="text-sm">HRA</span>
+                      <span className="text-sm">${(selectedEmployee.allowances?.hra / 12).toFixed(2) || (selectedEmployee.salary * 0.25 / 12).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Overtime</span>
-                      <span className="text-sm">$500.00</span>
+                      <span className="text-sm">Conveyance Allowance</span>
+                      <span className="text-sm">${(selectedEmployee.allowances?.conveyanceAllowance / 12).toFixed(2) || (selectedEmployee.salary * 0.05 / 12).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Medical Allowance</span>
+                      <span className="text-sm">${(selectedEmployee.allowances?.medicalAllowance / 12).toFixed(2) || (selectedEmployee.salary * 0.05 / 12).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Special Allowance</span>
+                      <span className="text-sm">${(selectedEmployee.allowances?.specialAllowance / 12).toFixed(2) || "0.00"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Other Allowances</span>
+                      <span className="text-sm">${(selectedEmployee.allowances?.otherAllowances / 12).toFixed(2) || "0.00"}</span>
                     </div>
                   </div>
                 </div>
@@ -524,16 +676,28 @@ const Salary = () => {
                   <h4 className="font-medium mb-2">Deductions</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm">Tax</span>
-                      <span className="text-sm">-$1,200.00</span>
+                      <span className="text-sm">Income Tax</span>
+                      <span className="text-sm">-${(selectedEmployee.deductions?.incomeTax / 12).toFixed(2) || (selectedEmployee.salary * 0.1 / 12).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Insurance</span>
-                      <span className="text-sm">-$300.00</span>
+                      <span className="text-sm">PF Employee</span>
+                      <span className="text-sm">-${(selectedEmployee.deductions?.providentFund / 12).toFixed(2) || (selectedEmployee.salary * 0.05 / 12).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Retirement</span>
-                      <span className="text-sm">-$500.00</span>
+                      <span className="text-sm">Professional Tax</span>
+                      <span className="text-sm">-${(selectedEmployee.deductions?.professionalTax / 12).toFixed(2) || "16.67"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">ESI Employee</span>
+                      <span className="text-sm">-${(selectedEmployee.deductions?.esi / 12).toFixed(2) || (selectedEmployee.salary * 0.01 / 12).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Loan Deduction</span>
+                      <span className="text-sm">-${(selectedEmployee.deductions?.loanDeduction / 12).toFixed(2) || "0.00"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Other Deductions</span>
+                      <span className="text-sm">-${(selectedEmployee.deductions?.otherDeductions / 12).toFixed(2) || "0.00"}</span>
                     </div>
                   </div>
                 </div>
@@ -543,7 +707,7 @@ const Salary = () => {
                 <div className="flex justify-between">
                   <span className="font-semibold">Net Pay</span>
                   <span className="font-semibold">
-                    ${((selectedEmployee.salary / 12) + 1500 - 2000).toFixed(2)}
+                    ${calculateNetPay(selectedEmployee).netPay.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -681,6 +845,19 @@ const Salary = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Salary Components Dialog */}
+      {selectedEmployee && (
+        <SalaryDetailsForm 
+          isOpen={editSalaryDetailsDialog}
+          onClose={() => setEditSalaryDetailsDialog(false)}
+          employeeName={selectedEmployee.employee.name}
+          initialSalary={selectedEmployee.salary}
+          initialAllowances={selectedEmployee.allowances}
+          initialDeductions={selectedEmployee.deductions}
+          onSave={handleSaveSalaryDetails}
+        />
+      )}
+
       {/* Employee Profile Dialog */}
       <Sheet open={showEmployeeProfile} onOpenChange={setShowEmployeeProfile}>
         <SheetContent className="w-full sm:max-w-md md:max-w-lg">
@@ -721,7 +898,29 @@ const Salary = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium mb-2">Salary Information</h3>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-lg font-medium">Salary Information</h3>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-7 px-2 gap-1"
+                        onClick={() => handleEditSalary(selectedEmployee)}
+                      >
+                        <Edit className="h-3 w-3" />
+                        Edit Base
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-7 px-2 gap-1"
+                        onClick={() => handleEditSalaryDetails(selectedEmployee)}
+                      >
+                        <DollarSign className="h-3 w-3" />
+                        Edit Components
+                      </Button>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Basic Salary</p>
@@ -751,6 +950,36 @@ const Salary = () => {
                 </div>
 
                 <div>
+                  <h3 className="text-lg font-medium mb-2">Salary Breakdown</h3>
+                  <div className="border rounded-md p-4 space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Allowances</h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>Basic: ${(selectedEmployee.allowances?.basicSalary / 12).toFixed(2) || (selectedEmployee.salary * 0.5 / 12).toFixed(2)}</div>
+                        <div>HRA: ${(selectedEmployee.allowances?.hra / 12).toFixed(2) || (selectedEmployee.salary * 0.25 / 12).toFixed(2)}</div>
+                        <div>Conveyance: ${(selectedEmployee.allowances?.conveyanceAllowance / 12).toFixed(2) || (selectedEmployee.salary * 0.05 / 12).toFixed(2)}</div>
+                        <div>Medical: ${(selectedEmployee.allowances?.medicalAllowance / 12).toFixed(2) || (selectedEmployee.salary * 0.05 / 12).toFixed(2)}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Deductions</h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>Income Tax: ${(selectedEmployee.deductions?.incomeTax / 12).toFixed(2) || (selectedEmployee.salary * 0.1 / 12).toFixed(2)}</div>
+                        <div>PF: ${(selectedEmployee.deductions?.providentFund / 12).toFixed(2) || (selectedEmployee.salary * 0.05 / 12).toFixed(2)}</div>
+                        <div>Prof Tax: ${(selectedEmployee.deductions?.professionalTax / 12).toFixed(2) || "16.67"}</div>
+                        <div>ESI: ${(selectedEmployee.deductions?.esi / 12).toFixed(2) || (selectedEmployee.salary * 0.01 / 12).toFixed(2)}</div>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t">
+                      <div className="flex justify-between font-medium">
+                        <span>Net Monthly Salary:</span>
+                        <span>${calculateNetPay(selectedEmployee).netPay.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
                   <h3 className="text-lg font-medium mb-2">Employment History</h3>
                   <div className="space-y-3">
                     <div className="border-l-2 border-gray-200 pl-4 py-1">
@@ -768,12 +997,12 @@ const Salary = () => {
               <SheetFooter className="mt-6">
                 <Button 
                   variant="outline" 
-                  onClick={() => handleEditSalary(selectedEmployee)}
+                  onClick={() => handleViewPayslip(selectedEmployee)}
                 >
-                  Edit Salary
-                </Button>
-                <Button onClick={() => handleViewPayslip(selectedEmployee)}>
                   View Payslip
+                </Button>
+                <Button onClick={() => handleEditSalaryDetails(selectedEmployee)}>
+                  Manage Salary Components
                 </Button>
               </SheetFooter>
             </div>
