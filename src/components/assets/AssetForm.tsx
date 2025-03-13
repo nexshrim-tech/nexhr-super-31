@@ -66,7 +66,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
             value={formData.type} 
             onValueChange={(value) => handleSelectChange("type", value)}
           >
-            <SelectTrigger>
+            <SelectTrigger id="type">
               <SelectValue placeholder="Select asset type" />
             </SelectTrigger>
             <SelectContent>
@@ -112,14 +112,15 @@ const AssetForm: React.FC<AssetFormProps> = ({
           <Popover>
             <PopoverTrigger asChild>
               <Button
+                id="purchaseDate"
                 variant="outline"
-                className="w-full justify-start text-left"
+                className="w-full justify-start text-left font-normal"
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 {date ? format(date, "PPP") : "Select date"}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0" align="start">
               <CalendarComponent
                 mode="single"
                 selected={date}
@@ -135,7 +136,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
             value={formData.status} 
             onValueChange={(value) => handleSelectChange("status", value)}
           >
-            <SelectTrigger>
+            <SelectTrigger id="status">
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
@@ -154,7 +155,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
           value={formData.assignedTo || ""} 
           onValueChange={(value) => handleSelectChange("assignedTo", value)}
         >
-          <SelectTrigger>
+          <SelectTrigger id="assignedTo">
             <SelectValue placeholder="Select employee" />
           </SelectTrigger>
           <SelectContent>

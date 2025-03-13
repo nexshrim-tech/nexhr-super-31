@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Edit, Eye } from "lucide-react";
+import { Search, Edit, Eye, MoreHorizontal } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -13,6 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AssetTableProps {
@@ -83,6 +89,7 @@ const AssetTable: React.FC<AssetTableProps> = ({
                     {asset.assignedTo ? (
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
+                          <AvatarImage alt={asset.assignedTo.name} />
                           <AvatarFallback>{asset.assignedTo.avatar}</AvatarFallback>
                         </Avatar>
                         <span className="text-sm">{asset.assignedTo.name}</span>
@@ -106,10 +113,22 @@ const AssetTable: React.FC<AssetTableProps> = ({
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => onEdit(asset)}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => onEdit(asset)}
+                        title="Edit Asset"
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => onView(asset)}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => onView(asset)}
+                        title="View Asset Details"
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>
