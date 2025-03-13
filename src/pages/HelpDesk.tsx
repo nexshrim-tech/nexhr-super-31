@@ -1,6 +1,6 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,10 +23,23 @@ import {
   AlertCircle,
   Plus,
   Search,
+  Send,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Sample ticket data
 const tickets = [
@@ -83,6 +96,41 @@ const tickets = [
 ];
 
 const HelpDesk = () => {
+  const [replyTicket, setReplyTicket] = useState<any>(null);
+  const [replyMessage, setReplyMessage] = useState("");
+  const [quickChatOpen, setQuickChatOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+
+  const handleQuickReply = (ticket: any) => {
+    setReplyTicket(ticket);
+    setQuickChatOpen(true);
+  };
+
+  const handleSendReply = () => {
+    if (!replyMessage.trim()) return;
+    
+    toast({
+      title: "Reply sent",
+      description: `Your reply to ticket ${replyTicket.id} has been sent`
+    });
+    
+    setReplyMessage("");
+    setQuickChatOpen(false);
+  };
+
+  const handleNavigateToChatWithEmployee = (ticket: any) => {
+    // In a real app, you would navigate to the chat with this employee
+    // For now, we'll just navigate to the messenger page
+    navigate('/messenger');
+    toast({
+      title: "Opening chat",
+      description: `Starting conversation with ${ticket.requestedBy}`
+    });
+  };
+
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
@@ -99,7 +147,7 @@ const HelpDesk = () => {
           </div>
 
           <div className="mb-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="relative max-w-md w-full">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <Search className="h-4 w-4 text-gray-400" />
@@ -117,16 +165,16 @@ const HelpDesk = () => {
             </div>
           </div>
 
-          <Tabs defaultValue="all" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <TabsList>
+          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <TabsList className="flex-wrap">
                 <TabsTrigger value="all" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">All</TabsTrigger>
                 <TabsTrigger value="open" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Open</TabsTrigger>
                 <TabsTrigger value="in-progress" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">In Progress</TabsTrigger>
                 <TabsTrigger value="pending" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Pending</TabsTrigger>
                 <TabsTrigger value="resolved" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">Resolved</TabsTrigger>
               </TabsList>
-              <div className="flex space-x-2 text-sm">
+              <div className="flex flex-wrap gap-3 text-sm">
                 <div className="flex items-center">
                   <div className="h-3 w-3 rounded-full bg-red-500 mr-1"></div>
                   <span>High</span>
@@ -147,14 +195,14 @@ const HelpDesk = () => {
                 {tickets.map((ticket) => (
                   <Card key={ticket.id}>
                     <CardContent className="p-0">
-                      <div className="flex items-center justify-between p-6">
-                        <div className="flex items-center space-x-4">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
+                        <div className="flex items-center space-x-4 mb-4 md:mb-0">
                           <Avatar>
                             <AvatarImage src="" />
                             <AvatarFallback>{ticket.avatar}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <h3 className="font-medium">{ticket.title}</h3>
                               <Badge
                                 variant={
@@ -192,11 +240,59 @@ const HelpDesk = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline">
-                            <MessageSquare className="h-4 w-4 mr-1" />
-                            Reply
-                          </Button>
+                        <div className="flex flex-wrap gap-2">
+                          {isMobile ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button size="sm" variant="outline">
+                                  <MessageSquare className="h-4 w-4 mr-1" />
+                                  Reply
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-72 p-4">
+                                <div className="space-y-4">
+                                  <div>
+                                    <h4 className="font-medium text-sm">Quick Reply</h4>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Send a quick message to {ticket.requestedBy}
+                                    </p>
+                                  </div>
+                                  <Textarea 
+                                    placeholder="Type your reply..." 
+                                    className="min-h-[100px]" 
+                                    value={replyMessage}
+                                    onChange={(e) => setReplyMessage(e.target.value)}
+                                  />
+                                  <div className="flex justify-between">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleNavigateToChatWithEmployee(ticket)}
+                                    >
+                                      Open Full Chat
+                                    </Button>
+                                    <Button 
+                                      size="sm"
+                                      onClick={handleSendReply}
+                                      disabled={!replyMessage.trim()}
+                                    >
+                                      <Send className="h-3 w-3 mr-1" />
+                                      Send
+                                    </Button>
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleQuickReply(ticket)}
+                            >
+                              <MessageSquare className="h-4 w-4 mr-1" />
+                              Reply
+                            </Button>
+                          )}
                           <Button size="sm" variant="outline">
                             View
                           </Button>
@@ -215,14 +311,14 @@ const HelpDesk = () => {
                   .map((ticket) => (
                     <Card key={ticket.id}>
                       <CardContent className="p-0">
-                        <div className="flex items-center justify-between p-6">
-                          <div className="flex items-center space-x-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
+                          <div className="flex items-center space-x-4 mb-4 md:mb-0">
                             <Avatar>
                               <AvatarImage src="" />
                               <AvatarFallback>{ticket.avatar}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="font-medium">{ticket.title}</h3>
                                 <Badge variant="destructive">
                                   {ticket.status}
@@ -245,11 +341,59 @@ const HelpDesk = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <MessageSquare className="h-4 w-4 mr-1" />
-                              Reply
-                            </Button>
+                          <div className="flex flex-wrap gap-2">
+                            {isMobile ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <MessageSquare className="h-4 w-4 mr-1" />
+                                    Reply
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72 p-4">
+                                  <div className="space-y-4">
+                                    <div>
+                                      <h4 className="font-medium text-sm">Quick Reply</h4>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Send a quick message to {ticket.requestedBy}
+                                      </p>
+                                    </div>
+                                    <Textarea 
+                                      placeholder="Type your reply..." 
+                                      className="min-h-[100px]" 
+                                      value={replyMessage}
+                                      onChange={(e) => setReplyMessage(e.target.value)}
+                                    />
+                                    <div className="flex justify-between">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleNavigateToChatWithEmployee(ticket)}
+                                      >
+                                        Open Full Chat
+                                      </Button>
+                                      <Button 
+                                        size="sm"
+                                        onClick={handleSendReply}
+                                        disabled={!replyMessage.trim()}
+                                      >
+                                        <Send className="h-3 w-3 mr-1" />
+                                        Send
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleQuickReply(ticket)}
+                              >
+                                <MessageSquare className="h-4 w-4 mr-1" />
+                                Reply
+                              </Button>
+                            )}
                             <Button size="sm" variant="outline">
                               View
                             </Button>
@@ -268,14 +412,14 @@ const HelpDesk = () => {
                   .map((ticket) => (
                     <Card key={ticket.id}>
                       <CardContent className="p-0">
-                        <div className="flex items-center justify-between p-6">
-                          <div className="flex items-center space-x-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
+                          <div className="flex items-center space-x-4 mb-4 md:mb-0">
                             <Avatar>
                               <AvatarImage src="" />
                               <AvatarFallback>{ticket.avatar}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="font-medium">{ticket.title}</h3>
                                 <Badge>
                                   {ticket.status}
@@ -298,11 +442,59 @@ const HelpDesk = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <MessageSquare className="h-4 w-4 mr-1" />
-                              Reply
-                            </Button>
+                          <div className="flex flex-wrap gap-2">
+                            {isMobile ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <MessageSquare className="h-4 w-4 mr-1" />
+                                    Reply
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72 p-4">
+                                  <div className="space-y-4">
+                                    <div>
+                                      <h4 className="font-medium text-sm">Quick Reply</h4>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Send a quick message to {ticket.requestedBy}
+                                      </p>
+                                    </div>
+                                    <Textarea 
+                                      placeholder="Type your reply..." 
+                                      className="min-h-[100px]" 
+                                      value={replyMessage}
+                                      onChange={(e) => setReplyMessage(e.target.value)}
+                                    />
+                                    <div className="flex justify-between">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleNavigateToChatWithEmployee(ticket)}
+                                      >
+                                        Open Full Chat
+                                      </Button>
+                                      <Button 
+                                        size="sm"
+                                        onClick={handleSendReply}
+                                        disabled={!replyMessage.trim()}
+                                      >
+                                        <Send className="h-3 w-3 mr-1" />
+                                        Send
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleQuickReply(ticket)}
+                              >
+                                <MessageSquare className="h-4 w-4 mr-1" />
+                                Reply
+                              </Button>
+                            )}
                             <Button size="sm" variant="outline">
                               View
                             </Button>
@@ -321,14 +513,14 @@ const HelpDesk = () => {
                   .map((ticket) => (
                     <Card key={ticket.id}>
                       <CardContent className="p-0">
-                        <div className="flex items-center justify-between p-6">
-                          <div className="flex items-center space-x-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
+                          <div className="flex items-center space-x-4 mb-4 md:mb-0">
                             <Avatar>
                               <AvatarImage src="" />
                               <AvatarFallback>{ticket.avatar}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="font-medium">{ticket.title}</h3>
                                 <Badge variant="secondary">
                                   {ticket.status}
@@ -351,11 +543,59 @@ const HelpDesk = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <MessageSquare className="h-4 w-4 mr-1" />
-                              Reply
-                            </Button>
+                          <div className="flex flex-wrap gap-2">
+                            {isMobile ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <MessageSquare className="h-4 w-4 mr-1" />
+                                    Reply
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72 p-4">
+                                  <div className="space-y-4">
+                                    <div>
+                                      <h4 className="font-medium text-sm">Quick Reply</h4>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Send a quick message to {ticket.requestedBy}
+                                      </p>
+                                    </div>
+                                    <Textarea 
+                                      placeholder="Type your reply..." 
+                                      className="min-h-[100px]" 
+                                      value={replyMessage}
+                                      onChange={(e) => setReplyMessage(e.target.value)}
+                                    />
+                                    <div className="flex justify-between">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleNavigateToChatWithEmployee(ticket)}
+                                      >
+                                        Open Full Chat
+                                      </Button>
+                                      <Button 
+                                        size="sm"
+                                        onClick={handleSendReply}
+                                        disabled={!replyMessage.trim()}
+                                      >
+                                        <Send className="h-3 w-3 mr-1" />
+                                        Send
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleQuickReply(ticket)}
+                              >
+                                <MessageSquare className="h-4 w-4 mr-1" />
+                                Reply
+                              </Button>
+                            )}
                             <Button size="sm" variant="outline">
                               View
                             </Button>
@@ -374,14 +614,14 @@ const HelpDesk = () => {
                   .map((ticket) => (
                     <Card key={ticket.id}>
                       <CardContent className="p-0">
-                        <div className="flex items-center justify-between p-6">
-                          <div className="flex items-center space-x-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6">
+                          <div className="flex items-center space-x-4 mb-4 md:mb-0">
                             <Avatar>
                               <AvatarImage src="" />
                               <AvatarFallback>{ticket.avatar}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="font-medium">{ticket.title}</h3>
                                 <Badge
                                   variant="outline"
@@ -407,11 +647,59 @@ const HelpDesk = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <MessageSquare className="h-4 w-4 mr-1" />
-                              Reply
-                            </Button>
+                          <div className="flex flex-wrap gap-2">
+                            {isMobile ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button size="sm" variant="outline">
+                                    <MessageSquare className="h-4 w-4 mr-1" />
+                                    Reply
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72 p-4">
+                                  <div className="space-y-4">
+                                    <div>
+                                      <h4 className="font-medium text-sm">Quick Reply</h4>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Send a quick message to {ticket.requestedBy}
+                                      </p>
+                                    </div>
+                                    <Textarea 
+                                      placeholder="Type your reply..." 
+                                      className="min-h-[100px]" 
+                                      value={replyMessage}
+                                      onChange={(e) => setReplyMessage(e.target.value)}
+                                    />
+                                    <div className="flex justify-between">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => handleNavigateToChatWithEmployee(ticket)}
+                                      >
+                                        Open Full Chat
+                                      </Button>
+                                      <Button 
+                                        size="sm"
+                                        onClick={handleSendReply}
+                                        disabled={!replyMessage.trim()}
+                                      >
+                                        <Send className="h-3 w-3 mr-1" />
+                                        Send
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleQuickReply(ticket)}
+                              >
+                                <MessageSquare className="h-4 w-4 mr-1" />
+                                Reply
+                              </Button>
+                            )}
                             <Button size="sm" variant="outline">
                               View
                             </Button>
@@ -423,6 +711,55 @@ const HelpDesk = () => {
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* Reply dialog for desktop */}
+          <Dialog open={quickChatOpen} onOpenChange={setQuickChatOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  Reply to {replyTicket?.requestedBy}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Ticket: {replyTicket?.title} ({replyTicket?.id})
+                  </p>
+                  <Textarea 
+                    placeholder="Type your reply..." 
+                    className="min-h-[150px]" 
+                    value={replyMessage}
+                    onChange={(e) => setReplyMessage(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    if (replyTicket) {
+                      handleNavigateToChatWithEmployee(replyTicket);
+                      setQuickChatOpen(false);
+                    }
+                  }}
+                >
+                  Open Full Chat
+                </Button>
+                <div className="flex gap-2">
+                  <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DialogClose>
+                  <Button 
+                    onClick={handleSendReply}
+                    disabled={!replyMessage.trim()}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Send Reply
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>

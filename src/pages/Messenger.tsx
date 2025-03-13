@@ -22,8 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
+// Sample employee data
 const employees = [
   { id: 1, name: "Olivia Rhye", avatar: "OR", status: "online" },
   { id: 2, name: "Phoenix Baker", avatar: "PB", status: "offline" },
@@ -34,6 +38,7 @@ const employees = [
   { id: 7, name: "Drew Cano", avatar: "DC", status: "online" },
 ];
 
+// Sample group data
 const groups = [
   { id: 1, name: "HR Team", members: ["Olivia Rhye", "Phoenix Baker", "Lana Steiner"] },
   { id: 2, name: "Engineering", members: ["Demi Wilkinson", "Candice Wu", "Drew Cano"] },
@@ -72,6 +77,7 @@ const Messenger = () => {
   const [newGroupName, setNewGroupName] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const filteredEmployees = employees.filter(
     emp => emp.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -85,6 +91,24 @@ const Messenger = () => {
     if (!message.trim()) return;
     
     // In a real app, this would send to the backend
+    // Here we're just showing a toast notification
+    const newMessage = {
+      id: Date.now(),
+      sender: "user",
+      text: message,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    // Update the selected chat with the new message
+    // In a real app, this would be done through a state management system
+    if (selectedChat) {
+      if (!selectedChat.messages) {
+        selectedChat.messages = [];
+      }
+      selectedChat.messages.push(newMessage);
+      setSelectedChat({ ...selectedChat });
+    }
+    
     toast({
       title: "Message sent",
       description: "Your message has been sent successfully"
@@ -109,6 +133,16 @@ const Messenger = () => {
       description: `${newGroupName} group has been created successfully`
     });
     
+    // Add the new group to our local state
+    const newGroup = {
+      id: groups.length + 1,
+      name: newGroupName,
+      members: selectedMembers
+    };
+    
+    groups.push(newGroup);
+    setChatTab("groups");
+    
     setIsCreateGroupOpen(false);
     setNewGroupName("");
     setSelectedMembers([]);
@@ -116,6 +150,16 @@ const Messenger = () => {
 
   const handleSelectChat = (chat: any) => {
     setSelectedChat(chat);
+  };
+
+  const handleMemberSelection = (name: string) => {
+    setSelectedMembers(prev => {
+      if (prev.includes(name)) {
+        return prev.filter(member => member !== name);
+      } else {
+        return [...prev, name];
+      }
+    });
   };
 
   return (
@@ -128,9 +172,9 @@ const Messenger = () => {
             <p className="text-gray-500">Communicate with your team</p>
           </div>
           
-          <div className="flex-1 flex overflow-hidden">
-            {/* Sidebar */}
-            <div className="w-80 border-r bg-white flex flex-col">
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+            {/* Sidebar - Hidden on mobile when chat is selected */}
+            <div className={`${isMobile && selectedChat ? 'hidden' : 'block'} w-full md:w-80 border-r bg-white flex flex-col`}>
               <div className="p-4 border-b">
                 <div className="relative mb-4">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
@@ -171,7 +215,7 @@ const Messenger = () => {
                             New Group
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="sm:max-w-md">
                           <DialogHeader>
                             <DialogTitle>Create New Group</DialogTitle>
                           </DialogHeader>
@@ -191,18 +235,25 @@ const Messenger = () => {
                               <label className="text-sm font-medium">
                                 Select Members
                               </label>
-                              <Select>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select members" />
-                                </SelectTrigger>
-                                <SelectContent>
+                              <ScrollArea className="h-48 border rounded-md p-2">
+                                <div className="space-y-2">
                                   {employees.map((emp) => (
-                                    <SelectItem key={emp.id} value={emp.id.toString()}>
-                                      {emp.name}
-                                    </SelectItem>
+                                    <div key={emp.id} className="flex items-center space-x-2">
+                                      <Checkbox 
+                                        id={`employee-${emp.id}`} 
+                                        checked={selectedMembers.includes(emp.name)}
+                                        onCheckedChange={() => handleMemberSelection(emp.name)}
+                                      />
+                                      <label 
+                                        htmlFor={`employee-${emp.id}`}
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                      >
+                                        {emp.name}
+                                      </label>
+                                    </div>
                                   ))}
-                                </SelectContent>
-                              </Select>
+                                </div>
+                              </ScrollArea>
                             </div>
                             <div className="flex flex-wrap gap-2 mt-4">
                               {selectedMembers.map((member) => (
@@ -291,11 +342,23 @@ const Messenger = () => {
               </ScrollArea>
             </div>
             
-            {/* Chat area */}
-            <div className="flex-1 flex flex-col bg-gray-50">
+            {/* Chat area - Hidden on mobile when no chat is selected */}
+            <div className={`${isMobile && !selectedChat ? 'hidden' : 'block'} flex-1 flex flex-col bg-gray-50`}>
               {selectedChat ? (
                 <>
                   <div className="bg-white p-4 border-b flex items-center justify-between">
+                    {isMobile && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="mr-2" 
+                        onClick={() => setSelectedChat(null)}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                          <path d="m15 18-6-6 6-6"/>
+                        </svg>
+                      </Button>
+                    )}
                     <div className="flex items-center gap-3">
                       {selectedChat.with.avatar ? (
                         <Avatar>
@@ -361,14 +424,15 @@ const Messenger = () => {
                   </ScrollArea>
                   
                   <div className="p-4 bg-white border-t">
-                    <div className="flex gap-2">
-                      <Input 
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Textarea 
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Type your message..."
-                        className="flex-1"
+                        className="flex-1 min-h-[80px] sm:min-h-[unset]"
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
                             handleSendMessage();
                           }
                         }}
@@ -376,6 +440,7 @@ const Messenger = () => {
                       <Button 
                         onClick={handleSendMessage}
                         disabled={!message.trim()}
+                        className="sm:self-end"
                       >
                         <Send className="h-4 w-4 mr-2" />
                         Send
