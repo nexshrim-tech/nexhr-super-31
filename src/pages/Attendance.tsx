@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,40 @@ const attendanceData = [
     status: "Present",
     workHours: "8h 40m",
     notes: "",
+  },
+  // Add today's date records to show data when clicking on current day
+  {
+    id: 8,
+    employeeId: "EMP001",
+    employee: { name: "Olivia Rhye", avatar: "OR" },
+    date: format(new Date(), 'yyyy-MM-dd'),
+    checkIn: "08:55 AM",
+    checkOut: "05:15 PM",
+    status: "Present",
+    workHours: "8h 20m",
+    notes: "",
+  },
+  {
+    id: 9,
+    employeeId: "EMP002",
+    employee: { name: "Phoenix Baker", avatar: "PB" },
+    date: format(new Date(), 'yyyy-MM-dd'),
+    checkIn: "09:05 AM",
+    checkOut: "05:30 PM",
+    status: "Present",
+    workHours: "8h 25m",
+    notes: "",
+  },
+  {
+    id: 10,
+    employeeId: "EMP003",
+    employee: { name: "Lana Steiner", avatar: "LS" },
+    date: format(new Date(), 'yyyy-MM-dd'),
+    checkIn: "",
+    checkOut: "",
+    status: "Absent",
+    workHours: "-",
+    notes: "Sick leave",
   },
 ];
 
@@ -215,8 +250,8 @@ const Attendance = () => {
     return <Badge className={badgeClass}>{status}</Badge>;
   };
 
-  const renderDayContent = (props: DayContentProps) => {
-    const dateString = format(props.date, 'yyyy-MM-dd');
+  const renderDayContent = ({ date, displayMonth }: DayContentProps) => {
+    const dateString = format(date, 'yyyy-MM-dd');
     const employees = [...new Set(attendanceData.map(record => record.employeeId))];
     
     let present = 0;
@@ -239,7 +274,7 @@ const Attendance = () => {
     
     return (
       <div className="relative w-full h-full flex items-center justify-center">
-        <div>{props.date.getDate()}</div>
+        <div>{date.getDate()}</div>
         <div className="absolute bottom-0 left-0 right-0 flex justify-center text-[8px] gap-1">
           {present > 0 && <span className="text-green-600">{present}P</span>}
           {absent > 0 && <span className="text-red-600">{absent}A</span>}
@@ -340,7 +375,7 @@ const Attendance = () => {
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="All Employees" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="pointer-events-auto">
                           <SelectItem value="all">All Employees</SelectItem>
                           <SelectItem value="EMP001">Olivia Rhye</SelectItem>
                           <SelectItem value="EMP002">Phoenix Baker</SelectItem>
@@ -356,7 +391,7 @@ const Attendance = () => {
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="All Departments" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="pointer-events-auto">
                           <SelectItem value="all">All Departments</SelectItem>
                           <SelectItem value="engineering">Engineering</SelectItem>
                           <SelectItem value="design">Design</SelectItem>
@@ -373,7 +408,7 @@ const Attendance = () => {
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      className="mx-auto pointer-events-auto"
+                      className="mx-auto"
                       components={{
                         DayContent: renderDayContent
                       }}
@@ -485,7 +520,7 @@ const Attendance = () => {
                             <Filter className="h-4 w-4" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[200px]">
+                        <PopoverContent className="w-[200px] pointer-events-auto">
                           <div className="space-y-4">
                             <div className="space-y-2">
                               <Label>Department</Label>
@@ -496,7 +531,7 @@ const Attendance = () => {
                                 <SelectTrigger>
                                   <SelectValue placeholder="All Departments" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="pointer-events-auto">
                                   <SelectItem value="all">All Departments</SelectItem>
                                   <SelectItem value="engineering">Engineering</SelectItem>
                                   <SelectItem value="design">Design</SelectItem>
@@ -511,7 +546,7 @@ const Attendance = () => {
                                 <SelectTrigger>
                                   <SelectValue placeholder="All Status" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="pointer-events-auto">
                                   <SelectItem value="all">All Status</SelectItem>
                                   <SelectItem value="present">Present</SelectItem>
                                   <SelectItem value="absent">Absent</SelectItem>
@@ -530,13 +565,12 @@ const Attendance = () => {
                             {selectedDate ? format(selectedDate, 'PPP') : "Select date"}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                           <Calendar
                             mode="single"
                             selected={selectedDate}
                             onSelect={setSelectedDate}
                             initialFocus
-                            className="pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
@@ -644,7 +678,7 @@ const Attendance = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="pointer-events-auto">
                   <SelectItem value="Present">Present</SelectItem>
                   <SelectItem value="Absent">Absent</SelectItem>
                   <SelectItem value="Late">Late</SelectItem>
@@ -693,7 +727,7 @@ const Attendance = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="pointer-events-auto">
                   <SelectItem value="EMP001">Olivia Rhye</SelectItem>
                   <SelectItem value="EMP002">Phoenix Baker</SelectItem>
                   <SelectItem value="EMP003">Lana Steiner</SelectItem>
@@ -711,7 +745,7 @@ const Attendance = () => {
                     {newAttendanceData.date || "Select date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                   <Calendar
                     mode="single"
                     selected={new Date(newAttendanceData.date)}
@@ -720,7 +754,6 @@ const Attendance = () => {
                       date: date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
                     })}
                     initialFocus
-                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -754,7 +787,7 @@ const Attendance = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="pointer-events-auto">
                   <SelectItem value="Present">Present</SelectItem>
                   <SelectItem value="Absent">Absent</SelectItem>
                   <SelectItem value="Late">Late</SelectItem>

@@ -69,7 +69,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
             <SelectTrigger id="type">
               <SelectValue placeholder="Select asset type" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="pointer-events-auto">
               {assetTypes.map(type => (
                 <SelectItem key={type} value={type}>{type}</SelectItem>
               ))}
@@ -139,7 +139,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
             <SelectTrigger id="status">
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="pointer-events-auto">
               <SelectItem value="Available">Available</SelectItem>
               <SelectItem value="Assigned">Assigned</SelectItem>
               <SelectItem value="In Maintenance">In Maintenance</SelectItem>
@@ -152,14 +152,14 @@ const AssetForm: React.FC<AssetFormProps> = ({
       <div className="space-y-2">
         <Label htmlFor="assignedTo">Assigned To</Label>
         <Select 
-          value={formData.assignedTo || ""} 
-          onValueChange={(value) => handleSelectChange("assignedTo", value)}
+          value={formData.assignedTo || "not-assigned"} 
+          onValueChange={(value) => handleSelectChange("assignedTo", value === "not-assigned" ? null : value)}
         >
           <SelectTrigger id="assignedTo">
             <SelectValue placeholder="Select employee" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Not Assigned</SelectItem>
+          <SelectContent className="pointer-events-auto">
+            <SelectItem value="not-assigned">Not Assigned</SelectItem>
             {employees.map(employee => (
               <SelectItem key={employee.id} value={employee.id.toString()}>
                 {employee.name}
