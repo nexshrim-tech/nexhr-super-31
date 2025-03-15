@@ -27,6 +27,66 @@ import {
 } from "@/components/ui/dialog";
 import { FileText, Search, Upload, Download, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+// Sample employee data for auto-filling
+const employees = [
+  { 
+    id: "EMP001", 
+    name: "Olivia Rhye", 
+    email: "olivia.rhye@example.com",
+    role: "UI Designer",
+    department: "Design",
+    joiningDate: "2022-01-10",
+    reportingManager: "Phoenix Baker",
+    employeeId: "EMP-1001",
+    avatar: "OR"
+  },
+  { 
+    id: "EMP002", 
+    name: "Phoenix Baker", 
+    email: "phoenix.baker@example.com",
+    role: "Product Manager",
+    department: "Product",
+    joiningDate: "2021-05-15",
+    reportingManager: "Lana Steiner",
+    employeeId: "EMP-1002",
+    avatar: "PB"
+  },
+  { 
+    id: "EMP003", 
+    name: "Lana Steiner", 
+    email: "lana.steiner@example.com",
+    role: "Frontend Developer",
+    department: "Engineering",
+    joiningDate: "2021-09-22",
+    reportingManager: "Candice Wu",
+    employeeId: "EMP-1003",
+    avatar: "LS"
+  },
+  { 
+    id: "EMP004", 
+    name: "Demi Wilkinson", 
+    email: "demi.wilkinson@example.com",
+    role: "Backend Developer",
+    department: "Engineering",
+    joiningDate: "2022-02-01",
+    reportingManager: "Candice Wu",
+    employeeId: "EMP-1004",
+    avatar: "DW"
+  },
+  { 
+    id: "EMP005", 
+    name: "Candice Wu", 
+    email: "candice.wu@example.com",
+    role: "Engineering Lead",
+    department: "Engineering",
+    joiningDate: "2020-11-15",
+    reportingManager: "CEO",
+    employeeId: "EMP-1005",
+    avatar: "CW"
+  },
+];
 
 // Document categories and templates
 const documentCategories = [
@@ -121,6 +181,9 @@ const DocumentGenerator = () => {
   const [templateName, setTemplateName] = useState("");
   const [templateVariables, setTemplateVariables] = useState<string[]>([]);
   const [newVariable, setNewVariable] = useState("");
+  
+  // New state for employee selection
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
 
   const handleLetterheadUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -154,6 +217,9 @@ const DocumentGenerator = () => {
 
   const handleTemplateSelect = (category: string, template: any) => {
     setSelectedTemplate(template);
+    setTemplateName(template.name);
+    
+    // Default template content with employee placeholders
     setTemplateContent(`Dear [Employee Name],
 
 This is a sample template for the ${template.name}.
@@ -163,8 +229,35 @@ This is a sample template for the ${template.name}.
 Sincerely,
 [Manager Name]
 [Company Name]`);
-    setTemplateName(template.name);
+    
     setTemplateVariables(["Employee Name", "Manager Name", "Company Name"]);
+    
+    // Reset employee selection
+    setSelectedEmployee(null);
+  };
+
+  const handleEmployeeSelect = (employeeId: string) => {
+    setSelectedEmployee(employeeId);
+    
+    const employee = employees.find(emp => emp.id === employeeId);
+    if (!employee) return;
+    
+    // Replace template variables with employee data
+    let updatedContent = templateContent;
+    updatedContent = updatedContent.replace(/\[Employee Name\]/g, employee.name);
+    updatedContent = updatedContent.replace(/\[Employee ID\]/g, employee.employeeId);
+    updatedContent = updatedContent.replace(/\[Employee Email\]/g, employee.email);
+    updatedContent = updatedContent.replace(/\[Employee Role\]/g, employee.role);
+    updatedContent = updatedContent.replace(/\[Employee Department\]/g, employee.department);
+    updatedContent = updatedContent.replace(/\[Joining Date\]/g, employee.joiningDate);
+    updatedContent = updatedContent.replace(/\[Manager Name\]/g, employee.reportingManager);
+    
+    setTemplateContent(updatedContent);
+    
+    toast({
+      title: "Employee selected",
+      description: `Template updated with ${employee.name}'s information.`
+    });
   };
 
   const handleAddVariable = () => {
@@ -198,26 +291,7 @@ Sincerely,
   };
 
   // Filter templates based on search and category
-  const filteredTemplates = searchTerm || selectedCategory !== "all" 
-    ? documentCategories.map(category => {
-        if (selectedCategory !== "all" && selectedCategory !== category.id) {
-          return null;
-        }
-        
-        const filteredItems = category.templates.filter(template => 
-          template.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        
-        if (filteredItems.length === 0) {
-          return null;
-        }
-        
-        return {
-          ...category,
-          templates: filteredItems
-        };
-      }).filter(Boolean)
-    : documentCategories;
+  const filteredTemplates = // ... keep existing code (template filtering logic)
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -239,7 +313,7 @@ Sincerely,
                 </TabsList>
                 
                 {activeTab === "templates" && (
-                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <div className="relative w-full sm:w-auto">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                       <Input
@@ -296,6 +370,35 @@ Sincerely,
                                 onChange={(e) => setTemplateName(e.target.value)}
                               />
                             </div>
+                            
+                            {/* New Employee Selection */}
+                            <div>
+                              <Label htmlFor="employee-select">Auto-fill with Employee Data</Label>
+                              <Select 
+                                value={selectedEmployee || ''} 
+                                onValueChange={handleEmployeeSelect}
+                              >
+                                <SelectTrigger id="employee-select" className="w-full">
+                                  <SelectValue placeholder="Select employee to auto-fill" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {employees.map((employee) => (
+                                    <SelectItem key={employee.id} value={employee.id}>
+                                      <div className="flex items-center gap-2">
+                                        <Avatar className="h-6 w-6">
+                                          <AvatarFallback>{employee.avatar}</AvatarFallback>
+                                        </Avatar>
+                                        <span>{employee.name}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Select an employee to auto-fill the template with their information
+                              </p>
+                            </div>
+                            
                             <div>
                               <Label htmlFor="template-content">Content</Label>
                               <Textarea 
@@ -359,6 +462,21 @@ Sincerely,
                                   </button>
                                 </Badge>
                               ))}
+                            </div>
+                            
+                            <div className="border rounded-md p-3 bg-gray-50">
+                              <p className="text-sm text-muted-foreground mb-2">
+                                Common employee variables you can use:
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                <Badge variant="outline">[Employee Name]</Badge>
+                                <Badge variant="outline">[Employee ID]</Badge>
+                                <Badge variant="outline">[Employee Email]</Badge>
+                                <Badge variant="outline">[Employee Role]</Badge>
+                                <Badge variant="outline">[Employee Department]</Badge>
+                                <Badge variant="outline">[Joining Date]</Badge>
+                                <Badge variant="outline">[Manager Name]</Badge>
+                              </div>
                             </div>
                             
                             <div className="border rounded-md p-3 bg-gray-50">
