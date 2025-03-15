@@ -1,24 +1,21 @@
+
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import SidebarNav from "@/components/SidebarNav";
-import { DateRange } from "react-day-picker";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, MapPin, Camera } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { CalendarRange, Settings, UserCheck } from "lucide-react";
 
-// Import refactored components
-import AttendanceHeader from "@/components/attendance/AttendanceHeader";
-import AttendanceStats from "@/components/attendance/AttendanceStats";
+// Import components
 import AttendanceCalendar from "@/components/attendance/AttendanceCalendar";
 import AttendanceTable from "@/components/attendance/AttendanceTable";
+import AttendancePhotos from "@/components/attendance/AttendancePhotos";
 import EditAttendanceDialog from "@/components/attendance/EditAttendanceDialog";
 import AddAttendanceSheet from "@/components/attendance/AddAttendanceSheet";
-import AttendancePhotos from "@/components/attendance/AttendancePhotos";
 import AttendanceSettings from "@/components/attendance/AttendanceSettings";
+import TodaysAttendance from "@/components/TodaysAttendance";
 
 // Import data
 import { attendanceData, AttendanceRecord } from "@/data/attendanceData";
@@ -72,6 +69,7 @@ const Attendance = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [filterDepartment, setFilterDepartment] = useState("all");
   const [currentRecord, setCurrentRecord] = useState<AttendanceRecord | null>(null);
+  const [currentTab, setCurrentTab] = useState("overview");
   const [editFormData, setEditFormData] = useState({
     date: "",
     checkIn: "",
@@ -86,13 +84,6 @@ const Attendance = () => {
     checkOut: "",
     status: "Present",
     notes: "",
-  });
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: new Date(),
   });
   const [attendanceSettings, setAttendanceSettings] = useState({
     workStartTime: "09:00",
@@ -109,32 +100,6 @@ const Attendance = () => {
   const isTodayHoliday = attendanceSettings.holidays.some(date => 
     format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
   );
-
-  // Rest of the functions remain the same
-  const handlePrevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(currentYear - 1);
-    } else {
-      setCurrentMonth(currentMonth - 1);
-    }
-  };
-
-  const handleNextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
-    }
-  };
-
-  const handleDateClick = (day: number) => {
-    if (day) {
-      const newDate = new Date(currentYear, currentMonth, day);
-      setSelectedDate(newDate);
-    }
-  };
 
   const filteredRecords = attendanceData.filter(record => {
     const matchesSearch = 
@@ -191,20 +156,6 @@ const Attendance = () => {
     });
   };
 
-  const handleExportReport = () => {
-    setIsExportDialogOpen(true);
-  };
-
-  const handleExport = () => {
-    if (dateRange?.from && dateRange?.to) {
-      toast({
-        title: "Report generated",
-        description: `Attendance report has been generated from ${format(dateRange.from, 'PP')} to ${format(dateRange.to, 'PP')}`
-      });
-      setIsExportDialogOpen(false);
-    }
-  };
-
   const handleSaveSettings = (settings: any) => {
     setAttendanceSettings(settings);
     toast({
@@ -229,46 +180,111 @@ const Attendance = () => {
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
       <div className="flex-1 overflow-auto">
-        <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-          <AttendanceHeader 
-            handleExportReport={handleExportReport} 
-            openAddAttendance={() => setIsAddAttendanceOpen(true)}
-            openSettings={() => setIsSettingsOpen(true)}
-          />
-
-          <AttendanceStats 
-            isHoliday={isTodayHoliday}
-            holidayName={isTodayHoliday ? "Company Holiday" : undefined}
-          />
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <AttendanceCalendar 
-              currentMonth={currentMonth}
-              currentYear={currentYear}
-              selectedDate={selectedDate}
-              selectedEmployee={selectedEmployee}
-              filterDepartment={filterDepartment}
-              handlePrevMonth={handlePrevMonth}
-              handleNextMonth={handleNextMonth}
-              handleDateClick={handleDateClick}
-              setSelectedEmployee={setSelectedEmployee}
-              setFilterDepartment={setFilterDepartment}
-              holidayDates={attendanceSettings.holidays}
-            />
-            
-            <AttendanceTable 
-              selectedDate={selectedDate}
-              searchTerm={searchTerm}
-              filteredRecords={filteredRecords}
-              setSearchTerm={setSearchTerm}
-              handleEditRecord={handleEditRecord}
-            />
-
-            <AttendancePhotos 
-              photos={sampleAttendancePhotos}
-              date={selectedDate}
-            />
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6">
+          {/* Header with tabs */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold tracking-tight mb-2 sm:mb-0">Attendance Management</h1>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsAddAttendanceOpen(true)}
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Mark Attendance
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+            </div>
           </div>
+
+          {/* Main tabs */}
+          <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-6">
+            <TabsList className="grid w-full sm:w-auto grid-cols-3">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="records">Records</TabsTrigger>
+              <TabsTrigger value="photos">Photos</TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-6">
+              <TodaysAttendance />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <AttendanceCalendar 
+                  currentMonth={selectedDate.getMonth()}
+                  currentYear={selectedDate.getFullYear()}
+                  selectedDate={selectedDate}
+                  selectedEmployee={selectedEmployee}
+                  filterDepartment={filterDepartment}
+                  handlePrevMonth={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))}
+                  handleNextMonth={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))}
+                  handleDateClick={(day) => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day))}
+                  setSelectedEmployee={setSelectedEmployee}
+                  setFilterDepartment={setFilterDepartment}
+                  holidayDates={attendanceSettings.holidays}
+                />
+                <AttendanceTable 
+                  selectedDate={selectedDate}
+                  searchTerm={searchTerm}
+                  filteredRecords={filteredRecords}
+                  setSearchTerm={setSearchTerm}
+                  handleEditRecord={handleEditRecord}
+                />
+              </div>
+            </TabsContent>
+
+            {/* Records Tab */}
+            <TabsContent value="records" className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
+                <div className="flex items-center">
+                  <CalendarRange className="h-5 w-5 text-primary mr-2" />
+                  <h2 className="text-lg font-medium">
+                    Attendance for {format(selectedDate, 'MMMM yyyy')}
+                  </h2>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setIsAddAttendanceOpen(true)}
+                  >
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Mark Attendance
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-6">
+                <AttendanceTable 
+                  selectedDate={selectedDate}
+                  searchTerm={searchTerm}
+                  filteredRecords={filteredRecords}
+                  setSearchTerm={setSearchTerm}
+                  handleEditRecord={handleEditRecord}
+                />
+              </div>
+            </TabsContent>
+
+            {/* Photos Tab */}
+            <TabsContent value="photos" className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
+                <div className="flex items-center">
+                  <h2 className="text-lg font-medium">
+                    Attendance Photos for {format(selectedDate, 'MMMM d, yyyy')}
+                  </h2>
+                </div>
+              </div>
+              <AttendancePhotos 
+                photos={sampleAttendancePhotos}
+                date={selectedDate}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
@@ -299,58 +315,6 @@ const Attendance = () => {
           </div>
         </SheetContent>
       </Sheet>
-
-      <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Export Attendance Records</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <label className="block text-sm font-medium mb-2">Select Date Range</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange?.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "LLL dd, y")} -{" "}
-                        {format(dateRange.to, "LLL dd, y")}
-                      </>
-                    ) : (
-                      format(dateRange.from, "LLL dd, y")
-                    )
-                  ) : (
-                    <span>Pick a date range</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={dateRange?.from}
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={2}
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleExport}>
-              Export
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

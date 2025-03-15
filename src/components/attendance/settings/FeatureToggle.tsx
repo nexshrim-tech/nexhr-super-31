@@ -8,18 +8,20 @@ interface FeatureToggleProps {
   description: string;
   enabled: boolean;
   onToggle: (checked: boolean) => void;
+  id?: string;
 }
 
-const FeatureToggle = ({ title, description, enabled, onToggle }: FeatureToggleProps) => {
+const FeatureToggle = ({ title, description, enabled, onToggle, id }: FeatureToggleProps) => {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between space-y-0 rounded-lg border p-4">
       <div className="space-y-0.5">
-        <Label>{title}</Label>
+        <Label htmlFor={id ?? title}>{title}</Label>
         <div className="text-sm text-muted-foreground">
           {description}
         </div>
       </div>
       <Switch
+        id={id ?? title}
         checked={enabled}
         onCheckedChange={onToggle}
       />

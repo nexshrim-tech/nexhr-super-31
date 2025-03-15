@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, UserCheck, Download } from "lucide-react";
+import { Calendar as CalendarIcon, UserCheck, Download, MapPin, Camera } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import {
@@ -21,6 +22,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { Separator } from "@/components/ui/separator";
+import FeatureToggle from "@/components/attendance/settings/FeatureToggle";
 
 const TodaysAttendance = () => {
   // Today's date
@@ -36,6 +39,11 @@ const TodaysAttendance = () => {
   // State for current date
   const [date, setDate] = useState<Date>(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
+  
+  // States for features
+  const [useGeolocation, setUseGeolocation] = useState(true);
+  const [useCamera, setUseCamera] = useState(true);
+  const [markAttendanceOpen, setMarkAttendanceOpen] = useState(false);
   
   // Generate calendar days for the current month
   const getDaysInMonth = (year: number, month: number) => {
@@ -127,6 +135,14 @@ const TodaysAttendance = () => {
     }
   };
 
+  const handleMarkAttendance = () => {
+    toast({
+      title: "Attendance Marked",
+      description: `Your attendance has been recorded for ${format(new Date(), 'PP')}`,
+    });
+    setMarkAttendanceOpen(false);
+  };
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
@@ -212,80 +228,143 @@ const TodaysAttendance = () => {
             </PopoverContent>
           </Popover>
           
-          <div className="flex gap-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Download className="h-4 w-4" />
-                  Export
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Export Attendance Records</DialogTitle>
-                  <DialogDescription>
-                    Select a date range to export attendance records
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="py-4 space-y-4">
-                  <div className="space-y-2">
-                    <Label>Date Range</Label>
-                    <div className="grid gap-2">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {dateRange?.from ? (
-                              dateRange.to ? (
-                                <>
-                                  {format(dateRange.from, "LLL dd, y")} -{" "}
-                                  {format(dateRange.to, "LLL dd, y")}
-                                </>
-                              ) : (
-                                format(dateRange.from, "LLL dd, y")
-                              )
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Export Attendance Records</DialogTitle>
+                <DialogDescription>
+                  Select a date range to export attendance records
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                  <Label>Date Range</Label>
+                  <div className="grid gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateRange?.from ? (
+                            dateRange.to ? (
+                              <>
+                                {format(dateRange.from, "LLL dd, y")} -{" "}
+                                {format(dateRange.to, "LLL dd, y")}
+                              </>
                             ) : (
-                              <span>Pick a date range</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            initialFocus
-                            mode="range"
-                            defaultMonth={dateRange?.from}
-                            selected={dateRange}
-                            onSelect={setDateRange}
-                            numberOfMonths={2}
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                              format(dateRange.from, "LLL dd, y")
+                            )
+                          ) : (
+                            <span>Pick a date range</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          initialFocus
+                          mode="range"
+                          defaultMonth={dateRange?.from}
+                          selected={dateRange}
+                          onSelect={setDateRange}
+                          numberOfMonths={2}
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
-                
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setDateRange({ from: new Date(), to: new Date() })}>
-                    Reset
-                  </Button>
-                  <Button onClick={handleExport}>
-                    Export Records
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-            
-            <Button variant="outline" size="sm" className="gap-1">
-              <UserCheck className="h-4 w-4" />
-              Mark Attendance
-            </Button>
-          </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDateRange({ from: new Date(), to: new Date() })}>
+                  Reset
+                </Button>
+                <Button onClick={handleExport}>
+                  Export Records
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
+
+        <Separator className="my-4" />
+        
+        <Dialog open={markAttendanceOpen} onOpenChange={setMarkAttendanceOpen}>
+          <Button variant="default" size="sm" className="w-full gap-1" onClick={() => setMarkAttendanceOpen(true)}>
+            <UserCheck className="h-4 w-4 mr-2" />
+            Mark Today's Attendance
+          </Button>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Mark Attendance</DialogTitle>
+              <DialogDescription>
+                Record your attendance for today ({format(new Date(), 'PP')})
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4 space-y-4">
+              <div className="space-y-3">
+                <FeatureToggle 
+                  title="Use Geolocation" 
+                  description="Enable to verify your location" 
+                  enabled={useGeolocation} 
+                  onToggle={setUseGeolocation}
+                  id="toggle-geolocation"
+                />
+                
+                <FeatureToggle 
+                  title="Take Photo" 
+                  description="Take a photo for attendance verification" 
+                  enabled={useCamera} 
+                  onToggle={setUseCamera}
+                  id="toggle-camera"
+                />
+              </div>
+              
+              {useGeolocation && (
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <MapPin className="h-4 w-4 text-blue-600 mr-2" />
+                    <span className="text-sm font-medium">Location Verification</span>
+                  </div>
+                  <p className="text-xs text-blue-700">
+                    Your location will be verified against office geo-fence
+                  </p>
+                </div>
+              )}
+              
+              {useCamera && (
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <Camera className="h-4 w-4 text-blue-600 mr-2" />
+                    <span className="text-sm font-medium">Photo Verification</span>
+                  </div>
+                  <p className="text-xs text-blue-700">
+                    A photo will be captured for attendance verification
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setMarkAttendanceOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleMarkAttendance}>
+                Mark Attendance
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
