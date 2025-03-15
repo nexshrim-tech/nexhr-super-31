@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Save } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -116,12 +116,10 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
           </div>
 
           <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full">
-                <Calendar className="h-4 w-4 mr-2" />
-                Manage Holidays
-              </Button>
-            </DialogTrigger>
+            <Button variant="outline" onClick={() => setIsHolidayDialogOpen(true)}>
+              <Calendar className="h-4 w-4 mr-2" />
+              Manage Holidays
+            </Button>
             <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle>Manage Holidays</DialogTitle>
