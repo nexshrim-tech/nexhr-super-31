@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import SidebarNav from "@/components/SidebarNav";
@@ -10,13 +11,10 @@ import {
   ArrowLeft, 
   Download, 
   Edit, 
-  Facebook, 
   FileText, 
-  Instagram, 
   MapPin, 
   Phone, 
   Mail, 
-  Twitter, 
   User, 
   Calendar, 
   DollarSign, 
@@ -39,6 +37,9 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,6 +77,8 @@ const EmployeeDetails = () => {
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState("current");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [employeeForm, setEmployeeForm] = useState(employeeData);
   const { toast } = useToast();
   
   const employee = employeeData;
@@ -100,6 +103,15 @@ const EmployeeDetails = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEmployeeForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (field: string, value: string) => {
+    setEmployeeForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleDownload = (documentType: string) => {
@@ -129,10 +141,24 @@ const EmployeeDetails = () => {
   };
 
   const handleEditProfile = () => {
+    setIsEditMode(true);
     toast({
       title: "Edit mode",
       description: "You can now edit the employee profile.",
     });
+  };
+
+  const handleSaveProfile = () => {
+    setIsEditMode(false);
+    toast({
+      title: "Profile updated",
+      description: "Employee profile has been updated successfully.",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setEmployeeForm(employeeData);
   };
 
   return (
@@ -157,40 +183,141 @@ const EmployeeDetails = () => {
             <h2 className="text-xl font-semibold mb-4">Details</h2>
             <div className="flex flex-col xl:flex-row gap-6">
               <div className="flex-1 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Name:</p>
-                    <p className="font-medium">{employee.name}</p>
+                {isEditMode ? (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Name:</Label>
+                          <Input 
+                            id="name" 
+                            name="name" 
+                            value={employeeForm.name} 
+                            onChange={handleInputChange} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="dob">DOB:</Label>
+                          <Input 
+                            id="dob" 
+                            name="dob" 
+                            value={employeeForm.dob} 
+                            onChange={handleInputChange} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email:</Label>
+                          <Input 
+                            id="email" 
+                            name="email" 
+                            value={employeeForm.email} 
+                            onChange={handleInputChange} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="gender">Gender:</Label>
+                          <Select 
+                            value={employeeForm.gender} 
+                            onValueChange={(value) => handleSelectChange("gender", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Male">Male</SelectItem>
+                              <SelectItem value="Female">Female</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">Phone Number:</Label>
+                          <Input 
+                            id="phone" 
+                            name="phone" 
+                            value={employeeForm.phone} 
+                            onChange={handleInputChange} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="address">Address:</Label>
+                          <Input 
+                            id="address" 
+                            name="address" 
+                            value={employeeForm.address} 
+                            onChange={handleInputChange} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="role">Role:</Label>
+                          <Input 
+                            id="role" 
+                            name="role" 
+                            value={employeeForm.role} 
+                            onChange={handleInputChange} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="department">Department:</Label>
+                          <Select 
+                            value={employeeForm.department} 
+                            onValueChange={(value) => handleSelectChange("department", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Design">Design</SelectItem>
+                              <SelectItem value="Engineering">Engineering</SelectItem>
+                              <SelectItem value="Marketing">Marketing</SelectItem>
+                              <SelectItem value="Sales">Sales</SelectItem>
+                              <SelectItem value="HR">HR</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-6">
+                        <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                        <Button onClick={handleSaveProfile}>Save Changes</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Name:</p>
+                      <p className="font-medium">{employee.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">DOB:</p>
+                      <p className="font-medium">{employee.dob}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Email:</p>
+                      <p className="font-medium">{employee.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Gender:</p>
+                      <p className="font-medium">{employee.gender}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Phone Number:</p>
+                      <p className="font-medium">{employee.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Address:</p>
+                      <p className="font-medium">{employee.address}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Employee ID:</p>
+                      <p className="font-medium">{employee.employeeId}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Joining:</p>
+                      <p className="font-medium">{employee.joining}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">DOB:</p>
-                    <p className="font-medium">{employee.dob}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Email:</p>
-                    <p className="font-medium">{employee.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Gender:</p>
-                    <p className="font-medium">{employee.gender}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Phone Number:</p>
-                    <p className="font-medium">{employee.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Address:</p>
-                    <p className="font-medium">{employee.address}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Employee ID:</p>
-                    <p className="font-medium">{employee.employeeId}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Joining:</p>
-                    <p className="font-medium">{employee.joining}</p>
-                  </div>
-                </div>
+                )}
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
@@ -228,23 +355,22 @@ const EmployeeDetails = () => {
                       </div>
                     </div>
                     
-                    <div className="mt-6 flex justify-center gap-3">
-                      <Button variant="ghost" size="icon" className="rounded-full">
-                        <Facebook className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="rounded-full">
-                        <Instagram className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="rounded-full">
-                        <Twitter className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
                     <div className="mt-6">
-                      <Button className="w-full" onClick={handleEditProfile}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </Button>
+                      {isEditMode ? (
+                        <div className="flex gap-2">
+                          <Button variant="outline" className="w-1/2" onClick={handleCancelEdit}>
+                            Cancel
+                          </Button>
+                          <Button className="w-1/2" onClick={handleSaveProfile}>
+                            Save
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button className="w-full" onClick={handleEditProfile}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Profile
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </Card>

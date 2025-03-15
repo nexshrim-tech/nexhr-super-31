@@ -29,8 +29,8 @@ const LocationManager = ({
   geofencingEnabled
 }: LocationManagerProps) => {
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="space-y-6 w-full">
+      <Card className="w-full">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <MapPin className="h-4 w-4" />

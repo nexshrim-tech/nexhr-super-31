@@ -55,7 +55,7 @@ const EmployeeGeofencingTable = ({ masterGeofencingEnabled }: EmployeeGeofencing
   };
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <MapPin className="h-4 w-4" />
@@ -74,15 +74,15 @@ const EmployeeGeofencingTable = ({ masterGeofencingEnabled }: EmployeeGeofencing
             />
           </div>
           
-          <div className="border rounded-md">
+          <div className="border rounded-md overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Position</TableHead>
-                  <TableHead className="text-right">Geofencing</TableHead>
+                  <TableHead className="w-[15%]">Employee ID</TableHead>
+                  <TableHead className="w-[30%]">Name</TableHead>
+                  <TableHead className="w-[20%]">Department</TableHead>
+                  <TableHead className="w-[20%]">Position</TableHead>
+                  <TableHead className="w-[15%] text-right">Geofencing</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

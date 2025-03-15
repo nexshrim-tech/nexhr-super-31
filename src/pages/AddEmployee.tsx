@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChevronLeft, Upload } from "lucide-react";
+import { ChevronLeft, Upload, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AddEmployee = () => {
@@ -20,15 +20,22 @@ const AddEmployee = () => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    fatherName: "",
     email: "",
     phone: "",
     department: "",
     jobTitle: "",
     employeeId: "",
     joinDate: "",
+    password: "",
+    confirmPassword: ""
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formProgress, setFormProgress] = useState(0);
+  const [documents, setDocuments] = useState({
+    aadharCard: null as File | null,
+    panCard: null as File | null
+  });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,6 +45,21 @@ const AddEmployee = () => {
         setAvatarPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>, docType: 'aadharCard' | 'panCard') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setDocuments(prev => ({
+        ...prev,
+        [docType]: file
+      }));
+      
+      toast({
+        title: "Document uploaded",
+        description: `${docType === 'aadharCard' ? 'Aadhar Card' : 'PAN Card'} successfully uploaded.`
+      });
     }
   };
 
@@ -63,6 +85,12 @@ const AddEmployee = () => {
     if (!formData.email) errors.email = "Email is required";
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = "Email is invalid";
+    }
+    if (formData.password && formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+    if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
     }
     
     setFormErrors(errors);
@@ -171,11 +199,12 @@ const AddEmployee = () => {
                 </CardHeader>
                 <CardContent>
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid grid-cols-4 mb-6">
+                    <TabsList className="grid grid-cols-5 mb-6">
                       <TabsTrigger value="personal">Personal</TabsTrigger>
                       <TabsTrigger value="employment">Employment</TabsTrigger>
                       <TabsTrigger value="contact">Contact</TabsTrigger>
                       <TabsTrigger value="bank">Bank Details</TabsTrigger>
+                      <TabsTrigger value="documents">Documents</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="personal" className="space-y-4">
@@ -205,6 +234,15 @@ const AddEmployee = () => {
                           {formErrors.lastName && (
                             <p className="text-xs text-red-500">{formErrors.lastName}</p>
                           )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fatherName">Father's Name</Label>
+                          <Input 
+                            id="fatherName" 
+                            placeholder="Enter father's name" 
+                            value={formData.fatherName}
+                            onChange={handleInputChange}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="dob">Date of Birth</Label>
@@ -344,6 +382,36 @@ const AddEmployee = () => {
                           />
                         </div>
                         <div className="space-y-2">
+                          <Label htmlFor="password" className={formErrors.password ? "text-red-500" : ""}>Password</Label>
+                          <Input 
+                            id="password" 
+                            type="password" 
+                            placeholder="Set password" 
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            className={formErrors.password ? "border-red-500" : ""}
+                          />
+                          {formErrors.password && (
+                            <p className="text-xs text-red-500">{formErrors.password}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword" className={formErrors.confirmPassword ? "text-red-500" : ""}>
+                            Confirm Password
+                          </Label>
+                          <Input 
+                            id="confirmPassword" 
+                            type="password" 
+                            placeholder="Confirm password" 
+                            value={formData.confirmPassword}
+                            onChange={handleInputChange}
+                            className={formErrors.confirmPassword ? "border-red-500" : ""}
+                          />
+                          {formErrors.confirmPassword && (
+                            <p className="text-xs text-red-500">{formErrors.confirmPassword}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
                           <Label htmlFor="address">Address</Label>
                           <Input id="address" placeholder="Enter address" onChange={handleInputChange} />
                         </div>
@@ -377,12 +445,16 @@ const AddEmployee = () => {
                           <Input id="bank-name" placeholder="Enter bank name" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
+                          <Label htmlFor="branch-name">Branch Name</Label>
+                          <Input id="branch-name" placeholder="Enter branch name" onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
                           <Label htmlFor="account-number">Account Number</Label>
                           <Input id="account-number" placeholder="Enter account number" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="routing-number">Routing Number</Label>
-                          <Input id="routing-number" placeholder="Enter routing number" onChange={handleInputChange} />
+                          <Label htmlFor="ifsc-code">IFSC Code</Label>
+                          <Input id="ifsc-code" placeholder="Enter IFSC code" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="account-type">Account Type</Label>
@@ -399,6 +471,83 @@ const AddEmployee = () => {
                       </div>
                       <div className="flex justify-end space-x-2 pt-4">
                         <Button variant="outline" onClick={() => setActiveTab("contact")}>Previous</Button>
+                        <Button onClick={() => setActiveTab("documents")}>Next</Button>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="documents" className="space-y-4">
+                      <div className="grid grid-cols-2 gap-6">
+                        <Card>
+                          <CardContent className="pt-6">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-medium">Aadhar Card</h4>
+                                  <p className="text-sm text-gray-500">Upload employee's Aadhar card</p>
+                                </div>
+                                <div className="relative">
+                                  <input
+                                    type="file"
+                                    id="aadhar-upload"
+                                    className="sr-only"
+                                    accept="image/*,.pdf"
+                                    onChange={(e) => handleDocumentUpload(e, 'aadharCard')}
+                                  />
+                                  <Label
+                                    htmlFor="aadhar-upload"
+                                    className="cursor-pointer inline-flex items-center gap-2 border px-3 py-2 rounded-md text-sm"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                    {documents.aadharCard ? 'Change File' : 'Upload File'}
+                                  </Label>
+                                </div>
+                              </div>
+                              {documents.aadharCard && (
+                                <div className="p-3 bg-green-50 text-green-800 rounded-md text-sm">
+                                  File uploaded: {documents.aadharCard.name}
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardContent className="pt-6">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-medium">PAN Card</h4>
+                                  <p className="text-sm text-gray-500">Upload employee's PAN card</p>
+                                </div>
+                                <div className="relative">
+                                  <input
+                                    type="file"
+                                    id="pan-upload"
+                                    className="sr-only"
+                                    accept="image/*,.pdf"
+                                    onChange={(e) => handleDocumentUpload(e, 'panCard')}
+                                  />
+                                  <Label
+                                    htmlFor="pan-upload"
+                                    className="cursor-pointer inline-flex items-center gap-2 border px-3 py-2 rounded-md text-sm"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                    {documents.panCard ? 'Change File' : 'Upload File'}
+                                  </Label>
+                                </div>
+                              </div>
+                              {documents.panCard && (
+                                <div className="p-3 bg-green-50 text-green-800 rounded-md text-sm">
+                                  File uploaded: {documents.panCard.name}
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button variant="outline" onClick={() => setActiveTab("bank")}>Previous</Button>
                         <Button onClick={handleSubmit}>Save Employee</Button>
                       </div>
                     </TabsContent>
