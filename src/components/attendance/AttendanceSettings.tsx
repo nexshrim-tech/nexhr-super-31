@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,16 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar } from "lucide-react";
-import LocationPicker from './LocationPicker';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { DayPickerMultipleSelect } from "react-day-picker";
 
 interface AttendanceSettingsProps {
   onSave: (settings: any) => void;
@@ -33,18 +25,12 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
   const [holidays, setHolidays] = React.useState<Date[]>([]);
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = React.useState(false);
 
-  const handleHolidaySelect = (date: Date | undefined) => {
-    if (!date) return;
-    setHolidays(prev => {
-      // Check if date already exists
-      const exists = prev.some(d => d.toDateString() === date.toDateString());
-      if (exists) {
-        // Remove the date if it exists
-        return prev.filter(d => d.toDateString() !== date.toDateString());
-      }
-      // Add the date if it doesn't exist
-      return [...prev, date];
-    });
+  const handleHolidaySelect: DayPickerMultipleSelect = (dates) => {
+    if (!dates) {
+      setHolidays([]);
+      return;
+    }
+    setHolidays(dates);
   };
 
   return (
@@ -114,7 +100,7 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
                 <CalendarComponent
                   mode="multiple"
                   selected={holidays}
-                  onSelect={(date) => handleHolidaySelect(date)}
+                  onSelect={handleHolidaySelect}
                   className="rounded-md border pointer-events-auto"
                 />
                 <div className="mt-4 text-sm text-muted-foreground">
