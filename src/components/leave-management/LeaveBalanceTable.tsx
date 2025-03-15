@@ -117,7 +117,7 @@ const LeaveBalanceTable: React.FC<LeaveBalanceTableProps> = ({ balanceData }) =>
                 <SelectItem value="all">All Balances</SelectItem>
                 <SelectItem value="low">Low Balance (≤ 5)</SelectItem>
                 <SelectItem value="medium">Medium Balance (6-10)</SelectItem>
-                <SelectItem value="high">High Balance (> 10)</SelectItem>
+                <SelectItem value="high">High Balance (&gt; 10)</SelectItem>
               </SelectContent>
             </Select>
           </div>
