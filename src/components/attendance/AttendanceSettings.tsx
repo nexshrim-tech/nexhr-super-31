@@ -5,32 +5,56 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar } from "lucide-react";
+import { MapPin, Calendar, Save } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+
+interface Location {
+  id: string;
+  name: string;
+  coordinates: [number, number];
+}
+
+interface AttendanceSettings {
+  workStartTime: string;
+  lateThreshold: string;
+  enableGeofencing: boolean;
+  defaultRadius: number;
+  requirePhoto: boolean;
+  holidays: Date[];
+  locations: Location[];
+}
 
 interface AttendanceSettingsProps {
-  onSave: (settings: any) => void;
+  onSave: (settings: AttendanceSettings) => void;
 }
 
 const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
-  const [settings, setSettings] = React.useState({
+  const [settings, setSettings] = React.useState<AttendanceSettings>({
     workStartTime: "09:00",
     lateThreshold: "09:30",
     enableGeofencing: true,
     defaultRadius: 250,
     requirePhoto: true,
+    holidays: [],
+    locations: [],
   });
 
-  const [holidays, setHolidays] = React.useState<Date[]>([]);
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = React.useState(false);
 
   const handleHolidaySelect = (dates: Date[] | undefined) => {
     if (!dates) {
-      setHolidays([]);
+      setSettings(prev => ({ ...prev, holidays: [] }));
       return;
     }
-    setHolidays(dates);
+    setSettings(prev => ({ ...prev, holidays: dates }));
+  };
+
+  const handleSaveSettings = () => {
+    onSave(settings);
   };
 
   return (
@@ -48,6 +72,9 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
                 value={settings.workStartTime}
                 onChange={(e) => setSettings({ ...settings, workStartTime: e.target.value })}
               />
+              <p className="text-sm text-muted-foreground">
+                Employees arriving before this time are marked as present
+              </p>
             </div>
             <div className="space-y-2">
               <Label>Late Threshold</Label>
@@ -56,6 +83,9 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
                 value={settings.lateThreshold}
                 onChange={(e) => setSettings({ ...settings, lateThreshold: e.target.value })}
               />
+              <p className="text-sm text-muted-foreground">
+                Employees arriving after this time are marked as late
+              </p>
             </div>
           </div>
 
@@ -92,25 +122,42 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
                 Manage Holidays
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle>Manage Holidays</DialogTitle>
               </DialogHeader>
-              <div className="py-4">
-                <CalendarComponent
-                  mode="multiple"
-                  selected={holidays}
-                  onSelect={handleHolidaySelect}
-                  className="rounded-md border pointer-events-auto"
-                />
-                <div className="mt-4 text-sm text-muted-foreground">
-                  Click on dates to toggle them as holidays. Selected dates are marked as holidays.
-                </div>
+              <div className="flex-1 overflow-hidden">
+                <ScrollArea className="h-[500px] pr-4">
+                  <div className="space-y-4">
+                    <CalendarComponent
+                      mode="multiple"
+                      selected={settings.holidays}
+                      onSelect={handleHolidaySelect}
+                      className="rounded-md border pointer-events-auto"
+                    />
+                    <div className="space-y-2">
+                      <Label>Selected Holidays</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {settings.holidays.map((date) => (
+                          <Badge 
+                            key={date.toISOString()} 
+                            variant="secondary"
+                          >
+                            {format(date, 'PPP')}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </ScrollArea>
               </div>
             </DialogContent>
           </Dialog>
 
-          <Button onClick={() => onSave({ ...settings, holidays })}>Save Settings</Button>
+          <Button onClick={handleSaveSettings} className="w-full">
+            <Save className="h-4 w-4 mr-2" />
+            Save Settings
+          </Button>
         </CardContent>
       </Card>
     </div>
