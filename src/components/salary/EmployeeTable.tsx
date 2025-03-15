@@ -5,16 +5,22 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { FileText, Edit, History } from "lucide-react";
+import { FileText, History } from "lucide-react";
 import { EmployeeSalary } from "@/types/salary";
 
 interface EmployeeTableProps {
   employees: EmployeeSalary[];
   onGenerateSalarySlip: (employee: EmployeeSalary) => void;
   onViewHistory?: (employee: EmployeeSalary) => void;
+  onViewLatestPayslip?: (employee: EmployeeSalary) => void;
 }
 
-const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, onGenerateSalarySlip, onViewHistory }) => {
+const EmployeeTable: React.FC<EmployeeTableProps> = ({ 
+  employees, 
+  onGenerateSalarySlip, 
+  onViewHistory, 
+  onViewLatestPayslip 
+}) => {
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -58,6 +64,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, onGenerateSala
                     variant="ghost" 
                     size="icon"
                     onClick={() => onGenerateSalarySlip(employee)}
+                    title="Generate Salary Slip"
                   >
                     <FileText className="h-4 w-4" />
                   </Button>
@@ -66,13 +73,21 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, onGenerateSala
                       variant="ghost" 
                       size="icon"
                       onClick={() => onViewHistory(employee)}
+                      title="View Payslip History"
                     >
                       <History className="h-4 w-4" />
                     </Button>
                   )}
-                  <Button variant="ghost" size="icon">
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  {onViewLatestPayslip && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => onViewLatestPayslip(employee)}
+                      title="View Latest Payslip"
+                    >
+                      <FileText className="h-4 w-4 text-blue-600" />
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>

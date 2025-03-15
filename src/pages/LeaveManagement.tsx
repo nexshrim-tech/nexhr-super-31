@@ -11,13 +11,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
 import LeaveCalendar from "@/components/leave-management/LeaveCalendar";
-import LeaveOverview from "@/components/leave-management/LeaveOverview";
 import LeaveApplicationForm from "@/components/leave-management/LeaveApplicationForm";
 import LeaveTable from "@/components/leave-management/LeaveTable";
+import LeaveHistoryTable from "@/components/leave-management/LeaveHistoryTable";
 
 const initialLeaveApplications = [
   {
     id: 1,
+    employeeId: "EMP001",
     employee: { name: "Olivia Rhye", avatar: "OR" },
     type: "Annual Leave",
     startDate: "2023-08-15",
@@ -28,6 +29,7 @@ const initialLeaveApplications = [
   },
   {
     id: 2,
+    employeeId: "EMP002",
     employee: { name: "Phoenix Baker", avatar: "PB" },
     type: "Sick Leave",
     startDate: "2023-08-10",
@@ -38,6 +40,7 @@ const initialLeaveApplications = [
   },
   {
     id: 3,
+    employeeId: "EMP003",
     employee: { name: "Lana Steiner", avatar: "LS" },
     type: "Personal Leave",
     startDate: "2023-08-25",
@@ -48,6 +51,7 @@ const initialLeaveApplications = [
   },
   {
     id: 4,
+    employeeId: "EMP004",
     employee: { name: "Demi Wilkinson", avatar: "DW" },
     type: "Maternity Leave",
     startDate: "2023-09-01",
@@ -58,6 +62,7 @@ const initialLeaveApplications = [
   },
   {
     id: 5,
+    employeeId: "EMP005",
     employee: { name: "Candice Wu", avatar: "CW" },
     type: "Annual Leave",
     startDate: "2023-08-05",
@@ -71,6 +76,8 @@ const initialLeaveApplications = [
 const leaveHistoryData = [
   {
     id: 1,
+    employeeId: "EMP001",
+    employee: "Olivia Rhye",
     type: "Annual Leave",
     startDate: "2023-01-10",
     endDate: "2023-01-15",
@@ -79,6 +86,8 @@ const leaveHistoryData = [
   },
   {
     id: 2,
+    employeeId: "EMP001",
+    employee: "Olivia Rhye",
     type: "Sick Leave",
     startDate: "2023-03-22",
     endDate: "2023-03-23",
@@ -87,6 +96,8 @@ const leaveHistoryData = [
   },
   {
     id: 3,
+    employeeId: "EMP003",
+    employee: "Lana Steiner",
     type: "Personal Leave",
     startDate: "2023-05-15",
     endDate: "2023-05-16",
@@ -95,10 +106,32 @@ const leaveHistoryData = [
   },
   {
     id: 4,
+    employeeId: "EMP002",
+    employee: "Phoenix Baker",
     type: "Annual Leave",
     startDate: "2023-07-05",
     endDate: "2023-07-10",
     duration: "5 days",
+    status: "Completed",
+  },
+  {
+    id: 5,
+    employeeId: "EMP005",
+    employee: "Candice Wu",
+    type: "Sick Leave",
+    startDate: "2023-06-12",
+    endDate: "2023-06-13",
+    duration: "2 days",
+    status: "Completed",
+  },
+  {
+    id: 6,
+    employeeId: "EMP004",
+    employee: "Demi Wilkinson",
+    type: "Personal Leave",
+    startDate: "2023-04-20",
+    endDate: "2023-04-21",
+    duration: "2 days",
     status: "Completed",
   },
 ];
@@ -113,6 +146,7 @@ const leaveBalanceData = [
 const LeaveManagement = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [activeTab, setActiveTab] = useState("all");
+  const [historyTab, setHistoryTab] = useState("all");
   const [leaveApplications, setLeaveApplications] = useState(initialLeaveApplications);
   const [showApplyLeaveDialog, setShowApplyLeaveDialog] = useState(false);
   const [viewLeaveDetails, setViewLeaveDetails] = useState<any>(null);
@@ -146,6 +180,7 @@ const LeaveManagement = () => {
   const handleCreateLeave = (formData: FormData) => {
     const newLeave = {
       id: leaveApplications.length + 1,
+      employeeId: "EMP010",
       employee: { name: "Current User", avatar: "CU" },
       type: formData.get('leaveType') as string,
       startDate: formData.get('startDate') as string,
@@ -179,6 +214,11 @@ const LeaveManagement = () => {
     return app.status.toLowerCase() === activeTab.toLowerCase();
   });
 
+  const filteredHistoryData = leaveHistoryData.filter(item => {
+    if (historyTab === "all") return true;
+    return item.type.toLowerCase().includes(historyTab.toLowerCase());
+  });
+
   return (
     <div className="flex h-screen bg-gray-50">
       <SidebarNav />
@@ -199,25 +239,13 @@ const LeaveManagement = () => {
           </div>
 
           <div className="grid md:grid-cols-12 gap-6">
-            <div className="md:col-span-4 space-y-6">
+            <div className="md:col-span-4">
               <Card className="shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">Leave Calendar</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <LeaveCalendar date={date} setDate={setDate} />
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Leave Balance</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <LeaveOverview 
-                    balanceData={leaveBalanceData} 
-                    historyData={leaveHistoryData}
-                  />
                 </CardContent>
               </Card>
             </div>
@@ -255,6 +283,31 @@ const LeaveManagement = () => {
               </Card>
             </div>
           </div>
+          
+          <div className="mt-6">
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <CardTitle className="text-base">Leave History</CardTitle>
+                  <Tabs 
+                    defaultValue="all" 
+                    onValueChange={setHistoryTab}
+                    className="w-full max-w-[400px]"
+                  >
+                    <TabsList className="grid w-full grid-cols-4">
+                      <TabsTrigger value="all">All</TabsTrigger>
+                      <TabsTrigger value="annual">Annual</TabsTrigger>
+                      <TabsTrigger value="sick">Sick</TabsTrigger>
+                      <TabsTrigger value="personal">Personal</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <LeaveHistoryTable historyData={filteredHistoryData} showEmployee={true} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
@@ -291,6 +344,10 @@ const LeaveManagement = () => {
                     </Avatar>
                     <p className="font-medium">{viewLeaveDetails.employee.name}</p>
                   </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Employee ID</p>
+                  <p className="mt-1">{viewLeaveDetails.employeeId || "N/A"}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Status</p>

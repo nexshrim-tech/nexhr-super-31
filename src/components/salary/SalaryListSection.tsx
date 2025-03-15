@@ -1,8 +1,9 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, History } from "lucide-react";
+import { Search, History, FileText } from "lucide-react";
 import { EmployeeSalary, PayslipRecord } from "@/types/salary";
 import EmployeeTable from "./EmployeeTable";
 import EmployeeCard from "./EmployeeCard";
@@ -18,9 +19,14 @@ import PayslipHistory from "./PayslipHistory";
 interface SalaryListSectionProps {
   employees: EmployeeSalary[];
   onGenerateSalarySlip: (employee: EmployeeSalary) => void;
+  onViewLatestPayslip?: (employee: EmployeeSalary) => void;
 }
 
-const SalaryListSection: React.FC<SalaryListSectionProps> = ({ employees, onGenerateSalarySlip }) => {
+const SalaryListSection: React.FC<SalaryListSectionProps> = ({ 
+  employees, 
+  onGenerateSalarySlip,
+  onViewLatestPayslip 
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("table");
   const [openHistory, setOpenHistory] = useState(false);
@@ -83,6 +89,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({ employees, onGene
               employees={filteredEmployees} 
               onGenerateSalarySlip={onGenerateSalarySlip}
               onViewHistory={handleViewHistory}
+              onViewLatestPayslip={onViewLatestPayslip}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -92,6 +99,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({ employees, onGene
                   employee={employee} 
                   onGenerateSalarySlip={onGenerateSalarySlip}
                   onViewHistory={handleViewHistory}
+                  onViewLatestPayslip={onViewLatestPayslip}
                 />
               ))}
             </div>

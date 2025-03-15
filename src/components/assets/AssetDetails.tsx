@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Edit, FilePlus } from "lucide-react";
+import { Edit, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface AssetDetailsProps {
@@ -16,6 +16,7 @@ interface AssetDetailsProps {
     value: number;
     assignedTo: { name: string; avatar: string } | null;
     status: string;
+    bill?: string;
   };
   onEdit: () => void;
   onClose: () => void;
@@ -23,6 +24,22 @@ interface AssetDetailsProps {
 
 const AssetDetails: React.FC<AssetDetailsProps> = ({ asset, onEdit, onClose }) => {
   const { toast } = useToast();
+
+  const handleViewBill = () => {
+    if (asset.bill) {
+      // If we had a real bill document, we would open it here
+      toast({
+        title: "Viewing bill",
+        description: `Opening bill for ${asset.name}`,
+      });
+    } else {
+      toast({
+        title: "No bill available",
+        description: "No bill was uploaded for this asset.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -92,15 +109,10 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset, onEdit, onClose }) =
         </Button>
         <Button
           variant="outline"
-          onClick={() => {
-            toast({
-              title: "Asset report generated",
-              description: `Report for ${asset.name} has been generated.`
-            });
-          }}
+          onClick={handleViewBill}
         >
-          <FilePlus className="h-4 w-4 mr-2" />
-          Generate Report
+          <FileText className="h-4 w-4 mr-2" />
+          View Bill
         </Button>
       </div>
     </div>

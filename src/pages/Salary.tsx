@@ -1,14 +1,14 @@
+
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SalaryStats from "@/components/salary/SalaryStats";
 import SalaryTrends from "@/components/salary/SalaryTrends";
 import SalaryListSection from "@/components/salary/SalaryListSection";
-import SalaryFormDialog from "@/components/salary/SalaryFormDialog";
 import PayslipDialog from "@/components/salary/PayslipDialog";
 import { EmployeeSalary, SalaryData } from "@/types/salary";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from "recharts";
 
 // Sample data
 const salaryData: SalaryData[] = [
@@ -20,6 +20,21 @@ const salaryData: SalaryData[] = [
   { month: "Jun", amount: 280000 },
   { month: "Jul", amount: 285000 },
   { month: "Aug", amount: 290000 },
+];
+
+const departmentSalaryData = [
+  { name: "Engineering", value: 150000, fill: "#8884d8" },
+  { name: "Design", value: 75000, fill: "#83a6ed" },
+  { name: "Product", value: 85000, fill: "#8dd1e1" },
+  { name: "Marketing", value: 60000, fill: "#82ca9d" },
+  { name: "Sales", value: 50000, fill: "#a4de6c" },
+];
+
+const employeeGrowthData = [
+  { name: "Q1", growth: 2.5 },
+  { name: "Q2", growth: 3.1 },
+  { name: "Q3", growth: 2.8 },
+  { name: "Q4", growth: 3.5 },
 ];
 
 const employeeSalaries: EmployeeSalary[] = [
@@ -151,7 +166,6 @@ const employeeSalaries: EmployeeSalary[] = [
 ];
 
 const Salary = () => {
-  const [openDialog, setOpenDialog] = useState(false);
   const [openSalarySlip, setOpenSalarySlip] = useState(false);
   const [selectedSalaryData, setSelectedSalaryData] = useState<EmployeeSalary | null>(null);
   const { toast } = useToast();
@@ -161,20 +175,13 @@ const Salary = () => {
     setOpenSalarySlip(true);
   };
 
-  const handleAddSalary = () => {
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
-
-  const handleSalarySave = (formData: any) => {
+  const handleViewLatestPayslip = (employeeData: EmployeeSalary) => {
+    setSelectedSalaryData(employeeData);
+    setOpenSalarySlip(true);
     toast({
-      title: "Salary details updated",
-      description: "The salary details have been successfully updated.",
+      title: "Viewing latest payslip",
+      description: `Showing payslip for ${employeeData.employee.name}`,
     });
-    setOpenDialog(false);
   };
 
   return (
@@ -182,28 +189,82 @@ const Salary = () => {
       <SidebarNav />
       <div className="flex-1 overflow-y-auto">
         <div className="container py-8">
-          <div className="flex justify-between items-center mb-6">
+          <div className="mb-6">
             <h1 className="text-2xl font-bold">Salary Management</h1>
-            <Button onClick={handleAddSalary}>
-              <Plus className="mr-2 h-4 w-4" /> Add Salary
-            </Button>
           </div>
 
           <SalaryStats />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Department Salary Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={departmentSalaryData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={90}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        animationBegin={0}
+                        animationDuration={1500}
+                      >
+                        {departmentSalaryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Salary Growth Rate (Quarterly)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={employeeGrowthData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis unit="%" />
+                      <Tooltip formatter={(value) => `${value}%`} />
+                      <Bar 
+                        dataKey="growth" 
+                        fill="#8884d8" 
+                        animationBegin={0}
+                        animationDuration={1500}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
           <SalaryTrends data={salaryData} />
+          
           <SalaryListSection 
             employees={employeeSalaries} 
-            onGenerateSalarySlip={handleGenerateSalarySlip} 
+            onGenerateSalarySlip={handleGenerateSalarySlip}
+            onViewLatestPayslip={handleViewLatestPayslip}
           />
         </div>
       </div>
-
-      <SalaryFormDialog
-        open={openDialog}
-        onOpenChange={setOpenDialog}
-        onClose={handleCloseDialog}
-        onSave={handleSalarySave}
-      />
 
       <PayslipDialog
         open={openSalarySlip}
