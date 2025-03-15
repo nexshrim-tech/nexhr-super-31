@@ -198,19 +198,34 @@ const LeaveManagement = () => {
             </Button>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="md:col-span-1 space-y-6">
-              <LeaveCalendar date={date} setDate={setDate} />
-              <LeaveOverview 
-                balanceData={leaveBalanceData} 
-                historyData={leaveHistoryData}
-              />
+          <div className="grid md:grid-cols-12 gap-6">
+            <div className="md:col-span-4 space-y-6">
+              <Card className="shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Leave Calendar</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <LeaveCalendar date={date} setDate={setDate} />
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Leave Balance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <LeaveOverview 
+                    balanceData={leaveBalanceData} 
+                    historyData={leaveHistoryData}
+                  />
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="md:col-span-2">
-              <Card>
+            <div className="md:col-span-8">
+              <Card className="shadow-sm">
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-4">
                     <CardTitle className="text-base">Leave Applications</CardTitle>
                     <Tabs 
                       defaultValue="all" 
