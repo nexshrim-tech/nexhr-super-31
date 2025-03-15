@@ -1,26 +1,18 @@
 
-import React, { useState } from "react";
-import {
+import React, { useState, useEffect } from 'react';
+import { 
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useToast } from "@/hooks/use-toast";
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Sample employee data
 const sampleEmployees = [
@@ -40,21 +32,64 @@ interface ProjectEditProps {
 
 const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, onSave }) => {
   const [editedProject, setEditedProject] = useState({
-    ...project,
-    assignees: [...project.assignees]
+    id: 0,
+    name: '',
+    description: '',
+    status: 'planned',
+    priority: 'medium',
+    dueDate: '',
+    assignees: [] as number[],
+    progress: 0,
+    tasks: [] as any[],
+    comments: [] as any[]
   });
-  const { toast } = useToast();
+
+  useEffect(() => {
+    if (project && project.id) {
+      // Make sure assignees is always an array
+      const assignees = Array.isArray(project.assignees) ? project.assignees : [];
+      
+      setEditedProject({
+        ...project,
+        assignees
+      });
+    }
+  }, [project]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditedProject({
+      ...editedProject,
+      [name]: value
+    });
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setEditedProject({
+      ...editedProject,
+      [name]: value
+    });
+  };
+
+  const handleAssigneeChange = (employeeId: number) => {
+    setEditedProject(prev => {
+      const currentAssignees = [...prev.assignees];
+      
+      if (currentAssignees.includes(employeeId)) {
+        return {
+          ...prev,
+          assignees: currentAssignees.filter(id => id !== employeeId)
+        };
+      } else {
+        return {
+          ...prev,
+          assignees: [...currentAssignees, employeeId]
+        };
+      }
+    });
+  };
 
   const handleSave = () => {
-    if (!editedProject.name) {
-      toast({
-        title: "Project name required",
-        description: "Please enter a name for the project",
-        variant: "destructive"
-      });
-      return;
-    }
-
     onSave(editedProject);
     onOpenChange(false);
   };
@@ -64,9 +99,6 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Project</DialogTitle>
-          <DialogDescription>
-            Make changes to your project details
-          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
@@ -75,9 +107,10 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
             </label>
             <Input
               id="project-name"
+              name="name"
               placeholder="Enter project name"
               value={editedProject.name}
-              onChange={(e) => setEditedProject({...editedProject, name: e.target.value})}
+              onChange={handleInputChange}
             />
           </div>
           <div className="space-y-2">
@@ -86,9 +119,10 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
             </label>
             <Textarea
               id="project-description"
+              name="description"
               placeholder="Enter project description"
               value={editedProject.description}
-              onChange={(e) => setEditedProject({...editedProject, description: e.target.value})}
+              onChange={handleInputChange}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -98,7 +132,7 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
               </label>
               <Select
                 value={editedProject.status}
-                onValueChange={(value) => setEditedProject({...editedProject, status: value})}
+                onValueChange={(value) => handleSelectChange('status', value)}
               >
                 <SelectTrigger id="project-status">
                   <SelectValue placeholder="Select status" />
@@ -116,7 +150,7 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
               </label>
               <Select
                 value={editedProject.priority}
-                onValueChange={(value) => setEditedProject({...editedProject, priority: value})}
+                onValueChange={(value) => handleSelectChange('priority', value)}
               >
                 <SelectTrigger id="project-priority">
                   <SelectValue placeholder="Select priority" />
@@ -135,14 +169,15 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
             </label>
             <Input
               id="project-due-date"
+              name="dueDate"
               type="date"
               value={editedProject.dueDate}
-              onChange={(e) => setEditedProject({...editedProject, dueDate: e.target.value})}
+              onChange={handleInputChange}
             />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">
-              Team Members
+              Assign Team Members
             </label>
             <ScrollArea className="h-[150px] border rounded-md p-2">
               <div className="space-y-2">
@@ -150,25 +185,13 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
                   <div key={employee.id} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      id={`employee-${employee.id}`}
+                      id={`employee-edit-${employee.id}`}
                       className="rounded border-gray-300"
                       checked={editedProject.assignees.includes(employee.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setEditedProject({
-                            ...editedProject,
-                            assignees: [...editedProject.assignees, employee.id]
-                          });
-                        } else {
-                          setEditedProject({
-                            ...editedProject,
-                            assignees: editedProject.assignees.filter(id => id !== employee.id)
-                          });
-                        }
-                      }}
+                      onChange={() => handleAssigneeChange(employee.id)}
                     />
                     <label 
-                      htmlFor={`employee-${employee.id}`}
+                      htmlFor={`employee-edit-${employee.id}`}
                       className="text-sm font-medium flex items-center gap-2"
                     >
                       <Avatar className="h-6 w-6">
@@ -187,7 +210,7 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!editedProject.name}>
+          <Button onClick={handleSave}>
             Save Changes
           </Button>
         </DialogFooter>

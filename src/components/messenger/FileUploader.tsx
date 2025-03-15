@@ -1,6 +1,7 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Paperclip, X, Image, Mic, FileText, Upload, Send } from 'lucide-react';
+import { Paperclip, X, Image, Mic, FileText, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface FileUploaderProps {

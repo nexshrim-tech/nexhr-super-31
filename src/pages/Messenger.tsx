@@ -26,6 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import FileUploader from "@/components/messenger/FileUploader";
 
 // Sample employee data
 const employees = [
@@ -159,6 +160,62 @@ const Messenger = () => {
       } else {
         return [...prev, name];
       }
+    });
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (!selectedChat) return;
+    
+    // Create a new message with file information
+    const fileMessage = {
+      id: Date.now(),
+      sender: "user",
+      text: `[File: ${file.name}]`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      file: {
+        name: file.name,
+        type: file.type,
+        url: URL.createObjectURL(file)
+      }
+    };
+    
+    // Add the file message to the chat
+    if (!selectedChat.messages) {
+      selectedChat.messages = [];
+    }
+    selectedChat.messages.push(fileMessage);
+    setSelectedChat({ ...selectedChat });
+    
+    toast({
+      title: "File sent",
+      description: `${file.name} has been sent successfully`
+    });
+  };
+
+  const handleVoiceRecord = (blob: Blob) => {
+    if (!selectedChat) return;
+    
+    // Create a new message with voice recording information
+    const voiceMessage = {
+      id: Date.now(),
+      sender: "user",
+      text: "[Voice Message]",
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      voice: {
+        url: URL.createObjectURL(blob)
+      }
+    };
+    
+    // Add the voice message to the chat
+    if (!selectedChat.messages) {
+      selectedChat.messages = [];
+    }
+    selectedChat.messages.push(voiceMessage);
+    setSelectedChat({ ...selectedChat });
+    
+    toast({
+      title: "Voice message sent",
+      description: "Your voice message has been sent successfully"
     });
   };
 
@@ -407,6 +464,43 @@ const Messenger = () => {
                                 </div>
                               )}
                               <p>{msg.text}</p>
+                              
+                              {/* Display file if present */}
+                              {msg.file && msg.file.type.startsWith('image/') && (
+                                <div className="mt-2">
+                                  <img 
+                                    src={msg.file.url} 
+                                    alt={msg.file.name} 
+                                    className="max-w-full rounded-md max-h-40 object-contain"
+                                  />
+                                </div>
+                              )}
+                              
+                              {/* Display document link if present */}
+                              {msg.file && !msg.file.type.startsWith('image/') && (
+                                <div className="mt-2 flex items-center gap-2 py-2 px-3 bg-gray-100 rounded-md">
+                                  <FileText className="h-4 w-4" />
+                                  <a 
+                                    href={msg.file.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-blue-500 underline"
+                                  >
+                                    {msg.file.name}
+                                  </a>
+                                </div>
+                              )}
+                              
+                              {/* Display voice message if present */}
+                              {msg.voice && (
+                                <div className="mt-2">
+                                  <audio controls className="w-full max-w-[200px]">
+                                    <source src={msg.voice.url} type="audio/webm" />
+                                    Your browser does not support the audio element.
+                                  </audio>
+                                </div>
+                              )}
+                              
                               <div className={`text-xs mt-1 ${
                                 msg.sender === "user" ? "text-blue-100" : "text-gray-400"
                               }`}>
@@ -424,6 +518,12 @@ const Messenger = () => {
                   </ScrollArea>
                   
                   <div className="p-4 bg-white border-t">
+                    <div className="mb-2">
+                      <FileUploader 
+                        onFileSelect={handleFileSelect} 
+                        onVoiceRecord={handleVoiceRecord}
+                      />
+                    </div>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Textarea 
                         value={message}
