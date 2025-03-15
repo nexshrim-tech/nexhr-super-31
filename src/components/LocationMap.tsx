@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Download, Maximize, Minimize, Info, UserPlus, Search, Calendar } from "lucide-react";
+import { Download, Maximize, Minimize, Info, UserPlus, Search, Calendar, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,13 +13,17 @@ interface LocationMapProps {
   defaultView?: boolean;
 }
 
-// Mock employee data for the map
+// Mock employee data for the map with timestamps for movement tracking
 const employees = [
   {
     id: 1,
     name: "Chisom Chukwukwe",
     avatar: "CC",
-    position: { left: "25%", top: "45%" },
+    positions: [
+      { left: "25%", top: "45%", timestamp: "09:00 AM" },
+      { left: "35%", top: "40%", timestamp: "11:30 AM" },
+      { left: "45%", top: "35%", timestamp: "02:00 PM" },
+    ],
     color: "blue",
     lastSeen: "2 mins ago",
     location: "Main Office, Floor 2"
@@ -28,7 +32,11 @@ const employees = [
     id: 2,
     name: "David Cooper",
     avatar: "DC",
-    position: { left: "45%", top: "30%" },
+    positions: [
+      { left: "45%", top: "30%", timestamp: "09:30 AM" },
+      { left: "50%", top: "35%", timestamp: "11:45 AM" },
+      { left: "55%", top: "40%", timestamp: "01:15 PM" },
+    ],
     color: "green",
     lastSeen: "Just now",
     location: "Conference Room A"
@@ -37,7 +45,11 @@ const employees = [
     id: 3,
     name: "Sarah Miller",
     avatar: "SM",
-    position: { left: "65%", top: "50%" },
+    positions: [
+      { left: "65%", top: "50%", timestamp: "08:45 AM" },
+      { left: "60%", top: "45%", timestamp: "10:30 AM" },
+      { left: "55%", top: "40%", timestamp: "03:00 PM" },
+    ],
     color: "yellow",
     lastSeen: "5 mins ago",
     location: "Cafeteria"
@@ -46,7 +58,11 @@ const employees = [
     id: 4,
     name: "Michael Johnson",
     avatar: "MJ",
-    position: { left: "55%", top: "65%" },
+    positions: [
+      { left: "35%", top: "65%", timestamp: "09:15 AM" },
+      { left: "45%", top: "60%", timestamp: "12:00 PM" },
+      { left: "55%", top: "65%", timestamp: "04:30 PM" },
+    ],
     color: "purple",
     lastSeen: "15 mins ago",
     location: "Reception Area"
@@ -59,7 +75,9 @@ const LocationMap = ({ employeeId, defaultView = true }: LocationMapProps) => {
   const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
   const isMobile = useIsMobile();
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [showHistorical, setShowHistorical] = useState(false);
+  const [showHistorical, setShowHistorical] = useState(true);
+  const [viewTimeline, setViewTimeline] = useState(false);
+  const [animationComplete, setAnimationComplete] = useState(false);
 
   useEffect(() => {
     if (employeeId) {
@@ -68,6 +86,20 @@ const LocationMap = ({ employeeId, defaultView = true }: LocationMapProps) => {
       setSelectedEmployee(null);
     }
   }, [employeeId]);
+
+  useEffect(() => {
+    // Reset animation state when historical view changes
+    if (showHistorical) {
+      setAnimationComplete(false);
+      
+      // Start animation after a brief delay
+      const timer = setTimeout(() => {
+        setAnimationComplete(true);
+      }, 2000); // Animation takes 2 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showHistorical]);
 
   const handleViewFullMap = () => {
     setIsFullscreen(true);
@@ -96,6 +128,23 @@ const LocationMap = ({ employeeId, defaultView = true }: LocationMapProps) => {
     const animation = isSelected ? "animate-pulse" : "";
     
     return { size, innerSize, animation };
+  };
+
+  const handleViewBill = () => {
+    toast({
+      title: "Bill View",
+      description: "Viewing purchase bill for this asset."
+    });
+  };
+
+  const toggleTimeline = () => {
+    setViewTimeline(!viewTimeline);
+    toast({
+      title: viewTimeline ? "Timeline hidden" : "Timeline activated",
+      description: viewTimeline 
+        ? "Employee movement timeline is now hidden." 
+        : "You can now see the timeline of employee movements."
+    });
   };
 
   return (
@@ -129,6 +178,18 @@ const LocationMap = ({ employeeId, defaultView = true }: LocationMapProps) => {
             <Calendar className="h-4 w-4 mr-2" />
             {showHistorical ? "Hide History" : "Show History"}
           </Button>
+          
+          {showHistorical && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/90 backdrop-blur-sm"
+              onClick={toggleTimeline}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              {viewTimeline ? "Hide Timeline" : "View Timeline"}
+            </Button>
+          )}
           
           {selectedEmployee && (
             <Badge variant="outline" className="bg-white/90 backdrop-blur-sm py-1 px-3">
@@ -166,28 +227,122 @@ const LocationMap = ({ employeeId, defaultView = true }: LocationMapProps) => {
             className="w-full h-full object-cover transition-transform"
           />
           
+          {/* Animated paths between positions */}
+          {showHistorical && (
+            <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+              {employees.map(employee => {
+                // If an employee is selected, only show that employee's path
+                if (selectedEmployee && employee.id !== selectedEmployee) return null;
+                
+                return employee.positions.length > 1 && (
+                  <g key={`path-${employee.id}`}>
+                    {employee.positions.slice(0, -1).map((pos, index) => {
+                      const nextPos = employee.positions[index + 1];
+                      return (
+                        <path 
+                          key={`segment-${employee.id}-${index}`}
+                          d={`M${pos.left},${pos.top} L${nextPos.left},${nextPos.top}`}
+                          stroke={`var(--${employee.color}-500, #3b82f6)`}
+                          strokeWidth="2"
+                          strokeDasharray="10,5"
+                          fill="none"
+                          className={`${animationComplete ? 'opacity-60' : 'opacity-0'}`}
+                          style={{
+                            strokeDashoffset: animationComplete ? 0 : 100,
+                            transition: 'stroke-dashoffset 2s ease, opacity 0.5s ease',
+                          }}
+                        />
+                      );
+                    })}
+                  </g>
+                );
+              })}
+            </svg>
+          )}
+          
+          {/* Movement timeline */}
+          {showHistorical && viewTimeline && (
+            <div className="absolute bottom-16 left-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-md border z-10">
+              <h4 className="text-sm font-medium mb-2">Movement Timeline</h4>
+              <div className="space-y-3 max-h-40 overflow-y-auto">
+                {employees.map(employee => {
+                  // If an employee is selected, only show that employee's timeline
+                  if (selectedEmployee && employee.id !== selectedEmployee) return null;
+                  
+                  return (
+                    <div key={`timeline-${employee.id}`}>
+                      <p className="text-sm font-medium flex items-center gap-1">
+                        <span className={`inline-block w-2 h-2 rounded-full bg-${employee.color}-500`}></span>
+                        {employee.name}
+                      </p>
+                      <div className="pl-4 space-y-1 mt-1">
+                        {employee.positions.map((pos, index) => (
+                          <p key={`time-${employee.id}-${index}`} className="text-xs text-gray-600 flex justify-between">
+                            <span>{pos.timestamp}</span>
+                            <span className="text-gray-500">
+                              {index === 0 
+                                ? 'Started' 
+                                : index === employee.positions.length - 1 
+                                  ? 'Current location' 
+                                  : `Position ${index + 1}`}
+                            </span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          
           {/* Map markers */}
           {employees.map(employee => {
             // If an employee is selected, only show that employee
             if (selectedEmployee && employee.id !== selectedEmployee) return null;
             
+            // Get the current position (last in the array)
+            const currentPosition = employee.positions[employee.positions.length - 1];
             const markerStyle = getMarkerStyle(employee.id);
+            
             return (
               <TooltipProvider key={employee.id}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div 
-                      className={`absolute cursor-pointer ${markerStyle.animation}`}
-                      style={{ left: employee.position.left, top: employee.position.top }}
+                      className={`absolute cursor-pointer ${markerStyle.animation} z-20`}
+                      style={{ 
+                        left: currentPosition.left, 
+                        top: currentPosition.top,
+                        transition: 'left 1s ease-out, top 1s ease-out'
+                      }}
                       onClick={() => setSelectedEmployee(employee.id === selectedEmployee ? null : employee.id)}
                     >
-                      <div className={`${markerStyle.size} bg-${employee.color}-500 rounded-full flex items-center justify-center`}>
-                        <div className={`${markerStyle.innerSize} bg-${employee.color}-100 rounded-full`}></div>
+                      {/* Pin for latest location */}
+                      <div className="relative">
+                        <div className={`${markerStyle.size} bg-${employee.color}-500 rounded-full flex items-center justify-center`}>
+                          <div className={`${markerStyle.innerSize} bg-${employee.color}-100 rounded-full`}></div>
+                        </div>
+                        <div 
+                          className={`absolute -bottom-4 left-1/2 -translate-x-1/2 h-4 w-2 bg-${employee.color}-500 rounded-b-sm`}
+                          style={{ clipPath: 'polygon(0% 0%, 100% 0%, 50% 100%)' }}
+                        ></div>
                       </div>
                       
-                      {showHistorical && (
-                        <div className={`absolute -z-10 ${employee.color === 'purple' ? 'border-purple-300' : `border-${employee.color}-300`} border-2 border-dashed rounded-full w-24 h-24 -translate-x-1/2 -translate-y-1/2 opacity-40`} style={{ left: '50%', top: '50%' }}></div>
-                      )}
+                      {/* Historical positions */}
+                      {showHistorical && employee.positions.slice(0, -1).map((pos, index) => (
+                        <div 
+                          key={`hist-${employee.id}-${index}`}
+                          className={`absolute w-3 h-3 bg-${employee.color}-200 rounded-full`}
+                          style={{ 
+                            left: `calc(${pos.left} - ${currentPosition.left})`, 
+                            top: `calc(${pos.top} - ${currentPosition.top})`,
+                            opacity: 0.7
+                          }}
+                        >
+                          <div className={`w-1.5 h-1.5 bg-${employee.color}-400 rounded-full m-auto translate-y-[30%]`}></div>
+                        </div>
+                      ))}
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="top">
@@ -195,36 +350,13 @@ const LocationMap = ({ employeeId, defaultView = true }: LocationMapProps) => {
                       <p className="font-semibold">{employee.name}</p>
                       <p>{employee.location}</p>
                       <p className="text-gray-500">Last seen: {employee.lastSeen}</p>
+                      <p className="text-gray-500 text-xs">At: {currentPosition.timestamp}</p>
                     </div>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             );
           })}
-          
-          {/* Historical paths example (shown when showHistorical is true) */}
-          {showHistorical && (
-            <>
-              <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                <path 
-                  d="M25%,45% Q35%,40% 45%,30%" 
-                  stroke="#3b82f6" 
-                  strokeWidth="2" 
-                  fill="none" 
-                  strokeDasharray="5,5"
-                  className="opacity-60"
-                />
-                <path 
-                  d="M65%,50% Q60%,60% 55%,65%" 
-                  stroke="#eab308" 
-                  strokeWidth="2" 
-                  fill="none" 
-                  strokeDasharray="5,5"
-                  className="opacity-60"
-                />
-              </svg>
-            </>
-          )}
         </div>
         
         {!isFullscreen && defaultView && (

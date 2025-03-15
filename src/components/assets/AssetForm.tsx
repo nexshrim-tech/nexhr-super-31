@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "lucide-react";
+import { Calendar, Upload } from "lucide-react";
 import { format } from "date-fns";
 import {
   Popover,
@@ -28,10 +28,12 @@ interface AssetFormProps {
     value: string;
     assignedTo: string | null;
     status: string;
+    billDocument?: string;
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSelectChange: (name: string, value: string) => void;
   handleDateSelect: (date: Date | undefined) => void;
+  handleFileUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   date: Date | undefined;
   assetTypes: string[];
   employees: { id: number; name: string; avatar: string }[];
@@ -42,6 +44,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
   handleInputChange,
   handleSelectChange,
   handleDateSelect,
+  handleFileUpload,
   date,
   assetTypes,
   employees
@@ -167,6 +170,34 @@ const AssetForm: React.FC<AssetFormProps> = ({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="billDocument" className="flex items-center gap-2">
+          Purchase Bill (Optional)
+        </Label>
+        <div className="flex items-center gap-3">
+          <Input
+            id="billDocument"
+            name="billDocument"
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            className="flex-1"
+            onChange={handleFileUpload}
+          />
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => document.getElementById('billDocument')?.click()}
+          >
+            <Upload className="h-4 w-4" />
+            Upload
+          </Button>
+        </div>
+        {formData.billDocument && (
+          <p className="text-sm text-green-600 mt-1">Bill document uploaded: {formData.billDocument}</p>
+        )}
       </div>
     </div>
   );

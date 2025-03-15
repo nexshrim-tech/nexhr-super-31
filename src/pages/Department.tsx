@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Pen, Plus } from "lucide-react";
+import { Eye, Pen, Plus, UserPlus, UserMinus, BarChart } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -31,6 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const initialDepartments = [
   {
@@ -102,6 +103,19 @@ const managers = [
   "Lana Steiner",
 ];
 
+const employeeList = [
+  { id: 1, name: "Olivia Rhye", avatar: "OR", department: "Engineering" },
+  { id: 2, name: "Phoenix Baker", avatar: "PB", department: "Design" },
+  { id: 3, name: "Lana Steiner", avatar: "LS", department: "Product" },
+  { id: 4, name: "Demi Wilkinson", avatar: "DW", department: "Engineering" },
+  { id: 5, name: "Candice Wu", avatar: "CW", department: "Marketing" },
+  { id: 6, name: "Natali Craig", avatar: "NC", department: "Sales" },
+  { id: 7, name: "Drew Cano", avatar: "DC", department: "Human Resources" },
+  { id: 8, name: "Orlando Diggs", avatar: "OD", department: "Finance" },
+  { id: 9, name: "Chisom Chukwukwe", avatar: "CC", department: "Design" },
+  { id: 10, name: "Michael Johnson", avatar: "MJ", department: "Engineering" },
+];
+
 interface DepartmentFormData {
   name: string;
   manager: string;
@@ -115,6 +129,7 @@ const Department = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isManageEmployeesDialogOpen, setIsManageEmployeesDialogOpen] = useState(false);
   const [currentDepartment, setCurrentDepartment] = useState<any>(null);
   const [formData, setFormData] = useState<DepartmentFormData>({
     name: "",
@@ -123,6 +138,8 @@ const Department = () => {
     budget: "",
     status: "Active"
   });
+  const [departmentEmployees, setDepartmentEmployees] = useState<any[]>([]);
+  const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
   const { toast } = useToast();
 
   const totalEmployees = departments.reduce((sum, dept) => sum + dept.employeeCount, 0);
@@ -155,7 +172,6 @@ const Department = () => {
   };
 
   const handleAddDepartment = () => {
-    // Validate required fields
     if (!formData.name || !formData.manager || !formData.employeeCount || !formData.budget) {
       toast({
         title: "Missing required fields",
@@ -165,7 +181,6 @@ const Department = () => {
       return;
     }
 
-    // Create new department
     const newDepartment = {
       id: Math.max(...departments.map(d => d.id)) + 1,
       name: formData.name,
@@ -204,7 +219,6 @@ const Department = () => {
   const handleEditDepartment = () => {
     if (!currentDepartment) return;
 
-    // Validate required fields
     if (!formData.name || !formData.manager || !formData.employeeCount || !formData.budget) {
       toast({
         title: "Missing required fields",
@@ -236,6 +250,78 @@ const Department = () => {
       description: `${formData.name} has been updated.`
     });
   };
+
+  const handleManageEmployees = (department: any) => {
+    setCurrentDepartment(department);
+    
+    const deptEmployees = employeeList.filter(emp => 
+      emp.department.toLowerCase() === department.name.toLowerCase()
+    );
+    
+    const otherEmployees = employeeList.filter(emp => 
+      emp.department.toLowerCase() !== department.name.toLowerCase()
+    );
+    
+    setDepartmentEmployees(deptEmployees);
+    setAvailableEmployees(otherEmployees);
+    setIsManageEmployeesDialogOpen(true);
+  };
+
+  const handleAddEmployee = (employee: any) => {
+    const updatedAvailable = availableEmployees.filter(emp => emp.id !== employee.id);
+    setAvailableEmployees(updatedAvailable);
+    
+    const updatedDeptEmployees = [...departmentEmployees, {...employee, department: currentDepartment.name}];
+    setDepartmentEmployees(updatedDeptEmployees);
+    
+    const updatedDepartments = departments.map(dept => {
+      if (dept.id === currentDepartment.id) {
+        return {
+          ...dept,
+          employeeCount: dept.employeeCount + 1
+        };
+      }
+      return dept;
+    });
+    
+    setDepartments(updatedDepartments);
+    
+    toast({
+      title: "Employee added",
+      description: `${employee.name} has been added to ${currentDepartment.name}.`
+    });
+  };
+
+  const handleRemoveEmployee = (employee: any) => {
+    const updatedDeptEmployees = departmentEmployees.filter(emp => emp.id !== employee.id);
+    setDepartmentEmployees(updatedDeptEmployees);
+    
+    const updatedAvailable = [...availableEmployees, {...employee, department: "Unassigned"}];
+    setAvailableEmployees(updatedAvailable);
+    
+    const updatedDepartments = departments.map(dept => {
+      if (dept.id === currentDepartment.id) {
+        return {
+          ...dept,
+          employeeCount: dept.employeeCount - 1
+        };
+      }
+      return dept;
+    });
+    
+    setDepartments(updatedDepartments);
+    
+    toast({
+      title: "Employee removed",
+      description: `${employee.name} has been removed from ${currentDepartment.name}.`
+    });
+  };
+
+  const chartData = departments.map(dept => ({
+    name: dept.name,
+    employees: dept.employeeCount,
+    budget: dept.budget / 1000
+  }));
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -288,6 +374,26 @@ const Department = () => {
             </Card>
           </div>
 
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-base">Department Analytics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsBarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <XAxis dataKey="name" />
+                    <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                    <Tooltip />
+                    <Bar yAxisId="left" dataKey="employees" fill="#8884d8" name="Employees" />
+                    <Bar yAxisId="right" dataKey="budget" fill="#82ca9d" name="Budget (thousands)" />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Department List</CardTitle>
@@ -319,6 +425,14 @@ const Department = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleManageEmployees(department)}
+                            >
+                              <UserPlus className="h-4 w-4 mr-1" />
+                              <span className="hidden md:inline">Employees</span>
+                            </Button>
                             <Button variant="outline" size="sm" onClick={() => handleEditDepartmentOpen(department)}>
                               <Pen className="h-4 w-4 mr-1" />
                               <span className="hidden md:inline">Edit</span>
@@ -394,7 +508,6 @@ const Department = () => {
         </div>
       </div>
 
-      {/* Add Department Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md md:max-w-lg mx-auto">
           <DialogHeader>
@@ -488,7 +601,6 @@ const Department = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Department Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md md:max-w-lg mx-auto">
           <DialogHeader>
@@ -586,7 +698,6 @@ const Department = () => {
         </DialogContent>
       </Dialog>
 
-      {/* View Department Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-md md:max-w-lg mx-auto">
           <DialogHeader>
@@ -632,6 +743,88 @@ const Department = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isManageEmployeesDialogOpen} onOpenChange={setIsManageEmployeesDialogOpen}>
+        <DialogContent className="max-w-3xl mx-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Department Employees</DialogTitle>
+            <DialogDescription>
+              Add or remove employees from the {currentDepartment?.name} department
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div>
+              <h3 className="font-medium mb-3">Current Employees</h3>
+              {departmentEmployees.length > 0 ? (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                  {departmentEmployees.map(employee => (
+                    <div key={employee.id} className="flex items-center justify-between p-2 border rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>{employee.avatar}</AvatarFallback>
+                        </Avatar>
+                        <span>{employee.name}</span>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleRemoveEmployee(employee)}
+                      >
+                        <UserMinus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 border rounded-md text-gray-500">
+                  No employees in this department
+                </div>
+              )}
+            </div>
+            
+            <div>
+              <h3 className="font-medium mb-3">Available Employees</h3>
+              {availableEmployees.length > 0 ? (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                  {availableEmployees.map(employee => (
+                    <div key={employee.id} className="flex items-center justify-between p-2 border rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>{employee.avatar}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <span>{employee.name}</span>
+                          <p className="text-xs text-gray-500">{employee.department}</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-green-500 hover:text-green-700 hover:bg-green-50"
+                        onClick={() => handleAddEmployee(employee)}
+                      >
+                        <UserPlus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 border rounded-md text-gray-500">
+                  No available employees
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setIsManageEmployeesDialogOpen(false)}>
+              Done
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
