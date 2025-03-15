@@ -291,7 +291,32 @@ Sincerely,
   };
 
   // Filter templates based on search and category
-  const filteredTemplates = // ... keep existing code (template filtering logic)
+  const filteredTemplates = documentCategories
+    .filter(category => {
+      if (selectedCategory !== "all" && category.id !== selectedCategory) {
+        return false;
+      }
+      
+      if (searchTerm) {
+        return (
+          category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          category.templates.some(template => 
+            template.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        );
+      }
+      
+      return true;
+    })
+    .map(category => ({
+      ...category,
+      templates: searchTerm 
+        ? category.templates.filter(template => 
+            template.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        : category.templates
+    }))
+    .filter(category => category.templates.length > 0);
 
   return (
     <div className="flex h-full bg-gray-50">
