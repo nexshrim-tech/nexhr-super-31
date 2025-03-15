@@ -35,6 +35,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ExpenseHistoryTab from "@/components/expense/ExpenseHistoryTab";
+import { 
+  ResponsiveContainer, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip 
+} from "recharts";
 
 const expensesData = [
   { name: "Jan", amount: 12000 },
