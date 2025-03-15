@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, UserCheck } from "lucide-react";
+import { Calendar as CalendarIcon, UserCheck, Download } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import {
@@ -9,6 +8,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 const TodaysAttendance = () => {
   // Today's date
@@ -99,7 +111,22 @@ const TodaysAttendance = () => {
            currentMonth === today.getMonth() && 
            currentYear === today.getFullYear();
   };
-  
+
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(),
+  });
+  const { toast } = useToast();
+
+  const handleExport = () => {
+    if (dateRange?.from && dateRange?.to) {
+      toast({
+        title: "Export Started",
+        description: `Exporting attendance data from ${format(dateRange.from, 'PP')} to ${format(dateRange.to, 'PP')}`,
+      });
+    }
+  };
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
@@ -124,6 +151,7 @@ const TodaysAttendance = () => {
             <div className="text-xs text-yellow-700">Late</div>
           </div>
         </div>
+        
         <div className="flex flex-col sm:flex-row sm:justify-between gap-2">
           <Popover open={showCalendar} onOpenChange={setShowCalendar}>
             <PopoverTrigger asChild>
@@ -183,10 +211,80 @@ const TodaysAttendance = () => {
               </div>
             </PopoverContent>
           </Popover>
-          <Button variant="outline" size="sm" className="w-full gap-1">
-            <UserCheck className="h-4 w-4" />
-            Mark Attendance
-          </Button>
+          
+          <div className="flex gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1">
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Export Attendance Records</DialogTitle>
+                  <DialogDescription>
+                    Select a date range to export attendance records
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="py-4 space-y-4">
+                  <div className="space-y-2">
+                    <Label>Date Range</Label>
+                    <div className="grid gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange?.from ? (
+                              dateRange.to ? (
+                                <>
+                                  {format(dateRange.from, "LLL dd, y")} -{" "}
+                                  {format(dateRange.to, "LLL dd, y")}
+                                </>
+                              ) : (
+                                format(dateRange.from, "LLL dd, y")
+                              )
+                            ) : (
+                              <span>Pick a date range</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            initialFocus
+                            mode="range"
+                            defaultMonth={dateRange?.from}
+                            selected={dateRange}
+                            onSelect={setDateRange}
+                            numberOfMonths={2}
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                </div>
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDateRange({ from: new Date(), to: new Date() })}>
+                    Reset
+                  </Button>
+                  <Button onClick={handleExport}>
+                    Export Records
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            <Button variant="outline" size="sm" className="gap-1">
+              <UserCheck className="h-4 w-4" />
+              Mark Attendance
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
