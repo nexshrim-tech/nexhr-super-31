@@ -16,6 +16,8 @@ import {
   Menu,
   MessageSquare,
   Users,
+  Video,
+  Briefcase,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -40,6 +42,8 @@ const SidebarNav: React.FC = () => {
     { name: 'Assets', icon: <BarChart2 className="w-5 h-5" />, path: '/assets' },
     { name: 'Department', icon: <Users className="w-5 h-5" />, path: '/department' },
     { name: 'Messenger', icon: <MessageSquare className="w-5 h-5" />, path: '/messenger' },
+    { name: 'Meetings', icon: <Video className="w-5 h-5" />, path: '/meetings' },
+    { name: 'Projects', icon: <Briefcase className="w-5 h-5" />, path: '/projects' },
     { name: 'Help desk', icon: <HelpCircle className="w-5 h-5" />, path: '/help-desk' },
     { name: 'Documents', icon: <FileText className="w-5 h-5" />, path: '/documents' },
   ];
