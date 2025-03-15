@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -339,7 +338,10 @@ const Salary = () => {
                           <TableCell>₹{employee.salary.toLocaleString()}</TableCell>
                           <TableCell>{format(new Date(employee.lastIncrement), "MMM d, yyyy")}</TableCell>
                           <TableCell>
-                            <Badge variant={employee.status === "Paid" ? "success" : "warning"}>
+                            <Badge 
+                              variant={employee.status === "Paid" ? "default" : "secondary"}
+                              className={employee.status === "Paid" ? "bg-green-500 hover:bg-green-600" : "bg-yellow-500 hover:bg-yellow-600"}
+                            >
                               {employee.status}
                             </Badge>
                           </TableCell>
@@ -377,7 +379,10 @@ const Salary = () => {
                               <p className="text-sm text-gray-500">{employee.position}</p>
                             </div>
                           </div>
-                          <Badge variant={employee.status === "Paid" ? "success" : "warning"}>
+                          <Badge 
+                            variant={employee.status === "Paid" ? "default" : "secondary"}
+                            className={employee.status === "Paid" ? "bg-green-500 hover:bg-green-600" : "bg-yellow-500 hover:bg-yellow-600"}
+                          >
                             {employee.status}
                           </Badge>
                         </div>
@@ -461,7 +466,13 @@ const Salary = () => {
               Enter the salary details for the employee. Click save when you're done.
             </DialogDescription>
           </DialogHeader>
-          <SalaryDetailsForm onSave={handleSalarySave} />
+          <SalaryDetailsForm 
+            isOpen={openDialog}
+            onClose={handleCloseDialog}
+            employeeName="New Employee"
+            initialSalary={50000}
+            onSave={handleSalarySave}
+          />
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" onClick={handleCloseDialog}>Cancel</Button>
