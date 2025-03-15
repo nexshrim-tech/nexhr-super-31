@@ -1,14 +1,15 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Download, UserPlus } from "lucide-react";
+import { Download, UserPlus, Settings } from "lucide-react";
 
 interface AttendanceHeaderProps {
   handleExportReport: () => void;
   openAddAttendance: () => void;
+  openSettings: () => void;
 }
 
-const AttendanceHeader = ({ handleExportReport, openAddAttendance }: AttendanceHeaderProps) => {
+const AttendanceHeader = ({ handleExportReport, openAddAttendance, openSettings }: AttendanceHeaderProps) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
       <div>
@@ -23,6 +24,14 @@ const AttendanceHeader = ({ handleExportReport, openAddAttendance }: AttendanceH
         >
           <Download className="h-4 w-4" />
           Export Report
+        </Button>
+        <Button 
+          variant="outline"
+          className="gap-2"
+          onClick={openSettings}
+        >
+          <Settings className="h-4 w-4" />
+          Settings
         </Button>
         <Button className="flex items-center gap-2" onClick={openAddAttendance}>
           <UserPlus className="h-4 w-4" />

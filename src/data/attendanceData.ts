@@ -9,6 +9,9 @@ export interface AttendanceRecord {
   status: string;
   workHours: string;
   notes: string;
+  checkInPhoto?: string;
+  checkOutPhoto?: string;
+  location?: string;
 }
 
 // Sample attendance data
