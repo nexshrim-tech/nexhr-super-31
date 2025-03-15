@@ -42,12 +42,12 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory, o
       }
       
       // Category filter
-      if (filters.category && expense.category !== filters.category) {
+      if (filters.category && filters.category !== "all" && expense.category !== filters.category) {
         return false;
       }
       
       // Status filter
-      if (filters.status && expense.status !== filters.status) {
+      if (filters.status && filters.status !== "all" && expense.status !== filters.status) {
         return false;
       }
       

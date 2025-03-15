@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ExpenseHistoryTab from "@/components/expense/ExpenseHistoryTab";
+import ExpenseAdvancedAnalytics from "@/components/expense/ExpenseAdvancedAnalytics";
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -330,6 +332,7 @@ const Expenses = () => {
               <TabsTrigger value="current">Current Expenses</TabsTrigger>
               <TabsTrigger value="history">Expense History</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced Analytics</TabsTrigger>
             </TabsList>
             
             <TabsContent value="current">
@@ -541,6 +544,10 @@ const Expenses = () => {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+            
+            <TabsContent value="advanced">
+              <ExpenseAdvancedAnalytics expenses={allExpenses} />
             </TabsContent>
           </Tabs>
         </div>
