@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,15 +7,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Plus, Eye, MoreHorizontal, Upload, MessageSquare, Clock } from "lucide-react";
+import { Search, Filter, Plus, Eye, MoreHorizontal, Upload, MessageSquare, Clock, Users, Edit, LineChart, BarChart, PieChart } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart as RechartsLineChart, Line } from 'recharts';
 
-// Sample data for tickets
 const ticketsData = [
   {
     id: "HD-1001",
@@ -191,11 +190,44 @@ const ticketsData = [
   }
 ];
 
+const statusData = [
+  { name: 'Open', value: 2 },
+  { name: 'In Progress', value: 1 },
+  { name: 'Resolved', value: 1 },
+  { name: 'Closed', value: 1 },
+];
+
+const categoryData = [
+  { name: 'Hardware', value: 2 },
+  { name: 'Software', value: 2 },
+  { name: 'Access Request', value: 1 },
+];
+
+const resolutionTimeData = [
+  { name: 'Day 1', time: 4 },
+  { name: 'Day 2', time: 6 },
+  { name: 'Day 3', time: 2 },
+  { name: 'Day 4', time: 8 },
+  { name: 'Day 5', time: 3 },
+];
+
+const supportStaff = [
+  { id: 1, name: "Technical Support", avatar: "TS" },
+  { id: 2, name: "IT Security", avatar: "IS" },
+  { id: 3, name: "Email Support", avatar: "ES" },
+  { id: 4, name: "Software Support", avatar: "SS" },
+  { id: 5, name: "Hardware Support", avatar: "HS" },
+];
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
 const HelpDesk = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [tickets, setTickets] = useState(ticketsData);
   const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
   const [isTicketDetailOpen, setIsTicketDetailOpen] = useState(false);
+  const [isEditAssigneeOpen, setIsEditAssigneeOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [newTicket, setNewTicket] = useState({
     title: "",
     description: "",
@@ -205,7 +237,14 @@ const HelpDesk = () => {
   const [currentTicket, setCurrentTicket] = useState<any>(null);
   const [newComment, setNewComment] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedAssignee, setSelectedAssignee] = useState("");
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (currentTicket && isEditAssigneeOpen) {
+      setSelectedAssignee(currentTicket.assignedTo.name);
+    }
+  }, [currentTicket, isEditAssigneeOpen]);
 
   const handleNewTicketSubmit = () => {
     const ticket = {
@@ -270,7 +309,6 @@ const HelpDesk = () => {
     setCurrentTicket(updatedTicket);
     setNewComment("");
     
-    // Update ticket in the list
     const updatedTickets = tickets.map(t => 
       t.id === updatedTicket.id ? updatedTicket : t
     );
@@ -283,14 +321,12 @@ const HelpDesk = () => {
   };
 
   const changeTicketStatus = (ticketId: string, newStatus: string) => {
-    // Update ticket in the list
     const updatedTickets = tickets.map(ticket => 
       ticket.id === ticketId ? { ...ticket, status: newStatus, updated: new Date().toISOString() } : ticket
     );
     
     setTickets(updatedTickets);
     
-    // If the current ticket is open, update it too
     if (currentTicket && currentTicket.id === ticketId) {
       setCurrentTicket({ ...currentTicket, status: newStatus, updated: new Date().toISOString() });
     }
@@ -339,13 +375,42 @@ const HelpDesk = () => {
     }
   };
 
+  const handleEditAssignee = () => {
+    if (!selectedAssignee || !currentTicket) return;
+    
+    const staffMember = supportStaff.find(staff => staff.name === selectedAssignee);
+    
+    if (staffMember) {
+      const updatedTicket = {
+        ...currentTicket,
+        assignedTo: {
+          name: staffMember.name,
+          avatar: staffMember.avatar
+        },
+        updated: new Date().toISOString()
+      };
+      
+      setCurrentTicket(updatedTicket);
+      
+      const updatedTickets = tickets.map(t => 
+        t.id === updatedTicket.id ? updatedTicket : t
+      );
+      setTickets(updatedTickets);
+      
+      setIsEditAssigneeOpen(false);
+      
+      toast({
+        title: "Assignee updated",
+        description: `Ticket has been assigned to ${staffMember.name}.`
+      });
+    }
+  };
+
   const filteredTickets = tickets.filter(ticket => {
-    // Filter by tab
     if (activeTab !== "all" && ticket.status.toLowerCase() !== activeTab) {
       return false;
     }
     
-    // Search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       return (
@@ -369,10 +434,19 @@ const HelpDesk = () => {
               <h1 className="text-2xl font-semibold">Help Desk</h1>
               <p className="text-gray-500">Manage and track support tickets</p>
             </div>
-            <Button onClick={() => setIsNewTicketOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Ticket
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsAnalyticsOpen(true)}
+              >
+                <BarChart className="h-4 w-4 mr-2" />
+                Analytics
+              </Button>
+              <Button onClick={() => setIsNewTicketOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Ticket
+              </Button>
+            </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -489,7 +563,6 @@ const HelpDesk = () => {
         </div>
       </div>
 
-      {/* New Ticket Dialog */}
       <Dialog open={isNewTicketOpen} onOpenChange={setIsNewTicketOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -572,7 +645,6 @@ const HelpDesk = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Ticket Detail Dialog */}
       <Dialog open={isTicketDetailOpen} onOpenChange={setIsTicketDetailOpen}>
         <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-auto">
           {currentTicket && (
@@ -619,11 +691,22 @@ const HelpDesk = () => {
                   </div>
                   <div>
                     <h4 className="text-sm font-medium mb-1">Assigned to</h4>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback>{currentTicket.assignedTo.avatar}</AvatarFallback>
-                      </Avatar>
-                      <span>{currentTicket.assignedTo.name}</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback>{currentTicket.assignedTo.avatar}</AvatarFallback>
+                        </Avatar>
+                        <span>{currentTicket.assignedTo.name}</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setIsEditAssigneeOpen(true)}
+                        className="h-7 px-2"
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
                     </div>
                   </div>
                   <div>
@@ -696,6 +779,196 @@ const HelpDesk = () => {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditAssigneeOpen} onOpenChange={setIsEditAssigneeOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change Assignee</DialogTitle>
+            <DialogDescription>
+              Reassign this ticket to another support staff member.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="assignee">Support Staff</Label>
+                <Select
+                  value={selectedAssignee}
+                  onValueChange={setSelectedAssignee}
+                >
+                  <SelectTrigger id="assignee">
+                    <SelectValue placeholder="Select support staff" />
+                  </SelectTrigger>
+                  <SelectContent className="pointer-events-auto">
+                    {supportStaff.map((staff) => (
+                      <SelectItem key={staff.id} value={staff.name}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback>{staff.avatar}</AvatarFallback>
+                          </Avatar>
+                          <span>{staff.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditAssigneeOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditAssignee}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAnalyticsOpen} onOpenChange={setIsAnalyticsOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Help Desk Analytics</DialogTitle>
+            <DialogDescription>
+              View statistics and insights about your help desk tickets.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Open Tickets</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{tickets.filter(t => t.status === "Open").length}</div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {Math.round((tickets.filter(t => t.status === "Open").length / tickets.length) * 100)}% of total
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Average Resolution Time</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">2.4 days</div>
+                  <p className="text-xs text-gray-500 mt-1">↓ 12% from last month</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Customer Satisfaction</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">94%</div>
+                  <p className="text-xs text-gray-500 mt-1">↑ 3% from last month</p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-md">Tickets by Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie
+                          data={statusData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          className="animate-fade-in"
+                        >
+                          {statusData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-md">Tickets by Category</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsBarChart
+                        data={categoryData}
+                        margin={{
+                          top: 5,
+                          right: 30,
+                          left: 20,
+                          bottom: 5,
+                        }}
+                        className="animate-fade-in"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="value" fill="#8884d8" name="Number of Tickets" />
+                      </RechartsBarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-md">Resolution Time Trend</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsLineChart
+                        data={resolutionTimeData}
+                        margin={{
+                          top: 5,
+                          right: 30,
+                          left: 20,
+                          bottom: 5,
+                        }}
+                        className="animate-fade-in"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="time"
+                          stroke="#8884d8"
+                          activeDot={{ r: 8 }}
+                          name="Hours to Resolution"
+                        />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setIsAnalyticsOpen(false)}>Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
