@@ -4,14 +4,15 @@ import { format } from "date-fns";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 import { PayslipRecord } from "@/types/salary";
 
 interface PayslipHistoryProps {
   payslips: PayslipRecord[];
+  onViewPayslip?: (payslipId: string) => void;
 }
 
-const PayslipHistory: React.FC<PayslipHistoryProps> = ({ payslips }) => {
+const PayslipHistory: React.FC<PayslipHistoryProps> = ({ payslips, onViewPayslip }) => {
   return (
     <Card className="mt-6">
       <CardHeader>
@@ -38,9 +39,16 @@ const PayslipHistory: React.FC<PayslipHistoryProps> = ({ payslips }) => {
                 <TableCell>₹{payslip.amount.toLocaleString()}</TableCell>
                 <TableCell>{format(new Date(payslip.date), "MMM d, yyyy")}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon">
-                    <Download className="h-4 w-4" />
-                  </Button>
+                  <div className="flex space-x-2">
+                    {onViewPayslip && (
+                      <Button variant="ghost" size="icon" onClick={() => onViewPayslip(payslip.id)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

@@ -1,179 +1,303 @@
 
-import React, { useState } from "react";
-import { Upload, X, File, Image, FileText, Film, Music } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Paperclip, X, Image, Mic, FileText, Upload, Send } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface FileUploaderProps {
   onFileSelect: (file: File) => void;
-  allowedTypes?: string[];
-  maxSize?: number; // in MB
-  showPreview?: boolean;
+  onVoiceRecord?: (blob: Blob) => void;
 }
 
-const FileUploader: React.FC<FileUploaderProps> = ({ 
-  onFileSelect, 
-  allowedTypes = ["image/*", "application/pdf", "text/*", "audio/*", "video/*"],
-  maxSize = 10,
-  showPreview = true
-}) => {
-  const [dragActive, setDragActive] = useState(false);
-  const [previewFile, setPreviewFile] = useState<File | null>(null);
+const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, onVoiceRecord }) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
-  
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-  
-  const validateFile = (file: File): boolean => {
-    // Check file type
-    const fileType = file.type;
-    const isValidType = allowedTypes.some(type => {
-      if (type.includes("*")) {
-        const mainType = type.split("/")[0];
-        return fileType.startsWith(mainType);
-      }
-      return type === fileType;
-    });
-    
-    if (!isValidType) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload a supported file type",
-        variant: "destructive"
-      });
-      return false;
-    }
-    
-    // Check file size
-    const fileSizeInMB = file.size / (1024 * 1024);
-    if (fileSizeInMB > maxSize) {
-      toast({
-        title: "File too large",
-        description: `File size must be less than ${maxSize}MB`,
-        variant: "destructive"
-      });
-      return false;
-    }
-    
-    return true;
-  };
-  
-  const processFile = (file: File) => {
-    if (validateFile(file)) {
-      if (showPreview) {
-        setPreviewFile(file);
-      }
-      onFileSelect(file);
-    }
-  };
-  
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      processFile(file);
-    }
-  };
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      processFile(file);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+
+    // Create preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewUrl(null);
     }
   };
 
-  const getFileTypeIcon = (type: string) => {
-    if (type.startsWith('image')) return <Image className="h-5 w-5" />;
-    if (type.startsWith('application/pdf')) return <FileText className="h-5 w-5" />;
-    if (type.startsWith('text')) return <FileText className="h-5 w-5" />;
-    if (type.startsWith('video')) return <Film className="h-5 w-5" />;
-    if (type.startsWith('audio')) return <Music className="h-5 w-5" />;
-    return <File className="h-5 w-5" />;
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
-  
-  const clearPreview = () => {
-    setPreviewFile(null);
+
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
   };
-  
+
+  const handleSendFile = () => {
+    if (selectedFile) {
+      onFileSelect(selectedFile);
+      clearSelectedFile();
+      toast({
+        title: "File sent",
+        description: `${selectedFile.name} has been sent successfully.`
+      });
+    }
+  };
+
+  // Voice recording functionality
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunksRef.current = [];
+      
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioUrl(url);
+        setRecordedAudio(audioBlob);
+        
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      // Start recording
+      mediaRecorder.start();
+      setIsRecording(true);
+      
+      // Start timer
+      let seconds = 0;
+      timerRef.current = setInterval(() => {
+        seconds += 1;
+        setRecordingTime(seconds);
+      }, 1000);
+      
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      toast({
+        title: "Permission Denied",
+        description: "Please allow microphone access to record voice messages.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      
+      // Stop timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      
+      // Clear recorded data
+      chunksRef.current = [];
+      setRecordedAudio(null);
+      setAudioUrl(null);
+    }
+    
+    setIsRecording(false);
+    
+    // Stop timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+      setRecordingTime(0);
+    }
+  };
+
+  const sendVoiceMessage = () => {
+    if (recordedAudio && onVoiceRecord) {
+      onVoiceRecord(recordedAudio);
+      setRecordedAudio(null);
+      setAudioUrl(null);
+      toast({
+        title: "Voice message sent",
+        description: "Your voice message has been sent successfully."
+      });
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
-    <div className="relative">
-      {previewFile && showPreview ? (
-        <div className="mb-3 relative">
-          {previewFile.type.startsWith('image') ? (
-            <div className="relative rounded-md overflow-hidden border border-gray-200">
-              <img 
-                src={URL.createObjectURL(previewFile)} 
-                alt="Preview" 
-                className="max-h-[150px] max-w-full object-contain" 
-              />
-              <Button 
-                variant="destructive" 
-                size="icon"
-                className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-80 hover:opacity-100"
-                onClick={clearPreview}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+    <div className="flex flex-col">
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={handleFileChange}
+        accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      />
+      
+      {!selectedFile && !isRecording && !recordedAudio && (
+        <div className="flex space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={handleButtonClick}
+            title="Upload file"
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={startRecording}
+            title="Record voice message"
+          >
+            <Mic className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      
+      {selectedFile && (
+        <div className="mt-2 p-3 border rounded-md">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              {selectedFile.type.startsWith('image/') ? (
+                <Image className="h-5 w-5 mr-2 text-blue-500" />
+              ) : (
+                <FileText className="h-5 w-5 mr-2 text-blue-500" />
+              )}
+              <span className="text-sm truncate max-w-[200px]">{selectedFile.name}</span>
             </div>
-          ) : (
-            <div className="flex items-center p-2 border rounded-md bg-gray-50">
-              <div className="flex items-center flex-1 overflow-hidden">
-                {getFileTypeIcon(previewFile.type)}
-                <span className="ml-2 text-sm truncate">{previewFile.name}</span>
-                <span className="ml-2 text-xs text-gray-500">
-                  ({(previewFile.size / 1024).toFixed(1)} KB)
-                </span>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="h-6 w-6 ml-2"
-                onClick={clearPreview}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={clearSelectedFile}
+              className="h-6 w-6"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {previewUrl && (
+            <div className="mb-2">
+              <img 
+                src={previewUrl} 
+                alt="Preview" 
+                className="max-h-40 rounded-md object-contain mx-auto"
+              />
             </div>
           )}
+          
+          <Button 
+            variant="primary" 
+            className="w-full"
+            onClick={handleSendFile}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Send File
+          </Button>
         </div>
-      ) : (
-        <div 
-          className={`flex items-center justify-center border-2 border-dashed rounded-md p-4 transition-colors ${
-            dragActive ? "border-blue-400 bg-blue-50" : "border-gray-300"
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          <input
-            id="file-upload"
-            type="file"
-            onChange={handleChange}
-            className="hidden"
-            accept={allowedTypes.join(",")}
-          />
-          <label htmlFor="file-upload" className="cursor-pointer text-center">
-            <Upload className="mx-auto h-8 w-8 text-gray-400" />
-            <p className="mt-1 text-sm font-medium">
-              Drag & drop or click to upload
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Supports images, documents, audio, and video up to {maxSize}MB
-            </p>
-          </label>
+      )}
+      
+      {isRecording && (
+        <div className="mt-2 p-3 border rounded-md bg-red-50">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse mr-2"></div>
+              <span className="text-sm font-medium">Recording... {formatTime(recordingTime)}</span>
+            </div>
+          </div>
+          
+          <div className="flex space-x-2">
+            <Button 
+              variant="destructive" 
+              className="w-1/2"
+              onClick={cancelRecording}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button 
+              variant="default" 
+              className="w-1/2"
+              onClick={stopRecording}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Stop & Send
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {recordedAudio && audioUrl && (
+        <div className="mt-2 p-3 border rounded-md">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <Mic className="h-5 w-5 mr-2 text-blue-500" />
+              <span className="text-sm">Voice Message</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setRecordedAudio(null);
+                setAudioUrl(null);
+              }}
+              className="h-6 w-6"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <audio controls className="w-full mb-2">
+            <source src={audioUrl} type="audio/webm" />
+            Your browser does not support the audio element.
+          </audio>
+          
+          <Button 
+            variant="primary" 
+            className="w-full"
+            onClick={sendVoiceMessage}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Send Voice Message
+          </Button>
         </div>
       )}
     </div>

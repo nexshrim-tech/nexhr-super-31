@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -215,7 +214,6 @@ const Salary = () => {
             employees={employeeSalaries} 
             onGenerateSalarySlip={handleGenerateSalarySlip} 
           />
-          <PayslipHistory payslips={payslipHistory} />
         </div>
       </div>
 

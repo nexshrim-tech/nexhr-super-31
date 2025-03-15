@@ -34,7 +34,9 @@ import {
   Trash2,
   Edit3,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  Upload,
+  Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -44,6 +46,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ProjectEdit from "@/components/project/ProjectEdit";
+import ResourceManagement from "@/components/project/ResourceManagement";
 
 // Sample data for projects
 const sampleEmployees = [
@@ -124,6 +128,8 @@ const ProjectManagement = () => {
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
 
   // Form states for new project
@@ -258,6 +264,26 @@ const ProjectManagement = () => {
     });
   };
 
+  const handleEditProject = () => {
+    if (selectedProject) {
+      setIsEditProjectOpen(true);
+    }
+  };
+
+  const handleSaveProjectEdits = (editedProject: any) => {
+    const updatedProjects = projects.map(project => 
+      project.id === editedProject.id ? editedProject : project
+    );
+    
+    setProjects(updatedProjects);
+    setSelectedProject(editedProject);
+    
+    toast({
+      title: "Project updated",
+      description: "The project details have been updated successfully"
+    });
+  };
+
   // Filter projects based on search and status
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -311,6 +337,14 @@ const ProjectManagement = () => {
                   <span className="capitalize text-gray-600 text-sm">{selectedProject.status.replace("-", " ")}</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={handleEditProject}
+                  >
+                    <Edit3 className="h-4 w-4 mr-1" />
+                    Edit Project
+                  </Button>
                   <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
                     <DialogTrigger asChild>
                       <Button size="sm">
@@ -369,116 +403,188 @@ const ProjectManagement = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="mb-6">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="resources">Resources</TabsTrigger>
+                  <TabsTrigger value="team">Team</TabsTrigger>
+                  <TabsTrigger value="comments">Comments</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="overview" className="mt-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <CardTitle className="text-xl">{selectedProject.name}</CardTitle>
+                              <CardDescription className="mt-2">
+                                {selectedProject.description}
+                              </CardDescription>
+                            </div>
+                            <Badge 
+                              className={`${getPriorityColor(selectedProject.priority)} bg-transparent border`}
+                            >
+                              {selectedProject.priority} priority
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-6">
+                            <div>
+                              <h3 className="text-sm font-medium mb-2">Progress</h3>
+                              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                <div 
+                                  className="bg-blue-600 h-2.5 rounded-full" 
+                                  style={{ width: `${selectedProject.progress}%` }}
+                                ></div>
+                              </div>
+                              <div className="flex justify-between mt-1">
+                                <span className="text-xs text-gray-500">{selectedProject.progress}% complete</span>
+                                <span className="text-xs text-gray-500">Due: {selectedProject.dueDate}</span>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <h3 className="text-sm font-medium mb-2">Tasks</h3>
+                              <div className="space-y-2">
+                                {selectedProject.tasks && selectedProject.tasks.length > 0 ? (
+                                  selectedProject.tasks.map((task) => (
+                                    <div 
+                                      key={task.id} 
+                                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        {task.status === "completed" ? (
+                                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                        ) : task.status === "in-progress" ? (
+                                          <Clock className="h-5 w-5 text-blue-500" />
+                                        ) : (
+                                          <Clock className="h-5 w-5 text-yellow-500" />
+                                        )}
+                                        <span className={task.status === "completed" ? "line-through text-gray-500" : ""}>
+                                          {task.name}
+                                        </span>
+                                      </div>
+                                      <Select
+                                        value={task.status}
+                                        onValueChange={(value) => handleUpdateTaskStatus(task.id, value)}
+                                      >
+                                        <SelectTrigger className="h-8 w-32">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="planned">Planned</SelectItem>
+                                          <SelectItem value="in-progress">In Progress</SelectItem>
+                                          <SelectItem value="completed">Completed</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="text-center py-8 border border-dashed rounded-md">
+                                    <FileText className="mx-auto h-8 w-8 text-gray-400" />
+                                    <p className="mt-2 text-sm text-gray-500">No tasks yet</p>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="mt-2"
+                                      onClick={() => setIsAddTaskOpen(true)}
+                                    >
+                                      <Plus className="h-4 w-4 mr-1" />
+                                      Add Task
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <div>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Project Details</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                              <p className="capitalize">{selectedProject.status.replace("-", " ")}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-500">Priority</h3>
+                              <p className="capitalize">{selectedProject.priority}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-500">Due Date</h3>
+                              <p>{selectedProject.dueDate}</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-500">Team Size</h3>
+                              <p>{selectedProject.assignees.length} members</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-500">Tasks</h3>
+                              <p>{selectedProject.tasks.length} tasks</p>
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-500">Completed Tasks</h3>
+                              <p>
+                                {selectedProject.tasks.filter(t => t.status === "completed").length} of {selectedProject.tasks.length}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="resources" className="mt-0">
+                  <ResourceManagement projectId={selectedProject.id} />
+                </TabsContent>
+                
+                <TabsContent value="team" className="mt-0">
                   <Card>
                     <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-xl">{selectedProject.name}</CardTitle>
-                          <CardDescription className="mt-2">
-                            {selectedProject.description}
-                          </CardDescription>
-                        </div>
-                        <Badge 
-                          className={`${getPriorityColor(selectedProject.priority)} bg-transparent border`}
-                        >
-                          {selectedProject.priority} priority
-                        </Badge>
-                      </div>
+                      <CardTitle>Project Team</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-6">
-                        <div>
-                          <h3 className="text-sm font-medium mb-2">Progress</h3>
-                          <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div 
-                              className="bg-blue-600 h-2.5 rounded-full" 
-                              style={{ width: `${selectedProject.progress}%` }}
-                            ></div>
-                          </div>
-                          <div className="flex justify-between mt-1">
-                            <span className="text-xs text-gray-500">{selectedProject.progress}% complete</span>
-                            <span className="text-xs text-gray-500">Due: {selectedProject.dueDate}</span>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-sm font-medium">Team Members</h3>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedProject.assignees.map((assigneeId) => {
-                              const employee = sampleEmployees.find(e => e.id === assigneeId);
-                              return employee ? (
-                                <div key={employee.id} className="flex items-center gap-2 bg-gray-100 rounded-md px-2 py-1">
-                                  <Avatar className="h-6 w-6">
-                                    <AvatarFallback>{employee.avatar}</AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-sm">{employee.name}</span>
+                      <div className="space-y-4">
+                        {selectedProject.assignees.map((assigneeId: number) => {
+                          const employee = sampleEmployees.find(e => e.id === assigneeId);
+                          return employee ? (
+                            <div key={employee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                              <div className="flex items-center gap-3">
+                                <Avatar>
+                                  <AvatarFallback>{employee.avatar}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium">{employee.name}</p>
+                                  <p className="text-sm text-gray-500">{employee.role}</p>
                                 </div>
-                              ) : null;
-                            })}
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium mb-2">Tasks</h3>
-                          <div className="space-y-2">
-                            {selectedProject.tasks && selectedProject.tasks.length > 0 ? (
-                              selectedProject.tasks.map((task) => (
-                                <div 
-                                  key={task.id} 
-                                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    {task.status === "completed" ? (
-                                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                    ) : task.status === "in-progress" ? (
-                                      <Clock className="h-5 w-5 text-blue-500" />
-                                    ) : (
-                                      <Clock className="h-5 w-5 text-yellow-500" />
-                                    )}
-                                    <span className={task.status === "completed" ? "line-through text-gray-500" : ""}>
-                                      {task.name}
-                                    </span>
-                                  </div>
-                                  <Select
-                                    value={task.status}
-                                    onValueChange={(value) => handleUpdateTaskStatus(task.id, value)}
-                                  >
-                                    <SelectTrigger className="h-8 w-32">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="planned">Planned</SelectItem>
-                                      <SelectItem value="in-progress">In Progress</SelectItem>
-                                      <SelectItem value="completed">Completed</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="text-center py-8 border border-dashed rounded-md">
-                                <FileText className="mx-auto h-8 w-8 text-gray-400" />
-                                <p className="mt-2 text-sm text-gray-500">No tasks yet</p>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="mt-2"
-                                  onClick={() => setIsAddTaskOpen(true)}
-                                >
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Add Task
-                                </Button>
                               </div>
-                            )}
-                          </div>
-                        </div>
+                              <Button variant="ghost" size="sm">
+                                <MessageSquare className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : null;
+                        })}
+                        
+                        <Button className="w-full" variant="outline" onClick={handleEditProject}>
+                          <Users className="mr-2 h-4 w-4" />
+                          Manage Team Members
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
-                  
+                </TabsContent>
+                
+                <TabsContent value="comments" className="mt-0">
                   <Card>
                     <CardHeader>
                       <CardTitle>Comments</CardTitle>
@@ -486,7 +592,7 @@ const ProjectManagement = () => {
                     <CardContent>
                       <div className="space-y-4">
                         {selectedProject.comments && selectedProject.comments.length > 0 ? (
-                          <ScrollArea className="h-[250px] pr-4">
+                          <ScrollArea className="h-[300px] pr-4">
                             <div className="space-y-4">
                               {selectedProject.comments.map((comment) => (
                                 <div key={comment.id} className="flex gap-3">
@@ -528,46 +634,8 @@ const ProjectManagement = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </div>
-                
-                <div>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Project Details</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                          <p className="capitalize">{selectedProject.status.replace("-", " ")}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Priority</h3>
-                          <p className="capitalize">{selectedProject.priority}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Due Date</h3>
-                          <p>{selectedProject.dueDate}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Team Size</h3>
-                          <p>{selectedProject.assignees.length} members</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Tasks</h3>
-                          <p>{selectedProject.tasks.length} tasks</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-gray-500">Completed Tasks</h3>
-                          <p>
-                            {selectedProject.tasks.filter(t => t.status === "completed").length} of {selectedProject.tasks.length}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+                </TabsContent>
+              </Tabs>
             </div>
           ) : (
             <div className="p-4 lg:p-6">
@@ -838,6 +906,14 @@ const ProjectManagement = () => {
           )}
         </div>
       </div>
+      
+      {/* Project Edit Dialog */}
+      <ProjectEdit 
+        open={isEditProjectOpen}
+        onOpenChange={setIsEditProjectOpen}
+        project={selectedProject || {}}
+        onSave={handleSaveProjectEdits}
+      />
     </div>
   );
 };
