@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Phone, Mail, User, Edit } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface EmployeeProfileCardProps {
   employee: {
@@ -18,6 +19,7 @@ interface EmployeeProfileCardProps {
   onEditProfile: () => void;
   onCancelEdit: () => void;
   onSaveProfile: () => void;
+  onInputChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const EmployeeProfileCard: React.FC<EmployeeProfileCardProps> = ({
@@ -25,7 +27,8 @@ const EmployeeProfileCard: React.FC<EmployeeProfileCardProps> = ({
   isEditMode,
   onEditProfile,
   onCancelEdit,
-  onSaveProfile
+  onSaveProfile,
+  onInputChange
 }) => {
   return (
     <Card className="lg:col-span-1">
@@ -37,22 +40,68 @@ const EmployeeProfileCard: React.FC<EmployeeProfileCardProps> = ({
               <AvatarImage src="" alt={employee.name} />
               <AvatarFallback className="text-lg">{employee.avatar}</AvatarFallback>
             </Avatar>
-            <h3 className="mt-4 text-lg font-semibold">{employee.name}</h3>
-            <p className="text-sm text-gray-500">{employee.role}</p>
+            {isEditMode ? (
+              <Input 
+                className="mt-4 text-center" 
+                name="name" 
+                value={employee.name} 
+                onChange={onInputChange}
+              />
+            ) : (
+              <h3 className="mt-4 text-lg font-semibold">{employee.name}</h3>
+            )}
+            
+            {isEditMode ? (
+              <Input 
+                className="mt-1 text-center text-sm" 
+                name="role" 
+                value={employee.role} 
+                onChange={onInputChange}
+              />
+            ) : (
+              <p className="text-sm text-gray-500">{employee.role}</p>
+            )}
           </div>
           
           <div className="mt-6 space-y-4">
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">{employee.phone}</span>
+              {isEditMode ? (
+                <Input 
+                  className="text-sm" 
+                  name="phone" 
+                  value={employee.phone} 
+                  onChange={onInputChange}
+                />
+              ) : (
+                <span className="text-sm">{employee.phone}</span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">{employee.email}</span>
+              {isEditMode ? (
+                <Input 
+                  className="text-sm" 
+                  name="email" 
+                  value={employee.email} 
+                  onChange={onInputChange}
+                />
+              ) : (
+                <span className="text-sm">{employee.email}</span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-gray-500" />
-              <span className="text-sm">{employee.employeeId}</span>
+              {isEditMode ? (
+                <Input 
+                  className="text-sm" 
+                  name="employeeId" 
+                  value={employee.employeeId} 
+                  onChange={onInputChange}
+                />
+              ) : (
+                <span className="text-sm">{employee.employeeId}</span>
+              )}
             </div>
           </div>
           

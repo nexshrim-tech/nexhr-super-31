@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -5,7 +6,7 @@ import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Eye, Trash } from "lucide-react";
+import { ArrowLeft, Eye, Trash, FileText } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -18,7 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-// Import our new components
+// Import our components
 import EmployeeProfileCard from "@/components/employees/EmployeeProfileCard";
 import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
 import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
@@ -29,6 +30,7 @@ import EmployeeAssetsSection from "@/components/employees/EmployeeAssetsSection"
 import EmployeeDocumentsSection from "@/components/employees/EmployeeDocumentsSection";
 import DocumentUpdateDialog from "@/components/employees/DocumentUpdateDialog";
 import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
+import PayslipDialog from "@/components/employees/PayslipDialog";
 
 // Enhanced employee data with additional fields
 const employeeData = {
@@ -68,6 +70,15 @@ const employeeData = {
   geofencingEnabled: true
 };
 
+// Sample payslips data
+const payslipsData = [
+  { id: "PAY001", employee: "Chisom Chukwukwe", period: "January 2024", amount: 85000, date: "2024-01-31" },
+  { id: "PAY002", employee: "Chisom Chukwukwe", period: "February 2024", amount: 85000, date: "2024-02-29" },
+  { id: "PAY003", employee: "Chisom Chukwukwe", period: "March 2024", amount: 87500, date: "2024-03-31" },
+  { id: "PAY004", employee: "Chisom Chukwukwe", period: "April 2024", amount: 87500, date: "2024-04-30" },
+  { id: "PAY005", employee: "Chisom Chukwukwe", period: "May 2024", amount: 90000, date: "2024-05-31" },
+];
+
 const EmployeeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -76,10 +87,11 @@ const EmployeeDetails = () => {
   const [employeeForm, setEmployeeForm] = useState(employeeData);
   const { toast } = useToast();
   
-  const employee = employeeData;
+  const employee = employeeForm; // Use the form state directly
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [geofencingEnabled, setGeofencingEnabled] = useState(employeeData.geofencingEnabled);
   const [documentEditDialog, setDocumentEditDialog] = useState<'aadhar' | 'pan' | null>(null);
+  const [payslipDialogOpen, setPayslipDialogOpen] = useState(false);
 
   const handleGeofencingToggle = (checked: boolean) => {
     setGeofencingEnabled(checked);
@@ -114,10 +126,14 @@ const EmployeeDetails = () => {
   };
 
   const handleViewDetails = (type: string) => {
-    toast({
-      title: `${type} details`,
-      description: `Viewing ${type.toLowerCase()} details for ${employee.name}.`,
-    });
+    if (type.toLowerCase() === 'salary') {
+      setPayslipDialogOpen(true);
+    } else {
+      toast({
+        title: `${type} details`,
+        description: `Viewing ${type.toLowerCase()} details for ${employee.name}.`,
+      });
+    }
   };
 
   const handleRemoveEmployee = () => {
@@ -179,6 +195,7 @@ const EmployeeDetails = () => {
               onEditProfile={handleEditProfile}
               onCancelEdit={handleCancelEdit}
               onSaveProfile={handleSaveProfile}
+              onInputChange={handleInputChange}
             />
 
             {/* Details Section */}
@@ -232,7 +249,11 @@ const EmployeeDetails = () => {
             onViewDetails={handleViewDetails}
           />
 
-          <div className="flex justify-center mt-8 mb-4">
+          <div className="flex justify-between mt-8 mb-4">
+            <Button variant="outline" className="gap-2" onClick={() => setPayslipDialogOpen(true)}>
+              <FileText className="h-4 w-4" />
+              View Payslips
+            </Button>
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
               <DialogTrigger asChild>
                 <Button variant="destructive" className="px-8">
@@ -267,6 +288,7 @@ const EmployeeDetails = () => {
             onUpload={handleDocumentUpload}
           />
 
+          {/* Employee Edit Dialog */}
           <EmployeeEditDialog
             isOpen={editDialogOpen}
             onOpenChange={setEditDialogOpen}
@@ -278,6 +300,13 @@ const EmployeeDetails = () => {
                 description: "Employee profile has been updated successfully.",
               });
             }}
+          />
+
+          {/* Payslip Dialog */}
+          <PayslipDialog
+            isOpen={payslipDialogOpen}
+            onOpenChange={setPayslipDialogOpen}
+            payslips={payslipsData}
           />
         </div>
       </div>
