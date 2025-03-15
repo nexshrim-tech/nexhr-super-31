@@ -5,12 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Save } from "lucide-react";
+import { MapPin, Calendar, Save, Download, Camera } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface Location {
   id: string;
@@ -44,6 +48,14 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
   });
 
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = React.useState(false);
+  const [isLocationDialogOpen, setIsLocationDialogOpen] = React.useState(false);
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(),
+  });
+  const [isExportDialogOpen, setIsExportDialogOpen] = React.useState(false);
+  const mapContainer = React.useRef<HTMLDivElement>(null);
+  const map = React.useRef<mapboxgl.Map | null>(null);
 
   const handleHolidaySelect = (dates: Date[] | undefined) => {
     if (!dates) {
@@ -52,6 +64,75 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
     }
     setSettings(prev => ({ ...prev, holidays: dates }));
   };
+
+  const handleExport = () => {
+    if (dateRange?.from && dateRange?.to) {
+      console.log(`Exporting attendance data from ${format(dateRange.from, 'PP')} to ${format(dateRange.to, 'PP')}`);
+      setIsExportDialogOpen(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!mapContainer.current || !isLocationDialogOpen) return;
+
+    mapboxgl.accessToken = 'YOUR_MAPBOX_TOKEN'; // Replace with your token
+    
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v11',
+      center: [0, 0],
+      zoom: 2
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    // Add click handler for adding locations
+    map.current.on('click', (e) => {
+      const newLocation: Location = {
+        id: Date.now().toString(),
+        name: `Location ${settings.locations.length + 1}`,
+        coordinates: [e.lngLat.lng, e.lngLat.lat]
+      };
+
+      // Add marker
+      new mapboxgl.Marker()
+        .setLngLat([e.lngLat.lng, e.lngLat.lat])
+        .addTo(map.current!);
+
+      // Add circle for radius
+      map.current?.addSource(`circle-${newLocation.id}`, {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [e.lngLat.lng, e.lngLat.lat]
+          },
+          properties: {}
+        }
+      });
+
+      map.current?.addLayer({
+        id: `circle-${newLocation.id}`,
+        type: 'circle',
+        source: `circle-${newLocation.id}`,
+        paint: {
+          'circle-radius': settings.defaultRadius,
+          'circle-color': '#4353ff',
+          'circle-opacity': 0.2,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#4353ff'
+        }
+      });
+
+      setSettings(prev => ({
+        ...prev,
+        locations: [...prev.locations, newLocation]
+      }));
+    });
+
+    return () => map.current?.remove();
+  }, [isLocationDialogOpen]);
 
   const handleSaveSettings = () => {
     onSave(settings);
@@ -64,6 +145,7 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
           <CardTitle>Attendance Settings</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Time Configuration */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Work Start Time</Label>
@@ -89,6 +171,7 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
             </div>
           </div>
 
+          {/* Geofencing Settings */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Geofencing</Label>
@@ -102,6 +185,7 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
             />
           </div>
 
+          {/* Photo Requirement */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Photo Requirement</Label>
@@ -115,6 +199,38 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
             />
           </div>
 
+          {/* Location Management */}
+          <div className="space-y-4">
+            <Button variant="outline" onClick={() => setIsLocationDialogOpen(true)}>
+              <MapPin className="h-4 w-4 mr-2" />
+              Manage Locations
+            </Button>
+            <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
+              <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                  <DialogTitle>Manage Office Locations</DialogTitle>
+                </DialogHeader>
+                <div className="h-[400px] rounded-lg overflow-hidden">
+                  <div ref={mapContainer} className="h-full" />
+                </div>
+                <div className="mt-4">
+                  <Label>Added Locations</Label>
+                  <div className="grid gap-2 mt-2">
+                    {settings.locations.map((location) => (
+                      <div key={location.id} className="flex items-center justify-between p-2 border rounded">
+                        <span>{location.name}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {location.coordinates[1].toFixed(6)}, {location.coordinates[0].toFixed(6)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Holiday Management */}
           <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
             <Button variant="outline" onClick={() => setIsHolidayDialogOpen(true)}>
               <Calendar className="h-4 w-4 mr-2" />
@@ -148,6 +264,63 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
                     </div>
                   </div>
                 </ScrollArea>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Export Dialog */}
+          <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+            <Button variant="outline" onClick={() => setIsExportDialogOpen(true)}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Attendance Data
+            </Button>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Export Attendance Records</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <Label>Select Date Range</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full mt-2 justify-start text-left font-normal"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "LLL dd, y")} -{" "}
+                            {format(dateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(dateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Pick a date range</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={2}
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex justify-end">
+                <Button variant="outline" className="mr-2" onClick={() => setIsExportDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleExport}>
+                  Export
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
