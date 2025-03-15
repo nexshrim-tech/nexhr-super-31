@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Calendar } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { DayPickerMultipleSelect } from "react-day-picker";
 
 interface AttendanceSettingsProps {
   onSave: (settings: any) => void;
@@ -25,7 +25,7 @@ const AttendanceSettings = ({ onSave }: AttendanceSettingsProps) => {
   const [holidays, setHolidays] = React.useState<Date[]>([]);
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = React.useState(false);
 
-  const handleHolidaySelect: DayPickerMultipleSelect = (dates) => {
+  const handleHolidaySelect = (dates: Date[] | undefined) => {
     if (!dates) {
       setHolidays([]);
       return;
