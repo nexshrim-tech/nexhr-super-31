@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, X, Check, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +13,7 @@ import LeaveCalendar from "@/components/leave-management/LeaveCalendar";
 import LeaveApplicationForm from "@/components/leave-management/LeaveApplicationForm";
 import LeaveTable from "@/components/leave-management/LeaveTable";
 import LeaveHistoryTable from "@/components/leave-management/LeaveHistoryTable";
+import LeaveBalanceTable from "@/components/leave-management/LeaveBalanceTable";
 
 const initialLeaveApplications = [
   {
@@ -137,10 +137,72 @@ const leaveHistoryData = [
 ];
 
 const leaveBalanceData = [
-  { type: "Annual Leave", total: 20, used: 5, balance: 15 },
-  { type: "Sick Leave", total: 12, used: 2, balance: 10 },
-  { type: "Personal Leave", total: 7, used: 2, balance: 5 },
-  { type: "Study Leave", total: 5, used: 2, balance: 3 },
+  {
+    id: 1,
+    employeeId: "EMP001",
+    employee: "Olivia Rhye",
+    type: "Annual Leave",
+    startDate: "2023-01-10",
+    endDate: "2023-01-15",
+    duration: "5 days",
+    status: "Completed",
+    balance: 15
+  },
+  {
+    id: 2,
+    employeeId: "EMP001",
+    employee: "Olivia Rhye",
+    type: "Sick Leave",
+    startDate: "2023-03-22",
+    endDate: "2023-03-23",
+    duration: "2 days",
+    status: "Completed",
+    balance: 10
+  },
+  {
+    id: 3,
+    employeeId: "EMP003",
+    employee: "Lana Steiner",
+    type: "Personal Leave",
+    startDate: "2023-05-15",
+    endDate: "2023-05-16",
+    duration: "2 days",
+    status: "Completed",
+    balance: 5
+  },
+  {
+    id: 4,
+    employeeId: "EMP002",
+    employee: "Phoenix Baker",
+    type: "Annual Leave",
+    startDate: "2023-07-05",
+    endDate: "2023-07-10",
+    duration: "5 days",
+    status: "Completed",
+    balance: 12
+  },
+  {
+    id: 5,
+    employeeId: "EMP005",
+    employee: "Candice Wu",
+    type: "Sick Leave",
+    startDate: "2023-06-12",
+    endDate: "2023-06-13",
+    duration: "2 days",
+    status: "Completed",
+    balance: 8
+  },
+  {
+    id: 6,
+    employeeId: "EMP004",
+    employee: "Demi Wilkinson",
+    type: "Personal Leave",
+    startDate: "2023-04-20",
+    endDate: "2023-04-21",
+    duration: "2 days",
+    status: "Completed",
+    balance: 3
+  },
 ];
 
 const LeaveManagement = () => {
@@ -238,76 +300,93 @@ const LeaveManagement = () => {
             </Button>
           </div>
 
-          <div className="grid md:grid-cols-12 gap-6">
-            <div className="md:col-span-4">
-              <Card className="shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Leave Calendar</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <LeaveCalendar date={date} setDate={setDate} />
-                </CardContent>
-              </Card>
-            </div>
+          <Tabs defaultValue="applications" className="mb-6">
+            <TabsList className="mb-4">
+              <TabsTrigger value="applications">Applications</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="balance">Leave Balance</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="applications">
+              <div className="grid md:grid-cols-12 gap-6">
+                <div className="md:col-span-4">
+                  <Card className="shadow-sm">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Leave Calendar</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <LeaveCalendar date={date} setDate={setDate} />
+                    </CardContent>
+                  </Card>
+                </div>
 
-            <div className="md:col-span-8">
+                <div className="md:col-span-8">
+                  <Card className="shadow-sm">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between flex-wrap gap-4">
+                        <CardTitle className="text-base">Leave Applications</CardTitle>
+                        <Tabs 
+                          defaultValue="all" 
+                          onValueChange={setActiveTab}
+                          className="w-full max-w-[400px]"
+                        >
+                          <TabsList className="grid w-full grid-cols-4">
+                            <TabsTrigger value="all">All</TabsTrigger>
+                            <TabsTrigger value="pending">Pending</TabsTrigger>
+                            <TabsTrigger value="approved">Approved</TabsTrigger>
+                            <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <LeaveTable 
+                        applications={filteredApplications}
+                        onViewLeave={(app) => {
+                          setViewLeaveDetails(app);
+                          setShowViewDialog(true);
+                        }}
+                        onApproveLeave={handleApproveLeave}
+                        onRejectLeave={handleRejectLeave}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="history">
               <Card className="shadow-sm">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between flex-wrap gap-4">
-                    <CardTitle className="text-base">Leave Applications</CardTitle>
+                    <CardTitle className="text-base">Leave History</CardTitle>
                     <Tabs 
                       defaultValue="all" 
-                      onValueChange={setActiveTab}
+                      onValueChange={setHistoryTab}
                       className="w-full max-w-[400px]"
                     >
                       <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="all">All</TabsTrigger>
-                        <TabsTrigger value="pending">Pending</TabsTrigger>
-                        <TabsTrigger value="approved">Approved</TabsTrigger>
-                        <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                        <TabsTrigger value="annual">Annual</TabsTrigger>
+                        <TabsTrigger value="sick">Sick</TabsTrigger>
+                        <TabsTrigger value="personal">Personal</TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <LeaveTable 
-                    applications={filteredApplications}
-                    onViewLeave={(app) => {
-                      setViewLeaveDetails(app);
-                      setShowViewDialog(true);
-                    }}
-                    onApproveLeave={handleApproveLeave}
-                    onRejectLeave={handleRejectLeave}
+                  <LeaveHistoryTable 
+                    historyData={filteredHistoryData} 
+                    showEmployee={true} 
                   />
                 </CardContent>
               </Card>
-            </div>
-          </div>
-          
-          <div className="mt-6">
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <CardTitle className="text-base">Leave History</CardTitle>
-                  <Tabs 
-                    defaultValue="all" 
-                    onValueChange={setHistoryTab}
-                    className="w-full max-w-[400px]"
-                  >
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="all">All</TabsTrigger>
-                      <TabsTrigger value="annual">Annual</TabsTrigger>
-                      <TabsTrigger value="sick">Sick</TabsTrigger>
-                      <TabsTrigger value="personal">Personal</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <LeaveHistoryTable historyData={filteredHistoryData} showEmployee={true} />
-              </CardContent>
-            </Card>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="balance">
+              <LeaveBalanceTable balanceData={leaveBalanceData} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
