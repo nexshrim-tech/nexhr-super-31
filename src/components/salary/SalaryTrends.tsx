@@ -2,9 +2,10 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
+import { SalaryData } from "@/types/salary";
 
 interface SalaryTrendsProps {
-  data: Array<{ month: string; amount: number }>;
+  data: SalaryData[];
 }
 
 const SalaryTrends: React.FC<SalaryTrendsProps> = ({ data }) => {

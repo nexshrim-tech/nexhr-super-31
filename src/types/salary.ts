@@ -27,6 +27,7 @@ export interface EmployeeSalary {
   status: string;
   allowances: SalaryAllowances;
   deductions: SalaryDeductions;
+  payslipId?: string;
 }
 
 export interface PayslipRecord {
