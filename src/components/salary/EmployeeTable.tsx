@@ -5,15 +5,16 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { FileText, Edit } from "lucide-react";
+import { FileText, Edit, History } from "lucide-react";
 import { EmployeeSalary } from "@/types/salary";
 
 interface EmployeeTableProps {
   employees: EmployeeSalary[];
   onGenerateSalarySlip: (employee: EmployeeSalary) => void;
+  onViewHistory?: (employee: EmployeeSalary) => void;
 }
 
-const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, onGenerateSalarySlip }) => {
+const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, onGenerateSalarySlip, onViewHistory }) => {
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -60,6 +61,15 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({ employees, onGenerateSala
                   >
                     <FileText className="h-4 w-4" />
                   </Button>
+                  {onViewHistory && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => onViewHistory(employee)}
+                    >
+                      <History className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="icon">
                     <Edit className="h-4 w-4" />
                   </Button>

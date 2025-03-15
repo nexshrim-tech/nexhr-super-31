@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Paperclip, X, Image, Mic, FileText, Upload, Send } from 'lucide-react';
@@ -63,7 +62,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, onVoiceRecord
     }
   };
 
-  // Voice recording functionality
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -225,7 +223,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, onVoiceRecord
           )}
           
           <Button 
-            variant="primary" 
+            variant="default" 
             className="w-full"
             onClick={handleSendFile}
           >
@@ -291,7 +289,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect, onVoiceRecord
           </audio>
           
           <Button 
-            variant="primary" 
+            variant="default" 
             className="w-full"
             onClick={sendVoiceMessage}
           >

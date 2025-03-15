@@ -5,15 +5,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { FileText, Edit } from "lucide-react";
+import { FileText, Edit, History } from "lucide-react";
 import { EmployeeSalary } from "@/types/salary";
 
 interface EmployeeCardProps {
   employee: EmployeeSalary;
   onGenerateSalarySlip: (employee: EmployeeSalary) => void;
+  onViewHistory?: (employee: EmployeeSalary) => void;
 }
 
-const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onGenerateSalarySlip }) => {
+const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onGenerateSalarySlip, onViewHistory }) => {
   return (
     <Card key={employee.id}>
       <CardContent className="p-4">
@@ -56,6 +57,15 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onGenerateSalaryS
           >
             <FileText className="h-4 w-4 mr-1" /> Salary Slip
           </Button>
+          {onViewHistory && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onViewHistory(employee)}
+            >
+              <History className="h-4 w-4 mr-1" /> History
+            </Button>
+          )}
           <Button variant="outline" size="sm">
             <Edit className="h-4 w-4 mr-1" /> Edit
           </Button>

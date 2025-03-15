@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +26,6 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({ employees, onGene
   const [openHistory, setOpenHistory] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeSalary | null>(null);
   
-  // Sample payslip history data - in a real app this would come from an API
   const samplePayslipHistory: PayslipRecord[] = [
     { id: "PS-2023-08", employee: "Olivia Rhye", period: "August 2023", amount: 6250, date: "2023-08-31" },
     { id: "PS-2023-07", employee: "Olivia Rhye", period: "July 2023", amount: 6250, date: "2023-07-31" },
@@ -111,7 +109,6 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({ employees, onGene
           <PayslipHistory 
             payslips={samplePayslipHistory} 
             onViewPayslip={(id) => {
-              // Here we would fetch the specific payslip data and show it
               console.log("View payslip:", id);
             }}
           />
