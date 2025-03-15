@@ -3,24 +3,12 @@ import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle,
-  DialogClose 
-} from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
-import SalaryDetailsForm from "@/components/SalaryDetailsForm";
-import SalarySlipGenerator from "@/components/salary/SalarySlipGenerator";
 import SalaryStats from "@/components/salary/SalaryStats";
 import SalaryTrends from "@/components/salary/SalaryTrends";
 import SalaryListSection from "@/components/salary/SalaryListSection";
-import PayslipHistory from "@/components/salary/PayslipHistory";
-import { EmployeeSalary, PayslipRecord, SalaryData } from "@/types/salary";
-import { Download } from "lucide-react";
+import SalaryFormDialog from "@/components/salary/SalaryFormDialog";
+import PayslipDialog from "@/components/salary/PayslipDialog";
+import { EmployeeSalary, SalaryData } from "@/types/salary";
 
 // Sample data
 const salaryData: SalaryData[] = [
@@ -162,13 +150,6 @@ const employeeSalaries: EmployeeSalary[] = [
   },
 ];
 
-const payslipHistory: PayslipRecord[] = [
-  { id: "PS-2023-08", employee: "Olivia Rhye", period: "August 2023", amount: 6250, date: "2023-08-31" },
-  { id: "PS-2023-07", employee: "Olivia Rhye", period: "July 2023", amount: 6250, date: "2023-07-31" },
-  { id: "PS-2023-06", employee: "Olivia Rhye", period: "June 2023", amount: 6250, date: "2023-06-30" },
-  { id: "PS-2023-05", employee: "Olivia Rhye", period: "May 2023", amount: 6000, date: "2023-05-31" },
-];
-
 const Salary = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [openSalarySlip, setOpenSalarySlip] = useState(false);
@@ -217,45 +198,18 @@ const Salary = () => {
         </div>
       </div>
 
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Add Salary Details</DialogTitle>
-            <DialogDescription>
-              Enter the salary details for the employee. Click save when you're done.
-            </DialogDescription>
-          </DialogHeader>
-          <SalaryDetailsForm 
-            isOpen={openDialog}
-            onClose={handleCloseDialog}
-            employeeName="New Employee"
-            initialSalary={50000}
-            onSave={handleSalarySave}
-          />
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" onClick={handleCloseDialog}>Cancel</Button>
-            </DialogClose>
-            <Button type="submit" form="salary-form">Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SalaryFormDialog
+        open={openDialog}
+        onOpenChange={setOpenDialog}
+        onClose={handleCloseDialog}
+        onSave={handleSalarySave}
+      />
 
-      <Sheet open={openSalarySlip} onOpenChange={setOpenSalarySlip}>
-        <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
-          <SheetHeader className="mb-4">
-            <SheetTitle>Salary Slip</SheetTitle>
-          </SheetHeader>
-          {selectedSalaryData && (
-            <SalarySlipGenerator employeeData={selectedSalaryData} />
-          )}
-          <SheetFooter className="mt-4">
-            <Button>
-              <Download className="mr-2 h-4 w-4" /> Download PDF
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      <PayslipDialog
+        open={openSalarySlip}
+        onOpenChange={setOpenSalarySlip}
+        employeeData={selectedSalaryData}
+      />
     </div>
   );
 };

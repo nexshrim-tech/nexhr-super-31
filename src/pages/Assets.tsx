@@ -1,24 +1,13 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
-import { Button } from "@/components/ui/button";
-import { Download, Plus } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 // Import asset components
-import AssetForm from "@/components/assets/AssetForm";
-import AssetDetails from "@/components/assets/AssetDetails";
 import AssetStats from "@/components/assets/AssetStats";
 import AssetTable from "@/components/assets/AssetTable";
+import FilterSection from "@/components/assets/FilterSection";
+import AssetDialogs from "@/components/assets/AssetDialogs";
 
 const initialAssetData = [
   {
@@ -310,22 +299,12 @@ const Assets = () => {
       <SidebarNav />
       <div className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold">Asset Management</h1>
-              <p className="text-gray-500">Track and manage company assets</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button className="flex items-center gap-2" onClick={openAddAssetDialog}>
-                <Plus className="h-4 w-4" />
-                Add Asset
-              </Button>
-              <Button variant="outline" className="flex items-center gap-2" onClick={handleExport}>
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
-            </div>
-          </div>
+          <FilterSection
+            searchTerm={searchTerm}
+            onSearchChange={(e) => setSearchTerm(e.target.value)}
+            onAddAsset={openAddAssetDialog}
+            onExport={handleExport}
+          />
 
           <AssetStats assets={assetData} />
 
@@ -339,78 +318,25 @@ const Assets = () => {
         </div>
       </div>
 
-      {/* Add Asset Dialog */}
-      <Dialog open={isAddAssetDialogOpen} onOpenChange={setIsAddAssetDialogOpen}>
-        <DialogContent className="max-w-md md:max-w-lg mx-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Asset</DialogTitle>
-            <DialogDescription>
-              Enter the details for the new asset.
-            </DialogDescription>
-          </DialogHeader>
-          <AssetForm 
-            formData={formData} 
-            handleInputChange={handleInputChange}
-            handleSelectChange={handleSelectChange}
-            handleDateSelect={handleDateSelect}
-            date={date}
-            assetTypes={assetTypes}
-            employees={employees}
-          />
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setIsAddAssetDialogOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-            <Button onClick={handleAddAsset} className="w-full sm:w-auto">Add Asset</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Asset Dialog */}
-      <Dialog open={isEditAssetDialogOpen} onOpenChange={setIsEditAssetDialogOpen}>
-        <DialogContent className="max-w-md md:max-w-lg mx-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Asset</DialogTitle>
-            <DialogDescription>
-              Update the details for this asset.
-            </DialogDescription>
-          </DialogHeader>
-          {currentAsset && (
-            <>
-              <AssetForm 
-                formData={formData} 
-                handleInputChange={handleInputChange}
-                handleSelectChange={handleSelectChange}
-                handleDateSelect={handleDateSelect}
-                date={date}
-                assetTypes={assetTypes}
-                employees={employees}
-              />
-              <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" onClick={() => setIsEditAssetDialogOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-                <Button onClick={handleEditAsset} className="w-full sm:w-auto">Update Asset</Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* View Asset Dialog */}
-      <Dialog open={isViewAssetDialogOpen} onOpenChange={setIsViewAssetDialogOpen}>
-        <DialogContent className="max-w-md md:max-w-lg mx-auto">
-          <DialogHeader>
-            <DialogTitle>Asset Details</DialogTitle>
-          </DialogHeader>
-          {currentAsset && (
-            <AssetDetails 
-              asset={currentAsset}
-              onEdit={() => {
-                setIsViewAssetDialogOpen(false);
-                handleEditAssetOpen(currentAsset);
-              }}
-              onClose={() => setIsViewAssetDialogOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <AssetDialogs
+        isAddAssetDialogOpen={isAddAssetDialogOpen}
+        setIsAddAssetDialogOpen={setIsAddAssetDialogOpen}
+        isEditAssetDialogOpen={isEditAssetDialogOpen}
+        setIsEditAssetDialogOpen={setIsEditAssetDialogOpen}
+        isViewAssetDialogOpen={isViewAssetDialogOpen}
+        setIsViewAssetDialogOpen={setIsViewAssetDialogOpen}
+        currentAsset={currentAsset}
+        formData={formData}
+        handleInputChange={handleInputChange}
+        handleSelectChange={handleSelectChange}
+        handleDateSelect={handleDateSelect}
+        date={date}
+        assetTypes={assetTypes}
+        employees={employees}
+        handleAddAsset={handleAddAsset}
+        handleEditAsset={handleEditAsset}
+        handleEditAssetOpen={handleEditAssetOpen}
+      />
     </div>
   );
 };
