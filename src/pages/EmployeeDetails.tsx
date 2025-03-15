@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -7,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Eye, Trash, FileText } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -18,6 +16,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Import our components
 import EmployeeProfileCard from "@/components/employees/EmployeeProfileCard";
@@ -83,6 +86,7 @@ const EmployeeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   const [isEditMode, setIsEditMode] = useState(false);
   const [employeeForm, setEmployeeForm] = useState(employeeData);
   const { toast } = useToast();
@@ -116,6 +120,16 @@ const EmployeeDetails = () => {
 
   const handleSelectChange = (field: string, value: string) => {
     setEmployeeForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleBankDetailsChange = (field: string, value: string) => {
+    setEmployeeForm((prev) => ({
+      ...prev,
+      bankDetails: {
+        ...prev.bankDetails,
+        [field]: value
+      }
+    }));
   };
 
   const handleDownload = (documentType: string) => {
@@ -210,7 +224,11 @@ const EmployeeDetails = () => {
                   </TabsList>
 
                   <TabsContent value="personal">
-                    <EmployeePersonalTab employee={employee} />
+                    <EmployeePersonalTab 
+                      employee={employee}
+                      isEditMode={isEditMode}
+                      onInputChange={handleInputChange}
+                    />
                   </TabsContent>
 
                   <TabsContent value="work">
@@ -218,11 +236,18 @@ const EmployeeDetails = () => {
                       employee={employee}
                       geofencingEnabled={geofencingEnabled}
                       onGeofencingToggle={handleGeofencingToggle}
+                      isEditMode={isEditMode}
+                      onInputChange={handleInputChange}
+                      onSelectChange={handleSelectChange}
                     />
                   </TabsContent>
 
                   <TabsContent value="bank">
-                    <EmployeeBankTab bankDetails={employee.bankDetails} />
+                    <EmployeeBankTab 
+                      bankDetails={employee.bankDetails} 
+                      isEditMode={isEditMode}
+                      onBankDetailsChange={handleBankDetailsChange}
+                    />
                   </TabsContent>
 
                   <TabsContent value="documents">
