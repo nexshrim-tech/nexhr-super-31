@@ -13,14 +13,190 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+
+const MOCK_LEAVE_BALANCE = [
+  {
+    id: 1,
+    type: "Annual Leave",
+    total: 20,
+    used: 5,
+    balance: 15
+  },
+  {
+    id: 2,
+    type: "Sick Leave",
+    total: 10,
+    used: 2,
+    balance: 8
+  },
+  {
+    id: 3,
+    type: "Personal Leave",
+    total: 5,
+    used: 1,
+    balance: 4
+  },
+  {
+    id: 4,
+    type: "Study Leave",
+    total: 3,
+    used: 0,
+    balance: 3
+  }
+];
+
+const MOCK_LEAVE_HISTORY = [
+  {
+    id: 1,
+    type: "Annual Leave",
+    startDate: "2023-07-10",
+    endDate: "2023-07-17",
+    duration: "5 days",
+    status: "Completed"
+  },
+  {
+    id: 2,
+    type: "Sick Leave",
+    startDate: "2023-05-22",
+    endDate: "2023-05-23",
+    duration: "2 days",
+    status: "Completed"
+  },
+  {
+    id: 3,
+    type: "Personal Leave",
+    startDate: "2023-03-15",
+    endDate: "2023-03-15",
+    duration: "1 day",
+    status: "Completed"
+  }
+];
+
+const MOCK_LEAVE_APPLICATIONS = [
+  {
+    id: 1,
+    employee: {
+      name: "John Doe",
+      avatar: "JD"
+    },
+    type: "Annual Leave",
+    startDate: "2023-08-15",
+    endDate: "2023-08-22",
+    duration: "5 days",
+    status: "Pending"
+  },
+  {
+    id: 2,
+    employee: {
+      name: "Jane Smith",
+      avatar: "JS"
+    },
+    type: "Sick Leave",
+    startDate: "2023-08-18",
+    endDate: "2023-08-19",
+    duration: "2 days",
+    status: "Pending"
+  },
+  {
+    id: 3,
+    employee: {
+      name: "Mike Johnson",
+      avatar: "MJ"
+    },
+    type: "Personal Leave",
+    startDate: "2023-08-25",
+    endDate: "2023-08-25",
+    duration: "1 day",
+    status: "Pending"
+  }
+];
+
+const MOCK_LEAVE_BALANCE_TABLE = [
+  {
+    id: 1,
+    employeeId: "EMP001",
+    employee: "John Doe",
+    type: "Annual Leave",
+    startDate: "2023-01-01",
+    endDate: "2023-12-31",
+    duration: "N/A",
+    status: "Active",
+    balance: 15
+  },
+  {
+    id: 2,
+    employeeId: "EMP001",
+    employee: "John Doe",
+    type: "Sick Leave",
+    startDate: "2023-01-01",
+    endDate: "2023-12-31",
+    duration: "N/A",
+    status: "Active",
+    balance: 8
+  },
+  {
+    id: 3,
+    employeeId: "EMP002",
+    employee: "Jane Smith",
+    type: "Annual Leave",
+    startDate: "2023-01-01",
+    endDate: "2023-12-31",
+    duration: "N/A",
+    status: "Active",
+    balance: 12
+  },
+  {
+    id: 4,
+    employeeId: "EMP002",
+    employee: "Jane Smith",
+    type: "Sick Leave",
+    startDate: "2023-01-01",
+    endDate: "2023-12-31",
+    duration: "N/A",
+    status: "Active",
+    balance: 10
+  }
+];
 
 const LeaveManagement = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+  };
+
+  const handleSubmitApplication = (formData: FormData) => {
+    // Process form data
+    toast({
+      title: "Leave Application Submitted",
+      description: "Your leave application has been submitted successfully.",
+    });
+    
+    setShowApplicationForm(false);
+  };
+
+  const handleViewLeave = (application: any) => {
+    setSelectedApplication(application);
+  };
+
+  const handleApproveLeave = (id: number) => {
+    toast({
+      title: "Leave Approved",
+      description: `Leave request #${id} has been approved.`,
+    });
+  };
+
+  const handleRejectLeave = (id: number) => {
+    toast({
+      title: "Leave Rejected",
+      description: `Leave request #${id} has been rejected.`,
+    });
   };
 
   return (
@@ -42,7 +218,10 @@ const LeaveManagement = () => {
 
           <Card className="mb-6 transform hover:scale-[1.01] transition-all duration-300 shadow-md hover:shadow-lg border-t-4 border-t-nexhr-primary rounded-lg overflow-hidden animate-scale-in">
             <CardContent className="p-6">
-              <LeaveOverview />
+              <LeaveOverview 
+                balanceData={MOCK_LEAVE_BALANCE} 
+                historyData={MOCK_LEAVE_HISTORY}
+              />
             </CardContent>
           </Card>
 
@@ -54,7 +233,10 @@ const LeaveManagement = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <LeaveApplicationForm />
+                <LeaveApplicationForm 
+                  onSubmit={handleSubmitApplication}
+                  onCancel={() => setShowApplicationForm(false)}
+                />
               </CardContent>
             </Card>
 
@@ -65,7 +247,9 @@ const LeaveManagement = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 overflow-x-auto">
-                <LeaveBalanceTable />
+                <LeaveBalanceTable 
+                  balanceData={MOCK_LEAVE_BALANCE_TABLE}
+                />
               </CardContent>
             </Card>
           </div>
@@ -92,18 +276,10 @@ const LeaveManagement = () => {
                 </CardHeader>
                 <CardContent className={`${isMobile ? 'p-2' : 'p-6'} overflow-x-auto`}>
                   <LeaveTable 
-                    onApprove={(id) => {
-                      toast({
-                        title: "Leave Approved",
-                        description: `Leave request #${id} has been approved.`,
-                      });
-                    }}
-                    onReject={(id) => {
-                      toast({
-                        title: "Leave Rejected",
-                        description: `Leave request #${id} has been rejected.`,
-                      });
-                    }}
+                    applications={MOCK_LEAVE_APPLICATIONS}
+                    onViewLeave={handleViewLeave}
+                    onApproveLeave={handleApproveLeave}
+                    onRejectLeave={handleRejectLeave}
                   />
                 </CardContent>
               </Card>
@@ -117,7 +293,10 @@ const LeaveManagement = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <LeaveCalendar />
+                  <LeaveCalendar 
+                    date={selectedDate}
+                    setDate={setSelectedDate}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -130,13 +309,53 @@ const LeaveManagement = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className={`${isMobile ? 'p-2' : 'p-6'} overflow-x-auto`}>
-                  <LeaveHistoryTable />
+                  <LeaveHistoryTable 
+                    historyData={MOCK_LEAVE_HISTORY}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
         </div>
       </div>
+
+      {selectedApplication && (
+        <Dialog open={!!selectedApplication} onOpenChange={() => setSelectedApplication(null)}>
+          <DialogContent>
+            <DialogTitle>Leave Application Details</DialogTitle>
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span className="font-medium">Employee:</span>
+                <span>{selectedApplication.employee.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Leave Type:</span>
+                <span>{selectedApplication.type}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Duration:</span>
+                <span>{selectedApplication.duration}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Period:</span>
+                <span>{selectedApplication.startDate} to {selectedApplication.endDate}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Status:</span>
+                <span className={`${
+                  selectedApplication.status === "Approved"
+                    ? "text-green-600"
+                    : selectedApplication.status === "Pending"
+                    ? "text-yellow-600"
+                    : "text-red-600"
+                }`}>
+                  {selectedApplication.status}
+                </span>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

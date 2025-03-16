@@ -40,7 +40,7 @@ const LeaveTable = ({ applications, onViewLeave, onApproveLeave, onRejectLeave }
           </TableRow>
         </TableHeader>
         <TableBody>
-          {applications.length > 0 ? (
+          {applications && applications.length > 0 ? (
             applications.map((application) => (
               <TableRow key={application.id}>
                 <TableCell>
@@ -110,7 +110,7 @@ const LeaveTable = ({ applications, onViewLeave, onApproveLeave, onRejectLeave }
           ) : (
             <TableRow>
               <TableCell colSpan={6} className="text-center py-6 text-gray-500">
-                No tasks found. Try adjusting your filters.
+                No pending leave requests found.
               </TableCell>
             </TableRow>
           )}

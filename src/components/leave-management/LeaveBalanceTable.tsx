@@ -32,7 +32,7 @@ interface LeaveBalanceTableProps {
 
 const LeaveBalanceTable: React.FC<LeaveBalanceTableProps> = ({ balanceData }) => {
   const [activeTab, setActiveTab] = useState("all");
-  const [leaveBalances, setLeaveBalances] = useState(balanceData);
+  const [leaveBalances, setLeaveBalances] = useState(balanceData || []);
   const [searchQuery, setSearchQuery] = useState("");
   const [balanceFilter, setBalanceFilter] = useState("all");
   const { toast } = useToast();
