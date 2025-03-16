@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,47 +26,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import FileUploader from "@/components/messenger/FileUploader";
-
-// Sample employee data
-const employees = [
-  { id: 1, name: "Olivia Rhye", avatar: "OR", status: "online" },
-  { id: 2, name: "Phoenix Baker", avatar: "PB", status: "offline" },
-  { id: 3, name: "Lana Steiner", avatar: "LS", status: "online" },
-  { id: 4, name: "Demi Wilkinson", avatar: "DW", status: "away" },
-  { id: 5, name: "Candice Wu", avatar: "CW", status: "online" },
-  { id: 6, name: "Natali Craig", avatar: "NC", status: "offline" },
-  { id: 7, name: "Drew Cano", avatar: "DC", status: "online" },
-];
-
-// Sample group data
-const groups = [
-  { id: 1, name: "HR Team", members: ["Olivia Rhye", "Phoenix Baker", "Lana Steiner"] },
-  { id: 2, name: "Engineering", members: ["Demi Wilkinson", "Candice Wu", "Drew Cano"] },
-  { id: 3, name: "Marketing", members: ["Natali Craig", "Lana Steiner"] },
-];
-
-// Sample chat data
-const sampleChats = [
-  {
-    id: 1,
-    with: employees[2], // Lana Steiner
-    messages: [
-      { id: 1, sender: "user", text: "Hi Lana, do you have a minute?", time: "9:30 AM" },
-      { id: 2, sender: "other", text: "Sure, what's up?", time: "9:32 AM" },
-      { id: 3, sender: "user", text: "I wanted to discuss the new project timeline.", time: "9:33 AM" },
-      { id: 4, sender: "other", text: "Of course, I'm free now if you want to talk.", time: "9:35 AM" },
-    ]
-  },
-  {
-    id: 2,
-    with: groups[0], // HR Team
-    messages: [
-      { id: 1, sender: "user", text: "Team, any updates on the onboarding process?", time: "Yesterday" },
-      { id: 2, sender: "Olivia Rhye", text: "We've updated the documentation.", time: "Yesterday" },
-      { id: 3, sender: "Phoenix Baker", text: "I'll share the new template later today.", time: "Yesterday" },
-    ]
-  }
-];
+import FeatureLock from "@/components/FeatureLock";
+import { useSubscription } from "@/context/SubscriptionContext";
 
 const Messenger = () => {
   const [chatTab, setChatTab] = useState("direct");
@@ -79,6 +39,10 @@ const Messenger = () => {
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { subscription } = useSubscription();
+
+  const isPremium = subscription && subscription.plan !== "free";
 
   const filteredEmployees = employees.filter(
     emp => emp.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -88,11 +52,13 @@ const Messenger = () => {
     group => group.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [selectedChat?.messages]);
+
   const handleSendMessage = () => {
     if (!message.trim()) return;
     
-    // In a real app, this would send to the backend
-    // Here we're just showing a toast notification
     const newMessage = {
       id: Date.now(),
       sender: "user",
@@ -100,8 +66,6 @@ const Messenger = () => {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     
-    // Update the selected chat with the new message
-    // In a real app, this would be done through a state management system
     if (selectedChat) {
       if (!selectedChat.messages) {
         selectedChat.messages = [];
@@ -128,13 +92,11 @@ const Messenger = () => {
       return;
     }
     
-    // In a real app, this would create the group on the backend
     toast({
       title: "Group created",
       description: `${newGroupName} group has been created successfully`
     });
     
-    // Add the new group to our local state
     const newGroup = {
       id: groups.length + 1,
       name: newGroupName,
@@ -166,7 +128,6 @@ const Messenger = () => {
   const handleFileSelect = (file: File) => {
     if (!selectedChat) return;
     
-    // Create a new message with file information
     const fileMessage = {
       id: Date.now(),
       sender: "user",
@@ -179,7 +140,6 @@ const Messenger = () => {
       }
     };
     
-    // Add the file message to the chat
     if (!selectedChat.messages) {
       selectedChat.messages = [];
     }
@@ -195,7 +155,6 @@ const Messenger = () => {
   const handleVoiceRecord = (blob: Blob) => {
     if (!selectedChat) return;
     
-    // Create a new message with voice recording information
     const voiceMessage = {
       id: Date.now(),
       sender: "user",
@@ -206,7 +165,6 @@ const Messenger = () => {
       }
     };
     
-    // Add the voice message to the chat
     if (!selectedChat.messages) {
       selectedChat.messages = [];
     }
@@ -219,6 +177,29 @@ const Messenger = () => {
     });
   };
 
+  if (!isPremium) {
+    return (
+      <div className="flex h-full bg-gray-50">
+        <SidebarNav />
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full flex flex-col">
+            <div className="bg-white border-b p-4">
+              <h1 className="text-2xl font-semibold">Messenger</h1>
+              <p className="text-gray-500">Communicate with your team</p>
+            </div>
+            
+            <div className="flex-1 p-6">
+              <FeatureLock 
+                title="Premium Messaging System" 
+                description="Upgrade to our Premium plan to access the complete messaging system with direct messages, group chats, file sharing, and more."
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
@@ -230,8 +211,7 @@ const Messenger = () => {
           </div>
           
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-            {/* Sidebar - Hidden on mobile when chat is selected */}
-            <div className={`${isMobile && selectedChat ? 'hidden' : 'block'} w-full md:w-80 border-r bg-white flex flex-col`}>
+            <div className={`${isMobile && selectedChat ? 'hidden' : 'block'} w-full md:w-80 border-r bg-white flex flex-col h-full max-h-[calc(100vh-120px)]`}>
               <div className="p-4 border-b">
                 <div className="relative mb-4">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
@@ -341,7 +321,7 @@ const Messenger = () => {
                 </Tabs>
               </div>
               
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 overflow-y-auto">
                 {chatTab === "direct" ? (
                   <div className="divide-y">
                     {filteredEmployees.map((emp) => (
@@ -399,11 +379,10 @@ const Messenger = () => {
               </ScrollArea>
             </div>
             
-            {/* Chat area - Hidden on mobile when no chat is selected */}
-            <div className={`${isMobile && !selectedChat ? 'hidden' : 'block'} flex-1 flex flex-col bg-gray-50`}>
+            <div className={`${isMobile && !selectedChat ? 'hidden' : 'block'} flex-1 flex flex-col bg-gray-50 h-full max-h-[calc(100vh-120px)]`}>
               {selectedChat ? (
                 <>
-                  <div className="bg-white p-4 border-b flex items-center justify-between">
+                  <div className="bg-white p-4 border-b flex items-center justify-between sticky top-0 z-10">
                     {isMobile && (
                       <Button 
                         variant="ghost" 
@@ -445,7 +424,7 @@ const Messenger = () => {
                     </div>
                   </div>
                   
-                  <ScrollArea className="flex-1 p-4">
+                  <div className="flex-1 overflow-y-auto p-4">
                     <div className="space-y-4">
                       {selectedChat.messages && selectedChat.messages.length > 0 ? (
                         selectedChat.messages.map((msg: any) => (
@@ -465,7 +444,6 @@ const Messenger = () => {
                               )}
                               <p>{msg.text}</p>
                               
-                              {/* Display file if present */}
                               {msg.file && msg.file.type.startsWith('image/') && (
                                 <div className="mt-2">
                                   <img 
@@ -476,7 +454,6 @@ const Messenger = () => {
                                 </div>
                               )}
                               
-                              {/* Display document link if present */}
                               {msg.file && !msg.file.type.startsWith('image/') && (
                                 <div className="mt-2 flex items-center gap-2 py-2 px-3 bg-gray-100 rounded-md">
                                   <FileText className="h-4 w-4" />
@@ -491,7 +468,6 @@ const Messenger = () => {
                                 </div>
                               )}
                               
-                              {/* Display voice message if present */}
                               {msg.voice && (
                                 <div className="mt-2">
                                   <audio controls className="w-full max-w-[200px]">
@@ -514,10 +490,11 @@ const Messenger = () => {
                           No messages yet. Start a conversation!
                         </div>
                       )}
+                      <div ref={messagesEndRef} />
                     </div>
-                  </ScrollArea>
+                  </div>
                   
-                  <div className="p-4 bg-white border-t">
+                  <div className="p-4 bg-white border-t sticky bottom-0">
                     <div className="mb-2">
                       <FileUploader 
                         onFileSelect={handleFileSelect} 

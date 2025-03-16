@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSubscription } from '@/context/SubscriptionContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const SidebarNav: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -104,7 +105,7 @@ const SidebarNav: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              <nav className="flex-1 px-2 py-4 overflow-y-auto hide-scrollbar">
+              <ScrollArea className="flex-1 px-2 py-4">
                 {menu.map((item) => (
                   <Link
                     key={item.name}
@@ -133,7 +134,7 @@ const SidebarNav: React.FC = () => {
                   <CreditCard className="w-5 h-5" />
                   <span>Manage Subscription</span>
                 </Button>
-              </nav>
+              </ScrollArea>
               <div className="border-t p-4 bg-white">
                 <Link
                   to="/logout"
@@ -151,8 +152,8 @@ const SidebarNav: React.FC = () => {
   }
 
   return (
-    <div className={`${collapsed ? 'w-16' : 'w-56'} min-h-screen border-r bg-white shadow-sm transition-all duration-300 relative flex flex-col`}>
-      <div className="p-4 mb-2">
+    <div className={`${collapsed ? 'w-16' : 'w-56'} min-h-screen border-r bg-white shadow-sm transition-all duration-300 relative flex flex-col h-screen`}>
+      <div className="p-4 border-b">
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-2'} font-semibold px-2 py-4`}>
           {!collapsed ? (
             <>
@@ -173,13 +174,13 @@ const SidebarNav: React.FC = () => {
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </Button>
       
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <nav className="space-y-1 px-2 overflow-y-auto flex-grow hide-scrollbar">
+      <ScrollArea className="flex-1 h-[calc(100vh-160px)]">
+        <div className="px-2 py-4">
           {menu.map((item) => (
             <Link
               key={item.name}
               to={item.path}
-              className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium hover:bg-gray-100 transition-colors ${
+              className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium mb-1 hover:bg-gray-100 transition-colors ${
                 isActive(item.path) 
                   ? 'bg-nexhr-primary/10 text-nexhr-primary font-semibold' 
                   : 'text-gray-700'
@@ -212,18 +213,18 @@ const SidebarNav: React.FC = () => {
               <CreditCard className="w-5 h-5" />
             </Button>
           )}
-        </nav>
-        
-        <div className={`border-t p-4 bg-white ${collapsed ? 'w-16' : 'w-56'}`}>
-          <Link
-            to="/logout"
-            className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100`}
-            title={collapsed ? 'Logout' : ''}
-          >
-            <LogOut className="w-5 h-5" />
-            {!collapsed && <span>Logout</span>}
-          </Link>
         </div>
+      </ScrollArea>
+      
+      <div className="border-t p-4 bg-white">
+        <Link
+          to="/logout"
+          className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100`}
+          title={collapsed ? 'Logout' : ''}
+        >
+          <LogOut className="w-5 h-5" />
+          {!collapsed && <span>Logout</span>}
+        </Link>
       </div>
     </div>
   );
