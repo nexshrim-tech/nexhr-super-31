@@ -28,6 +28,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import FileUploader from "@/components/messenger/FileUploader";
 import FeatureLock from "@/components/FeatureLock";
 import { useSubscription } from "@/context/SubscriptionContext";
+import { sampleChats, employees, groups } from "@/data/messengerData";
 
 const Messenger = () => {
   const [chatTab, setChatTab] = useState("direct");
@@ -40,9 +41,9 @@ const Messenger = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { subscription } = useSubscription();
+  const { features, plan } = useSubscription();
 
-  const isPremium = subscription && subscription.plan !== "free";
+  const isPremium = plan !== "None";
 
   const filteredEmployees = employees.filter(
     emp => emp.name.toLowerCase().includes(searchTerm.toLowerCase())
