@@ -25,14 +25,16 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-4">
               <div className="mb-6">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent animate-fade-in">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent animate-fade-in flex items-center">
                   Welcome to Your Dashboard
+                  <Sparkles className="h-5 w-5 ml-2 text-yellow-400 animate-pulse-slow" />
                 </h1>
+                <div className="h-1 w-20 bg-gradient-to-r from-nexhr-primary to-purple-600 mt-1 mb-3 rounded-full"></div>
                 <p className="text-gray-600 mt-2">
                   Here's what's happening in your organization today
                 </p>
               </div>
-              <div className="transform hover:scale-[1.01] transition-all duration-300 shadow-sm hover:shadow-md rounded-lg">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 shadow-md hover:shadow-lg rounded-lg">
                 <EmployeeStats />
               </div>
             </div>
@@ -49,24 +51,24 @@ const Index = () => {
           
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 grid grid-cols-1 gap-6">
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg">
                 <TodaysAttendance />
               </div>
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg">
                 <ExpenseGraph />
               </div>
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg">
                 <EmployeeLocation />
               </div>
             </div>
             <div className="space-y-6">
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg">
                 <SubscriptionManager />
               </div>
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card glass-effect rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card glass-effect rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg">
                 <QuickLinks />
               </div>
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card gradient-border rounded-lg overflow-hidden shadow-sm hover:shadow-md">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card gradient-border rounded-lg overflow-hidden shadow-md hover:shadow-lg">
                 <TaskReminders />
               </div>
             </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +20,7 @@ import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import EmployeeListHeader from "@/components/employees/EmployeeListHeader";
 import EmployeePagination from "@/components/employees/EmployeePagination";
 import UserHeader from "@/components/UserHeader";
+import { Sparkles } from "lucide-react";
 
 const employees = [
   {
@@ -134,9 +136,11 @@ const AllEmployees = () => {
         <UserHeader title="Employee Directory" />
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2 animate-fade-in">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2 animate-fade-in flex items-center">
               Employee Directory
+              <Sparkles className="h-5 w-5 ml-2 text-yellow-400 animate-pulse-slow" />
             </h1>
+            <div className="h-1 w-20 bg-gradient-to-r from-nexhr-primary to-purple-600 mt-1 mb-3 rounded-full"></div>
             <p className="text-gray-600">
               Manage and view all employees in your organization
             </p>
@@ -145,15 +149,19 @@ const AllEmployees = () => {
           <EmployeeListHeader />
 
           {/* Today's Attendance Widget */}
-          <div className="mb-6 transform hover:scale-[1.01] transition-all duration-300 dashboard-card shadow-sm hover:shadow-md rounded-lg overflow-hidden border border-gray-200">
+          <div className="mb-6 transform hover:scale-[1.01] transition-all duration-300 dashboard-card shadow-md hover:shadow-lg rounded-lg overflow-hidden border border-gray-200">
             <TodaysAttendance />
           </div>
 
           <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300 animate-scale-in rounded-lg overflow-hidden">
             <CardHeader className="pb-3 border-b">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <CardTitle className="text-xl font-semibold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
+                <CardTitle className="text-xl font-semibold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent flex items-center">
                   Employee Directory
+                  <span className="relative flex h-3 w-3 ml-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+                  </span>
                 </CardTitle>
                 <EmployeeFilters 
                   searchTerm={searchTerm}
@@ -166,7 +174,7 @@ const AllEmployees = () => {
             <CardContent>
               <div className="rounded-md border overflow-hidden shadow-sm">
                 <Table>
-                  <TableHeader className="bg-gray-50">
+                  <TableHeader className="bg-gradient-to-r from-gray-50 to-gray-100">
                     <TableRow>
                       <TableHead>Employee ID</TableHead>
                       <TableHead className="w-[300px]">Name</TableHead>
@@ -199,10 +207,10 @@ const AllEmployees = () => {
                           <Badge
                             className={`${
                               employee.status === "Active"
-                                ? "bg-green-100 text-green-800"
+                                ? "bg-green-100 text-green-800 border border-green-200"
                                 : employee.status === "On Leave"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
+                                ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                : "bg-gray-100 text-gray-800 border border-gray-200"
                             } transition-colors`}
                           >
                             {employee.status}
