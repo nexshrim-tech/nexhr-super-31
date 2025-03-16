@@ -40,6 +40,11 @@ const Login = () => {
     e.preventDefault();
     // Add your sign up logic here
     if (name && email && password) {
+      // Mark as new user to show subscription modal on first dashboard load
+      localStorage.setItem("new-user", "true");
+      // Set default subscription as None
+      localStorage.setItem("subscription-plan", "None");
+      
       toast({
         title: "Sign up successful",
         description: "Welcome to NexHR! Please check your email to verify your account.",
