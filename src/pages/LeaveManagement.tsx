@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import UserHeader from "@/components/UserHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import LeaveOverview from "@/components/leave-management/LeaveOverview";
 import LeaveTable from "@/components/leave-management/LeaveTable";
 import LeaveCalendar from "@/components/leave-management/LeaveCalendar";
 import LeaveApplicationForm from "@/components/leave-management/LeaveApplicationForm";
@@ -166,6 +165,7 @@ const LeaveManagement = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [leaveBalances, setLeaveBalances] = useState(MOCK_LEAVE_BALANCE_TABLE);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -199,6 +199,19 @@ const LeaveManagement = () => {
     });
   };
 
+  const handleUpdateLeaveBalance = (id: number, type: string, newBalance: number) => {
+    setLeaveBalances(prevBalances => 
+      prevBalances.map(balance => 
+        balance.id === id ? { ...balance, balance: newBalance } : balance
+      )
+    );
+    
+    toast({
+      title: "Leave Balance Updated",
+      description: `${type} balance has been updated to ${newBalance} days.`,
+    });
+  };
+
   return (
     <div className="flex min-h-screen bg-gradient-to-b from-white to-gray-50">
       <SidebarNav />
@@ -215,15 +228,6 @@ const LeaveManagement = () => {
               Manage employee leave requests, view leave balances, and track leave history
             </p>
           </div>
-
-          <Card className="mb-6 transform hover:scale-[1.01] transition-all duration-300 shadow-md hover:shadow-lg border-t-4 border-t-nexhr-primary rounded-lg overflow-hidden animate-scale-in">
-            <CardContent className="p-6">
-              <LeaveOverview 
-                balanceData={MOCK_LEAVE_BALANCE} 
-                historyData={MOCK_LEAVE_HISTORY}
-              />
-            </CardContent>
-          </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <Card className="col-span-1 transform hover:scale-[1.01] transition-all duration-300 shadow-md hover:shadow-lg rounded-lg overflow-hidden glass-effect border border-gray-200 animate-scale-in">
@@ -248,7 +252,7 @@ const LeaveManagement = () => {
               </CardHeader>
               <CardContent className="p-6 overflow-x-auto">
                 <LeaveBalanceTable 
-                  balanceData={MOCK_LEAVE_BALANCE_TABLE}
+                  balanceData={leaveBalances}
                 />
               </CardContent>
             </Card>
@@ -278,8 +282,8 @@ const LeaveManagement = () => {
                   <LeaveTable 
                     applications={MOCK_LEAVE_APPLICATIONS}
                     onViewLeave={handleViewLeave}
-                    onApproveLeave={handleApproveLeave}
-                    onRejectLeave={handleRejectLeave}
+                    onApprove={handleApproveLeave}
+                    onReject={handleRejectLeave}
                   />
                 </CardContent>
               </Card>
