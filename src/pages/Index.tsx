@@ -18,7 +18,9 @@ const Index = () => {
         <UserHeader title="Dashboard" />
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <EmployeeStats />
+            <div className="lg:col-span-4">
+              <EmployeeStats />
+            </div>
           </div>
           
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">

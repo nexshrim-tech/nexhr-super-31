@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   BarChart2,
@@ -31,6 +31,16 @@ const SidebarNav: React.FC = () => {
   const location = useLocation();
   const currentPath = location.pathname;
   const { setShowSubscriptionModal } = useSubscription();
+  const [isScrolling, setIsScrolling] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolling(window.scrollY > 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const menu = [
     { name: 'Overview', icon: <LayoutDashboard className="w-5 h-5" />, path: '/' },
@@ -71,19 +81,19 @@ const SidebarNav: React.FC = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="fixed top-3 left-3 z-50" 
+          className="fixed top-3 left-3 z-50 bg-white/80 backdrop-blur-sm shadow-sm" 
           onClick={toggleMobileMenu}
         >
           <Menu className="h-5 w-5" />
         </Button>
         
         {mobileMenuOpen && (
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMobileMenuOpen(false)}>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setMobileMenuOpen(false)}>
             <div 
-              className="w-64 h-full bg-white overflow-y-auto" 
+              className="w-64 h-full bg-white overflow-hidden flex flex-col animate-slide-in-right shadow-xl" 
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-4 mb-2">
+              <div className="p-4 border-b">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 font-semibold px-2 py-4">
                     <span className="logo">NEX</span>
@@ -94,12 +104,12 @@ const SidebarNav: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              <nav className="space-y-1 px-2 overflow-y-auto max-h-[calc(100vh-160px)]">
+              <nav className="flex-1 px-2 py-4 overflow-y-auto hide-scrollbar">
                 {menu.map((item) => (
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`flex items-center space-x-3 rounded-md py-3 px-3 text-sm font-medium hover:bg-gray-100 ${
+                    className={`flex items-center space-x-3 rounded-md py-3 px-3 text-sm font-medium mb-1 hover:bg-gray-100 transition-colors ${
                       isActive(item.path) 
                         ? 'bg-nexhr-primary/10 text-nexhr-primary font-semibold' 
                         : 'text-gray-700'
@@ -124,7 +134,7 @@ const SidebarNav: React.FC = () => {
                   <span>Manage Subscription</span>
                 </Button>
               </nav>
-              <div className="absolute bottom-0 w-64 border-t p-4 bg-white">
+              <div className="border-t p-4 bg-white">
                 <Link
                   to="/logout"
                   className="flex items-center space-x-3 rounded-md py-3 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100"
@@ -141,7 +151,7 @@ const SidebarNav: React.FC = () => {
   }
 
   return (
-    <div className={`${collapsed ? 'w-16' : 'w-56'} min-h-screen border-r bg-white transition-all duration-300 relative flex flex-col`}>
+    <div className={`${collapsed ? 'w-16' : 'w-56'} min-h-screen border-r bg-white shadow-sm transition-all duration-300 relative flex flex-col`}>
       <div className="p-4 mb-2">
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-2'} font-semibold px-2 py-4`}>
           {!collapsed ? (
@@ -163,55 +173,57 @@ const SidebarNav: React.FC = () => {
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </Button>
       
-      <nav className="space-y-1 px-2 overflow-y-auto flex-grow hide-scrollbar">
-        {menu.map((item) => (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <nav className="space-y-1 px-2 overflow-y-auto flex-grow hide-scrollbar">
+          {menu.map((item) => (
+            <Link
+              key={item.name}
+              to={item.path}
+              className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium hover:bg-gray-100 transition-colors ${
+                isActive(item.path) 
+                  ? 'bg-nexhr-primary/10 text-nexhr-primary font-semibold' 
+                  : 'text-gray-700'
+              }`}
+              title={collapsed ? item.name : ''}
+            >
+              <span className={isActive(item.path) ? 'text-nexhr-primary' : ''}>
+                {item.icon}
+              </span>
+              {!collapsed && <span>{item.name}</span>}
+            </Link>
+          ))}
+          
+          {!collapsed && (
+            <Button
+              onClick={() => setShowSubscriptionModal(true)}
+              className="w-full mt-4 flex items-center justify-start space-x-3 rounded-md py-3 px-3 text-sm font-medium bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 animate-pulse-slow"
+            >
+              <CreditCard className="w-5 h-5" />
+              <span>Manage Subscription</span>
+            </Button>
+          )}
+          
+          {collapsed && (
+            <Button
+              onClick={() => setShowSubscriptionModal(true)}
+              className="w-full mt-4 flex items-center justify-center rounded-md py-3 px-3 text-sm font-medium bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 animate-pulse-slow"
+              title="Manage Subscription"
+            >
+              <CreditCard className="w-5 h-5" />
+            </Button>
+          )}
+        </nav>
+        
+        <div className={`border-t p-4 bg-white ${collapsed ? 'w-16' : 'w-56'}`}>
           <Link
-            key={item.name}
-            to={item.path}
-            className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium hover:bg-gray-100 ${
-              isActive(item.path) 
-                ? 'bg-nexhr-primary/10 text-nexhr-primary font-semibold' 
-                : 'text-gray-700'
-            }`}
-            title={collapsed ? item.name : ''}
+            to="/logout"
+            className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100`}
+            title={collapsed ? 'Logout' : ''}
           >
-            <span className={isActive(item.path) ? 'text-nexhr-primary' : ''}>
-              {item.icon}
-            </span>
-            {!collapsed && <span>{item.name}</span>}
+            <LogOut className="w-5 h-5" />
+            {!collapsed && <span>Logout</span>}
           </Link>
-        ))}
-        
-        {!collapsed && (
-          <Button
-            onClick={() => setShowSubscriptionModal(true)}
-            className="w-full mt-4 flex items-center justify-start space-x-3 rounded-md py-3 px-3 text-sm font-medium bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 animate-pulse-slow"
-          >
-            <CreditCard className="w-5 h-5" />
-            <span>Manage Subscription</span>
-          </Button>
-        )}
-        
-        {collapsed && (
-          <Button
-            onClick={() => setShowSubscriptionModal(true)}
-            className="w-full mt-4 flex items-center justify-center rounded-md py-3 px-3 text-sm font-medium bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 animate-pulse-slow"
-            title="Manage Subscription"
-          >
-            <CreditCard className="w-5 h-5" />
-          </Button>
-        )}
-      </nav>
-      
-      <div className={`border-t p-4 bg-white ${collapsed ? 'w-16' : 'w-56'}`}>
-        <Link
-          to="/logout"
-          className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100`}
-          title={collapsed ? 'Logout' : ''}
-        >
-          <LogOut className="w-5 h-5" />
-          {!collapsed && <span>Logout</span>}
-        </Link>
+        </div>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Star, Check, ChevronRight } from "lucide-react";
+import { CreditCard, Star, Check, ChevronRight, Zap } from "lucide-react";
 import { useSubscription } from '@/context/SubscriptionContext';
 
 const SubscriptionManager: React.FC = () => {
@@ -43,14 +43,16 @@ const SubscriptionManager: React.FC = () => {
     <Card className="w-full shadow-md overflow-hidden border-t-4 border-t-nexhr-primary animate-fade-in hover:shadow-lg transition-all duration-300">
       <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 pb-6">
         <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg font-medium flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-100 p-2 rounded-full">
               <CreditCard className="h-5 w-5 text-nexhr-primary" />
-              Subscription
-            </CardTitle>
-            <CardDescription className="mt-1">
-              Manage your current subscription plan
-            </CardDescription>
+            </div>
+            <div>
+              <CardTitle className="text-lg font-medium">Subscription</CardTitle>
+              <CardDescription className="mt-1">
+                Manage your current subscription plan
+              </CardDescription>
+            </div>
           </div>
           <Badge className={`${getPlanColor()} font-medium px-3 py-1 rounded-full`}>
             {plan === "None" ? "Free Trial" : plan}
@@ -61,7 +63,9 @@ const SubscriptionManager: React.FC = () => {
         <div className="space-y-4">
           {plan === "None" ? (
             <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-              <Star className="h-5 w-5 text-yellow-500 mt-0.5" />
+              <div className="rounded-full bg-amber-100 p-1.5 flex-shrink-0">
+                <Star className="h-5 w-5 text-amber-500" />
+              </div>
               <div>
                 <h4 className="font-medium text-gray-800">You're on a free trial</h4>
                 <p className="text-sm text-gray-600 mt-1">
@@ -70,12 +74,16 @@ const SubscriptionManager: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
-              <h4 className="font-medium text-gray-700">Plan features:</h4>
-              <ul className="space-y-2">
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-700 flex items-center gap-2">
+                <Zap className="h-4 w-4 text-nexhr-primary" /> Plan features:
+              </h4>
+              <ul className="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
                 {getPlanFeatures().map((feature, index) => (
                   <li key={index} className="flex items-center gap-2 text-sm text-gray-700">
-                    <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    <div className="bg-green-100 rounded-full p-0.5">
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    </div>
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -84,7 +92,7 @@ const SubscriptionManager: React.FC = () => {
           )}
         </div>
       </CardContent>
-      <CardFooter className="bg-gray-50 flex justify-between border-t">
+      <CardFooter className="bg-gray-50 flex justify-between border-t py-4">
         <div className="text-sm text-gray-500">
           {plan !== "None" 
             ? "Your subscription renews on the 15th of each month" 
@@ -93,7 +101,7 @@ const SubscriptionManager: React.FC = () => {
         </div>
         <Button 
           onClick={() => setShowSubscriptionModal(true)}
-          className="gap-1 group"
+          className="gap-1 group bg-nexhr-primary hover:bg-nexhr-primary/90"
         >
           {plan === "None" ? "Upgrade Plan" : "Manage Plan"}
           <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
