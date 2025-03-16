@@ -36,7 +36,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-3xl overflow-y-auto max-h-[90vh]">
+      <DialogContent className="sm:max-w-5xl w-[90vw] overflow-y-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">
             <span className="bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">

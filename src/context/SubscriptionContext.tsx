@@ -46,21 +46,29 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     expenseManagement: ["Business", "Enterprise"].includes(plan),
     helpDesk: ["Business", "Enterprise"].includes(plan),
     projectManagement: ["Business", "Enterprise"].includes(plan),
-    advancedAnalytics: ["Business", "Enterprise"].includes(plan),
+    advancedAnalytics: ["Enterprise"].includes(plan),
   };
   
   // Save plan to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("subscription-plan", plan);
     
-    // If user just registered and has no plan, show the subscription modal
-    if (plan === "None") {
-      // Only show it once after a delay on first load
-      const timer = setTimeout(() => {
-        setShowSubscriptionModal(true);
-      }, 1500);
-      
-      return () => clearTimeout(timer);
+    // If user just subscribed, show a success message or additional onboarding
+    if (plan !== "None") {
+      // You could add additional logic here for onboarding after subscription
+    }
+    // Only show the subscription modal for new users with no plan
+    else if (plan === "None") {
+      const isNewUser = localStorage.getItem("new-user") === "true";
+      if (isNewUser) {
+        // Show the modal after a delay on first load for new users
+        const timer = setTimeout(() => {
+          setShowSubscriptionModal(true);
+          localStorage.removeItem("new-user");
+        }, 1500);
+        
+        return () => clearTimeout(timer);
+      }
     }
   }, [plan]);
   
