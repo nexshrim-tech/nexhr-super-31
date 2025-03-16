@@ -2,7 +2,11 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
 
-const UserHeader = () => {
+interface UserHeaderProps {
+  title?: string;
+}
+
+const UserHeader = ({ title }: UserHeaderProps) => {
   const today = new Date();
   const formattedDate = format(today, "EEE, d MMMM");
 
@@ -16,6 +20,7 @@ const UserHeader = () => {
         <div className="flex flex-col">
           <div className="text-lg font-medium">Hi There, Admin</div>
           <div className="text-sm text-muted-foreground">{formattedDate}</div>
+          {title && <div className="text-base font-medium mt-1">{title}</div>}
         </div>
       </div>
     </div>
