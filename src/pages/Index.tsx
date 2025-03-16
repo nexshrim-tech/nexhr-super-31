@@ -10,9 +10,8 @@ import QuickLinks from "@/components/QuickLinks";
 import TaskReminders from "@/components/TaskReminders";
 import SubscriptionManager from "@/components/SubscriptionManager";
 import { Button } from "@/components/ui/button";
-import { CreditCard, ArrowUp, Home } from "lucide-react";
+import { CreditCard, ArrowUp } from "lucide-react";
 import { useSubscription } from "@/context/SubscriptionContext";
-import { Link } from "react-router-dom";
 
 const Index = () => {
   const { setShowSubscriptionModal } = useSubscription();
@@ -36,18 +35,6 @@ const Index = () => {
               <span>Manage Subscription</span>
               <ArrowUp className="ml-1 h-4 w-4 animate-bounce" />
             </Button>
-
-            {/* Fixed Back to Landing Page Button */}
-            <div className="fixed bottom-6 left-6 z-50">
-              <Link to="/landing">
-                <Button 
-                  className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white py-5 shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <Home className="mr-2 h-5 w-5" />
-                  Back to Landing Page
-                </Button>
-              </Link>
-            </div>
           </div>
           
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">

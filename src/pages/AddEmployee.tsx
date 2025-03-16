@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChevronLeft, Upload, FileText, Home, ArrowLeftCircle } from "lucide-react";
+import { ChevronLeft, Upload, FileText, ArrowLeftCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
@@ -63,18 +62,6 @@ const AddEmployee = () => {
               title="Employee Management Feature"
               description="Subscribe to a plan to unlock the ability to add and manage employees in your organization."
             />
-
-            {/* Prominent Back to Landing Button */}
-            <div className="fixed bottom-6 left-6 z-50">
-              <Link to="/landing">
-                <Button 
-                  className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white py-5 shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse-slow"
-                >
-                  <Home className="mr-2 h-5 w-5" />
-                  Back to Landing Page
-                </Button>
-              </Link>
-            </div>
           </div>
         </div>
       </div>
@@ -165,18 +152,6 @@ const AddEmployee = () => {
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
       <div className="flex-1 overflow-auto">
-        {/* Fixed Back to Landing Page Button */}
-        <div className="fixed bottom-6 left-6 z-50">
-          <Link to="/landing">
-            <Button 
-              className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white py-5 shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <Home className="mr-2 h-5 w-5" />
-              Back to Landing Page
-            </Button>
-          </Link>
-        </div>
-
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
           <div className="flex justify-between items-center mb-6">
             <div>

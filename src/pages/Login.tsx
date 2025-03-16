@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowRight, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { ArrowRight, Mail, Lock, User, ArrowLeft, Home } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -69,20 +69,21 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8 animate-fade-in relative">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute -top-12 left-0 text-nexhr-primary hover:text-nexhr-primary/80 hover:bg-gray-100 transition-all flex items-center gap-1"
-          asChild
-        >
-          <Link to="/landing">
-            <ArrowLeft className="h-4 w-4" />
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4 relative">
+      {/* Back to Landing Page Button - Prominent Position */}
+      <div className="fixed top-4 left-4 z-50">
+        <Link to="/landing">
+          <Button 
+            className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+            size="lg"
+          >
+            <Home className="h-5 w-5" />
             Back to Landing Page
-          </Link>
-        </Button>
-        
+          </Button>
+        </Link>
+      </div>
+      
+      <div className="w-full max-w-md space-y-8 animate-fade-in relative">
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <div className="text-4xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
