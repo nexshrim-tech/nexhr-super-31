@@ -1,6 +1,5 @@
-
 import { Route, Routes } from "react-router-dom";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
 import Index from "@/pages/Index";
 import Assets from "@/pages/Assets";
 import Attendance from "@/pages/Attendance";
@@ -24,15 +23,12 @@ import Track from "@/pages/Track";
 import AllEmployees from "@/pages/AllEmployees";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
 import SubscriptionModal from "./components/SubscriptionModal";
-import { useState } from "react";
 import { useSubscription } from "./context/SubscriptionContext";
 
-// Subscription modal wrapper that uses the context
 function SubscriptionModalWrapper() {
   const { showSubscriptionModal, setShowSubscriptionModal, setPlan, plan } = useSubscription();
   
   const handleSubscribe = (selectedPlan: string) => {
-    // Convert the selected plan to a SubscriptionPlan type
     setPlan(selectedPlan as any);
   };
   
