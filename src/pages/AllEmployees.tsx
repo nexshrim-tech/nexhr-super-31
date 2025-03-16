@@ -18,6 +18,7 @@ import EmployeeFilters from "@/components/employees/EmployeeFilters";
 import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import EmployeeListHeader from "@/components/employees/EmployeeListHeader";
 import EmployeePagination from "@/components/employees/EmployeePagination";
+import UserHeader from "@/components/UserHeader";
 
 const employees = [
   {
@@ -127,12 +128,13 @@ const AllEmployees = () => {
   };
 
   return (
-    <div className="flex h-full bg-gray-50">
+    <div className="flex h-full bg-gradient-to-b from-white to-gray-50 min-h-screen">
       <SidebarNav />
       <div className="flex-1 overflow-auto">
+        <UserHeader title="Employee Directory" />
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2 animate-fade-in">
               Employee Directory
             </h1>
             <p className="text-gray-600">
@@ -143,12 +145,12 @@ const AllEmployees = () => {
           <EmployeeListHeader />
 
           {/* Today's Attendance Widget */}
-          <div className="mb-6 transform hover:scale-[1.01] transition-all duration-300 dashboard-card">
+          <div className="mb-6 transform hover:scale-[1.01] transition-all duration-300 dashboard-card shadow-sm hover:shadow-md rounded-lg overflow-hidden border border-gray-200">
             <TodaysAttendance />
           </div>
 
-          <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-3">
+          <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300 animate-scale-in rounded-lg overflow-hidden">
+            <CardHeader className="pb-3 border-b">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <CardTitle className="text-xl font-semibold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
                   Employee Directory

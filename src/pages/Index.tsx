@@ -10,7 +10,7 @@ import QuickLinks from "@/components/QuickLinks";
 import TaskReminders from "@/components/TaskReminders";
 import SubscriptionManager from "@/components/SubscriptionManager";
 import { Button } from "@/components/ui/button";
-import { CreditCard, ArrowUp } from "lucide-react";
+import { CreditCard, ArrowUp, Sparkles } from "lucide-react";
 import { useSubscription } from "@/context/SubscriptionContext";
 
 const Index = () => {
@@ -21,27 +21,27 @@ const Index = () => {
       <SidebarNav />
       <div className="flex-1 flex flex-col overflow-hidden">
         <UserHeader title="Dashboard" />
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-6 overflow-y-auto bg-gradient-to-b from-white to-gray-50">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-4">
               <div className="mb-6">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent animate-fade-in">
                   Welcome to Your Dashboard
                 </h1>
                 <p className="text-gray-600 mt-2">
                   Here's what's happening in your organization today
                 </p>
               </div>
-              <div className="transform hover:scale-[1.01] transition-all duration-300">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 shadow-sm hover:shadow-md rounded-lg">
                 <EmployeeStats />
               </div>
             </div>
             
             <Button
               onClick={() => setShowSubscriptionModal(true)}
-              className="fixed bottom-6 right-6 bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 shadow-lg flex items-center gap-2 z-10 rounded-full py-6 hover:shadow-xl transition-all duration-300"
+              className="fixed bottom-6 right-6 bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 shadow-lg flex items-center gap-2 z-10 rounded-full py-6 hover:shadow-xl transition-all duration-300 group animate-pulse-slow"
             >
-              <CreditCard className="h-5 w-5 mr-1" />
+              <CreditCard className="h-5 w-5 mr-1 group-hover:scale-110 transition-transform" />
               <span>Manage Subscription</span>
               <ArrowUp className="ml-1 h-4 w-4 animate-bounce" />
             </Button>
@@ -49,24 +49,24 @@ const Index = () => {
           
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 grid grid-cols-1 gap-6">
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md">
                 <TodaysAttendance />
               </div>
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md">
                 <ExpenseGraph />
               </div>
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md">
                 <EmployeeLocation />
               </div>
             </div>
             <div className="space-y-6">
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md">
                 <SubscriptionManager />
               </div>
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card glass-effect">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card glass-effect rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md">
                 <QuickLinks />
               </div>
-              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card gradient-border">
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card gradient-border rounded-lg overflow-hidden shadow-sm hover:shadow-md">
                 <TaskReminders />
               </div>
             </div>
