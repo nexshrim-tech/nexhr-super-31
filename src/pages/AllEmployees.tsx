@@ -21,6 +21,7 @@ import EmployeeListHeader from "@/components/employees/EmployeeListHeader";
 import EmployeePagination from "@/components/employees/EmployeePagination";
 import UserHeader from "@/components/UserHeader";
 import { Sparkles } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const employees = [
   {
@@ -103,6 +104,7 @@ const AllEmployees = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const filteredEmployees = employees.filter(
     (employee) => {
@@ -134,9 +136,9 @@ const AllEmployees = () => {
       <SidebarNav />
       <div className="flex-1 overflow-auto">
         <UserHeader title="Employee Directory" />
-        <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto py-4 sm:py-6 px-4 sm:px-6">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2 animate-fade-in flex items-center">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2 animate-fade-in flex items-center">
               Employee Directory
               <Sparkles className="h-5 w-5 ml-2 text-yellow-400 animate-pulse-slow" />
             </h1>
@@ -171,15 +173,15 @@ const AllEmployees = () => {
                 />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="rounded-md border overflow-hidden shadow-sm">
+            <CardContent className={isMobile ? "p-2" : "p-4 sm:p-6"}>
+              <div className="rounded-md border overflow-hidden shadow-sm overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-gradient-to-r from-gray-50 to-gray-100">
                     <TableRow>
-                      <TableHead>Employee ID</TableHead>
-                      <TableHead className="w-[300px]">Name</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Role</TableHead>
+                      {!isMobile && <TableHead>Employee ID</TableHead>}
+                      <TableHead className="min-w-[200px]">Name</TableHead>
+                      {!isMobile && <TableHead>Department</TableHead>}
+                      {!isMobile && <TableHead>Role</TableHead>}
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -187,22 +189,25 @@ const AllEmployees = () => {
                   <TableBody>
                     {filteredEmployees.map((employee) => (
                       <TableRow key={employee.id} className="hover:bg-gray-50 transition-colors">
-                        <TableCell className="font-medium">{employee.id}</TableCell>
+                        {!isMobile && <TableCell className="font-medium">{employee.id}</TableCell>}
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
-                              <AvatarFallback className="bg-gradient-to-br from-nexhr-primary to-purple-600 text-white">
+                            <Avatar className="h-8 w-8 sm:h-9 sm:w-9 border-2 border-white shadow-sm">
+                              <AvatarFallback className="bg-gradient-to-br from-nexhr-primary to-purple-600 text-white text-xs sm:text-sm">
                                 {employee.avatar}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="font-medium">{employee.name}</div>
-                              <div className="text-sm text-gray-500">{employee.email}</div>
+                              <div className="font-medium text-sm sm:text-base">{employee.name}</div>
+                              <div className="text-xs sm:text-sm text-gray-500">{employee.email}</div>
+                              {isMobile && (
+                                <div className="text-xs text-gray-500 mt-1">{employee.department} • {employee.role}</div>
+                              )}
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>{employee.department}</TableCell>
-                        <TableCell>{employee.role}</TableCell>
+                        {!isMobile && <TableCell>{employee.department}</TableCell>}
+                        {!isMobile && <TableCell>{employee.role}</TableCell>}
                         <TableCell>
                           <Badge
                             className={`${
@@ -211,28 +216,30 @@ const AllEmployees = () => {
                                 : employee.status === "On Leave"
                                 ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
                                 : "bg-gray-100 text-gray-800 border border-gray-200"
-                            } transition-colors`}
+                            } transition-colors text-xs`}
                           >
                             {employee.status}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            {!isMobile && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="hover:bg-gray-100 transition-colors text-xs"
+                                onClick={() => {
+                                  setSelectedEmployee(employee);
+                                  setIsEditDialogOpen(true);
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            )}
                             <Button 
                               variant="outline" 
                               size="sm"
-                              className="hover:bg-gray-100 transition-colors"
-                              onClick={() => {
-                                setSelectedEmployee(employee);
-                                setIsEditDialogOpen(true);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="hover:bg-nexhr-primary/10 hover:text-nexhr-primary transition-colors"
+                              className="hover:bg-nexhr-primary/10 hover:text-nexhr-primary transition-colors text-xs"
                               onClick={() => handleViewEmployee(employee)}
                             >
                               View

@@ -1,12 +1,13 @@
 
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Home, AlertTriangle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const NotFound = () => {
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     console.error(
@@ -17,19 +18,19 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 bg-grid-pattern">
-      <div className="text-center max-w-md w-full glass-effect bg-white/90 rounded-lg shadow-xl border border-gray-100 p-8 animate-scale-in">
-        <div className="relative w-24 h-24 bg-gradient-to-br from-red-50 to-pink-50 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-red-100 shadow-inner animate-pulse-slow">
-          <AlertTriangle className="h-10 w-10 text-red-500" />
+      <div className="text-center max-w-md w-full glass-effect bg-white/90 rounded-lg shadow-xl border border-gray-100 p-6 sm:p-8 animate-scale-in">
+        <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-red-50 to-pink-50 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-red-100 shadow-inner animate-pulse-slow">
+          <AlertTriangle className={`${isMobile ? 'h-8 w-8' : 'h-10 w-10'} text-red-500`} />
           <span className="sr-only">404</span>
           <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full text-white text-xs flex items-center justify-center font-bold border-2 border-white">
             !
           </div>
         </div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2">
           Page Not Found
         </h1>
         <div className="h-1 w-16 bg-gradient-to-r from-nexhr-primary to-purple-600 mx-auto mb-4 rounded-full"></div>
-        <p className="text-gray-600 mb-8">
+        <p className="text-gray-600 mb-6 sm:mb-8">
           The page you are looking for doesn't exist or has been moved.
         </p>
         <Link to="/">
@@ -40,7 +41,7 @@ const NotFound = () => {
         </Link>
         
         <div className="mt-6 text-sm text-gray-500">
-          Error URL: <span className="font-mono text-xs bg-gray-100 p-1 rounded">{location.pathname}</span>
+          Error URL: <span className="font-mono text-xs bg-gray-100 p-1 rounded break-all">{location.pathname}</span>
         </div>
       </div>
     </div>
