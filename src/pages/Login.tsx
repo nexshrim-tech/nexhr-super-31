@@ -70,13 +70,20 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8 animate-fade-in">
-        <div className="text-center relative">
-          <Link to="/landing" className="absolute -top-12 left-0 flex items-center text-nexhr-primary hover:underline transition-all">
-            <ArrowLeft className="h-4 w-4 mr-1" />
+      <div className="w-full max-w-md space-y-8 animate-fade-in relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute -top-12 left-0 text-nexhr-primary hover:text-nexhr-primary/80 hover:bg-gray-100 transition-all flex items-center gap-1"
+          asChild
+        >
+          <Link to="/landing">
+            <ArrowLeft className="h-4 w-4" />
             Back to Landing Page
           </Link>
-          
+        </Button>
+        
+        <div className="text-center">
           <div className="flex justify-center mb-4">
             <div className="text-4xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
               NEX<span className="font-normal">HR</span>
