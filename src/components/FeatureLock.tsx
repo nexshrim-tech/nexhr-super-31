@@ -21,29 +21,12 @@ const FeatureLock: React.FC<FeatureLockProps> = ({ title, description }) => {
       <h3 className="text-xl font-semibold mb-2 text-gray-700">{title}</h3>
       <p className="text-gray-500 mb-6 max-w-md">{description}</p>
       
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button 
-            className="animate-pulse bg-nexhr-primary hover:bg-nexhr-primary/90"
-          >
-            Upgrade to Unlock
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80 p-4">
-          <div className="space-y-4">
-            <h4 className="font-medium text-lg">Subscription Required</h4>
-            <p className="text-sm text-gray-500">
-              This feature requires an active subscription plan. Upgrade now to unlock all features and enhance your HR management capabilities.
-            </p>
-            <Button 
-              onClick={() => setShowSubscriptionModal(true)} 
-              className="w-full"
-            >
-              View Plans
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
+      <Button 
+        className="animate-pulse bg-nexhr-primary hover:bg-nexhr-primary/90"
+        onClick={() => setShowSubscriptionModal(true)}
+      >
+        Upgrade to Unlock
+      </Button>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -11,11 +10,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronLeft, Upload, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/context/SubscriptionContext";
+import FeatureLock from "@/components/FeatureLock";
 
 const AddEmployee = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
   const { toast } = useToast();
+  const { features } = useSubscription();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -36,6 +38,35 @@ const AddEmployee = () => {
     aadharCard: null as File | null,
     panCard: null as File | null
   });
+
+  if (!features.employeeManagement) {
+    return (
+      <div className="flex h-full bg-gray-50">
+        <SidebarNav />
+        <div className="flex-1 overflow-auto">
+          <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-semibold">Add New Employee</h1>
+                <p className="text-gray-500">Add a new employee to your organization</p>
+              </div>
+              <Link to="/">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <ChevronLeft className="h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+            </div>
+            
+            <FeatureLock 
+              title="Employee Management Feature"
+              description="Subscribe to a plan to unlock the ability to add and manage employees in your organization."
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,7 +98,6 @@ const AddEmployee = () => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
     
-    // Calculate form progress
     const totalFields = Object.keys(formData).length;
     const filledFields = Object.values(formData).filter(val => val.trim() !== "").length;
     setFormProgress(Math.floor((filledFields / totalFields) * 100));
@@ -101,15 +131,13 @@ const AddEmployee = () => {
     e.preventDefault();
     
     if (validateForm()) {
-      // In a real app, this would send the data to a server
       toast({
         title: "Employee information saved",
         description: "The employee has been successfully added to the system.",
       });
       
-      // Redirect to employees list after successful submission
       setTimeout(() => {
-        navigate("/all-employees");
+        navigate("/");
       }, 2000);
     } else {
       toast({

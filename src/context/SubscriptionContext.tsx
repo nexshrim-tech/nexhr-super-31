@@ -53,9 +53,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   useEffect(() => {
     localStorage.setItem("subscription-plan", plan);
     
-    // If user just subscribed, show a success message or additional onboarding
+    // If user just subscribed, hide the subscription modal and show a success message
     if (plan !== "None") {
-      // You could add additional logic here for onboarding after subscription
+      setShowSubscriptionModal(false);
     }
     // Only show the subscription modal for new users with no plan
     else if (plan === "None") {

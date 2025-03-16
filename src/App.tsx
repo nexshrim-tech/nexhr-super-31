@@ -1,58 +1,87 @@
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
-import Dashboard from "./pages/Index";
-import Login from "./pages/Login";
-import NotFound from "./pages/NotFound";
-import Landing from "./pages/Landing";
-import AllEmployees from "./pages/AllEmployees";
-import AddEmployee from "./pages/AddEmployee";
-import EmployeeDetails from "./pages/EmployeeDetails";
-import Attendance from "./pages/Attendance";
-import Salary from "./pages/Salary";
-import LeaveManagement from "./pages/LeaveManagement";
-import DocumentGenerator from "./pages/DocumentGenerator";
-import Assets from "./pages/Assets";
-import TasksReminders from "./pages/TasksReminders";
-import Expenses from "./pages/Expenses";
-import Track from "./pages/Track";
-import HelpDesk from "./pages/HelpDesk";
-import Meetings from "./pages/Meetings";
-import Messenger from "./pages/Messenger";
-import Department from "./pages/Department";
-import ProjectManagement from "./pages/ProjectManagement";
-import Logout from "./pages/Logout";
+import Index from "@/pages/Index";
+import Assets from "@/pages/Assets";
+import Attendance from "@/pages/Attendance";
+import Department from "@/pages/Department";
+import DocumentGenerator from "@/pages/DocumentGenerator";
+import AddEmployee from "@/pages/AddEmployee";
+import EmployeeDetails from "@/pages/EmployeeDetails";
+import Expenses from "@/pages/Expenses";
+import HelpDesk from "@/pages/HelpDesk";
+import Landing from "@/pages/Landing";
+import LeaveManagement from "@/pages/LeaveManagement";
+import Login from "@/pages/Login";
+import Logout from "@/pages/Logout";
+import Meetings from "@/pages/Meetings";
+import Messenger from "@/pages/Messenger";
+import NotFound from "@/pages/NotFound";
+import ProjectManagement from "@/pages/ProjectManagement";
+import Salary from "@/pages/Salary";
+import TasksReminders from "@/pages/TasksReminders";
+import Track from "@/pages/Track";
+import AllEmployees from "@/pages/AllEmployees";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
+import SubscriptionModal from "./components/SubscriptionModal";
+import { useState } from "react";
+import { useSubscription } from "./context/SubscriptionContext";
+
+// Subscription modal wrapper that uses the context
+function SubscriptionModalWrapper() {
+  const { showSubscriptionModal, setShowSubscriptionModal, setPlan, plan } = useSubscription();
+  
+  const handleSubscribe = (selectedPlan: string) => {
+    // Convert the selected plan to a SubscriptionPlan type
+    setPlan(selectedPlan as any);
+  };
+  
+  return (
+    <SubscriptionModal 
+      isOpen={showSubscriptionModal} 
+      onClose={() => setShowSubscriptionModal(false)}
+      onSubscribe={handleSubscribe}
+      forceOpen={plan === "None"}
+    />
+  );
+}
+
+function AppRoutes() {
+  return (
+    <>
+      <SubscriptionModalWrapper />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/landing" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/add-employee" element={<AddEmployee />} />
+        <Route path="/employee/:id" element={<EmployeeDetails />} />
+        <Route path="/all-employees" element={<AllEmployees />} />
+        <Route path="/assets" element={<Assets />} />
+        <Route path="/attendance" element={<Attendance />} />
+        <Route path="/department" element={<Department />} />
+        <Route path="/document-generator" element={<DocumentGenerator />} />
+        <Route path="/expenses" element={<Expenses />} />
+        <Route path="/help-desk" element={<HelpDesk />} />
+        <Route path="/leave-management" element={<LeaveManagement />} />
+        <Route path="/logout" element={<Logout />} />
+        <Route path="/meetings" element={<Meetings />} />
+        <Route path="/messenger" element={<Messenger />} />
+        <Route path="/project-management" element={<ProjectManagement />} />
+        <Route path="/salary" element={<Salary />} />
+        <Route path="/tasks-reminders" element={<TasksReminders />} />
+        <Route path="/track" element={<Track />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+}
 
 function App() {
   return (
     <SubscriptionProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/landing" element={<Landing />} />
-          <Route path="/employees" element={<AllEmployees />} />
-          <Route path="/employees/add" element={<AddEmployee />} />
-          <Route path="/employees/:id" element={<EmployeeDetails />} />
-          <Route path="/attendance" element={<Attendance />} />
-          <Route path="/salary" element={<Salary />} />
-          <Route path="/leave-management" element={<LeaveManagement />} />
-          <Route path="/document-generator" element={<DocumentGenerator />} />
-          <Route path="/assets" element={<Assets />} />
-          <Route path="/tasks" element={<TasksReminders />} />
-          <Route path="/expenses" element={<Expenses />} />
-          <Route path="/track" element={<Track />} />
-          <Route path="/help-desk" element={<HelpDesk />} />
-          <Route path="/meetings" element={<Meetings />} />
-          <Route path="/messenger" element={<Messenger />} />
-          <Route path="/department" element={<Department />} />
-          <Route path="/projects" element={<ProjectManagement />} />
-          <Route path="/logout" element={<Logout />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-      </Router>
+      <AppRoutes />
+      <Toaster />
     </SubscriptionProvider>
   );
 }

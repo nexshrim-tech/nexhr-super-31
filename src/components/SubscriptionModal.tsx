@@ -16,12 +16,14 @@ interface SubscriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubscribe: (plan: string) => void;
+  forceOpen?: boolean;
 }
 
 const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   isOpen,
   onClose,
-  onSubscribe
+  onSubscribe,
+  forceOpen = false
 }) => {
   const { toast } = useToast();
   
@@ -35,7 +37,14 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open && !forceOpen) {
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-5xl w-[90vw] overflow-y-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">
@@ -211,11 +220,13 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           </div>
         </div>
         
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={onClose}>
-            Maybe Later
-          </Button>
-        </DialogFooter>
+        {!forceOpen && (
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={onClose}>
+              Maybe Later
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

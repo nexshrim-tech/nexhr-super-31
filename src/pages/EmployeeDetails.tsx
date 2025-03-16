@@ -7,20 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Eye, Trash, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { useSubscription } from "@/context/SubscriptionContext";
+import FeatureLock from "@/components/FeatureLock";
 
 // Import our components
 import EmployeeProfileCard from "@/components/employees/EmployeeProfileCard";
@@ -37,7 +25,7 @@ import PayslipDialog from "@/components/employees/PayslipDialog";
 
 // Enhanced employee data with additional fields
 const employeeData = {
-  id: "EMP001", // Added ID to fix TS2741 error
+  id: "EMP001",
   name: "Chisom Chukwukwe",
   email: "work@email.com",
   phone: "+369 258 147",
@@ -85,6 +73,7 @@ const payslipsData = [
 const EmployeeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { features } = useSubscription();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -96,6 +85,35 @@ const EmployeeDetails = () => {
   const [geofencingEnabled, setGeofencingEnabled] = useState(employeeData.geofencingEnabled);
   const [documentEditDialog, setDocumentEditDialog] = useState<'aadhar' | 'pan' | null>(null);
   const [payslipDialogOpen, setPayslipDialogOpen] = useState(false);
+
+  if (!features.employeeManagement) {
+    return (
+      <div className="flex h-full bg-gray-50">
+        <SidebarNav />
+        <div className="flex-1 overflow-auto">
+          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-semibold">Employee Details</h1>
+                <p className="text-gray-500">View and manage employee information</p>
+              </div>
+              <Link to="/">
+                <Button variant="outline" className="gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </Button>
+              </Link>
+            </div>
+            
+            <FeatureLock 
+              title="Employee Management Feature"
+              description="Subscribe to a plan to unlock the ability to view and manage employees in your organization."
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleGeofencingToggle = (checked: boolean) => {
     setGeofencingEnabled(checked);
@@ -202,7 +220,6 @@ const EmployeeDetails = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Profile Card */}
             <EmployeeProfileCard 
               employee={employee}
               isEditMode={isEditMode}
@@ -212,7 +229,6 @@ const EmployeeDetails = () => {
               onInputChange={handleInputChange}
             />
 
-            {/* Details Section */}
             <Card className="lg:col-span-2">
               <CardContent className="p-6">
                 <Tabs defaultValue="personal" className="space-y-4">
@@ -261,13 +277,10 @@ const EmployeeDetails = () => {
             </Card>
           </div>
 
-          {/* Tasks Section */}
           <EmployeeTasksSection tasks={employee.tasks} />
 
-          {/* Assets Section */}
           <EmployeeAssetsSection assets={employee.assets} />
 
-          {/* Documents Section */}
           <EmployeeDocumentsSection 
             leaves={employee.leaves}
             onDownload={handleDownload}
@@ -305,7 +318,6 @@ const EmployeeDetails = () => {
             </Dialog>
           </div>
 
-          {/* Document Update Dialog */}
           <DocumentUpdateDialog 
             type={documentEditDialog}
             isOpen={documentEditDialog !== null}
@@ -313,7 +325,6 @@ const EmployeeDetails = () => {
             onUpload={handleDocumentUpload}
           />
 
-          {/* Employee Edit Dialog */}
           <EmployeeEditDialog
             isOpen={editDialogOpen}
             onOpenChange={setEditDialogOpen}
@@ -327,7 +338,6 @@ const EmployeeDetails = () => {
             }}
           />
 
-          {/* Payslip Dialog */}
           <PayslipDialog
             isOpen={payslipDialogOpen}
             onOpenChange={setPayslipDialogOpen}
