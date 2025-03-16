@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChevronLeft, Upload, FileText } from "lucide-react";
+import { ChevronLeft, Upload, FileText, Home, ArrowLeftCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
@@ -62,6 +63,18 @@ const AddEmployee = () => {
               title="Employee Management Feature"
               description="Subscribe to a plan to unlock the ability to add and manage employees in your organization."
             />
+
+            {/* Prominent Back to Landing Button */}
+            <div className="fixed bottom-6 left-6 z-50">
+              <Link to="/landing">
+                <Button 
+                  className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white py-5 shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse-slow"
+                >
+                  <Home className="mr-2 h-5 w-5" />
+                  Back to Landing Page
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -152,15 +165,27 @@ const AddEmployee = () => {
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
       <div className="flex-1 overflow-auto">
+        {/* Fixed Back to Landing Page Button */}
+        <div className="fixed bottom-6 left-6 z-50">
+          <Link to="/landing">
+            <Button 
+              className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white py-5 shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <Home className="mr-2 h-5 w-5" />
+              Back to Landing Page
+            </Button>
+          </Link>
+        </div>
+
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-2xl font-semibold">Add New Employee</h1>
+              <h1 className="text-2xl font-semibold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">Add New Employee</h1>
               <p className="text-gray-500">Add a new employee to your organization</p>
             </div>
             <Link to="/">
-              <Button variant="outline" className="flex items-center gap-2">
-                <ChevronLeft className="h-4 w-4" />
+              <Button variant="outline" className="flex items-center gap-2 border-nexhr-primary text-nexhr-primary hover:bg-nexhr-primary/10">
+                <ArrowLeftCircle className="h-4 w-4" />
                 Back to Dashboard
               </Button>
             </Link>
@@ -168,13 +193,15 @@ const AddEmployee = () => {
 
           <div className="grid md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
-              <Card>
+              <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center space-y-4">
-                    <Avatar className="h-32 w-32">
-                      <AvatarImage src={avatarPreview || ""} alt="Profile" />
-                      <AvatarFallback>Upload</AvatarFallback>
-                    </Avatar>
+                    <div className="p-1 rounded-full bg-gradient-to-r from-nexhr-primary to-purple-600">
+                      <Avatar className="h-32 w-32 border-4 border-white">
+                        <AvatarImage src={avatarPreview || ""} alt="Profile" />
+                        <AvatarFallback className="bg-gradient-to-r from-gray-200 to-gray-300">Upload</AvatarFallback>
+                      </Avatar>
+                    </div>
                     <div className="relative">
                       <input
                         type="file"
@@ -185,7 +212,7 @@ const AddEmployee = () => {
                       />
                       <Label
                         htmlFor="avatar-upload"
-                        className="cursor-pointer inline-flex items-center gap-2 text-sm text-blue-600"
+                        className="cursor-pointer inline-flex items-center gap-2 text-sm text-nexhr-primary hover:text-purple-600 transition-colors"
                       >
                         <Upload className="h-4 w-4" />
                         Upload photo
@@ -201,17 +228,17 @@ const AddEmployee = () => {
                   </div>
 
                   <div className="mt-6 space-y-4">
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
                       <h4 className="font-medium text-blue-800">Saving Progress</h4>
                       <div className="mt-2">
-                        <div className="h-2 bg-blue-100 rounded-full">
+                        <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
                           <div 
-                            className="h-2 bg-blue-600 rounded-full" 
+                            className="h-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full" 
                             style={{ width: `${formProgress}%` }}
                           ></div>
                         </div>
                       </div>
-                      <div className="mt-2 text-sm text-blue-600">
+                      <div className="mt-2 text-sm font-medium text-blue-600">
                         {formProgress}% complete
                       </div>
                     </div>
@@ -221,18 +248,18 @@ const AddEmployee = () => {
             </div>
 
             <div className="md:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Employee Details</CardTitle>
+              <Card className="shadow-md hover:shadow-lg transition-all duration-300 border-t-4 border-t-purple-600">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white">
+                  <CardTitle className="text-gray-800">Employee Details</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid grid-cols-5 mb-6">
-                      <TabsTrigger value="personal">Personal</TabsTrigger>
-                      <TabsTrigger value="employment">Employment</TabsTrigger>
-                      <TabsTrigger value="contact">Contact</TabsTrigger>
-                      <TabsTrigger value="bank">Bank Details</TabsTrigger>
-                      <TabsTrigger value="documents">Documents</TabsTrigger>
+                    <TabsList className="grid grid-cols-5 mb-6 bg-gradient-to-r from-gray-100 to-gray-50">
+                      <TabsTrigger value="personal" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Personal</TabsTrigger>
+                      <TabsTrigger value="employment" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Employment</TabsTrigger>
+                      <TabsTrigger value="contact" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Contact</TabsTrigger>
+                      <TabsTrigger value="bank" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Bank Details</TabsTrigger>
+                      <TabsTrigger value="documents" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Documents</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="personal" className="space-y-4">
