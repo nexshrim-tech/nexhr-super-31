@@ -18,9 +18,11 @@ import {
   Users,
   Video,
   Briefcase,
+  CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSubscription } from '@/context/SubscriptionContext';
 
 const SidebarNav: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -28,13 +30,14 @@ const SidebarNav: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const currentPath = location.pathname;
+  const { setShowSubscriptionModal } = useSubscription();
 
   const menu = [
     { name: 'Overview', icon: <LayoutDashboard className="w-5 h-5" />, path: '/' },
     { name: 'Add employee', icon: <Users className="w-5 h-5" />, path: '/add-employee' },
     { name: 'All Employee', icon: <Users className="w-5 h-5" />, path: '/all-employees' },
     { name: 'Attendance', icon: <Calendar className="w-5 h-5" />, path: '/attendance' },
-    { name: 'Task & reminders', icon: <FileText className="w-5 h-5" />, path: '/tasks' },
+    { name: 'Task & reminders', icon: <FileText className="w-5 h-5" />, path: '/tasks-reminders' },
     { name: 'Expenses', icon: <DollarSign className="w-5 h-5" />, path: '/expenses' },
     { name: 'Leave management', icon: <Calendar className="w-5 h-5" />, path: '/leave-management' },
     { name: 'Salary', icon: <DollarSign className="w-5 h-5" />, path: '/salary' },
@@ -43,9 +46,9 @@ const SidebarNav: React.FC = () => {
     { name: 'Department', icon: <Users className="w-5 h-5" />, path: '/department' },
     { name: 'Messenger', icon: <MessageSquare className="w-5 h-5" />, path: '/messenger' },
     { name: 'Meetings', icon: <Video className="w-5 h-5" />, path: '/meetings' },
-    { name: 'Projects', icon: <Briefcase className="w-5 h-5" />, path: '/projects' },
+    { name: 'Projects', icon: <Briefcase className="w-5 h-5" />, path: '/project-management' },
     { name: 'Help desk', icon: <HelpCircle className="w-5 h-5" />, path: '/help-desk' },
-    { name: 'Documents', icon: <FileText className="w-5 h-5" />, path: '/documents' },
+    { name: 'Document Generator', icon: <FileText className="w-5 h-5" />, path: '/document-generator' },
   ];
 
   const toggleSidebar = () => {
@@ -91,7 +94,7 @@ const SidebarNav: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              <nav className="space-y-1 px-2">
+              <nav className="space-y-1 px-2 overflow-y-auto max-h-[calc(100vh-160px)]">
                 {menu.map((item) => (
                   <Link
                     key={item.name}
@@ -109,8 +112,19 @@ const SidebarNav: React.FC = () => {
                     <span>{item.name}</span>
                   </Link>
                 ))}
+                
+                <Button
+                  onClick={() => {
+                    setShowSubscriptionModal(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full mt-4 flex items-center justify-start space-x-3 rounded-md py-3 px-3 text-sm font-medium bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  <span>Manage Subscription</span>
+                </Button>
               </nav>
-              <div className="absolute bottom-0 w-64 border-t p-4">
+              <div className="absolute bottom-0 w-64 border-t p-4 bg-white">
                 <Link
                   to="/logout"
                   className="flex items-center space-x-3 rounded-md py-3 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100"
@@ -127,7 +141,7 @@ const SidebarNav: React.FC = () => {
   }
 
   return (
-    <div className={`${collapsed ? 'w-16' : 'w-56'} min-h-screen border-r bg-white transition-all duration-300 relative`}>
+    <div className={`${collapsed ? 'w-16' : 'w-56'} min-h-screen border-r bg-white transition-all duration-300 relative flex flex-col`}>
       <div className="p-4 mb-2">
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-2'} font-semibold px-2 py-4`}>
           {!collapsed ? (
@@ -148,7 +162,8 @@ const SidebarNav: React.FC = () => {
       >
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </Button>
-      <nav className="space-y-1 px-2">
+      
+      <nav className="space-y-1 px-2 overflow-y-auto flex-grow hide-scrollbar">
         {menu.map((item) => (
           <Link
             key={item.name}
@@ -166,8 +181,29 @@ const SidebarNav: React.FC = () => {
             {!collapsed && <span>{item.name}</span>}
           </Link>
         ))}
+        
+        {!collapsed && (
+          <Button
+            onClick={() => setShowSubscriptionModal(true)}
+            className="w-full mt-4 flex items-center justify-start space-x-3 rounded-md py-3 px-3 text-sm font-medium bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 animate-pulse-slow"
+          >
+            <CreditCard className="w-5 h-5" />
+            <span>Manage Subscription</span>
+          </Button>
+        )}
+        
+        {collapsed && (
+          <Button
+            onClick={() => setShowSubscriptionModal(true)}
+            className="w-full mt-4 flex items-center justify-center rounded-md py-3 px-3 text-sm font-medium bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 animate-pulse-slow"
+            title="Manage Subscription"
+          >
+            <CreditCard className="w-5 h-5" />
+          </Button>
+        )}
       </nav>
-      <div className={`absolute bottom-0 ${collapsed ? 'w-16' : 'w-56'} border-t p-4`}>
+      
+      <div className={`border-t p-4 bg-white ${collapsed ? 'w-16' : 'w-56'}`}>
         <Link
           to="/logout"
           className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100`}

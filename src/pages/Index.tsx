@@ -1,117 +1,42 @@
 
-import { useEffect } from "react";
+import React from "react";
 import SidebarNav from "@/components/SidebarNav";
 import UserHeader from "@/components/UserHeader";
-import QuickLinks from "@/components/QuickLinks";
-import TaskReminders from "@/components/TaskReminders";
 import EmployeeStats from "@/components/EmployeeStats";
+import TodaysAttendance from "@/components/TodaysAttendance";
 import ExpenseGraph from "@/components/ExpenseGraph";
 import EmployeeLocation from "@/components/EmployeeLocation";
-import EmployeeList from "@/components/EmployeeList";
-import TodaysAttendance from "@/components/TodaysAttendance";
-import SubscriptionModal from "@/components/SubscriptionModal";
-import FeatureLock from "@/components/FeatureLock";
-import { useSubscription } from "@/context/SubscriptionContext";
+import QuickLinks from "@/components/QuickLinks";
+import TaskReminders from "@/components/TaskReminders";
+import SubscriptionManager from "@/components/SubscriptionManager";
 
-const Dashboard = () => {
-  const { 
-    showSubscriptionModal, 
-    setShowSubscriptionModal, 
-    setPlan, 
-    features 
-  } = useSubscription();
-
-  // Check if user is newly registered and show subscription modal
-  useEffect(() => {
-    const isNewUser = localStorage.getItem("new-user") === "true";
-    if (isNewUser) {
-      setTimeout(() => {
-        setShowSubscriptionModal(true);
-        localStorage.removeItem("new-user");
-      }, 1500);
-    }
-  }, [setShowSubscriptionModal]);
-
-  const handleSubscribe = (plan: string) => {
-    setPlan(plan as any);
-    setShowSubscriptionModal(false);
-  };
-
+const Index = () => {
   return (
-    <div className="flex h-full bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       <SidebarNav />
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-          <UserHeader />
-          <div className="grid gap-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <QuickLinks />
-              {features.employeeManagement ? (
-                <EmployeeStats />
-              ) : (
-                <FeatureLock 
-                  title="Employee Stats Locked" 
-                  description="Upgrade your plan to access employee statistics and analytics."
-                />
-              )}
-            </div>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="grid gap-6">
-                {features.employeeManagement ? (
-                  <TaskReminders />
-                ) : (
-                  <FeatureLock 
-                    title="Task Management Locked" 
-                    description="Upgrade your plan to manage tasks and reminders."
-                  />
-                )}
-                {features.attendanceTracking ? (
-                  <TodaysAttendance />
-                ) : (
-                  <FeatureLock 
-                    title="Attendance Tracking Locked" 
-                    description="Upgrade your plan to track employee attendance."
-                  />
-                )}
-              </div>
-              <div className="grid gap-6">
-                {features.expenseManagement ? (
-                  <ExpenseGraph />
-                ) : (
-                  <FeatureLock 
-                    title="Expense Management Locked" 
-                    description="Upgrade your plan to access expense tracking and analytics."
-                  />
-                )}
-                {features.employeeManagement ? (
-                  <EmployeeLocation />
-                ) : (
-                  <FeatureLock 
-                    title="Employee Location Locked" 
-                    description="Upgrade your plan to track employee locations."
-                  />
-                )}
-              </div>
-            </div>
-            {features.employeeManagement ? (
-              <EmployeeList />
-            ) : (
-              <FeatureLock 
-                title="Employee Management Locked" 
-                description="Upgrade your plan to access the full employee management system."
-              />
-            )}
+      <div className="flex-1 flex flex-col">
+        <UserHeader title="Dashboard" />
+        <main className="flex-1 p-6 overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <EmployeeStats />
           </div>
-        </div>
+          
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 grid grid-cols-1 gap-6">
+              <TodaysAttendance />
+              <ExpenseGraph />
+              <EmployeeLocation />
+            </div>
+            <div className="space-y-6">
+              <SubscriptionManager />
+              <QuickLinks />
+              <TaskReminders />
+            </div>
+          </div>
+        </main>
       </div>
-
-      <SubscriptionModal 
-        isOpen={showSubscriptionModal} 
-        onClose={() => setShowSubscriptionModal(false)}
-        onSubscribe={handleSubscribe}
-      />
     </div>
   );
 };
 
-export default Dashboard;
+export default Index;
