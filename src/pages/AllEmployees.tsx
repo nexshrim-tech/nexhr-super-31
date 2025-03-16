@@ -119,12 +119,10 @@ const AllEmployees = () => {
   );
 
   const handleViewEmployee = (employee: any) => {
-    // Navigate to employee details page instead of opening dialog
     navigate(`/employee/${employee.id}`);
   };
   
   const handleSaveEmployee = () => {
-    // Here we would save the changes to the employee
     setIsEditDialogOpen(false);
   };
 
@@ -133,17 +131,28 @@ const AllEmployees = () => {
       <SidebarNav />
       <div className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2">
+              Employee Directory
+            </h1>
+            <p className="text-gray-600">
+              Manage and view all employees in your organization
+            </p>
+          </div>
+          
           <EmployeeListHeader />
 
           {/* Today's Attendance Widget */}
-          <div className="mb-6">
+          <div className="mb-6 transform hover:scale-[1.01] transition-all duration-300 dashboard-card">
             <TodaysAttendance />
           </div>
 
-          <Card>
+          <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300">
             <CardHeader className="pb-3">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <CardTitle>Employee Directory</CardTitle>
+                <CardTitle className="text-xl font-semibold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
+                  Employee Directory
+                </CardTitle>
                 <EmployeeFilters 
                   searchTerm={searchTerm}
                   setSearchTerm={setSearchTerm}
@@ -153,9 +162,9 @@ const AllEmployees = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-hidden shadow-sm">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="bg-gray-50">
                     <TableRow>
                       <TableHead>Employee ID</TableHead>
                       <TableHead className="w-[300px]">Name</TableHead>
@@ -167,12 +176,14 @@ const AllEmployees = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredEmployees.map((employee) => (
-                      <TableRow key={employee.id}>
+                      <TableRow key={employee.id} className="hover:bg-gray-50 transition-colors">
                         <TableCell className="font-medium">{employee.id}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                              <AvatarFallback>{employee.avatar}</AvatarFallback>
+                            <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
+                              <AvatarFallback className="bg-gradient-to-br from-nexhr-primary to-purple-600 text-white">
+                                {employee.avatar}
+                              </AvatarFallback>
                             </Avatar>
                             <div>
                               <div className="font-medium">{employee.name}</div>
@@ -190,7 +201,7 @@ const AllEmployees = () => {
                                 : employee.status === "On Leave"
                                 ? "bg-yellow-100 text-yellow-800"
                                 : "bg-gray-100 text-gray-800"
-                            }`}
+                            } transition-colors`}
                           >
                             {employee.status}
                           </Badge>
@@ -200,6 +211,7 @@ const AllEmployees = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
+                              className="hover:bg-gray-100 transition-colors"
                               onClick={() => {
                                 setSelectedEmployee(employee);
                                 setIsEditDialogOpen(true);
@@ -210,6 +222,7 @@ const AllEmployees = () => {
                             <Button 
                               variant="outline" 
                               size="sm"
+                              className="hover:bg-nexhr-primary/10 hover:text-nexhr-primary transition-colors"
                               onClick={() => handleViewEmployee(employee)}
                             >
                               View

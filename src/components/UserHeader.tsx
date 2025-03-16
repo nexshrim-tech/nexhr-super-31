@@ -13,16 +13,20 @@ const UserHeader = ({ title }: UserHeaderProps) => {
   const formattedDate = format(today, "EEE, d MMMM");
 
   return (
-    <div className="flex justify-between items-center p-4 mb-6 border-b bg-white">
+    <div className="flex justify-between items-center p-4 mb-6 border-b bg-white shadow-sm">
       <div className="flex items-center gap-3">
-        <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+        <Avatar className="h-12 w-12 border-2 border-white shadow-sm ring-2 ring-nexhr-primary/20">
           <AvatarImage src="https://github.com/shadcn.png" alt="@admin" />
-          <AvatarFallback>AD</AvatarFallback>
+          <AvatarFallback className="bg-gradient-to-br from-nexhr-primary to-purple-600 text-white">AD</AvatarFallback>
         </Avatar>
         <div className="flex flex-col">
-          <div className="text-lg font-medium">Hi There, Admin</div>
+          <div className="text-lg font-medium">Hi There, <span className="font-semibold text-nexhr-primary">Admin</span></div>
           <div className="text-sm text-muted-foreground">{formattedDate}</div>
-          {title && <div className="text-base font-medium mt-1 text-nexhr-primary">{title}</div>}
+          {title && (
+            <div className="text-base font-medium mt-1 bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
+              {title}
+            </div>
+          )}
         </div>
       </div>
       
@@ -32,12 +36,12 @@ const UserHeader = ({ title }: UserHeaderProps) => {
           <input 
             type="text" 
             placeholder="Search..." 
-            className="pl-9 pr-4 py-2 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-nexhr-primary/20 w-56"
+            className="pl-9 pr-4 py-2 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-nexhr-primary/20 w-56 transition-all duration-300 hover:border-nexhr-primary/30"
           />
         </div>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative hover:bg-nexhr-primary/10 transition-colors">
           <Bell className="h-5 w-5" />
-          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500"></span>
+          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
         </Button>
       </div>
     </div>

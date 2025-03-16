@@ -154,7 +154,6 @@ const Assets = () => {
   };
 
   const handleAddAsset = () => {
-    // Validate required fields
     if (!formData.name || !formData.type || !formData.serialNumber || !formData.purchaseDate) {
       toast({
         title: "Missing required fields",
@@ -164,7 +163,6 @@ const Assets = () => {
       return;
     }
 
-    // Create new asset
     const newAsset = {
       id: Math.max(...assetData.map(a => a.id)) + 1,
       name: formData.name,
@@ -188,7 +186,6 @@ const Assets = () => {
   const handleEditAsset = () => {
     if (!currentAsset) return;
 
-    // Validate required fields
     if (!formData.name || !formData.type || !formData.serialNumber || !formData.purchaseDate) {
       toast({
         title: "Missing required fields",
@@ -229,15 +226,12 @@ const Assets = () => {
   };
 
   const handleEditAssetOpen = (asset: any) => {
-    // First set the current asset
     setCurrentAsset(asset);
     
-    // Find the employee ID if assigned
     const employeeId = asset.assignedTo 
       ? employees.find(e => e.name === asset.assignedTo.name)?.id.toString() 
       : null;
     
-    // Then set the form data
     setFormData({
       name: asset.name,
       type: asset.type,
@@ -248,12 +242,10 @@ const Assets = () => {
       status: asset.status
     });
     
-    // Set date for date picker if purchaseDate exists
     if (asset.purchaseDate) {
       setDate(new Date(asset.purchaseDate));
     }
     
-    // Finally open the dialog
     setIsEditAssetDialogOpen(true);
   };
 
@@ -276,7 +268,6 @@ const Assets = () => {
     setIsAddAssetDialogOpen(true);
   };
 
-  // Handler for date selection
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
     if (selectedDate) {
@@ -299,22 +290,37 @@ const Assets = () => {
       <SidebarNav />
       <div className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-          <FilterSection
-            searchTerm={searchTerm}
-            onSearchChange={(e) => setSearchTerm(e.target.value)}
-            onAddAsset={openAddAssetDialog}
-            onExport={handleExport}
-          />
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2">
+              Asset Management
+            </h1>
+            <p className="text-gray-600">
+              Track and manage your organization's assets
+            </p>
+          </div>
 
-          <AssetStats assets={assetData} />
+          <div className="transform hover:scale-[1.01] transition-all duration-300">
+            <FilterSection
+              searchTerm={searchTerm}
+              onSearchChange={(e) => setSearchTerm(e.target.value)}
+              onAddAsset={openAddAssetDialog}
+              onExport={handleExport}
+            />
+          </div>
 
-          <AssetTable 
-            assets={filteredAssets}
-            searchTerm={searchTerm}
-            onSearchChange={(e) => setSearchTerm(e.target.value)}
-            onEdit={handleEditAssetOpen}
-            onView={handleViewAsset}
-          />
+          <div className="mt-6 transform hover:scale-[1.01] transition-all duration-300">
+            <AssetStats assets={assetData} />
+          </div>
+
+          <div className="mt-6 transform hover:scale-[1.01] transition-all duration-300 border border-gray-200 rounded-lg shadow-md hover:shadow-lg bg-white">
+            <AssetTable 
+              assets={filteredAssets}
+              searchTerm={searchTerm}
+              onSearchChange={(e) => setSearchTerm(e.target.value)}
+              onEdit={handleEditAssetOpen}
+              onView={handleViewAsset}
+            />
+          </div>
         </div>
       </div>
 

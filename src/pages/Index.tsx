@@ -24,12 +24,22 @@ const Index = () => {
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-4">
-              <EmployeeStats />
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
+                  Welcome to Your Dashboard
+                </h1>
+                <p className="text-gray-600 mt-2">
+                  Here's what's happening in your organization today
+                </p>
+              </div>
+              <div className="transform hover:scale-[1.01] transition-all duration-300">
+                <EmployeeStats />
+              </div>
             </div>
             
             <Button
               onClick={() => setShowSubscriptionModal(true)}
-              className="fixed bottom-6 right-6 bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 shadow-lg flex items-center gap-2 z-10 rounded-full py-6"
+              className="fixed bottom-6 right-6 bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 shadow-lg flex items-center gap-2 z-10 rounded-full py-6 hover:shadow-xl transition-all duration-300"
             >
               <CreditCard className="h-5 w-5 mr-1" />
               <span>Manage Subscription</span>
@@ -39,14 +49,26 @@ const Index = () => {
           
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 grid grid-cols-1 gap-6">
-              <TodaysAttendance />
-              <ExpenseGraph />
-              <EmployeeLocation />
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card">
+                <TodaysAttendance />
+              </div>
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card">
+                <ExpenseGraph />
+              </div>
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card">
+                <EmployeeLocation />
+              </div>
             </div>
             <div className="space-y-6">
-              <SubscriptionManager />
-              <QuickLinks />
-              <TaskReminders />
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card">
+                <SubscriptionManager />
+              </div>
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card glass-effect">
+                <QuickLinks />
+              </div>
+              <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card gradient-border">
+                <TaskReminders />
+              </div>
             </div>
           </div>
         </main>
