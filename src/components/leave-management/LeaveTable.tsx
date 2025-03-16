@@ -22,11 +22,11 @@ interface LeaveApplication {
 interface LeaveTableProps {
   applications: LeaveApplication[];
   onViewLeave: (application: LeaveApplication) => void;
-  onApproveLeave: (id: number) => void;
-  onRejectLeave: (id: number) => void;
+  onApprove?: (id: number) => void;
+  onReject?: (id: number) => void;
 }
 
-const LeaveTable = ({ applications, onViewLeave, onApproveLeave, onRejectLeave }: LeaveTableProps) => {
+const LeaveTable = ({ applications, onViewLeave, onApprove, onReject }: LeaveTableProps) => {
   return (
     <div className="rounded-md border">
       <Table>
@@ -81,13 +81,13 @@ const LeaveTable = ({ applications, onViewLeave, onApproveLeave, onRejectLeave }
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {application.status === "Pending" && (
+                    {application.status === "Pending" && onApprove && onReject && (
                       <>
                         <Button 
                           variant="outline" 
                           size="sm" 
                           className="text-green-600"
-                          onClick={() => onApproveLeave(application.id)}
+                          onClick={() => onApprove(application.id)}
                         >
                           <Check className="h-4 w-4 mr-1" />
                           Approve
@@ -96,7 +96,7 @@ const LeaveTable = ({ applications, onViewLeave, onApproveLeave, onRejectLeave }
                           variant="outline" 
                           size="sm" 
                           className="text-red-600"
-                          onClick={() => onRejectLeave(application.id)}
+                          onClick={() => onReject(application.id)}
                         >
                           <X className="h-4 w-4 mr-1" />
                           Reject
