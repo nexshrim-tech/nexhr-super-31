@@ -10,12 +10,19 @@ export interface DocumentField {
   required?: boolean;
 }
 
+export interface DocumentCategory {
+  id: string;
+  name: string;
+  templates: DocumentTemplate[];
+}
+
 export interface DocumentTemplate {
   id: string;
   name: string;
   description: string;
   icon: ReactNode;
   fields: DocumentField[];
+  category?: string;
 }
 
 export interface GeneratedDocument {

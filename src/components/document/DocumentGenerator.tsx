@@ -5,20 +5,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateOfferLetter, generateSalarySlip, exportToPdf } from '@/utils/documentUtils';
-import { DocumentTemplate, GeneratedDocument } from '@/types/documents';
-import documentTemplates from '@/data/documentTemplates';
+import { DocumentTemplate, GeneratedDocument, DocumentCategory } from '@/types/documents';
+import documentTemplates, { documentCategories } from '@/data/documentTemplates';
 import TemplateSelector from './TemplateSelector';
 import DocumentForm from './DocumentForm';
 import DocumentPreview from './DocumentPreview';
 import EmptyDocumentState from './EmptyDocumentState';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const DocumentGenerator: React.FC = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
   const [generatedDocument, setGeneratedDocument] = useState<GeneratedDocument | null>(null);
   const { toast } = useToast();
 
   const handleTemplateSelect = (template: DocumentTemplate) => {
     setSelectedTemplate(template);
+    setGeneratedDocument(null);
+  };
+
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setSelectedTemplate(null);
+    setGeneratedDocument(null);
+  };
+
+  const handleBackToCategories = () => {
+    setSelectedCategory(null);
+    setSelectedTemplate(null);
     setGeneratedDocument(null);
   };
 
@@ -91,7 +105,7 @@ const DocumentGenerator: React.FC = () => {
         
         Date: ${new Date().toLocaleDateString()}
         
-        ${selectedTemplate.id.toUpperCase()}
+        ${selectedTemplate.name.toUpperCase()}
         
         ${Object.entries(data).map(([key, value]) => {
           const field = selectedTemplate.fields.find(f => f.id === key);
@@ -129,62 +143,107 @@ const DocumentGenerator: React.FC = () => {
     setGeneratedDocument(null);
   };
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="md:col-span-1">
+  const renderContent = () => {
+    if (selectedTemplate) {
+      return (
         <Card>
           <CardHeader>
-            <CardTitle>Document Templates</CardTitle>
-            <CardDescription>Select a template to generate a document</CardDescription>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {selectedTemplate.icon}
+                <div>
+                  <CardTitle>{selectedTemplate.name}</CardTitle>
+                  <CardDescription>{selectedTemplate.description}</CardDescription>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={selectedCategory ? handleBackToTemplates : handleBackToCategories}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {generatedDocument ? (
+              <DocumentPreview 
+                documentContent={generatedDocument.content}
+                documentType={generatedDocument.type}
+                onBack={handleBackToForm}
+                onDownload={handleDownloadDocument}
+              />
+            ) : (
+              <DocumentForm 
+                template={selectedTemplate}
+                onSubmit={handleFormSubmit}
+              />
+            )}
+          </CardContent>
+        </Card>
+      );
+    } else if (selectedCategory) {
+      // Show templates for the selected category
+      const categoryTemplates = documentTemplates.filter(t => t.category === selectedCategory);
+      return (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{documentCategories.find(c => c.id === selectedCategory)?.name}</CardTitle>
+                <CardDescription>Select a template to generate a document</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleBackToCategories}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <TemplateSelector 
-              templates={documentTemplates}
+              templates={categoryTemplates}
               selectedTemplate={selectedTemplate}
               onTemplateSelect={handleTemplateSelect}
             />
           </CardContent>
         </Card>
-      </div>
-      
-      <div className="md:col-span-2">
-        {selectedTemplate ? (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {selectedTemplate.icon}
-                  <div>
-                    <CardTitle>{selectedTemplate.name}</CardTitle>
-                    <CardDescription>{selectedTemplate.description}</CardDescription>
-                  </div>
+      );
+    } else {
+      // Show categories
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {documentCategories.map((category) => (
+            <Card 
+              key={category.id}
+              className="cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => handleCategorySelect(category.id)}
+            >
+              <CardHeader>
+                <CardTitle className="text-lg">{category.name}</CardTitle>
+                <CardDescription>
+                  {category.templates.length} templates
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-2">
+                  {category.templates.slice(0, 3).map((template) => (
+                    <div key={template.id} className="flex items-center gap-2">
+                      {template.icon}
+                      <span className="text-sm">{template.name}</span>
+                    </div>
+                  ))}
+                  {category.templates.length > 3 && (
+                    <span className="text-sm text-gray-500">+{category.templates.length - 3} more</span>
+                  )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleBackToTemplates}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {generatedDocument ? (
-                <DocumentPreview 
-                  documentContent={generatedDocument.content}
-                  documentType={generatedDocument.type}
-                  onBack={handleBackToForm}
-                  onDownload={handleDownloadDocument}
-                />
-              ) : (
-                <DocumentForm 
-                  template={selectedTemplate}
-                  onSubmit={handleFormSubmit}
-                />
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <EmptyDocumentState />
-        )}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div>
+      {renderContent()}
     </div>
   );
 };
