@@ -42,3 +42,11 @@ export interface Employee {
   employeeId: string;
   avatar: string;
 }
+
+export interface SigningAuthority {
+  id: string;
+  name: string;
+  position: string;
+  department?: string;
+  signature?: string;
+}

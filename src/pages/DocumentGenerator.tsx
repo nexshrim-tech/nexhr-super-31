@@ -24,12 +24,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FileText, Search, Upload, Download, Plus, X } from "lucide-react";
+import { FileText, Search, Upload, Download, Plus, X, Signature, UserCheck, User, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import DocumentGenerator from "@/components/document/DocumentGenerator";
+import { SigningAuthority } from "@/types/documents";
 
-// Sample employee data for auto-filling
 const employees = [
   { 
     id: "EMP001", 
@@ -88,7 +88,6 @@ const employees = [
   },
 ];
 
-// Document categories and templates
 const documentCategories = [
   {
     id: "employee-management",
@@ -175,22 +174,29 @@ const DocumentGeneratorPage = () => {
   const [letterheadPreview, setLetterheadPreview] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // State for template editing
   const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
   const [templateContent, setTemplateContent] = useState("");
   const [templateName, setTemplateName] = useState("");
   const [templateVariables, setTemplateVariables] = useState<string[]>([]);
   const [newVariable, setNewVariable] = useState("");
   
-  // New state for employee selection
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+
+  const [signingAuthorities, setSigningAuthorities] = useState<SigningAuthority[]>([
+    { id: "auth1", name: "John Doe", position: "HR Manager" },
+    { id: "auth2", name: "Jane Smith", position: "CEO" },
+  ]);
+  const [newAuthorityName, setNewAuthorityName] = useState("");
+  const [newAuthorityPosition, setNewAuthorityPosition] = useState("");
+  const [newAuthorityDepartment, setNewAuthorityDepartment] = useState("");
+  const [isAddingAuthority, setIsAddingAuthority] = useState(false);
+  const [defaultSigningAuthority, setDefaultSigningAuthority] = useState<string>("auth1");
 
   const handleLetterheadUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setLetterhead(file);
       
-      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         if (e.target && typeof e.target.result === 'string') {
@@ -219,7 +225,6 @@ const DocumentGeneratorPage = () => {
     setSelectedTemplate(template);
     setTemplateName(template.name);
     
-    // Default template content with employee placeholders
     setTemplateContent(`Dear [Employee Name],
 
 This is a sample template for the ${template.name}.
@@ -232,7 +237,6 @@ Sincerely,
     
     setTemplateVariables(["Employee Name", "Manager Name", "Company Name"]);
     
-    // Reset employee selection
     setSelectedEmployee(null);
   };
 
@@ -242,7 +246,6 @@ Sincerely,
     const employee = employees.find(emp => emp.id === employeeId);
     if (!employee) return;
     
-    // Replace template variables with employee data
     let updatedContent = templateContent;
     updatedContent = updatedContent.replace(/\[Employee Name\]/g, employee.name);
     updatedContent = updatedContent.replace(/\[Employee ID\]/g, employee.employeeId);
@@ -272,7 +275,6 @@ Sincerely,
   };
 
   const handleGenerateDocument = () => {
-    // This would actually generate the document
     toast({
       title: "Document generated",
       description: `${templateName} has been generated successfully.`
@@ -290,7 +292,41 @@ Sincerely,
     setTemplateVariables([]);
   };
 
-  // Filter templates based on search and category
+  const handleAddAuthority = () => {
+    if (newAuthorityName && newAuthorityPosition) {
+      const newAuthority: SigningAuthority = {
+        id: `auth${Date.now()}`,
+        name: newAuthorityName,
+        position: newAuthorityPosition,
+        department: newAuthorityDepartment || undefined,
+      };
+      
+      setSigningAuthorities([...signingAuthorities, newAuthority]);
+      setNewAuthorityName("");
+      setNewAuthorityPosition("");
+      setNewAuthorityDepartment("");
+      setIsAddingAuthority(false);
+      
+      toast({
+        title: "Signing Authority Added",
+        description: `${newAuthorityName} has been added as a signing authority.`
+      });
+    }
+  };
+
+  const handleRemoveAuthority = (id: string) => {
+    if (id === defaultSigningAuthority) {
+      setDefaultSigningAuthority(id === signingAuthorities[0].id ? (signingAuthorities[1]?.id || "") : signingAuthorities[0].id);
+    }
+    
+    setSigningAuthorities(signingAuthorities.filter(auth => auth.id !== id));
+    
+    toast({
+      title: "Signing Authority Removed",
+      description: "The signing authority has been removed."
+    });
+  };
+
   const filteredTemplates = documentCategories
     .filter(category => {
       if (selectedCategory !== "all" && category.id !== selectedCategory) {
@@ -460,6 +496,127 @@ Sincerely,
                                 </div>
                               </div>
                             </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-lg font-medium mb-3 flex items-center">
+                          <Signature className="h-5 w-5 mr-2" />
+                          Signing Authorities
+                        </h3>
+                        <div className="border rounded-md p-4">
+                          <div className="mb-4">
+                            <Label htmlFor="default-authority" className="mb-2 block">Default Signing Authority</Label>
+                            <Select 
+                              value={defaultSigningAuthority} 
+                              onValueChange={setDefaultSigningAuthority}
+                            >
+                              <SelectTrigger id="default-authority">
+                                <SelectValue placeholder="Select a default signing authority" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {signingAuthorities.map(auth => (
+                                  <SelectItem key={auth.id} value={auth.id}>
+                                    {auth.name} - {auth.position}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-1">
+                              This authority will be used as the default signatory for all generated documents
+                            </p>
+                          </div>
+
+                          <div className="space-y-3 mt-4">
+                            <h4 className="text-sm font-medium mb-2">Manage Authorities</h4>
+                            {signingAuthorities.map(authority => (
+                              <div 
+                                key={authority.id} 
+                                className="flex items-center justify-between p-3 border rounded-md"
+                              >
+                                <div className="flex items-center">
+                                  <div className="bg-blue-100 p-2 rounded-full mr-3">
+                                    <UserCheck className="h-4 w-4 text-blue-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{authority.name}</p>
+                                    <p className="text-sm text-gray-500">{authority.position}</p>
+                                    {authority.department && (
+                                      <p className="text-xs text-gray-400">{authority.department}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => handleRemoveAuthority(authority.id)}
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+
+                          {isAddingAuthority ? (
+                            <div className="mt-4 border rounded-md p-3">
+                              <h4 className="text-sm font-medium mb-3">Add New Authority</h4>
+                              <div className="space-y-3">
+                                <div>
+                                  <Label htmlFor="authority-name">Name</Label>
+                                  <Input 
+                                    id="authority-name"
+                                    value={newAuthorityName}
+                                    onChange={(e) => setNewAuthorityName(e.target.value)}
+                                    placeholder="John Doe"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="authority-position">Position</Label>
+                                  <Input 
+                                    id="authority-position"
+                                    value={newAuthorityPosition}
+                                    onChange={(e) => setNewAuthorityPosition(e.target.value)}
+                                    placeholder="HR Manager"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="authority-department">Department (Optional)</Label>
+                                  <Input 
+                                    id="authority-department"
+                                    value={newAuthorityDepartment}
+                                    onChange={(e) => setNewAuthorityDepartment(e.target.value)}
+                                    placeholder="Human Resources"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end space-x-2 mt-4">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => setIsAddingAuthority(false)}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button 
+                                  size="sm"
+                                  onClick={handleAddAuthority}
+                                  disabled={!newAuthorityName || !newAuthorityPosition}
+                                >
+                                  Add Authority
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <Button 
+                              variant="outline" 
+                              className="mt-4 w-full" 
+                              onClick={() => setIsAddingAuthority(true)}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Signing Authority
+                            </Button>
                           )}
                         </div>
                       </div>
