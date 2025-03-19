@@ -8,7 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Download, ArrowLeft } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { generateOfferLetter, generateSalarySlip, exportToPdf } from '@/utils/documentUtils';
 
 interface DocumentField {
   id: string;
@@ -104,106 +109,217 @@ const documentTemplates: DocumentTemplate[] = [
 
 const DocumentGenerator: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
-  const [formData, setFormData] = useState<Record<string, string>>({});
-  const [generatedDocument, setGeneratedDocument] = useState<boolean>(false);
+  const [generatedDocument, setGeneratedDocument] = useState<{content: string, type: string} | null>(null);
   const { toast } = useToast();
+
+  const getValidationSchema = (template: DocumentTemplate) => {
+    const schemaFields: Record<string, any> = {};
+    
+    template.fields.forEach(field => {
+      if (field.required) {
+        schemaFields[field.id] = z.string().min(1, `${field.label} is required`);
+      } else {
+        schemaFields[field.id] = z.string().optional();
+      }
+    });
+    
+    return z.object(schemaFields);
+  };
 
   const handleTemplateSelect = (template: DocumentTemplate) => {
     setSelectedTemplate(template);
-    setFormData({});
-    setGeneratedDocument(false);
+    setGeneratedDocument(null);
   };
 
-  const handleFieldChange = (fieldId: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldId]: value
-    }));
+  const handleBackToTemplates = () => {
+    setSelectedTemplate(null);
+    setGeneratedDocument(null);
   };
 
-  const handleGenerateDocument = () => {
-    // Check if all required fields are filled
-    if (selectedTemplate) {
-      const missingFields = selectedTemplate.fields
-        .filter(field => field.required && !formData[field.id])
-        .map(field => field.label);
-      
-      if (missingFields.length > 0) {
-        toast({
-          title: 'Missing Fields',
-          description: `Please fill in the following fields: ${missingFields.join(', ')}`,
-          variant: 'destructive'
-        });
-        return;
+  const renderTemplateForm = (template: DocumentTemplate) => {
+    const validationSchema = getValidationSchema(template);
+    type FormValues = z.infer<typeof validationSchema>;
+    
+    const form = useForm<FormValues>({
+      resolver: zodResolver(validationSchema),
+      defaultValues: Object.fromEntries(template.fields.map(field => [field.id, ''])) as any,
+    });
+
+    const onSubmit = (data: FormValues) => {
+      let documentContent = '';
+      let documentType = template.id;
+
+      // Generate content based on template type
+      if (template.id === 'offer-letter') {
+        documentContent = generateOfferLetter(
+          {
+            id: data.employeeId || '123456',
+            name: data.employeeName,
+            position: data.position,
+            department: data.department,
+            salary: parseFloat(data.salary) || 0,
+            joiningDate: data.joiningDate,
+            email: '',
+            manager: '',
+            address: '',
+            phoneNumber: '',
+          },
+          { additionalNotes: data.additionalNotes }
+        );
+      } else if (template.id === 'salary-slip') {
+        documentContent = generateSalarySlip(
+          {
+            id: data.employeeId,
+            name: data.employeeName,
+            position: data.position || 'Employee',
+            department: data.department || 'N/A',
+            salary: parseFloat(data.basicSalary) || 0,
+            joiningDate: '',
+            email: '',
+            manager: '',
+            address: '',
+            phoneNumber: '',
+          },
+          {
+            month: data.month,
+            year: data.year,
+            allowances: {
+              basicSalary: parseFloat(data.basicSalary) || 0,
+              hra: parseFloat(data.allowances) || 0,
+              conveyanceAllowance: 0,
+              medicalAllowance: 0,
+              specialAllowance: 0,
+              otherAllowances: 0,
+            },
+            deductions: {
+              incomeTax: parseFloat(data.deductions) || 0,
+              providentFund: 0,
+              professionalTax: 0,
+              loanDeduction: 0,
+              otherDeductions: 0,
+            }
+          }
+        );
+      } else {
+        // Generic template for other document types
+        documentContent = `
+          [Company Letterhead]
+          
+          Date: ${new Date().toLocaleDateString()}
+          
+          ${template.id.toUpperCase()}
+          
+          ${Object.entries(data).map(([key, value]) => {
+            const field = template.fields.find(f => f.id === key);
+            return field ? `${field.label}: ${value}\n` : '';
+          }).join('')}
+          
+          Sincerely,
+          
+          [HR Manager Name]
+          HR Manager
+          [Company Name]
+        `;
       }
-      
-      // In a real application, this would generate the actual document
-      setGeneratedDocument(true);
+
+      setGeneratedDocument({ content: documentContent, type: documentType });
       
       toast({
         title: 'Document Generated',
-        description: `Your ${selectedTemplate.name} has been generated successfully.`
+        description: `Your ${template.name} has been generated successfully.`
       });
-    }
-  };
+    };
 
-  const handleDownloadDocument = () => {
-    toast({
-      title: 'Document Downloaded',
-      description: `Your ${selectedTemplate?.name} has been downloaded.`
-    });
-  };
+    const handleDownloadDocument = () => {
+      if (generatedDocument) {
+        exportToPdf(generatedDocument.content, `${template.id}-${Date.now()}.pdf`);
+        
+        toast({
+          title: 'Document Downloaded',
+          description: `Your ${template.name} has been downloaded.`
+        });
+      }
+    };
 
-  const renderField = (field: DocumentField) => {
-    switch (field.type) {
-      case 'text':
-        return (
-          <Input
-            id={field.id}
-            placeholder={field.placeholder}
-            value={formData[field.id] || ''}
-            onChange={(e) => handleFieldChange(field.id, e.target.value)}
-          />
-        );
-      case 'textarea':
-        return (
-          <Textarea
-            id={field.id}
-            placeholder={field.placeholder}
-            value={formData[field.id] || ''}
-            onChange={(e) => handleFieldChange(field.id, e.target.value)}
-          />
-        );
-      case 'date':
-        return (
-          <Input
-            id={field.id}
-            type="date"
-            value={formData[field.id] || ''}
-            onChange={(e) => handleFieldChange(field.id, e.target.value)}
-          />
-        );
-      case 'select':
-        return (
-          <Select
-            value={formData[field.id] || ''}
-            onValueChange={(value) => handleFieldChange(field.id, value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select an option" />
-            </SelectTrigger>
-            <SelectContent>
-              {field.options?.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
-      default:
-        return null;
-    }
+    return (
+      <div className="space-y-6">
+        {generatedDocument ? (
+          <div>
+            <div className="flex items-center mb-4">
+              <Button variant="ghost" onClick={() => setGeneratedDocument(null)} className="mr-2">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Form
+              </Button>
+              <Button onClick={handleDownloadDocument}>
+                <Download className="h-4 w-4 mr-2" />
+                Download Document
+              </Button>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <div className="border p-6 rounded-lg shadow-sm bg-white min-h-[500px] whitespace-pre-line overflow-auto font-serif">
+                  {generatedDocument.content}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {template.fields.map((field) => (
+                  <FormField
+                    key={field.id}
+                    control={form.control}
+                    name={field.id as any}
+                    render={({ field: formField }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {field.label}
+                          {field.required && <span className="text-red-500 ml-1">*</span>}
+                        </FormLabel>
+                        <FormControl>
+                          {field.type === 'textarea' ? (
+                            <Textarea
+                              {...formField}
+                              placeholder={field.placeholder}
+                            />
+                          ) : field.type === 'select' ? (
+                            <Select
+                              value={formField.value}
+                              onValueChange={formField.onChange}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select an option" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {field.options?.map((option) => (
+                                  <SelectItem key={option} value={option}>
+                                    {option}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              {...formField}
+                              type={field.type}
+                              placeholder={field.placeholder}
+                            />
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
+              <Button type="submit" className="w-full">Generate Document</Button>
+            </form>
+          </Form>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -246,53 +362,23 @@ const DocumentGenerator: React.FC = () => {
         {selectedTemplate ? (
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-3">
-                {selectedTemplate.icon}
-                <div>
-                  <CardTitle>{selectedTemplate.name}</CardTitle>
-                  <CardDescription>{selectedTemplate.description}</CardDescription>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {selectedTemplate.icon}
+                  <div>
+                    <CardTitle>{selectedTemplate.name}</CardTitle>
+                    <CardDescription>{selectedTemplate.description}</CardDescription>
+                  </div>
                 </div>
+                <Button variant="ghost" size="sm" onClick={handleBackToTemplates}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {generatedDocument ? (
-                <div className="border rounded-lg p-6 flex flex-col items-center justify-center min-h-[400px]">
-                  <FileText className="h-16 w-16 text-blue-500 mb-4" />
-                  <h3 className="text-xl font-medium mb-2">{selectedTemplate.name} Generated</h3>
-                  <p className="text-gray-500 mb-6 text-center">
-                    Your document has been generated successfully. You can now download it or go back to edit the details.
-                  </p>
-                  <div className="flex gap-4">
-                    <Button variant="outline" onClick={() => setGeneratedDocument(false)}>
-                      Edit Details
-                    </Button>
-                    <Button onClick={handleDownloadDocument}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Document
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {selectedTemplate.fields.map((field) => (
-                    <div key={field.id} className="space-y-2">
-                      <Label htmlFor={field.id}>
-                        {field.label}
-                        {field.required && <span className="text-red-500 ml-1">*</span>}
-                      </Label>
-                      {renderField(field)}
-                    </div>
-                  ))}
-                </div>
-              )}
+              {renderTemplateForm(selectedTemplate)}
             </CardContent>
-            {!generatedDocument && (
-              <CardFooter>
-                <Button className="w-full" onClick={handleGenerateDocument}>
-                  Generate Document
-                </Button>
-              </CardFooter>
-            )}
           </Card>
         ) : (
           <Card>

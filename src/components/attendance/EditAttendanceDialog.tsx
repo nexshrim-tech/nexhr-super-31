@@ -42,9 +42,11 @@ const EditAttendanceDialog = ({
   setEditFormData,
   handleSaveEdit,
 }: EditAttendanceDialogProps) => {
+  if (!currentRecord) return null;
+  
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Attendance Record</DialogTitle>
           <DialogDescription>
@@ -58,6 +60,7 @@ const EditAttendanceDialog = ({
               <Label htmlFor="checkIn">Check In Time</Label>
               <Input
                 id="checkIn"
+                type="time"
                 value={editFormData.checkIn}
                 onChange={(e) => setEditFormData({...editFormData, checkIn: e.target.value})}
               />
@@ -66,6 +69,7 @@ const EditAttendanceDialog = ({
               <Label htmlFor="checkOut">Check Out Time</Label>
               <Input
                 id="checkOut"
+                type="time"
                 value={editFormData.checkOut}
                 onChange={(e) => setEditFormData({...editFormData, checkOut: e.target.value})}
               />

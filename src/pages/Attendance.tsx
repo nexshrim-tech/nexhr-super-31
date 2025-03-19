@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -6,14 +5,13 @@ import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { CalendarRange, Settings, UserCheck } from "lucide-react";
+import { CalendarRange, Settings } from "lucide-react";
 
 // Import components
 import AttendanceCalendar from "@/components/attendance/AttendanceCalendar";
 import AttendanceTable from "@/components/attendance/AttendanceTable";
 import AttendancePhotos from "@/components/attendance/AttendancePhotos";
 import EditAttendanceDialog from "@/components/attendance/EditAttendanceDialog";
-import AddAttendanceSheet from "@/components/attendance/AddAttendanceSheet";
 import AttendanceSettings from "@/components/attendance/AttendanceSettings";
 import TodaysAttendance from "@/components/TodaysAttendance";
 
@@ -65,7 +63,6 @@ const Attendance = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isAddAttendanceOpen, setIsAddAttendanceOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [filterDepartment, setFilterDepartment] = useState("all");
   const [currentRecord, setCurrentRecord] = useState<AttendanceRecord | null>(null);
@@ -75,14 +72,6 @@ const Attendance = () => {
     checkIn: "",
     checkOut: "",
     status: "",
-    notes: "",
-  });
-  const [newAttendanceData, setNewAttendanceData] = useState({
-    employeeId: "",
-    date: format(new Date(), 'yyyy-MM-dd'),
-    checkIn: "",
-    checkOut: "",
-    status: "Present",
     notes: "",
   });
   const [attendanceSettings, setAttendanceSettings] = useState({
@@ -140,22 +129,6 @@ const Attendance = () => {
     setIsEditDialogOpen(false);
   };
 
-  const handleAddAttendance = () => {
-    toast({
-      title: "Attendance added",
-      description: "New attendance record has been added successfully."
-    });
-    setIsAddAttendanceOpen(false);
-    setNewAttendanceData({
-      employeeId: "",
-      date: format(new Date(), 'yyyy-MM-dd'),
-      checkIn: "",
-      checkOut: "",
-      status: "Present",
-      notes: "",
-    });
-  };
-
   const handleSaveSettings = (settings: any) => {
     setAttendanceSettings(settings);
     toast({
@@ -184,15 +157,7 @@ const Attendance = () => {
           {/* Header with tabs */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
             <h1 className="text-2xl font-bold tracking-tight mb-2 sm:mb-0">Attendance Management</h1>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setIsAddAttendanceOpen(true)}
-              >
-                <UserCheck className="h-4 w-4 mr-2" />
-                Mark Attendance
-              </Button>
+            <div>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -248,16 +213,6 @@ const Attendance = () => {
                     Attendance for {format(selectedDate, 'MMMM yyyy')}
                   </h2>
                 </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setIsAddAttendanceOpen(true)}
-                  >
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Mark Attendance
-                  </Button>
-                </div>
               </div>
               <div className="grid grid-cols-1 gap-6">
                 <AttendanceTable 
@@ -295,14 +250,6 @@ const Attendance = () => {
         editFormData={editFormData}
         setEditFormData={setEditFormData}
         handleSaveEdit={handleSaveEdit}
-      />
-
-      <AddAttendanceSheet 
-        isOpen={isAddAttendanceOpen}
-        onOpenChange={setIsAddAttendanceOpen}
-        newAttendanceData={newAttendanceData}
-        setNewAttendanceData={setNewAttendanceData}
-        handleAddAttendance={handleAddAttendance}
       />
 
       <Sheet open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>

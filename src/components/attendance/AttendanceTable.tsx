@@ -1,13 +1,14 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Edit } from "lucide-react";
+import { Search, Edit, Check, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AttendanceRecord {
   id: number;
@@ -36,6 +37,9 @@ const AttendanceTable = ({
   setSearchTerm,
   handleEditRecord,
 }: AttendanceTableProps) => {
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editData, setEditData] = useState<Partial<AttendanceRecord>>({});
+
   const renderAttendanceStatus = (status: string) => {
     let badgeClass = "";
     
@@ -57,6 +61,31 @@ const AttendanceTable = ({
     }
     
     return <Badge className={badgeClass}>{status}</Badge>;
+  };
+
+  const handleEditClick = (record: AttendanceRecord) => {
+    setEditingId(record.id);
+    setEditData({
+      checkIn: record.checkIn,
+      checkOut: record.checkOut,
+      status: record.status,
+      notes: record.notes
+    });
+  };
+
+  const handleSaveEdit = (record: AttendanceRecord) => {
+    const updatedRecord = {
+      ...record,
+      ...editData
+    };
+    handleEditRecord(updatedRecord);
+    setEditingId(null);
+    setEditData({});
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditData({});
   };
 
   return (
@@ -106,21 +135,81 @@ const AttendanceTable = ({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{record.checkIn || "-"}</TableCell>
-                  <TableCell>{record.checkOut || "-"}</TableCell>
-                  <TableCell>{renderAttendanceStatus(record.status)}</TableCell>
+                  <TableCell>
+                    {editingId === record.id ? (
+                      <Input
+                        type="time"
+                        value={editData.checkIn || ''}
+                        onChange={(e) => setEditData({...editData, checkIn: e.target.value})}
+                        className="w-full"
+                      />
+                    ) : (
+                      record.checkIn || "-"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingId === record.id ? (
+                      <Input
+                        type="time"
+                        value={editData.checkOut || ''}
+                        onChange={(e) => setEditData({...editData, checkOut: e.target.value})}
+                        className="w-full"
+                      />
+                    ) : (
+                      record.checkOut || "-"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingId === record.id ? (
+                      <Select
+                        value={editData.status || ''}
+                        onValueChange={(value) => setEditData({...editData, status: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Present">Present</SelectItem>
+                          <SelectItem value="Absent">Absent</SelectItem>
+                          <SelectItem value="Late">Late</SelectItem>
+                          <SelectItem value="Half Day">Half Day</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      renderAttendanceStatus(record.status)
+                    )}
+                  </TableCell>
                   <TableCell>{record.workHours}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    {editingId === record.id ? (
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleCancelEdit()}
+                        >
+                          <X className="h-4 w-4" />
+                          <span className="sr-only">Cancel</span>
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => handleSaveEdit(record)}
+                        >
+                          <Check className="h-4 w-4" />
+                          <span className="sr-only">Save</span>
+                        </Button>
+                      </div>
+                    ) : (
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleEditRecord(record)}
+                        onClick={() => handleEditClick(record)}
                       >
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Button>
-                    </div>
+                    )}
                   </TableCell>
                 </TableRow>
               )) : (
