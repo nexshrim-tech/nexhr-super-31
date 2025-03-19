@@ -8,6 +8,7 @@ export interface DocumentField {
   placeholder?: string;
   options?: string[];
   required?: boolean;
+  employeeField?: string; // Indicates which employee field this maps to
 }
 
 export interface DocumentCategory {
@@ -28,4 +29,16 @@ export interface DocumentTemplate {
 export interface GeneratedDocument {
   content: string;
   type: string;
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  joiningDate: string;
+  reportingManager: string;
+  employeeId: string;
+  avatar: string;
 }
