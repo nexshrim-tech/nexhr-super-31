@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -28,6 +27,7 @@ import {
 import { FileText, Search, Upload, Download, Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import DocumentGenerator from "@/components/document/DocumentGenerator";
 
 // Sample employee data for auto-filling
 const employees = [
@@ -167,7 +167,7 @@ const documentCategories = [
   }
 ];
 
-const DocumentGenerator = () => {
+const DocumentGeneratorPage = () => {
   const [activeTab, setActiveTab] = useState("templates");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -367,220 +367,7 @@ Sincerely,
               </div>
               
               <TabsContent value="templates" className="m-0">
-                {selectedTemplate ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>
-                            <div className="flex items-center justify-between">
-                              <span>Edit Template</span>
-                              <Button variant="ghost" size="sm" onClick={() => setSelectedTemplate(null)}>
-                                <X className="h-4 w-4 mr-1" />
-                                Close
-                              </Button>
-                            </div>
-                          </CardTitle>
-                          <CardDescription>
-                            Customize the template content and variables
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="template-name">Template Name</Label>
-                              <Input 
-                                id="template-name" 
-                                value={templateName} 
-                                onChange={(e) => setTemplateName(e.target.value)}
-                              />
-                            </div>
-                            
-                            {/* New Employee Selection */}
-                            <div>
-                              <Label htmlFor="employee-select">Auto-fill with Employee Data</Label>
-                              <Select 
-                                value={selectedEmployee || ''} 
-                                onValueChange={handleEmployeeSelect}
-                              >
-                                <SelectTrigger id="employee-select" className="w-full">
-                                  <SelectValue placeholder="Select employee to auto-fill" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {employees.map((employee) => (
-                                    <SelectItem key={employee.id} value={employee.id}>
-                                      <div className="flex items-center gap-2">
-                                        <Avatar className="h-6 w-6">
-                                          <AvatarFallback>{employee.avatar}</AvatarFallback>
-                                        </Avatar>
-                                        <span>{employee.name}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Select an employee to auto-fill the template with their information
-                              </p>
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="template-content">Content</Label>
-                              <Textarea 
-                                id="template-content" 
-                                className="min-h-[300px] font-mono"
-                                value={templateContent} 
-                                onChange={(e) => setTemplateContent(e.target.value)}
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-between">
-                          <Button variant="outline" onClick={() => setSelectedTemplate(null)}>Cancel</Button>
-                          <div className="space-x-2">
-                            <Button variant="outline" onClick={handleSaveTemplate}>
-                              Save Template
-                            </Button>
-                            <Button onClick={handleGenerateDocument}>
-                              Generate Document
-                            </Button>
-                          </div>
-                        </CardFooter>
-                      </Card>
-                    </div>
-                    
-                    <div>
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Template Variables</CardTitle>
-                          <CardDescription>
-                            Add or remove variables for this template
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div className="flex items-center space-x-2">
-                              <Input 
-                                placeholder="New variable name"
-                                value={newVariable}
-                                onChange={(e) => setNewVariable(e.target.value)}
-                              />
-                              <Button 
-                                variant="outline" 
-                                onClick={handleAddVariable}
-                                disabled={!newVariable}
-                              >
-                                <Plus className="h-4 w-4 mr-1" />
-                                Add
-                              </Button>
-                            </div>
-                            
-                            <div className="flex flex-wrap gap-2 pt-2">
-                              {templateVariables.map((variable) => (
-                                <Badge key={variable} variant="secondary" className="flex items-center gap-1">
-                                  {variable}
-                                  <button 
-                                    className="ml-1 h-3.5 w-3.5 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-300"
-                                    onClick={() => handleRemoveVariable(variable)}
-                                  >
-                                    <X className="h-2 w-2" />
-                                  </button>
-                                </Badge>
-                              ))}
-                            </div>
-                            
-                            <div className="border rounded-md p-3 bg-gray-50">
-                              <p className="text-sm text-muted-foreground mb-2">
-                                Common employee variables you can use:
-                              </p>
-                              <div className="flex flex-wrap gap-1">
-                                <Badge variant="outline">[Employee Name]</Badge>
-                                <Badge variant="outline">[Employee ID]</Badge>
-                                <Badge variant="outline">[Employee Email]</Badge>
-                                <Badge variant="outline">[Employee Role]</Badge>
-                                <Badge variant="outline">[Employee Department]</Badge>
-                                <Badge variant="outline">[Joining Date]</Badge>
-                                <Badge variant="outline">[Manager Name]</Badge>
-                              </div>
-                            </div>
-                            
-                            <div className="border rounded-md p-3 bg-gray-50">
-                              <p className="text-sm text-muted-foreground mb-2">
-                                How to use variables in your template:
-                              </p>
-                              <p className="text-sm">
-                                Use the format <code className="bg-gray-100 px-1 rounded">[Variable Name]</code> in your template content.
-                              </p>
-                              <p className="text-sm mt-1">
-                                Example: <code className="bg-gray-100 px-1 rounded">Dear [Employee Name],</code>
-                              </p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      
-                      {letterheadPreview && (
-                        <Card className="mt-4">
-                          <CardHeader>
-                            <CardTitle>Letterhead Preview</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="border rounded-md overflow-hidden">
-                              <img 
-                                src={letterheadPreview} 
-                                alt="Letterhead preview" 
-                                className="w-full object-contain max-h-[200px]"
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[calc(100vh-250px)]">
-                    <div className="space-y-6">
-                      {filteredTemplates.length > 0 ? (
-                        filteredTemplates.map((category: any) => (
-                          <div key={category.id} className="space-y-3">
-                            <h3 className="text-lg font-medium">{category.name}</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {category.templates.map((template: any) => (
-                                <Card 
-                                  key={template.id} 
-                                  className="hover:border-blue-200 cursor-pointer transition-all hover:shadow-md"
-                                  onClick={() => handleTemplateSelect(category.id, template)}
-                                >
-                                  <CardContent className="pt-6">
-                                    <div className="flex items-start space-x-4">
-                                      <div className="bg-blue-50 p-2 rounded-md">
-                                        <FileText className="h-6 w-6 text-blue-500" />
-                                      </div>
-                                      <div>
-                                        <h4 className="font-medium">{template.name}</h4>
-                                        <p className="text-sm text-gray-500 mt-1">
-                                          Click to customize and generate
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-12">
-                          <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                          <h3 className="mt-4 text-lg font-medium">No templates found</h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Try adjusting your search or filter criteria
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                )}
+                <DocumentGenerator />
               </TabsContent>
               
               <TabsContent value="generated" className="m-0">
@@ -712,4 +499,4 @@ Sincerely,
   );
 };
 
-export default DocumentGenerator;
+export default DocumentGeneratorPage;
