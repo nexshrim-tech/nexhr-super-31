@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -15,7 +14,9 @@ import {
   DialogTitle,
   DialogTrigger 
 } from "@/components/ui/dialog";
-import { ArrowLeft, Eye, Trash, FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Eye, Trash, FileText, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
@@ -85,6 +86,9 @@ const EmployeeDetails = () => {
   const navigate = useNavigate();
   const { features } = useSubscription();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [employeeForm, setEmployeeForm] = useState(employeeData);
@@ -211,6 +215,34 @@ const EmployeeDetails = () => {
     setEmployeeForm(employeeData);
   };
 
+  const handlePasswordChange = () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure both passwords match.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 8 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Password updated",
+      description: `Password has been updated for ${employee.name}.`
+    });
+    setIsPasswordDialogOpen(false);
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
@@ -297,11 +329,21 @@ const EmployeeDetails = () => {
             onViewDetails={handleViewDetails}
           />
 
-          <div className="flex justify-between mt-8 mb-4">
-            <Button variant="outline" className="gap-2" onClick={() => setPayslipDialogOpen(true)}>
-              <FileText className="h-4 w-4" />
-              View Payslips
-            </Button>
+          <div className="flex flex-wrap justify-between mt-8 mb-4 gap-4">
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" className="gap-2" onClick={() => setPayslipDialogOpen(true)}>
+                <FileText className="h-4 w-4" />
+                View Payslips
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                onClick={() => setIsPasswordDialogOpen(true)}
+              >
+                <Key className="h-4 w-4" />
+                Change Password
+              </Button>
+            </div>
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
               <DialogTrigger asChild>
                 <Button variant="destructive" className="px-8">
@@ -353,6 +395,43 @@ const EmployeeDetails = () => {
             onOpenChange={setPayslipDialogOpen}
             payslips={payslipsData}
           />
+
+          <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Change Password</DialogTitle>
+                <DialogDescription>
+                  Set a new password for {employee.name}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input 
+                    id="new-password" 
+                    type="password" 
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Input 
+                    id="confirm-password" 
+                    type="password" 
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handlePasswordChange}>Update Password</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

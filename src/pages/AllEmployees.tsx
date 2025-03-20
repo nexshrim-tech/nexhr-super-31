@@ -14,14 +14,25 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import TodaysAttendance from "@/components/TodaysAttendance";
 import EmployeeFilters from "@/components/employees/EmployeeFilters";
 import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import EmployeeListHeader from "@/components/employees/EmployeeListHeader";
 import EmployeePagination from "@/components/employees/EmployeePagination";
 import UserHeader from "@/components/UserHeader";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Key, Eye, Edit } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
 
 const employees = [
   {
@@ -102,9 +113,13 @@ const AllEmployees = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
 
   const filteredEmployees = employees.filter(
     (employee) => {
@@ -129,6 +144,38 @@ const AllEmployees = () => {
   
   const handleSaveEmployee = () => {
     setIsEditDialogOpen(false);
+    toast({
+      title: "Employee updated",
+      description: "Employee information has been updated successfully."
+    });
+  };
+
+  const handlePasswordChange = () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure both passwords match.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 8 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Password updated",
+      description: `Password has been updated for ${selectedEmployee.name}.`
+    });
+    setIsPasswordDialogOpen(false);
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   return (
@@ -223,25 +270,37 @@ const AllEmployees = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            {!isMobile && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="hover:bg-gray-100 transition-colors text-xs"
-                                onClick={() => {
-                                  setSelectedEmployee(employee);
-                                  setIsEditDialogOpen(true);
-                                }}
-                              >
-                                Edit
-                              </Button>
-                            )}
                             <Button 
                               variant="outline" 
                               size="sm"
-                              className="hover:bg-nexhr-primary/10 hover:text-nexhr-primary transition-colors text-xs"
+                              className="flex items-center gap-1 hover:bg-gray-100 transition-colors text-xs"
+                              onClick={() => {
+                                setSelectedEmployee(employee);
+                                setIsEditDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="flex items-center gap-1 hover:bg-indigo-100 hover:text-indigo-700 transition-colors text-xs"
+                              onClick={() => {
+                                setSelectedEmployee(employee);
+                                setIsPasswordDialogOpen(true);
+                              }}
+                            >
+                              <Key className="h-3 w-3" />
+                              Password
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="flex items-center gap-1 hover:bg-nexhr-primary/10 hover:text-nexhr-primary transition-colors text-xs"
                               onClick={() => handleViewEmployee(employee)}
                             >
+                              <Eye className="h-3 w-3" />
                               View
                             </Button>
                           </div>
@@ -265,6 +324,44 @@ const AllEmployees = () => {
             employee={selectedEmployee}
             onSave={handleSaveEmployee}
           />
+
+          {/* Password Change Dialog */}
+          <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Change Password</DialogTitle>
+                <DialogDescription>
+                  {selectedEmployee && `Set a new password for ${selectedEmployee.name}`}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input 
+                    id="new-password" 
+                    type="password" 
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Input 
+                    id="confirm-password" 
+                    type="password" 
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handlePasswordChange}>Update Password</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

@@ -7,14 +7,21 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowRight, Mail, Lock, User, ArrowLeft, Home } from "lucide-react";
+import { ArrowRight, Mail, Lock, User, ArrowLeft, Home, Phone, Building2, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  
+  // New signup fields
   const [name, setName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [companySize, setCompanySize] = useState("");
+  
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -39,7 +46,7 @@ const Login = () => {
   const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault();
     // Add your sign up logic here
-    if (name && email && password) {
+    if (name && email && password && companyName && phoneNumber && companySize) {
       // Mark as new user to show subscription modal on first dashboard load
       localStorage.setItem("new-user", "true");
       // Set default subscription as None
@@ -66,6 +73,9 @@ const Login = () => {
     setEmail("");
     setPassword("");
     setRememberMe(false);
+    setCompanyName("");
+    setPhoneNumber("");
+    setCompanySize("");
   };
 
   return (
@@ -110,21 +120,74 @@ const Login = () => {
           <CardContent>
             <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-4">
               {isSignUp && (
-                <div className="space-y-2 animate-fade-in">
-                  <Label htmlFor="name" className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-gray-500" />
-                    Full Name
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                  />
-                </div>
+                <>
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="name" className="flex items-center">
+                      <User className="h-4 w-4 mr-2 text-gray-500" />
+                      Full Name
+                    </Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="companyName" className="flex items-center">
+                      <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+                      Company Name
+                    </Label>
+                    <Input
+                      id="companyName"
+                      type="text"
+                      placeholder="Acme Inc."
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="phoneNumber" className="flex items-center">
+                      <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      placeholder="+1 (555) 123-4567"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="companySize" className="flex items-center">
+                      <Users className="h-4 w-4 mr-2 text-gray-500" />
+                      Company Size
+                    </Label>
+                    <Select value={companySize} onValueChange={setCompanySize} required>
+                      <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
+                        <SelectValue placeholder="Select company size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1-10">1-10 employees</SelectItem>
+                        <SelectItem value="11-50">11-50 employees</SelectItem>
+                        <SelectItem value="51-200">51-200 employees</SelectItem>
+                        <SelectItem value="201-500">201-500 employees</SelectItem>
+                        <SelectItem value="501+">501+ employees</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
               )}
               
               <div className="space-y-2">
