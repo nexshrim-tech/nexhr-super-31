@@ -12,14 +12,12 @@ interface EmployeeTableProps {
   employees: EmployeeSalary[];
   onGenerateSalarySlip: (employee: EmployeeSalary) => void;
   onViewHistory?: (employee: EmployeeSalary) => void;
-  onViewLatestPayslip?: (employee: EmployeeSalary) => void;
 }
 
 const EmployeeTable: React.FC<EmployeeTableProps> = ({ 
   employees, 
   onGenerateSalarySlip, 
-  onViewHistory, 
-  onViewLatestPayslip 
+  onViewHistory
 }) => {
   return (
     <div className="overflow-x-auto">
