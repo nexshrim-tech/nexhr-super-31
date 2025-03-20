@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Filter, Plus, Trash2, Eye, Edit } from "lucide-react";
+import { Calendar, Filter, Plus, Trash2, Eye, Edit, MessageSquare, Paperclip, Send } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -34,6 +34,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 
 const tasks = [
   {
@@ -43,6 +44,12 @@ const tasks = [
     status: "In Progress",
     priority: "High",
     assignedTo: { name: "Olivia Rhye", avatar: "OR" },
+    comments: [
+      { id: 1, author: "Demi Wilkinson", avatar: "DW", text: "I've started scheduling these. Will complete by tomorrow.", date: "2023-08-10" }
+    ],
+    resources: [
+      { id: 1, name: "Review_Template.docx", type: "document", uploadedBy: "Olivia Rhye", date: "2023-08-08" }
+    ]
   },
   {
     id: 2,
@@ -51,6 +58,8 @@ const tasks = [
     status: "To Do",
     priority: "Medium",
     assignedTo: { name: "Phoenix Baker", avatar: "PB" },
+    comments: [],
+    resources: []
   },
   {
     id: 3,
@@ -59,6 +68,8 @@ const tasks = [
     status: "To Do",
     priority: "Medium",
     assignedTo: { name: "Lana Steiner", avatar: "LS" },
+    comments: [],
+    resources: []
   },
   {
     id: 4,
@@ -67,6 +78,12 @@ const tasks = [
     status: "Completed",
     priority: "High",
     assignedTo: { name: "Demi Wilkinson", avatar: "DW" },
+    comments: [
+      { id: 1, author: "Demi Wilkinson", avatar: "DW", text: "All applications have been reviewed and approved.", date: "2023-08-10" }
+    ],
+    resources: [
+      { id: 1, name: "Leave_Summary.pdf", type: "document", uploadedBy: "Demi Wilkinson", date: "2023-08-10" }
+    ]
   },
   {
     id: 5,
@@ -75,6 +92,8 @@ const tasks = [
     status: "In Progress",
     priority: "High",
     assignedTo: { name: "Candice Wu", avatar: "CW" },
+    comments: [],
+    resources: []
   },
 ];
 
@@ -85,6 +104,8 @@ const TasksReminders = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
+  const [isResourceDialogOpen, setIsResourceDialogOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<any>(null);
   const [newTask, setNewTask] = useState({
     title: "",
@@ -93,6 +114,9 @@ const TasksReminders = () => {
     priority: "Medium",
     assignedTo: "",
   });
+  const [newComment, setNewComment] = useState("");
+  const [newResource, setNewResource] = useState<File | null>(null);
+  const [resourceDescription, setResourceDescription] = useState("");
   const { toast } = useToast();
 
   // Filter tasks based on selected filters and search
@@ -115,6 +139,18 @@ const TasksReminders = () => {
   const handleViewTask = (task: any) => {
     setCurrentTask(task);
     setIsViewDialogOpen(true);
+  };
+
+  // Handle comment button click
+  const handleCommentTask = (task: any) => {
+    setCurrentTask(task);
+    setIsCommentDialogOpen(true);
+  };
+
+  // Handle resource button click
+  const handleResourceTask = (task: any) => {
+    setCurrentTask(task);
+    setIsResourceDialogOpen(true);
   };
 
   // Handle save edit
@@ -151,6 +187,54 @@ const TasksReminders = () => {
     });
     
     setIsAddDialogOpen(false);
+  };
+
+  // Handle add comment
+  const handleAddComment = () => {
+    if (!newComment.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please enter a comment.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Comment added",
+      description: "Your comment has been added to the task.",
+    });
+    
+    setNewComment("");
+    setIsCommentDialogOpen(false);
+  };
+
+  // Handle resource file change
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setNewResource(e.target.files[0]);
+    }
+  };
+
+  // Handle add resource
+  const handleAddResource = () => {
+    if (!newResource) {
+      toast({
+        title: "Missing information",
+        description: "Please select a file to upload.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Resource added",
+      description: `"${newResource.name}" has been attached to the task.`,
+    });
+    
+    setNewResource(null);
+    setResourceDescription("");
+    setIsResourceDialogOpen(false);
   };
 
   return (
@@ -366,17 +450,40 @@ const TasksReminders = () => {
                                     variant="outline" 
                                     size="sm"
                                     onClick={() => handleViewTask(task)}
+                                    title="View details"
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>
                                   <Button 
                                     variant="outline" 
                                     size="sm"
+                                    onClick={() => handleCommentTask(task)}
+                                    title="Add comment"
+                                  >
+                                    <MessageSquare className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleResourceTask(task)}
+                                    title="Attach resource"
+                                  >
+                                    <Paperclip className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
                                     onClick={() => handleEditTask(task)}
+                                    title="Edit task"
                                   >
                                     <Edit className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="outline" size="sm" className="text-red-500">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-red-500"
+                                    title="Delete task"
+                                  >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
@@ -456,6 +563,51 @@ const TasksReminders = () => {
               <div>
                 <p className="text-sm text-gray-500">Description</p>
                 <p className="mt-1">No description provided.</p>
+              </div>
+
+              {/* Resources Section */}
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-2">Resources</p>
+                {currentTask.resources && currentTask.resources.length > 0 ? (
+                  <div className="space-y-2">
+                    {currentTask.resources.map((resource: any) => (
+                      <div key={resource.id} className="flex items-center justify-between p-2 border rounded-md">
+                        <div className="flex items-center gap-2">
+                          <Paperclip className="h-4 w-4 text-blue-500" />
+                          <span>{resource.name}</span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Uploaded by {resource.uploadedBy} on {resource.date}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No resources attached.</p>
+                )}
+              </div>
+
+              {/* Comments Section */}
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-2">Comments</p>
+                {currentTask.comments && currentTask.comments.length > 0 ? (
+                  <div className="space-y-3">
+                    {currentTask.comments.map((comment: any) => (
+                      <div key={comment.id} className="p-3 bg-gray-50 rounded-md">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback>{comment.avatar}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{comment.author}</span>
+                          <span className="text-xs text-gray-500">{comment.date}</span>
+                        </div>
+                        <p className="text-sm">{comment.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No comments yet.</p>
+                )}
               </div>
             </div>
           )}
@@ -656,8 +808,86 @@ const TasksReminders = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add Comment Dialog */}
+      <Dialog open={isCommentDialogOpen} onOpenChange={setIsCommentDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Comment</DialogTitle>
+            <DialogDescription>
+              Add a comment to the task "{currentTask?.title}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="comment">Comment</Label>
+              <Textarea
+                id="comment"
+                placeholder="Enter your comment..."
+                rows={4}
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCommentDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddComment}>
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Add Comment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Resource Dialog */}
+      <Dialog open={isResourceDialogOpen} onOpenChange={setIsResourceDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Attach Resource</DialogTitle>
+            <DialogDescription>
+              Attach a file or resource to the task "{currentTask?.title}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="resource">Select File</Label>
+              <Input
+                id="resource"
+                type="file"
+                onChange={handleFileChange}
+              />
+              {newResource && (
+                <p className="text-sm text-green-600">Selected: {newResource.name}</p>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="resourceDescription">Description (optional)</Label>
+              <Textarea
+                id="resourceDescription"
+                placeholder="Enter a description for this resource..."
+                rows={2}
+                value={resourceDescription}
+                onChange={(e) => setResourceDescription(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsResourceDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddResource}>
+              <Send className="h-4 w-4 mr-2" />
+              Submit Resource
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 export default TasksReminders;
+
