@@ -21,7 +21,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
 
-// Import our components
 import EmployeeProfileCard from "@/components/employees/EmployeeProfileCard";
 import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
 import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
@@ -33,8 +32,8 @@ import EmployeeDocumentsSection from "@/components/employees/EmployeeDocumentsSe
 import DocumentUpdateDialog from "@/components/employees/DocumentUpdateDialog";
 import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import PayslipDialog from "@/components/employees/PayslipDialog";
+import OfficialDocumentsDialog from "@/components/employees/OfficialDocumentsDialog";
 
-// Enhanced employee data with additional fields
 const employeeData = {
   id: "EMP001",
   name: "Chisom Chukwukwe",
@@ -72,7 +71,6 @@ const employeeData = {
   geofencingEnabled: true
 };
 
-// Sample payslips data
 const payslipsData = [
   { id: "PAY001", employee: "Chisom Chukwukwe", period: "January 2024", amount: 85000, date: "2024-01-31" },
   { id: "PAY002", employee: "Chisom Chukwukwe", period: "February 2024", amount: 85000, date: "2024-02-29" },
@@ -89,12 +87,13 @@ const EmployeeDetails = () => {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOfficialDocsDialog, setShowOfficialDocsDialog] = useState(false);
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [employeeForm, setEmployeeForm] = useState(employeeData);
   const { toast } = useToast();
   
-  const employee = employeeForm; // Use the form state directly
+  const employee = employeeForm;
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [geofencingEnabled, setGeofencingEnabled] = useState(employeeData.geofencingEnabled);
   const [documentEditDialog, setDocumentEditDialog] = useState<'aadhar' | 'pan' | null>(null);
@@ -343,6 +342,14 @@ const EmployeeDetails = () => {
                 <Key className="h-4 w-4" />
                 Change Password
               </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2 bg-purple-50 text-purple-700 hover:bg-purple-100"
+                onClick={() => setShowOfficialDocsDialog(true)}
+              >
+                <FileText className="h-4 w-4" />
+                Official Documents
+              </Button>
             </div>
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
               <DialogTrigger asChild>
@@ -432,6 +439,12 @@ const EmployeeDetails = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          <OfficialDocumentsDialog 
+            isOpen={showOfficialDocsDialog}
+            onClose={() => setShowOfficialDocsDialog(false)}
+            employeeName={employee.name}
+          />
         </div>
       </div>
     </div>
