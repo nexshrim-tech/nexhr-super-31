@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { AlertCircle, Eye, EyeOff, Lock } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -46,6 +47,10 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
   const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<Employee>>({});
   const [activeTab, setActiveTab] = useState("personal");
+  const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   
   React.useEffect(() => {
     if (employee) {
@@ -67,6 +72,54 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
       title: "Feature coming soon",
       description: "Changing profile photo will be available in a future update.",
     });
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const validatePassword = () => {
+    if (password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return false;
+    }
+    
+    if (password && password.length < 6) {
+      setPasswordError("Password must be at least 6 characters");
+      return false;
+    }
+    
+    setPasswordError("");
+    return true;
+  };
+
+  const handlePasswordChange = () => {
+    if (!password) {
+      toast({
+        title: "Password required",
+        description: "Please enter a new password",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!validatePassword()) {
+      toast({
+        title: "Password validation error",
+        description: passwordError,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Password updated",
+      description: "Employee password has been updated successfully",
+    });
+    
+    // Reset password fields
+    setPassword("");
+    setConfirmPassword("");
   };
 
   const handleSave = () => {
@@ -96,10 +149,11 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="personal">Personal</TabsTrigger>
             <TabsTrigger value="employment">Employment</TabsTrigger>
             <TabsTrigger value="contact">Contact</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
           
           <TabsContent value="personal" className="space-y-4">
@@ -255,6 +309,97 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
                   placeholder="Enter address"
                   onChange={handleInputChange}
                 />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="security" className="space-y-6">
+            <div className="bg-blue-50 border border-blue-100 p-4 rounded-md">
+              <h3 className="font-medium text-blue-800 mb-2 flex items-center">
+                <Lock className="mr-2 h-5 w-5" />
+                Change Password
+              </h3>
+              <p className="text-sm text-blue-600 mb-4">
+                Update the employee's account password. The employee will need to use this new password for their next login.
+              </p>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter new password"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (confirmPassword) validatePassword();
+                      }}
+                      iconRight={
+                        <button 
+                          type="button"
+                          onClick={togglePasswordVisibility}
+                          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      }
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label 
+                    htmlFor="confirm-password"
+                    className={passwordError ? "text-red-500" : ""}
+                  >
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirm-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (password) validatePassword();
+                    }}
+                    className={passwordError ? "border-red-500 focus:ring-red-500" : ""}
+                    iconRight={
+                      <button 
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    }
+                  />
+                  {passwordError && (
+                    <div className="flex items-center text-xs text-red-500 mt-1">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {passwordError}
+                    </div>
+                  )}
+                </div>
+                
+                <Button 
+                  onClick={handlePasswordChange}
+                  className="mt-2"
+                  variant="outline"
+                  size="sm"
+                >
+                  Update Password
+                </Button>
               </div>
             </div>
           </TabsContent>

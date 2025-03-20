@@ -7,12 +7,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowRight, Mail, Lock, User, ArrowLeft, Home, Phone, Building2, Users } from "lucide-react";
+import { ArrowRight, Mail, Lock, User, ArrowLeft, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   
@@ -24,6 +26,15 @@ const Login = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const validatePassword = () => {
+    if (password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return false;
+    }
+    setPasswordError("");
+    return true;
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +56,17 @@ const Login = () => {
 
   const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password match
+    if (!validatePassword()) {
+      toast({
+        title: "Password mismatch",
+        description: "Please ensure both passwords match",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Add your sign up logic here
     if (name && email && password && companyName && phoneNumber && companySize) {
       // Mark as new user to show subscription modal on first dashboard load
@@ -72,6 +94,8 @@ const Login = () => {
     setName("");
     setEmail("");
     setPassword("");
+    setConfirmPassword("");
+    setPasswordError("");
     setRememberMe(false);
     setCompanyName("");
     setPhoneNumber("");
@@ -231,6 +255,40 @@ const Login = () => {
                   className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
                 />
               </div>
+              
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label 
+                    htmlFor="confirmPassword" 
+                    className={`flex items-center ${passwordError ? "text-red-500" : ""}`}
+                  >
+                    <Lock className={`h-4 w-4 mr-2 ${passwordError ? "text-red-500" : "text-gray-500"}`} />
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (password && e.target.value) {
+                        validatePassword();
+                      }
+                    }}
+                    required
+                    className={`transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent ${
+                      passwordError ? "border-red-500 focus:ring-red-500" : ""
+                    }`}
+                  />
+                  {passwordError && (
+                    <div className="flex items-center text-xs text-red-500 mt-1">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {passwordError}
+                    </div>
+                  )}
+                </div>
+              )}
               
               {!isSignUp && (
                 <div className="flex items-center space-x-2">
