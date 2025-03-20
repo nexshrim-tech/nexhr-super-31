@@ -78,16 +78,6 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                       <History className="h-4 w-4" />
                     </Button>
                   )}
-                  {onViewLatestPayslip && (
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => onViewLatestPayslip(employee)}
-                      title="View Latest Payslip"
-                    >
-                      <FileText className="h-4 w-4 text-blue-600" />
-                    </Button>
-                  )}
                 </div>
               </TableCell>
             </TableRow>

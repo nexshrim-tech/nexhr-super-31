@@ -41,10 +41,12 @@ const TodaysAttendance = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   
   // States for features
-  const [useGeolocation, setUseGeolocation] = useState(true);
-  const [useCamera, setUseCamera] = useState(true);
-  const [markAttendanceOpen, setMarkAttendanceOpen] = useState(false);
-  
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(),
+  });
+  const { toast } = useToast();
+
   // Generate calendar days for the current month
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -120,12 +122,6 @@ const TodaysAttendance = () => {
            currentYear === today.getFullYear();
   };
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: new Date(),
-  });
-  const { toast } = useToast();
-
   const handleExport = () => {
     if (dateRange?.from && dateRange?.to) {
       toast({
@@ -133,14 +129,6 @@ const TodaysAttendance = () => {
         description: `Exporting attendance data from ${format(dateRange.from, 'PP')} to ${format(dateRange.to, 'PP')}`,
       });
     }
-  };
-
-  const handleMarkAttendance = () => {
-    toast({
-      title: "Attendance Marked",
-      description: `Your attendance has been recorded for ${format(new Date(), 'PP')}`,
-    });
-    setMarkAttendanceOpen(false);
   };
 
   return (
@@ -295,76 +283,6 @@ const TodaysAttendance = () => {
             </DialogContent>
           </Dialog>
         </div>
-
-        <Separator className="my-4" />
-        
-        <Dialog open={markAttendanceOpen} onOpenChange={setMarkAttendanceOpen}>
-          <Button variant="default" size="sm" className="w-full gap-1" onClick={() => setMarkAttendanceOpen(true)}>
-            <UserCheck className="h-4 w-4 mr-2" />
-            Mark Today's Attendance
-          </Button>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Mark Attendance</DialogTitle>
-              <DialogDescription>
-                Record your attendance for today ({format(new Date(), 'PP')})
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="py-4 space-y-4">
-              <div className="space-y-3">
-                <FeatureToggle 
-                  title="Use Geolocation" 
-                  description="Enable to verify your location" 
-                  enabled={useGeolocation} 
-                  onToggle={setUseGeolocation}
-                  id="toggle-geolocation"
-                />
-                
-                <FeatureToggle 
-                  title="Take Photo" 
-                  description="Take a photo for attendance verification" 
-                  enabled={useCamera} 
-                  onToggle={setUseCamera}
-                  id="toggle-camera"
-                />
-              </div>
-              
-              {useGeolocation && (
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <MapPin className="h-4 w-4 text-blue-600 mr-2" />
-                    <span className="text-sm font-medium">Location Verification</span>
-                  </div>
-                  <p className="text-xs text-blue-700">
-                    Your location will be verified against office geo-fence
-                  </p>
-                </div>
-              )}
-              
-              {useCamera && (
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <Camera className="h-4 w-4 text-blue-600 mr-2" />
-                    <span className="text-sm font-medium">Photo Verification</span>
-                  </div>
-                  <p className="text-xs text-blue-700">
-                    A photo will be captured for attendance verification
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setMarkAttendanceOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleMarkAttendance}>
-                Mark Attendance
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </CardContent>
     </Card>
   );
