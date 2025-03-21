@@ -107,12 +107,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Starting signup with data:', userData);
       
-      // If user is registering as an admin, first create the customer record
-      let customerId = null;
+      // First create the auth user without customer_id
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role: userData.role || 'employee',
+            name: userData.name || '',
+          },
+        },
+      });
+
+      if (authError) {
+        console.error('Auth signup error:', authError);
+        return { error: authError, data: null };
+      }
       
-      if (userData.role === 'admin') {
+      console.log('Auth signup successful:', authData);
+      
+      // Now if user is admin, create customer record after auth user is created
+      if (userData.role === 'admin' && authData.user) {
         try {
           console.log('Creating customer record for admin user');
+          
           // Insert the customer record
           const { data: customerData, error: customerError } = await supabase
             .from('customer')
@@ -127,38 +145,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           if (customerError) {
             console.error('Customer creation error:', customerError);
-            return { error: customerError, data: null };
+            return { error: customerError, data: authData };
           }
           
-          customerId = customerData?.customerid;
-          console.log('Customer created with ID:', customerId);
+          console.log('Customer created with ID:', customerData?.customerid);
+          
+          // Now update the user's profile with the customer ID
+          if (customerData?.customerid) {
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ customer_id: customerData.customerid })
+              .eq('id', authData.user.id);
+              
+            if (updateError) {
+              console.error('Error updating profile with customer ID:', updateError);
+            } else {
+              console.log('Profile updated with customer ID:', customerData.customerid);
+            }
+          }
         } catch (error: any) {
-          console.error('Error creating customer:', error);
-          return { error, data: null };
+          console.error('Error in customer creation process:', error);
+          return { error, data: authData };
         }
       }
-      
-      // Then create the auth user
-      console.log('Creating auth user with customer_id:', customerId);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            role: userData.role || 'employee',
-            customer_id: customerId,
-            name: userData.name || '',
-          },
-        },
-      });
 
-      if (error) {
-        console.error('Auth signup error:', error);
-      } else {
-        console.log('Auth signup successful:', data);
-      }
-
-      return { data, error };
+      return { data: authData, error: null };
     } catch (error) {
       console.error('Error during sign up:', error);
       return { error, data: null };
