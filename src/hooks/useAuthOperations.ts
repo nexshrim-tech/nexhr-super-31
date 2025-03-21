@@ -47,13 +47,13 @@ export const useAuthOperations = () => {
     }
   };
 
-  // Sign up new user
+  // Sign up new user - now works without email verification
   const signUp = async (email: string, password: string, userData: any) => {
     setIsLoading(true);
     try {
       console.log('Starting signup with data:', userData);
       
-      // Create the auth user
+      // Create the auth user without email verification requirements
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -124,6 +124,8 @@ export const useAuthOperations = () => {
         title: "Signup successful",
         description: "Your account has been created",
       });
+      
+      // Since verification is disabled, we can immediately navigate to the dashboard
       navigate('/');
       setIsLoading(false);
       return { data: authData, error: null };

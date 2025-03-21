@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,6 @@ const Login = () => {
   const location = useLocation();
   const { signIn, signUp, user, isLoading } = useAuth();
 
-  // If user is already logged in, redirect to home or the page they were trying to access
   useEffect(() => {
     if (user) {
       const from = location.state?.from || "/";
@@ -64,7 +62,7 @@ const Login = () => {
       const userData = {
         name,
         isAdmin,
-        companyName: companyName || name + "'s Company", // Fallback company name
+        companyName: companyName || name + "'s Company",
         phoneNumber: phoneNumber || "",
         companySize: companySize || "1-10"
       };
