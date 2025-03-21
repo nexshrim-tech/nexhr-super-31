@@ -27,27 +27,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [employeeId, setEmployeeId] = useState<number | null>(null);
   const navigate = useNavigate();
 
+  // Initialize auth state and set up listener
   useEffect(() => {
-    // First set up the auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user) {
-          await fetchUserProfile(currentSession.user.id);
-        } else {
-          setIsAdmin(false);
-          setCustomerId(null);
-          setEmployeeId(null);
+    const setupAuthStateListener = () => {
+      // First set up the auth state listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, currentSession) => {
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          
+          if (currentSession?.user) {
+            await fetchUserProfile(currentSession.user.id);
+          } else {
+            resetUserState();
+          }
+          
+          setLoading(false);
         }
-        
-        setLoading(false);
-      }
-    );
-
-    // Then fetch the current session
-    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+      );
+      
+      return subscription;
+    };
+    
+    const checkExistingSession = async () => {
+      // Then fetch the current session
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
@@ -56,13 +60,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       setLoading(false);
-    });
+    };
+    
+    // Set up auth listener and check for existing session
+    const subscription = setupAuthStateListener();
+    checkExistingSession();
 
+    // Cleanup function
     return () => {
       subscription.unsubscribe();
     };
   }, []);
 
+  // Reset user state when logged out
+  const resetUserState = () => {
+    setIsAdmin(false);
+    setCustomerId(null);
+    setEmployeeId(null);
+  };
+
+  // Fetch user profile data from Supabase
   const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -86,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -103,6 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Sign up new user
   const signUp = async (email: string, password: string, userData: any) => {
     try {
       console.log('Starting signup with data:', userData);
@@ -126,46 +145,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('Auth signup successful:', authData);
       
-      // Now if user is admin, create customer record after auth user is created
+      // Handle admin user customer creation
       if (userData.role === 'admin' && authData.user) {
-        try {
-          console.log('Creating customer record for admin user');
-          
-          // Insert the customer record
-          const { data: customerData, error: customerError } = await supabase
-            .from('customer')
-            .insert({
-              name: userData.companyName,
-              email: email,
-              phonenumber: userData.phoneNumber,
-              companysize: userData.companySize
-            })
-            .select('customerid')
-            .single();
-          
-          if (customerError) {
-            console.error('Customer creation error:', customerError);
-            return { error: customerError, data: authData };
-          }
-          
-          console.log('Customer created with ID:', customerData?.customerid);
-          
-          // Now update the user's profile with the customer ID
-          if (customerData?.customerid) {
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update({ customer_id: customerData.customerid })
-              .eq('id', authData.user.id);
-              
-            if (updateError) {
-              console.error('Error updating profile with customer ID:', updateError);
-            } else {
-              console.log('Profile updated with customer ID:', customerData.customerid);
-            }
-          }
-        } catch (error: any) {
-          console.error('Error in customer creation process:', error);
-          return { error, data: authData };
+        const result = await createCustomerForAdmin(authData.user.id, userData, email);
+        if (result.error) {
+          return { error: result.error, data: authData };
         }
       }
 
@@ -176,6 +160,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Create customer record for admin users
+  const createCustomerForAdmin = async (userId: string, userData: any, email: string) => {
+    try {
+      console.log('Creating customer record for admin user');
+      
+      // Insert the customer record
+      const { data: customerData, error: customerError } = await supabase
+        .from('customer')
+        .insert({
+          name: userData.companyName,
+          email: email,
+          phonenumber: userData.phoneNumber,
+          companysize: userData.companySize
+        })
+        .select('customerid')
+        .single();
+      
+      if (customerError) {
+        console.error('Customer creation error:', customerError);
+        return { error: customerError };
+      }
+      
+      console.log('Customer created with ID:', customerData?.customerid);
+      
+      // Update profile with customer ID
+      if (customerData?.customerid) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ customer_id: customerData.customerid })
+          .eq('id', userId);
+          
+        if (updateError) {
+          console.error('Error updating profile with customer ID:', updateError);
+          return { error: updateError };
+        }
+        
+        console.log('Profile updated with customer ID:', customerData.customerid);
+      }
+      
+      return { error: null };
+    } catch (error) {
+      console.error('Error in customer creation process:', error);
+      return { error };
+    }
+  };
+
+  // Sign out
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -185,6 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Build context value
   const value = {
     user,
     session,
