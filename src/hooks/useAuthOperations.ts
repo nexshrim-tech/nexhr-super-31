@@ -80,7 +80,7 @@ export const useAuthOperations = () => {
           toast({
             title: "Customer creation failed",
             description: "Your account was created but customer setup failed",
-            variant: "warning",
+            variant: "destructive", // Changed from "warning" to "destructive" to fix the type error
           });
           return { error: result.error, data: authData };
         }
