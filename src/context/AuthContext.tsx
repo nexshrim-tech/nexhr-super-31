@@ -105,12 +105,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, userData: any) => {
     try {
+      console.log('Starting signup with data:', userData);
+      
       // If user is registering as an admin, first create the customer record
       let customerId = null;
       
       if (userData.role === 'admin') {
         try {
-          // Insert the customer record first - using service role to bypass RLS
+          console.log('Creating customer record for admin user');
+          // Insert the customer record
           const { data: customerData, error: customerError } = await supabase
             .from('customer')
             .insert({
@@ -128,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           
           customerId = customerData?.customerid;
+          console.log('Customer created with ID:', customerId);
         } catch (error: any) {
           console.error('Error creating customer:', error);
           return { error, data: null };
@@ -135,6 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Then create the auth user
+      console.log('Creating auth user with customer_id:', customerId);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -146,6 +151,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
         },
       });
+
+      if (error) {
+        console.error('Auth signup error:', error);
+      } else {
+        console.log('Auth signup successful:', data);
+      }
 
       return { data, error };
     } catch (error) {
