@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -91,6 +90,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
       
+      // Fetch customer ID or employee ID after login
+      if (data.user) {
+        await fetchUserAssociations(data.user.id);
+      }
+      
       toast({
         title: "Login successful",
         description: "Welcome to NexHR!",
@@ -98,6 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       navigate("/");
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials",
@@ -120,7 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             first_name: userData.name?.split(' ')[0] || '',
             last_name: userData.name?.split(' ').slice(1).join(' ') || '',
-            role: 'employee',
+            role: 'admin',
             company_name: userData.companyName,
             phone_number: userData.phoneNumber,
             company_size: userData.companySize
@@ -132,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Set default subscription as None
       localStorage.setItem("subscription-plan", "None");
+      localStorage.setItem("new-user", "true");
       
       toast({
         title: "Sign up successful",
@@ -140,6 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       navigate("/");
     } catch (error: any) {
+      console.error("Sign up error:", error);
       toast({
         title: "Sign up failed",
         description: error.message || "Please fill in all required fields",
@@ -147,6 +154,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserAssociations = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('employee_id, customer_id, role')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        if (data.employee_id) {
+          setEmployeeId(data.employee_id);
+        }
+        
+        // Handle any additional profile data that's needed
+      }
+    } catch (error) {
+      console.error('Error fetching user associations:', error);
     }
   };
 

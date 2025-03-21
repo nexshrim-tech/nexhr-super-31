@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -212,10 +213,11 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
         }
       });
       
+      // Fix for TypeScript error - properly access control array and push button
       const controlPosition = google.maps.ControlPosition.TOP_RIGHT;
-      const controlArray = mapInstanceRef.current.controls[controlPosition];
-      
-      controlArray.push(locationButton);
+      if (mapInstanceRef.current.controls[controlPosition]) {
+        mapInstanceRef.current.controls[controlPosition].push(locationButton);
+      }
     }
     
     if (markersRef.current.length > 0) {
