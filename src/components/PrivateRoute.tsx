@@ -16,26 +16,34 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const location = useLocation();
 
   useEffect(() => {
-    if (!loading && !user) {
-      console.log('User not authenticated, redirecting to login');
+    if (!loading) {
+      console.log('Auth state in PrivateRoute:', { 
+        authenticated: !!user, 
+        isAdmin, 
+        loading, 
+        path: location.pathname 
+      });
     }
-  }, [loading, user]);
+  }, [loading, user, isAdmin, location.pathname]);
 
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-nexhr-primary"></div>
+        <div className="ml-3 text-gray-600">Loading authentication...</div>
       </div>
     );
   }
 
   // If not authenticated, redirect to login with return URL
   if (!user) {
+    console.log('User not authenticated, redirecting to login from:', location.pathname);
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   // If admin access is required but user is not admin
   if (requireAdmin && !isAdmin) {
+    console.log('Admin access required but user is not admin, redirecting to home');
     return <Navigate to="/" replace />;
   }
 

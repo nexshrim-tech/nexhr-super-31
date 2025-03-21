@@ -33,7 +33,19 @@ export const useEmployeeAnalytics = () => {
   });
 
   const fetchAnalytics = async () => {
-    if (!customerId) throw new Error('Customer ID is required');
+    if (!customerId) {
+      console.log('No customer ID found, returning default values');
+      return {
+        totalEmployees: 0,
+        activeEmployees: 0,
+        departmentCounts: [],
+        recentHires: [],
+        genderDistribution: { male: 0, female: 0, other: 0 },
+        attendanceSummary: { present: 0, absent: 0, late: 0 }
+      };
+    }
+    
+    console.log('Fetching analytics for customer ID:', customerId);
     
     // Fetch total employees
     const { data: employeeData, error: employeeError } = await supabase
@@ -41,7 +53,12 @@ export const useEmployeeAnalytics = () => {
       .select('employeeid, gender, joiningdate, firstname, lastname, profilepicturepath, jobtitle, department')
       .eq('customerid', customerId);
 
-    if (employeeError) throw employeeError;
+    if (employeeError) {
+      console.error('Error fetching employee data:', employeeError);
+      throw employeeError;
+    }
+
+    console.log('Employee data fetched:', employeeData?.length || 0, 'employees found');
 
     // Get department data
     const { data: departmentData, error: departmentError } = await supabase
@@ -49,7 +66,12 @@ export const useEmployeeAnalytics = () => {
       .select('departmentid, departmentname')
       .eq('customerid', customerId);
 
-    if (departmentError) throw departmentError;
+    if (departmentError) {
+      console.error('Error fetching department data:', departmentError);
+      throw departmentError;
+    }
+
+    console.log('Department data fetched:', departmentData?.length || 0, 'departments found');
 
     // Get today's attendance
     const today = new Date();
@@ -61,7 +83,12 @@ export const useEmployeeAnalytics = () => {
       .eq('customerid', customerId)
       .gte('checkintimestamp', today.toISOString());
 
-    if (attendanceError) throw attendanceError;
+    if (attendanceError) {
+      console.error('Error fetching attendance data:', attendanceError);
+      throw attendanceError;
+    }
+
+    console.log('Attendance data fetched:', attendanceData?.length || 0, 'attendance records found');
 
     // Process and set analytics data
     const totalEmployees = employeeData?.length || 0;
@@ -115,7 +142,7 @@ export const useEmployeeAnalytics = () => {
     };
   };
 
-  // Fix: Update React Query configuration to use onSettled/meta/onError options correctly
+  // Fix: Update React Query configuration to use meta.errorHandler for error handling
   const { data: analytics, isLoading: loading, refetch } = useQuery({
     queryKey: ['employee-analytics', customerId],
     queryFn: fetchAnalytics,

@@ -6,9 +6,7 @@ export const enableRealtime = async () => {
   try {
     console.log('Setting up realtime subscriptions for tables');
     
-    // Supabase realtime is now enabled by default for all tables
-    // We'll just log that we want to listen to specific tables
-    
+    // Enable realtime for critical tables
     const tables = [
       'employee',
       'department',
@@ -19,7 +17,13 @@ export const enableRealtime = async () => {
       'payslip'
     ];
     
-    // Log which tables we're setting up for realtime
+    // Activate realtime for each table
+    for (const table of tables) {
+      // Note: In newer Supabase versions, realtime is enabled by default
+      // So we just log that we're subscribing to these tables
+      console.log(`Enabling realtime for table: ${table}`);
+    }
+    
     console.log('Realtime enabled for tables:', tables.join(', '));
     
     return tables;
@@ -31,5 +35,6 @@ export const enableRealtime = async () => {
 
 // Initialize realtime in App.tsx
 export const initializeRealtime = async () => {
+  console.log('Initializing realtime subscriptions');
   return await enableRealtime();
 };

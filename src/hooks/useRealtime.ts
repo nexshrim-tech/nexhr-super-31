@@ -9,24 +9,32 @@ type ChangeHandler = (payload: RealtimePostgresChangesPayload<any>) => void;
 
 export const useRealtime = (entity: Entity, events: Event[], onChanges: ChangeHandler) => {
   useEffect(() => {
+    console.log(`Setting up realtime subscription for ${entity} table, events: ${events.join(', ')}`);
+    
     // Create channel with correct subscription format
     const channel = supabase
-      .channel('schema-db-changes')
+      .channel(`${entity}-changes`)
       .on(
-        'postgres_changes' as any, // Type cast to bypass TS error
+        'postgres_changes',
         { 
           event: events,
           schema: 'public',
           table: entity
         },
-        onChanges
+        (payload) => {
+          console.log(`Realtime change detected for ${entity}:`, payload);
+          onChanges(payload);
+        }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Subscription status for ${entity}:`, status);
+      });
 
     console.log(`Subscribed to realtime changes for ${entity} table, events: ${events.join(', ')}`);
 
     // Cleanup subscription on unmount
     return () => {
+      console.log(`Cleaning up realtime subscription for ${entity}`);
       supabase.removeChannel(channel);
     };
   }, [entity, events, onChanges]);
