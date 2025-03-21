@@ -23,6 +23,8 @@ export const useRealtime = (entity: Entity, events: Event[], onChanges: ChangeHa
       )
       .subscribe();
 
+    console.log(`Subscribed to realtime changes for ${entity} table, events: ${events.join(', ')}`);
+
     // Cleanup subscription on unmount
     return () => {
       supabase.removeChannel(channel);

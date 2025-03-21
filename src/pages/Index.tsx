@@ -10,12 +10,30 @@ import TaskReminders from "@/components/TaskReminders";
 import ExpenseGraph from "@/components/ExpenseGraph";
 import EmployeeLocation from "@/components/EmployeeLocation";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { initializeRealtime } from '@/utils/realtimeUtils';
 
-// Create a new QueryClient for React Query
-const queryClient = new QueryClient();
+// Create a new QueryClient for React Query with better defaults
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30 * 1000, // 30 seconds
+    },
+  },
+});
 
 const Index = () => {
   const { plan, setShowSubscriptionModal } = useSubscription();
+  
+  // Initialize realtime subscriptions when app loads
+  useEffect(() => {
+    const setupRealtime = async () => {
+      await initializeRealtime();
+    };
+    
+    setupRealtime();
+  }, []);
   
   // Show subscription modal for new users
   useEffect(() => {

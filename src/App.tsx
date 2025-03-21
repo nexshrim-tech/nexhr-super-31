@@ -27,6 +27,20 @@ import SubscriptionModal from "./components/SubscriptionModal";
 import { useSubscription } from "./context/SubscriptionContext";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/PrivateRoute";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect } from "react";
+import { initializeRealtime } from "./utils/realtimeUtils";
+
+// Create a global QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30 * 1000, // 30 seconds
+    },
+  },
+});
 
 function SubscriptionModalWrapper() {
   const { showSubscriptionModal, setShowSubscriptionModal, setPlan, plan } = useSubscription();
@@ -46,6 +60,16 @@ function SubscriptionModalWrapper() {
 }
 
 function AppRoutes() {
+  // Initialize realtime subscriptions at the app root level
+  useEffect(() => {
+    const setupRealtime = async () => {
+      await initializeRealtime();
+      console.log('Realtime initialized at app level');
+    };
+    
+    setupRealtime();
+  }, []);
+
   return (
     <>
       <SubscriptionModalWrapper />
@@ -86,12 +110,14 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <SubscriptionProvider>
-          <AppRoutes />
-          <Toaster />
-        </SubscriptionProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <AppRoutes />
+            <Toaster />
+          </SubscriptionProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </BrowserRouter>
   );
 }
