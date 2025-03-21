@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Starting signup with data:', userData);
       
-      // First create the auth user without customer_id
+      // First create the auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
