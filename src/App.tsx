@@ -1,4 +1,5 @@
-import { Route, Routes } from "react-router-dom";
+
+import { Route, Routes, BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import Index from "@/pages/Index";
 import Assets from "@/pages/Assets";
@@ -24,6 +25,8 @@ import AllEmployees from "@/pages/AllEmployees";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
 import SubscriptionModal from "./components/SubscriptionModal";
 import { useSubscription } from "./context/SubscriptionContext";
+import { AuthProvider } from "./context/AuthContext";
+import PrivateRoute from "./components/PrivateRoute";
 
 function SubscriptionModalWrapper() {
   const { showSubscriptionModal, setShowSubscriptionModal, setPlan, plan } = useSubscription();
@@ -47,26 +50,33 @@ function AppRoutes() {
     <>
       <SubscriptionModalWrapper />
       <Routes>
-        <Route path="/" element={<Index />} />
+        {/* Public Routes */}
         <Route path="/landing" element={<Landing />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/add-employee" element={<AddEmployee />} />
-        <Route path="/employee/:id" element={<EmployeeDetails />} />
-        <Route path="/all-employees" element={<AllEmployees />} />
-        <Route path="/assets" element={<Assets />} />
-        <Route path="/attendance" element={<Attendance />} />
-        <Route path="/department" element={<Department />} />
-        <Route path="/document-generator" element={<DocumentGenerator />} />
-        <Route path="/expenses" element={<Expenses />} />
-        <Route path="/help-desk" element={<HelpDesk />} />
-        <Route path="/leave-management" element={<LeaveManagement />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="/meetings" element={<Meetings />} />
-        <Route path="/messenger" element={<Messenger />} />
-        <Route path="/project-management" element={<ProjectManagement />} />
-        <Route path="/salary" element={<Salary />} />
-        <Route path="/tasks-reminders" element={<TasksReminders />} />
-        <Route path="/track" element={<Track />} />
+
+        {/* Protected Routes - accessible to all authenticated users */}
+        <Route path="/" element={<PrivateRoute><Index /></PrivateRoute>} />
+        <Route path="/employee/:id" element={<PrivateRoute><EmployeeDetails /></PrivateRoute>} />
+        <Route path="/assets" element={<PrivateRoute><Assets /></PrivateRoute>} />
+        <Route path="/attendance" element={<PrivateRoute><Attendance /></PrivateRoute>} />
+        <Route path="/document-generator" element={<PrivateRoute><DocumentGenerator /></PrivateRoute>} />
+        <Route path="/expenses" element={<PrivateRoute><Expenses /></PrivateRoute>} />
+        <Route path="/help-desk" element={<PrivateRoute><HelpDesk /></PrivateRoute>} />
+        <Route path="/leave-management" element={<PrivateRoute><LeaveManagement /></PrivateRoute>} />
+        <Route path="/logout" element={<PrivateRoute><Logout /></PrivateRoute>} />
+        <Route path="/meetings" element={<PrivateRoute><Meetings /></PrivateRoute>} />
+        <Route path="/messenger" element={<PrivateRoute><Messenger /></PrivateRoute>} />
+        <Route path="/project-management" element={<PrivateRoute><ProjectManagement /></PrivateRoute>} />
+        <Route path="/salary" element={<PrivateRoute><Salary /></PrivateRoute>} />
+        <Route path="/tasks-reminders" element={<PrivateRoute><TasksReminders /></PrivateRoute>} />
+        <Route path="/track" element={<PrivateRoute><Track /></PrivateRoute>} />
+
+        {/* Admin-only Routes */}
+        <Route path="/add-employee" element={<PrivateRoute requireAdmin={true}><AddEmployee /></PrivateRoute>} />
+        <Route path="/all-employees" element={<PrivateRoute requireAdmin={true}><AllEmployees /></PrivateRoute>} />
+        <Route path="/department" element={<PrivateRoute requireAdmin={true}><Department /></PrivateRoute>} />
+
+        {/* 404 Route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
@@ -75,10 +85,14 @@ function AppRoutes() {
 
 function App() {
   return (
-    <SubscriptionProvider>
-      <AppRoutes />
-      <Toaster />
-    </SubscriptionProvider>
+    <BrowserRouter>
+      <SubscriptionProvider>
+        <AuthProvider>
+          <AppRoutes />
+          <Toaster />
+        </AuthProvider>
+      </SubscriptionProvider>
+    </BrowserRouter>
   );
 }
 

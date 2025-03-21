@@ -1,14 +1,15 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Mail, Lock, User, ArrowLeft, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -17,15 +18,23 @@ const Login = () => {
   const [passwordError, setPasswordError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // New signup fields
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [companySize, setCompanySize] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, signUp, user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const validatePassword = () => {
     if (password !== confirmPassword) {
@@ -36,61 +45,124 @@ const Login = () => {
     return true;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add your authentication logic here
+    setIsLoading(true);
+    
     if (email && password) {
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message || "Please check your credentials and try again",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       toast({
         title: "Login successful",
         description: "Welcome to NexHR!",
       });
-      navigate("/");
+      setIsLoading(false);
     } else {
       toast({
         title: "Login failed",
         description: "Please enter valid credentials",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    // Validate password match
     if (!validatePassword()) {
       toast({
         title: "Password mismatch",
         description: "Please ensure both passwords match",
         variant: "destructive",
       });
+      setIsLoading(false);
       return;
     }
     
-    // Add your sign up logic here
     if (name && email && password && companyName && phoneNumber && companySize) {
-      // Mark as new user to show subscription modal on first dashboard load
-      localStorage.setItem("new-user", "true");
-      // Set default subscription as None
-      localStorage.setItem("subscription-plan", "None");
+      let customerId = null;
+      
+      if (isAdmin) {
+        try {
+          const { data: customerData, error: customerError } = await supabase
+            .from('customer')
+            .insert({
+              name: companyName,
+              email: email,
+              phonenumber: phoneNumber,
+              companysize: companySize
+            })
+            .select('customerid')
+            .single();
+          
+          if (customerError) {
+            toast({
+              title: "Sign up failed",
+              description: customerError.message || "Error creating company record",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+          }
+          
+          customerId = customerData?.customerid;
+        } catch (error: any) {
+          toast({
+            title: "Sign up failed",
+            description: error.message || "Error during sign up process",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      const { error } = await signUp(email, password, {
+        role: isAdmin ? 'admin' : 'employee',
+        customerId: customerId
+      });
+      
+      if (error) {
+        toast({
+          title: "Sign up failed",
+          description: error.message || "Error during sign up",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
       
       toast({
         title: "Sign up successful",
         description: "Welcome to NexHR! Please check your email to verify your account.",
       });
-      navigate("/");
+      
+      setIsSignUp(false);
+      setIsLoading(false);
     } else {
       toast({
         title: "Sign up failed",
         description: "Please fill in all required fields",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
   };
 
   const toggleForm = () => {
     setIsSignUp(!isSignUp);
-    // Reset form fields
     setName("");
     setEmail("");
     setPassword("");
@@ -100,11 +172,11 @@ const Login = () => {
     setCompanyName("");
     setPhoneNumber("");
     setCompanySize("");
+    setIsAdmin(false);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4 relative">
-      {/* Back to Landing Page Button - Prominent Position */}
       <div className="fixed top-4 left-4 z-50">
         <Link to="/landing">
           <Button 
@@ -159,6 +231,27 @@ const Login = () => {
                       required
                       className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
                     />
+                  </div>
+                  
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="accountType" className="flex items-center">
+                      <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+                      Account Type
+                    </Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="isAdmin" 
+                        checked={isAdmin} 
+                        onCheckedChange={() => setIsAdmin(!isAdmin)}
+                        className="data-[state=checked]:bg-nexhr-primary data-[state=checked]:border-nexhr-primary"
+                      />
+                      <Label
+                        htmlFor="isAdmin"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        I am registering as a company admin
+                      </Label>
+                    </div>
                   </div>
                   
                   <div className="space-y-2 animate-fade-in">
@@ -310,9 +403,19 @@ const Login = () => {
               <Button 
                 type="submit" 
                 className="w-full group transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+                disabled={isLoading}
               >
-                {isSignUp ? "Create Account" : "Sign in"}
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                    {isSignUp ? "Creating Account..." : "Signing in..."}
+                  </div>
+                ) : (
+                  <>
+                    {isSignUp ? "Create Account" : "Sign in"}
+                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>
