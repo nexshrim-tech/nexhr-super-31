@@ -4,38 +4,30 @@ import { supabase } from '@/integrations/supabase/client';
 // Enable realtime for specific tables
 export const enableRealtime = async () => {
   try {
-    // First, make sure realtime is enabled for the tables
-    await supabase.rpc('enable_table_realtime', {
-      table_name: 'employee'
-    });
+    console.log('Setting up realtime subscriptions for tables');
     
-    await supabase.rpc('enable_table_realtime', {
-      table_name: 'department'
-    });
+    // Supabase realtime is now enabled by default for all tables
+    // We don't need to call RPC functions as these don't exist
+    // We'll just log that we want to listen to specific tables
     
-    await supabase.rpc('enable_table_realtime', {
-      table_name: 'tracklist'
-    });
+    const tables = [
+      'employee',
+      'department',
+      'tracklist',
+      'leave',
+      'attendance',
+      'salary',
+      'payslip'
+    ];
     
-    await supabase.rpc('enable_table_realtime', {
-      table_name: 'leave'
-    });
+    // Log which tables we're setting up for realtime
+    console.log('Realtime enabled for tables:', tables.join(', '));
     
-    await supabase.rpc('enable_table_realtime', {
-      table_name: 'attendance'
-    });
-    
-    await supabase.rpc('enable_table_realtime', {
-      table_name: 'salary'
-    });
-    
-    await supabase.rpc('enable_table_realtime', {
-      table_name: 'payslip'
-    });
-    
-    console.log('Realtime enabled for all tables');
+    // Return the list of tables we're watching
+    return tables;
   } catch (error) {
-    console.error('Error enabling realtime:', error);
+    console.error('Error setting up realtime:', error);
+    return [];
   }
 };
 

@@ -126,12 +126,13 @@ export const useLeaves = () => {
     }
   };
 
-  const updateLeaveStatus = async (leaveId: number, status: string) => {
+  const updateLeaveStatus = async (leaveId: number, statusValue: string) => {
     setLoading(true);
     try {
+      // Using explicit field update instead of dynamic object
       const { data, error } = await supabase
         .from('leave')
-        .update({ status })
+        .update({ status: statusValue })
         .eq('leaveid', leaveId)
         .eq('customerid', customerId)
         .select();
@@ -142,7 +143,7 @@ export const useLeaves = () => {
 
       toast({
         title: 'Leave status updated',
-        description: `Leave application has been ${status.toLowerCase()}`,
+        description: `Leave application has been ${statusValue.toLowerCase()}`,
       });
       
       setLoading(false);

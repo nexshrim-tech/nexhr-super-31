@@ -9,7 +9,7 @@ type ChangeHandler = (payload: RealtimePostgresChangesPayload<any>) => void;
 
 export const useRealtime = (entity: Entity, events: Event[], onChanges: ChangeHandler) => {
   useEffect(() => {
-    // Enable specific entity changes
+    // Create channel with correct subscription format
     const channel = supabase
       .channel('schema-db-changes')
       .on(

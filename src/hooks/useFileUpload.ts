@@ -21,23 +21,20 @@ export const useFileUpload = (bucketName: string = 'documents') => {
         ? `${path}/${Date.now()}.${fileExt}`
         : `${Date.now()}.${fileExt}`;
       
-      // Upload the file with progress monitoring
+      // Upload the file without progress monitoring since it's not supported
       const { data, error } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: true,
-          onUploadProgress: (e) => {
-            if (e.total) {
-              const progress = Math.round((e.loaded / e.total) * 100);
-              setProgress(progress);
-            }
-          }
+          upsert: true
         });
       
       if (error) {
         throw error;
       }
+      
+      // Set progress to complete as we can't monitor it
+      setProgress(100);
       
       // Get public URL for the file
       const { data: { publicUrl } } = supabase.storage
@@ -45,7 +42,6 @@ export const useFileUpload = (bucketName: string = 'documents') => {
         .getPublicUrl(data.path);
       
       setIsUploading(false);
-      setProgress(100);
       
       toast({
         title: 'File uploaded',
