@@ -129,10 +129,10 @@ export const useLeaves = () => {
   const updateLeaveStatus = async (leaveId: number, statusValue: string) => {
     setLoading(true);
     try {
-      // Using explicit field update instead of dynamic object
+      // Using .update() with an object that only contains properties matching the table schema
       const { data, error } = await supabase
         .from('leave')
-        .update({ status: statusValue })
+        .update({ status: statusValue }) // This should match a valid column in the leave table
         .eq('leaveid', leaveId)
         .eq('customerid', customerId)
         .select();
