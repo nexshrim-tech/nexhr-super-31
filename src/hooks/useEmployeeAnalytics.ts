@@ -115,6 +115,7 @@ export const useEmployeeAnalytics = () => {
     };
   };
 
+  // Fix: Update React Query configuration to use onSettled/meta/onError options correctly
   const { data: analytics, isLoading: loading, refetch } = useQuery({
     queryKey: ['employee-analytics', customerId],
     queryFn: fetchAnalytics,
@@ -130,13 +131,15 @@ export const useEmployeeAnalytics = () => {
       genderDistribution: { male: 0, female: 0, other: 0 },
       attendanceSummary: { present: 0, absent: 0, late: 0 }
     },
-    onError: (error: any) => {
-      console.error('Error fetching analytics:', error);
-      toast({
-        title: 'Error fetching analytics',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+    meta: {
+      errorHandler: (error: any) => {
+        console.error('Error fetching analytics:', error);
+        toast({
+          title: 'Error fetching analytics',
+          description: error.message || 'An unexpected error occurred',
+          variant: 'destructive',
+        });
+      }
     }
   });
 
