@@ -34,7 +34,7 @@ export const useEmployeeAnalytics = () => {
       // Fetch total employees
       const { data: employeeData, error: employeeError } = await supabase
         .from('employee')
-        .select('employeeid, gender, joiningdate, firstname, lastname, profilepicturepath, jobtitle')
+        .select('employeeid, gender, joiningdate, firstname, lastname, profilepicturepath, jobtitle, department')
         .eq('customerid', customerId);
 
       if (employeeError) throw employeeError;
@@ -65,9 +65,10 @@ export const useEmployeeAnalytics = () => {
 
       // Department distribution
       const departmentCounts: { name: string; count: number }[] = [];
-      if (departmentData) {
+      if (departmentData && employeeData) {
         departmentData.forEach(dept => {
-          const count = employeeData?.filter(emp => emp.department === dept.departmentid).length || 0;
+          // Fix: Now we're correctly filtering employees by their department ID
+          const count = employeeData.filter(emp => emp.department === dept.departmentid).length || 0;
           departmentCounts.push({ 
             name: dept.departmentname || 'Unknown', 
             count 
