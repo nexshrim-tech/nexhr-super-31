@@ -1,3 +1,4 @@
+
 import React from "react";
 import { 
   Dialog, 
@@ -51,10 +52,15 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         
       if (planError) throw planError;
       
+      // Get current customer ID safely
+      const { data: customerId, error: customerIdError } = await supabase.rpc('get_current_customer_id');
+      
+      if (customerIdError) throw customerIdError;
+      
       const { error: updateError } = await supabase
         .from('customer')
         .update({ planid: planData.planid })
-        .eq('customerid', (await supabase.rpc('get_current_customer_id')));
+        .eq('customerid', customerId);
         
       if (updateError) throw updateError;
       

@@ -77,6 +77,14 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+  
+  // Helper function to safely trigger tab click
+  const switchTab = (tabValue: 'signin' | 'signup') => {
+    const tabElement = document.querySelector(`[data-value="${tabValue}"]`) as HTMLElement;
+    if (tabElement && tabElement.click) {
+      tabElement.click();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-100 p-4 flex items-center justify-center">
@@ -158,7 +166,7 @@ const Login = () => {
                 <p className="text-xs text-gray-500">
                   Don't have an account?{" "}
                   <button
-                    onClick={() => document.querySelector('[data-value="signup"]')?.click()}
+                    onClick={() => switchTab('signup')}
                     className="text-nexhr-primary hover:underline"
                   >
                     Sign Up
@@ -292,7 +300,7 @@ const Login = () => {
                 <p className="text-xs text-gray-500">
                   Already have an account?{" "}
                   <button
-                    onClick={() => document.querySelector('[data-value="signin"]')?.click()}
+                    onClick={() => switchTab('signin')}
                     className="text-nexhr-primary hover:underline"
                   >
                     Sign In
