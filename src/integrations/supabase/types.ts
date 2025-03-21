@@ -781,7 +781,7 @@ export type Database = {
           customer_id: number | null
           employee_id: number | null
           id: string
-          role: Database["public"]["Enums"]["user_role"]
+          role: string
           updated_at: string
         }
         Insert: {
@@ -789,7 +789,7 @@ export type Database = {
           customer_id?: number | null
           employee_id?: number | null
           id: string
-          role?: Database["public"]["Enums"]["user_role"]
+          role?: string
           updated_at?: string
         }
         Update: {
@@ -797,7 +797,7 @@ export type Database = {
           customer_id?: number | null
           employee_id?: number | null
           id?: string
-          role?: Database["public"]["Enums"]["user_role"]
+          role?: string
           updated_at?: string
         }
         Relationships: []

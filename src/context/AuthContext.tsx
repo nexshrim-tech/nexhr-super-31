@@ -36,12 +36,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // First set up the auth state listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, currentSession) => {
+          console.log('Auth state changed:', event, currentSession?.user?.id);
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           
           if (currentSession?.user) {
             const profileData = await fetchUserProfile(currentSession.user.id);
+            console.log('Profile data fetched:', profileData);
             if (profileData) {
+              // Check role as string instead of enum
               setIsAdmin(profileData.role === 'admin');
               setCustomerId(profileData.customer_id);
               setEmployeeId(profileData.employee_id);
@@ -69,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (currentSession?.user) {
         const profileData = await fetchUserProfile(currentSession.user.id);
         if (profileData) {
+          // Check role as string instead of enum
           setIsAdmin(profileData.role === 'admin');
           setCustomerId(profileData.customer_id);
           setEmployeeId(profileData.employee_id);

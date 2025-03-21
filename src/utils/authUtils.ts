@@ -55,13 +55,12 @@ export const createCustomerForAdmin = async (userId: string, userData: any, emai
     
     console.log('Customer created with ID:', customerData?.customerid);
     
-    // Update profile with customer ID using the RPC function
+    // Update profile with customer ID directly
     if (customerData?.customerid) {
       const { error: updateError } = await supabase
-        .rpc('update_profile_customer', { 
-          user_id: userId, 
-          customer_id_param: customerData.customerid 
-        });
+        .from('profiles')
+        .update({ customer_id: customerData.customerid })
+        .eq('id', userId);
         
       if (updateError) {
         console.error('Error updating profile with customer ID:', updateError);

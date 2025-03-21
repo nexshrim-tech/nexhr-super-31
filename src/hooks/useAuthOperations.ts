@@ -25,18 +25,18 @@ export const useAuthOperations = () => {
     }
   };
 
-  // Sign up new user - Simplified to avoid user_role enum issues
+  // Sign up new user with string role instead of enum
   const signUp = async (email: string, password: string, userData: any) => {
     try {
       console.log('Starting signup with data:', userData);
       
-      // First create the auth user with simplified metadata structure
+      // Create the auth user with string role
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            // Store as strings instead of enum values
+            // Store role as string
             role: userData.role || 'employee',
             name: userData.name || '',
           },
