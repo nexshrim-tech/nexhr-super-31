@@ -1197,6 +1197,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_profile_customer: {
+        Args: {
+          user_id: string
+          customer_id_param: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       user_role: "admin" | "employee"
