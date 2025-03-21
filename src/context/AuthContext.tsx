@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 import { resetUserState, fetchUserProfile } from '@/utils/authUtils';
 import { useAuthOperations } from '@/hooks/useAuthOperations';
 
@@ -28,11 +27,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [employeeId, setEmployeeId] = useState<number | null>(null);
   
-  const { signIn, signUp, signOut } = useAuthOperations();
+  const authOperations = useAuthOperations();
 
   // Initialize auth state and set up listener
   useEffect(() => {
-    const setupAuthStateListener = () => {
+    const setupAuthStateListener = async () => {
       // First set up the auth state listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, currentSession) => {
@@ -60,11 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       );
       
-      return subscription;
-    };
-    
-    const checkExistingSession = async () => {
-      // Then fetch the current session
+      // Check for existing session
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
@@ -80,15 +75,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       setLoading(false);
+      
+      return subscription;
     };
     
     // Set up auth listener and check for existing session
-    const subscription = setupAuthStateListener();
-    checkExistingSession();
-
+    const setupPromise = setupAuthStateListener();
+    
     // Cleanup function
     return () => {
-      subscription.unsubscribe();
+      setupPromise.then(subscription => subscription.unsubscribe());
     };
   }, []);
 
@@ -100,9 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAdmin,
     customerId,
     employeeId,
-    signIn,
-    signUp,
-    signOut,
+    ...authOperations
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

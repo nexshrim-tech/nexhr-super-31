@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Mail, Lock, User, ArrowLeft, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
+import { ArrowRight, Mail, Lock, User, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 
@@ -26,14 +25,15 @@ const Login = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const location = useLocation();
   const { signIn, signUp, user } = useAuth();
 
   useEffect(() => {
     if (user) {
-      navigate("/");
+      const from = location.state?.from || "/";
+      navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, location]);
 
   const validatePassword = () => {
     if (password !== confirmPassword) {
@@ -49,29 +49,9 @@ const Login = () => {
     setIsLoading(true);
     
     if (email && password) {
-      const { error } = await signIn(email, password);
-      
-      if (error) {
-        toast({
-          title: "Login failed",
-          description: error.message || "Please check your credentials and try again",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome to NexHR!",
-      });
+      await signIn(email, password);
       setIsLoading(false);
     } else {
-      toast({
-        title: "Login failed",
-        description: "Please enter valid credentials",
-        variant: "destructive",
-      });
       setIsLoading(false);
     }
   };
@@ -81,17 +61,12 @@ const Login = () => {
     setIsLoading(true);
     
     if (!validatePassword()) {
-      toast({
-        title: "Password mismatch",
-        description: "Please ensure both passwords match",
-        variant: "destructive",
-      });
       setIsLoading(false);
       return;
     }
     
     if (name && email && password && companyName && phoneNumber && companySize) {
-      const { error } = await signUp(email, password, {
+      await signUp(email, password, {
         name: name,
         role: isAdmin ? 'admin' : 'employee',
         companyName: companyName,
@@ -99,29 +74,8 @@ const Login = () => {
         companySize: companySize
       });
       
-      if (error) {
-        toast({
-          title: "Sign up failed",
-          description: error.message || "Error during sign up",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      toast({
-        title: "Sign up successful",
-        description: "Welcome to NexHR! Please check your email to verify your account.",
-      });
-      
-      setIsSignUp(false);
       setIsLoading(false);
     } else {
-      toast({
-        title: "Sign up failed",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
       setIsLoading(false);
     }
   };

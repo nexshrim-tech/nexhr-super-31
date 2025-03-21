@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
 interface PrivateRouteProps {
@@ -13,6 +13,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   requireAdmin = false 
 }) => {
   const { user, loading, isAdmin } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -22,9 +23,9 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
     );
   }
 
-  // If not authenticated, redirect to login
+  // If not authenticated, redirect to login with return URL
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   // If admin access is required but user is not admin

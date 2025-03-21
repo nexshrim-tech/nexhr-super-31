@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { createCustomerForAdmin } from '@/utils/authUtils';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 export const useAuthOperations = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
@@ -15,17 +17,33 @@ export const useAuthOperations = () => {
         password,
       });
 
-      if (error) return { error };
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message || "Please check your credentials",
+          variant: "destructive",
+        });
+        return { error };
+      }
       
-      // User is automatically set by the onAuthStateChange listener
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      navigate('/');
       return { error: null };
     } catch (error) {
       console.error('Error during sign in:', error);
+      toast({
+        title: "Error during login",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
       return { error };
     }
   };
 
-  // Sign up new user with string role instead of enum
+  // Sign up new user with string role
   const signUp = async (email: string, password: string, userData: any) => {
     try {
       console.log('Starting signup with data:', userData);
@@ -45,6 +63,11 @@ export const useAuthOperations = () => {
 
       if (authError) {
         console.error('Auth signup error:', authError);
+        toast({
+          title: "Signup failed",
+          description: authError.message || "Error during signup",
+          variant: "destructive",
+        });
         return { error: authError, data: null };
       }
       
@@ -54,13 +77,28 @@ export const useAuthOperations = () => {
       if (userData.role === 'admin' && authData.user) {
         const result = await createCustomerForAdmin(authData.user.id, userData, email);
         if (result.error) {
+          toast({
+            title: "Customer creation failed",
+            description: "Your account was created but customer setup failed",
+            variant: "warning",
+          });
           return { error: result.error, data: authData };
         }
       }
 
+      toast({
+        title: "Signup successful",
+        description: "Your account has been created",
+      });
+      navigate('/');
       return { data: authData, error: null };
     } catch (error) {
       console.error('Error during sign up:', error);
+      toast({
+        title: "Signup error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
       return { error, data: null };
     }
   };
@@ -69,9 +107,18 @@ export const useAuthOperations = () => {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully",
+      });
       navigate('/login');
     } catch (error) {
       console.error('Error during sign out:', error);
+      toast({
+        title: "Logout failed",
+        description: "An error occurred during logout",
+        variant: "destructive",
+      });
     }
   };
 
