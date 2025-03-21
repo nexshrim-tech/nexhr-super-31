@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +35,8 @@ import {
   AlertTriangle,
   ChevronRight,
   Upload,
-  Download
+  Download,
+  RefreshCw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/select";
 import ProjectEdit from "@/components/project/ProjectEdit";
 import ResourceManagement from "@/components/project/ResourceManagement";
+import { Label } from "@/components/ui/label";
 
 // Sample data for projects
 const sampleEmployees = [
@@ -61,6 +62,7 @@ const sampleEmployees = [
 const sampleProjects = [
   {
     id: 1,
+    projectId: "PRJ-001-XYZ123",
     name: "Website Redesign",
     description: "Redesign the company website to improve user experience",
     status: "in-progress",
@@ -81,6 +83,7 @@ const sampleProjects = [
   },
   {
     id: 2,
+    projectId: "PRJ-002-ABC456",
     name: "HR System Integration",
     description: "Integrate the new HR system with existing company software",
     status: "planned",
@@ -100,6 +103,7 @@ const sampleProjects = [
   },
   {
     id: 3,
+    projectId: "PRJ-003-DEF789",
     name: "Employee Training Program",
     description: "Develop training materials for new employee onboarding",
     status: "completed",
@@ -139,8 +143,27 @@ const ProjectManagement = () => {
     status: "planned",
     priority: "medium",
     dueDate: "",
-    assignees: [] as number[]
+    assignees: [] as number[],
+    projectId: ""
   });
+  
+  // Generate project ID function
+  const generateProjectId = () => {
+    const prefix = "PRJ-";
+    const number = String(projects.length + 1).padStart(3, '0');
+    const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `${prefix}${number}-${randomId}`;
+  };
+  
+  // Generate a project ID for the new project form
+  useEffect(() => {
+    if (isCreateProjectOpen && !newProject.projectId) {
+      setNewProject(prev => ({
+        ...prev,
+        projectId: generateProjectId()
+      }));
+    }
+  }, [isCreateProjectOpen]);
 
   // Form states for new task
   const [newTask, setNewTask] = useState({
@@ -161,6 +184,7 @@ const ProjectManagement = () => {
     const project = {
       id: projects.length + 1,
       ...newProject,
+      projectId: newProject.projectId || generateProjectId(),
       progress: 0,
       tasks: [],
       comments: []
@@ -174,7 +198,8 @@ const ProjectManagement = () => {
       status: "planned",
       priority: "medium",
       dueDate: "",
-      assignees: []
+      assignees: [],
+      projectId: ""
     });
 
     toast({
@@ -282,6 +307,13 @@ const ProjectManagement = () => {
       title: "Project updated",
       description: "The project details have been updated successfully"
     });
+  };
+
+  const refreshProjectId = () => {
+    setNewProject(prev => ({
+      ...prev,
+      projectId: generateProjectId()
+    }));
   };
 
   // Filter projects based on search and status
@@ -432,6 +464,10 @@ const ProjectManagement = () => {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-6">
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-medium">Project ID:</div>
+                              <div className="text-sm">{selectedProject.projectId}</div>
+                            </div>
                             <div>
                               <h3 className="text-sm font-medium mb-2">Progress</h3>
                               <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -511,6 +547,10 @@ const ProjectManagement = () => {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-4">
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-500">Project ID</h3>
+                              <p>{selectedProject.projectId || "Not assigned"}</p>
+                            </div>
                             <div>
                               <h3 className="text-sm font-medium text-gray-500">Status</h3>
                               <p className="capitalize">{selectedProject.status.replace("-", " ")}</p>
@@ -680,6 +720,30 @@ const ProjectManagement = () => {
                       </DialogHeader>
                       <div className="space-y-4 py-4">
                         <div className="space-y-2">
+                          <Label htmlFor="project-id" className="text-sm font-medium">
+                            Project ID
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="project-id"
+                              value={newProject.projectId}
+                              onChange={(e) => setNewProject({...newProject, projectId: e.target.value})}
+                              placeholder="Generated project ID"
+                              className="flex-1"
+                            />
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="icon"
+                              onClick={refreshProjectId}
+                              className="h-10 w-10"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      
+                        <div className="space-y-2">
                           <label htmlFor="project-name" className="text-sm font-medium">
                             Project Name
                           </label>
@@ -797,125 +861,4 @@ const ProjectManagement = () => {
                         <Button variant="outline" onClick={() => setIsCreateProjectOpen(false)}>
                           Cancel
                         </Button>
-                        <Button onClick={handleCreateProject} disabled={!newProject.name}>
-                          Create Project
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProjects.length > 0 ? (
-                  filteredProjects.map((project) => (
-                    <Card 
-                      key={project.id} 
-                      className="hover:border-blue-200 cursor-pointer transition-all hover:shadow-md"
-                      onClick={() => setSelectedProject(project)}
-                    >
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center">
-                            <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)} mr-2`} />
-                            <CardTitle className="text-base">{project.name}</CardTitle>
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="cursor-pointer">
-                                <Edit3 className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="cursor-pointer text-red-500">
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-2">
-                        <p className="text-sm text-gray-500 line-clamp-2 h-10 mb-2">
-                          {project.description}
-                        </p>
-                        
-                        <div className="w-full bg-gray-200 rounded-full h-1.5 mb-4">
-                          <div 
-                            className="bg-blue-600 h-1.5 rounded-full" 
-                            style={{ width: `${project.progress}%` }}
-                          ></div>
-                        </div>
-                        
-                        <div className="flex justify-between text-xs text-gray-500 mb-4">
-                          <span>{project.progress}% complete</span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {project.dueDate}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex -space-x-2">
-                            {project.assignees.slice(0, 3).map((assigneeId, index) => {
-                              const employee = sampleEmployees.find(e => e.id === assigneeId);
-                              return employee ? (
-                                <Avatar key={employee.id} className="h-7 w-7 border-2 border-white">
-                                  <AvatarFallback>{employee.avatar}</AvatarFallback>
-                                </Avatar>
-                              ) : null;
-                            })}
-                            {project.assignees.length > 3 && (
-                              <div className="h-7 w-7 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-600">
-                                +{project.assignees.length - 3}
-                              </div>
-                            )}
-                          </div>
-                          <Badge 
-                            variant="outline" 
-                            className={`${getPriorityColor(project.priority)}`}
-                          >
-                            {project.priority}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="lg:col-span-3 text-center py-12">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-4 text-lg font-medium">No projects found</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Create a new project or adjust your filters
-                    </p>
-                    <Button 
-                      className="mt-4"
-                      onClick={() => setIsCreateProjectOpen(true)}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Create Project
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Project Edit Dialog */}
-      <ProjectEdit 
-        open={isEditProjectOpen}
-        onOpenChange={setIsEditProjectOpen}
-        project={selectedProject || {}}
-        onSave={handleSaveProjectEdits}
-      />
-    </div>
-  );
-};
-
-export default ProjectManagement;
+                        <Button onClick={handleCreateProject} disabled={!newProject.

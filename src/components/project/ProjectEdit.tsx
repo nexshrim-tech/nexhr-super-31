@@ -13,6 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RefreshCw } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 // Sample employee data
 const sampleEmployees = [
@@ -41,7 +43,8 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
     assignees: [] as number[],
     progress: 0,
     tasks: [] as any[],
-    comments: [] as any[]
+    comments: [] as any[],
+    projectId: ''
   });
 
   useEffect(() => {
@@ -51,10 +54,25 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
       
       setEditedProject({
         ...project,
-        assignees
+        assignees,
+        projectId: project.projectId || generateProjectId()
       });
     }
   }, [project]);
+
+  const generateProjectId = () => {
+    const prefix = "PRJ-";
+    const number = String(project.id || 1).padStart(3, '0');
+    const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `${prefix}${number}-${randomId}`;
+  };
+
+  const refreshProjectId = () => {
+    setEditedProject(prev => ({
+      ...prev,
+      projectId: generateProjectId()
+    }));
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -101,6 +119,30 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
           <DialogTitle>Edit Project</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="project-id-edit" className="text-sm font-medium">
+              Project ID
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="project-id-edit"
+                name="projectId"
+                value={editedProject.projectId}
+                onChange={handleInputChange}
+                className="flex-1"
+              />
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="icon"
+                onClick={refreshProjectId}
+                className="h-10 w-10"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
           <div className="space-y-2">
             <label htmlFor="project-name" className="text-sm font-medium">
               Project Name
