@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,8 +22,9 @@ const Login = () => {
   const { signIn, signUp, user } = useAuth();
 
   // Redirect if already logged in
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) {
+      console.log("User already logged in, redirecting to home");
       navigate("/");
     }
   }, [user, navigate]);
@@ -33,10 +34,16 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      console.log("Handling sign in for:", email);
       await signIn(email, password);
-      // Auth context will automatically redirect on success
-    } catch (error) {
-      console.error("Login error:", error);
+      // Auth context will handle redirect and toast notification
+    } catch (error: any) {
+      console.error("Login error in component:", error);
+      toast({
+        title: "Login failed",
+        description: error.message || "Please check your credentials",
+        variant: "destructive",
+      });
       setIsLoading(false);
     }
   };
@@ -56,6 +63,7 @@ const Login = () => {
     }
 
     try {
+      console.log("Handling sign up for:", email);
       await signUp(email, password, {
         name,
         companyName,
@@ -63,17 +71,14 @@ const Login = () => {
         companySize,
       });
       
-      // Mark as new user to trigger subscription modal
-      localStorage.setItem("new-user", "true");
-      
-      toast({
-        title: "Account created successfully",
-        description: "Welcome to NexHR! Please choose a subscription plan to continue.",
-      });
-      
-      // Auth context will handle redirect on successful signup
+      // Auth context will handle redirect and notifications
     } catch (error: any) {
-      console.error("Signup error:", error);
+      console.error("Signup error in component:", error);
+      toast({
+        title: "Sign up failed",
+        description: error.message || "Please try again later",
+        variant: "destructive",
+      });
       setIsLoading(false);
     }
   };
@@ -98,8 +103,8 @@ const Login = () => {
 
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid grid-cols-2 w-full mb-4">
-            <TabsTrigger value="signin">Sign In</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="signin" data-value="signin">Sign In</TabsTrigger>
+            <TabsTrigger value="signup" data-value="signup">Sign Up</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin">

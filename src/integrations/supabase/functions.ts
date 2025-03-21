@@ -13,6 +13,7 @@ export const signInWithEmail = async (email: string, password: string) => {
 };
 
 export const signUpWithEmail = async (email: string, password: string, userData: any) => {
+  // First create the user in Supabase Auth
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -20,7 +21,7 @@ export const signUpWithEmail = async (email: string, password: string, userData:
       data: {
         first_name: userData.name?.split(' ')[0] || '',
         last_name: userData.name?.split(' ').slice(1).join(' ') || '',
-        role: 'employee',
+        role: 'admin',
         company_name: userData.companyName,
         phone_number: userData.phoneNumber,
         company_size: userData.companySize
@@ -29,7 +30,15 @@ export const signUpWithEmail = async (email: string, password: string, userData:
   });
   
   if (error) throw error;
-  return data;
+  
+  // After successful signup, we should check that the user was created properly
+  if (data.user) {
+    console.log("User created successfully:", data.user.id);
+    // Return the data with both user and session
+    return data;
+  } else {
+    throw new Error("User creation appeared to succeed but no user data was returned");
+  }
 };
 
 export const signOut = async () => {
@@ -99,5 +108,22 @@ export const getEmployeeDetails = async (employeeId: number) => {
     .single();
   
   if (error) throw error;
+  return data;
+};
+
+export const fetchUserProfile = async (userId: string) => {
+  if (!userId) return null;
+  
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
+  }
+  
   return data;
 };

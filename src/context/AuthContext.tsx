@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log("Auth state change event:", event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setLoading(false);
@@ -36,18 +38,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_IN') {
           // Fetch employee ID when signed in
           fetchEmployeeId(currentSession?.user?.id);
+          console.log("User signed in:", currentSession?.user?.id);
         } else if (event === 'SIGNED_OUT') {
           setEmployeeId(null);
+          console.log("User signed out");
         }
       }
     );
 
     // Then check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Existing session check:", currentSession ? "Found" : "None");
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
+        console.log("Found existing user session:", currentSession.user.id);
         // Fetch employee ID for existing session
         fetchEmployeeId(currentSession.user.id);
       }
@@ -64,16 +70,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!userId) return;
     
     try {
+      console.log("Fetching employee ID for user:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('employee_id')
         .eq('id', userId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching employee ID:", error);
+        throw error;
+      }
       
+      console.log("Profile data:", data);
       if (data && data.employee_id) {
         setEmployeeId(data.employee_id);
+        console.log("Set employee ID:", data.employee_id);
       }
     } catch (error) {
       console.error('Error fetching employee ID:', error);
@@ -83,14 +95,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log("Attempting sign in for:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
       
-      // Fetch customer ID or employee ID after login
+      console.log("Sign in successful:", data);
+      // Fetch user associations after login
       if (data.user) {
         await fetchUserAssociations(data.user.id);
       }
@@ -116,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, userData: any) => {
     try {
       setLoading(true);
+      console.log("Attempting sign up for:", email, "with data:", userData);
       
       // Create the user in Supabase Auth
       const { data, error } = await supabase.auth.signUp({
@@ -133,18 +151,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Sign up error:", error);
+        throw error;
+      }
+      
+      console.log("Sign up response:", data);
       
       // Set default subscription as None
       localStorage.setItem("subscription-plan", "None");
       localStorage.setItem("new-user", "true");
       
-      toast({
-        title: "Sign up successful",
-        description: "Welcome to NexHR! Please check your email to verify your account.",
-      });
-      
-      navigate("/");
+      // Check if user was created correctly
+      if (data.user) {
+        console.log("User created successfully with ID:", data.user.id);
+        
+        // If we have a session, the user was created successfully and we can redirect
+        if (data.session) {
+          console.log("Session created with sign up, navigating to home");
+          setSession(data.session);
+          setUser(data.user);
+          
+          toast({
+            title: "Sign up successful",
+            description: "Welcome to NexHR!",
+          });
+          
+          navigate("/");
+        } else {
+          console.log("No session with sign up, email confirmation may be required");
+          toast({
+            title: "Sign up successful",
+            description: "Please check your email to verify your account.",
+          });
+        }
+      } else {
+        console.error("Sign up appeared to succeed but no user was created");
+        toast({
+          title: "Sign up issue",
+          description: "Account created but there was an issue. Please try logging in.",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       console.error("Sign up error:", error);
       toast({
@@ -159,14 +207,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserAssociations = async (userId: string) => {
     try {
+      console.log("Fetching user associations for:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('employee_id, customer_id, role')
         .eq('id', userId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching user associations:", error);
+        throw error;
+      }
       
+      console.log("User associations:", data);
       if (data) {
         if (data.employee_id) {
           setEmployeeId(data.employee_id);
@@ -181,9 +234,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      console.log("Signing out user");
       await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setEmployeeId(null);
       navigate("/login");
     } catch (error: any) {
+      console.error("Sign out error:", error);
       toast({
         title: "Sign out failed",
         description: error.message,
