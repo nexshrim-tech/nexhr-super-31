@@ -1,4 +1,3 @@
-
 declare namespace google {
   namespace maps {
     class Map {

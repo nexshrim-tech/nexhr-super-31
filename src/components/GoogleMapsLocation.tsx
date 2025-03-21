@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,11 +28,9 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const { toast } = useToast();
   
-  // References for map objects
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   
-  // Load API key from localStorage if available
   useEffect(() => {
     const savedKey = localStorage.getItem('google-maps-api-key');
     if (savedKey) {
@@ -43,7 +40,6 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
     }
   }, []);
   
-  // Function to save API key and reload
   const saveApiKey = () => {
     if (!googleMapsApiKey) {
       toast({
@@ -59,9 +55,7 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
     loadGoogleMapsScript(googleMapsApiKey);
   };
   
-  // Load Google Maps script
   const loadGoogleMapsScript = (apiKey: string) => {
-    // Check if script already exists
     if (document.getElementById('google-maps-script')) return;
     
     const script = document.createElement('script');
@@ -86,14 +80,12 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
     document.head.appendChild(script);
   };
   
-  // Initialize map after script loads
   useEffect(() => {
     if (mapLoaded && mapRef.current && window.google && window.google.maps) {
       initializeMap();
     }
   }, [mapLoaded, employeeData]);
   
-  // Load script if API key is available
   useEffect(() => {
     if (googleMapsApiKey && !showApiKeyInput) {
       loadGoogleMapsScript(googleMapsApiKey);
@@ -103,10 +95,8 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
   const initializeMap = () => {
     if (!mapRef.current || !window.google || !window.google.maps) return;
     
-    // Default location (center of India)
     const defaultLocation = { lat: 20.5937, lng: 78.9629 };
     
-    // Create map instance
     const mapOptions: google.maps.MapOptions = {
       zoom: 5,
       center: defaultLocation,
@@ -118,11 +108,9 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
     
     mapInstanceRef.current = new google.maps.Map(mapRef.current, mapOptions);
     
-    // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
     
-    // Add markers for employees
     employeeData.forEach(employee => {
       if (employee.latitude && employee.longitude) {
         const marker = new google.maps.Marker({
@@ -132,7 +120,6 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
           animation: google.maps.Animation.DROP,
         });
         
-        // Add info window
         const infoContent = `
           <div style="padding: 10px;">
             <h3 style="margin: 0 0 8px; font-weight: 600;">${employee.firstname} ${employee.lastname}</h3>
@@ -152,15 +139,12 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
       }
     });
     
-    // Add user location tracking if not in read-only mode
     if (!readOnly && onLocationUpdate && mapInstanceRef.current) {
-      // Add click listener for location selection
       google.maps.event.addListener(mapInstanceRef.current, 'click', (e: google.maps.MapMouseEvent) => {
         if (e.latLng) {
           const lat = e.latLng.lat();
           const lng = e.latLng.lng();
           
-          // Clear current location marker and add new one
           markersRef.current.forEach(marker => marker.setMap(null));
           markersRef.current = [];
           
@@ -173,12 +157,10 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
           
           markersRef.current.push(marker);
           
-          // Update location via callback
           onLocationUpdate(lat, lng);
         }
       });
       
-      // Add button to get current location
       const locationButton = document.createElement("button");
       locationButton.textContent = "Current Location";
       locationButton.classList.add(
@@ -198,7 +180,6 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
                 mapInstanceRef.current.setCenter(pos);
                 mapInstanceRef.current.setZoom(15);
                 
-                // Clear current location marker and add new one
                 markersRef.current.forEach(marker => marker.setMap(null));
                 markersRef.current = [];
                 
@@ -211,7 +192,6 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
                 
                 markersRef.current.push(marker);
                 
-                // Update location via callback
                 onLocationUpdate(pos.lat, pos.lng);
               }
             },
@@ -232,15 +212,12 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
         }
       });
       
-      // Add the control to the map
-      if (mapInstanceRef.current.controls && google.maps.ControlPosition) {
-        mapInstanceRef.current.controls[google.maps.ControlPosition.TOP_RIGHT].push(
-          locationButton
-        );
-      }
+      const controlPosition = google.maps.ControlPosition.TOP_RIGHT;
+      const controlArray = mapInstanceRef.current.controls[controlPosition];
+      
+      controlArray.push(locationButton);
     }
     
-    // Fit bounds if there are markers
     if (markersRef.current.length > 0) {
       const bounds = new google.maps.LatLngBounds();
       markersRef.current.forEach(marker => {
@@ -248,7 +225,6 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
       });
       mapInstanceRef.current.fitBounds(bounds);
       
-      // Don't zoom in too close if only one marker
       if (markersRef.current.length === 1 && mapInstanceRef.current.getZoom() > 15) {
         mapInstanceRef.current.setZoom(15);
       }
