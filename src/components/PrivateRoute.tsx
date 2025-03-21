@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
@@ -14,17 +14,6 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
 }) => {
   const { user, loading, isAdmin } = useAuth();
   const location = useLocation();
-
-  useEffect(() => {
-    if (!loading) {
-      console.log('Auth state in PrivateRoute:', { 
-        authenticated: !!user, 
-        isAdmin, 
-        loading, 
-        path: location.pathname 
-      });
-    }
-  }, [loading, user, isAdmin, location.pathname]);
 
   if (loading) {
     return (

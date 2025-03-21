@@ -13,10 +13,6 @@ const Logout = () => {
     const performLogout = async () => {
       try {
         await signOut();
-        toast({
-          title: "Logged out successfully",
-          description: "You have been logged out of your account.",
-        });
       } catch (error) {
         console.error("Error during logout:", error);
         toast({
