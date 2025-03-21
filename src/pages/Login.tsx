@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowRight, Mail, Lock, User, ArrowLeft, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
+import { ArrowRight, Mail, Lock, User, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -26,6 +27,13 @@ const Login = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, signUp, user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const validatePassword = () => {
     if (password !== confirmPassword) {
@@ -36,15 +44,10 @@ const Login = () => {
     return true;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add your authentication logic here
     if (email && password) {
-      toast({
-        title: "Login successful",
-        description: "Welcome to NexHR!",
-      });
-      navigate("/");
+      await signIn(email, password);
     } else {
       toast({
         title: "Login failed",
@@ -54,7 +57,7 @@ const Login = () => {
     }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate password match
@@ -67,18 +70,15 @@ const Login = () => {
       return;
     }
     
-    // Add your sign up logic here
     if (name && email && password && companyName && phoneNumber && companySize) {
-      // Mark as new user to show subscription modal on first dashboard load
-      localStorage.setItem("new-user", "true");
-      // Set default subscription as None
-      localStorage.setItem("subscription-plan", "None");
+      const userData = {
+        name,
+        companyName,
+        phoneNumber,
+        companySize
+      };
       
-      toast({
-        title: "Sign up successful",
-        description: "Welcome to NexHR! Please check your email to verify your account.",
-      });
-      navigate("/");
+      await signUp(email, password, userData);
     } else {
       toast({
         title: "Sign up failed",

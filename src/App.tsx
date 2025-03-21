@@ -24,6 +24,7 @@ import AllEmployees from "@/pages/AllEmployees";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
 import SubscriptionModal from "./components/SubscriptionModal";
 import { useSubscription } from "./context/SubscriptionContext";
+import { AuthProvider } from "./context/AuthContext";
 
 function SubscriptionModalWrapper() {
   const { showSubscriptionModal, setShowSubscriptionModal, setPlan, plan } = useSubscription();
@@ -75,10 +76,12 @@ function AppRoutes() {
 
 function App() {
   return (
-    <SubscriptionProvider>
-      <AppRoutes />
-      <Toaster />
-    </SubscriptionProvider>
+    <AuthProvider>
+      <SubscriptionProvider>
+        <AppRoutes />
+        <Toaster />
+      </SubscriptionProvider>
+    </AuthProvider>
   );
 }
 
