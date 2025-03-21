@@ -1,16 +1,17 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { createCustomerForAdmin } from '@/utils/authUtils';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 export const useAuthOperations = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -23,6 +24,7 @@ export const useAuthOperations = () => {
           description: error.message || "Please check your credentials",
           variant: "destructive",
         });
+        setIsLoading(false);
         return { error };
       }
       
@@ -31,6 +33,7 @@ export const useAuthOperations = () => {
         description: "Welcome back!",
       });
       navigate('/');
+      setIsLoading(false);
       return { error: null };
     } catch (error) {
       console.error('Error during sign in:', error);
@@ -39,24 +42,25 @@ export const useAuthOperations = () => {
         description: "An unexpected error occurred",
         variant: "destructive",
       });
+      setIsLoading(false);
       return { error };
     }
   };
 
-  // Sign up new user with string role
+  // Sign up new user
   const signUp = async (email: string, password: string, userData: any) => {
+    setIsLoading(true);
     try {
       console.log('Starting signup with data:', userData);
       
-      // Create the auth user with string role
+      // Create the auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            // Store role as string
-            role: userData.role || 'employee',
             name: userData.name || '',
+            role: userData.isAdmin ? 'admin' : 'employee',
           },
         },
       });
@@ -68,21 +72,51 @@ export const useAuthOperations = () => {
           description: authError.message || "Error during signup",
           variant: "destructive",
         });
+        setIsLoading(false);
         return { error: authError, data: null };
       }
       
       console.log('Auth signup successful:', authData);
       
-      // Handle admin user customer creation
-      if (userData.role === 'admin' && authData.user) {
-        const result = await createCustomerForAdmin(authData.user.id, userData, email);
-        if (result.error) {
+      // If user is admin, create a customer record
+      if (userData.isAdmin && authData.user) {
+        const { data: customerData, error: customerError } = await supabase
+          .from('customer')
+          .insert({
+            name: userData.companyName,
+            email: email,
+            phonenumber: userData.phoneNumber || '',
+            companysize: userData.companySize || ''
+          })
+          .select('customerid')
+          .single();
+          
+        if (customerError) {
+          console.error('Customer creation error:', customerError);
           toast({
             title: "Customer creation failed",
             description: "Your account was created but customer setup failed",
-            variant: "destructive", // Changed from "warning" to "destructive" to fix the type error
+            variant: "destructive",
           });
-          return { error: result.error, data: authData };
+          setIsLoading(false);
+          return { error: customerError, data: authData };
+        }
+        
+        if (customerData) {
+          // Update profile with customer ID
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ customer_id: customerData.customerid })
+            .eq('id', authData.user.id);
+            
+          if (profileError) {
+            console.error('Profile update error:', profileError);
+            toast({
+              title: "Profile update failed",
+              description: "Customer record created but profile update failed",
+              variant: "destructive",
+            });
+          }
         }
       }
 
@@ -91,6 +125,7 @@ export const useAuthOperations = () => {
         description: "Your account has been created",
       });
       navigate('/');
+      setIsLoading(false);
       return { data: authData, error: null };
     } catch (error) {
       console.error('Error during sign up:', error);
@@ -99,12 +134,14 @@ export const useAuthOperations = () => {
         description: "An unexpected error occurred",
         variant: "destructive",
       });
+      setIsLoading(false);
       return { error, data: null };
     }
   };
 
   // Sign out
   const signOut = async () => {
+    setIsLoading(true);
     try {
       await supabase.auth.signOut();
       toast({
@@ -119,12 +156,15 @@ export const useAuthOperations = () => {
         description: "An error occurred during logout",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
     signIn,
     signUp,
-    signOut
+    signOut,
+    isLoading
   };
 };

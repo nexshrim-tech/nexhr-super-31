@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,6 @@ const Login = () => {
   const [passwordError, setPasswordError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -26,8 +26,9 @@ const Login = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, isLoading } = useAuth();
 
+  // If user is already logged in, redirect to home or the page they were trying to access
   useEffect(() => {
     if (user) {
       const from = location.state?.from || "/";
@@ -46,37 +47,29 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
     if (email && password) {
       await signIn(email, password);
-      setIsLoading(false);
-    } else {
-      setIsLoading(false);
     }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
     if (!validatePassword()) {
-      setIsLoading(false);
       return;
     }
     
-    if (name && email && password && companyName && phoneNumber && companySize) {
-      await signUp(email, password, {
-        name: name,
-        role: isAdmin ? 'admin' : 'employee',
-        companyName: companyName,
-        phoneNumber: phoneNumber,
-        companySize: companySize
-      });
+    if (name && email && password) {
+      const userData = {
+        name,
+        isAdmin,
+        companyName: companyName || name + "'s Company", // Fallback company name
+        phoneNumber: phoneNumber || "",
+        companySize: companySize || "1-10"
+      };
       
-      setIsLoading(false);
-    } else {
-      setIsLoading(false);
+      await signUp(email, password, userData);
     }
   };
 
@@ -173,56 +166,58 @@ const Login = () => {
                     </div>
                   </div>
                   
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="companyName" className="flex items-center">
-                      <Building2 className="h-4 w-4 mr-2 text-gray-500" />
-                      Company Name
-                    </Label>
-                    <Input
-                      id="companyName"
-                      type="text"
-                      placeholder="Acme Inc."
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      required
-                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="phoneNumber" className="flex items-center">
-                      <Phone className="h-4 w-4 mr-2 text-gray-500" />
-                      Phone Number
-                    </Label>
-                    <Input
-                      id="phoneNumber"
-                      type="tel"
-                      placeholder="+1 (555) 123-4567"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      required
-                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="companySize" className="flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-gray-500" />
-                      Company Size
-                    </Label>
-                    <Select value={companySize} onValueChange={setCompanySize} required>
-                      <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
-                        <SelectValue placeholder="Select company size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1-10">1-10 employees</SelectItem>
-                        <SelectItem value="11-50">11-50 employees</SelectItem>
-                        <SelectItem value="51-200">51-200 employees</SelectItem>
-                        <SelectItem value="201-500">201-500 employees</SelectItem>
-                        <SelectItem value="501+">501+ employees</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {isAdmin && (
+                    <>
+                      <div className="space-y-2 animate-fade-in">
+                        <Label htmlFor="companyName" className="flex items-center">
+                          <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+                          Company Name
+                        </Label>
+                        <Input
+                          id="companyName"
+                          type="text"
+                          placeholder="Acme Inc."
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2 animate-fade-in">
+                        <Label htmlFor="phoneNumber" className="flex items-center">
+                          <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                          Phone Number
+                        </Label>
+                        <Input
+                          id="phoneNumber"
+                          type="tel"
+                          placeholder="+1 (555) 123-4567"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2 animate-fade-in">
+                        <Label htmlFor="companySize" className="flex items-center">
+                          <Users className="h-4 w-4 mr-2 text-gray-500" />
+                          Company Size
+                        </Label>
+                        <Select value={companySize} onValueChange={setCompanySize}>
+                          <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
+                            <SelectValue placeholder="Select company size" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1-10">1-10 employees</SelectItem>
+                            <SelectItem value="11-50">11-50 employees</SelectItem>
+                            <SelectItem value="51-200">51-200 employees</SelectItem>
+                            <SelectItem value="201-500">201-500 employees</SelectItem>
+                            <SelectItem value="501+">501+ employees</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
               
