@@ -139,14 +139,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       console.log("Attempting sign up for:", email, "with data:", userData);
       
+      const nameParts = userData.name.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
       // Create the user in Supabase Auth with metadata
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            first_name: userData.name?.split(' ')[0] || '',
-            last_name: userData.name?.split(' ').slice(1).join(' ') || '',
+            full_name: userData.name,
             company_name: userData.companyName,
             phone_number: userData.phoneNumber,
             company_size: userData.companySize,
@@ -165,6 +168,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check if user was created successfully
       if (data.user) {
         console.log("User created successfully with ID:", data.user.id);
+        
+        // Manually create a profile since the trigger might be failing
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            role: 'admin'
+          });
+          
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+        } else {
+          console.log("Profile created successfully");
+        }
+        
+        // Create customer record manually since the trigger might be failing
+        const { data: customerData, error: customerError } = await supabase
+          .from('customer')
+          .insert({
+            name: userData.companyName,
+            email: email,
+            planid: 1, // Using default plan ID
+            companysize: userData.companySize,
+            phonenumber: userData.phoneNumber
+          })
+          .select();
+          
+        if (customerError) {
+          console.error("Error creating customer:", customerError);
+        } else if (customerData && customerData.length > 0) {
+          console.log("Customer created successfully:", customerData[0]);
+          
+          // Update profile with customer_id
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ customer_id: customerData[0].customerid })
+            .eq('id', data.user.id);
+            
+          if (updateError) {
+            console.error("Error updating profile with customer ID:", updateError);
+          } else {
+            console.log("Profile updated with customer ID");
+          }
+        }
         
         toast({
           title: "Sign up successful",
@@ -196,31 +243,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchUserAssociations = async (userId: string) => {
-    try {
-      console.log("Fetching user associations for:", userId);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('employee_id, customer_id, role')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error("Error fetching user associations:", error);
-        return;
-      }
-      
-      console.log("User associations:", data);
-      if (data) {
-        if (data.employee_id) {
-          setEmployeeId(data.employee_id);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching user associations:', error);
     }
   };
 

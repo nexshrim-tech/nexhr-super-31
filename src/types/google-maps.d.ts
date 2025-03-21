@@ -1,4 +1,19 @@
+
 declare namespace google.maps {
+  class Map {
+    constructor(mapDiv: Element, options?: MapOptions);
+    setCenter(latLng: LatLng | LatLngLiteral): void;
+    setZoom(zoom: number): void;
+    panTo(latLng: LatLng | LatLngLiteral): void;
+    controls: MVCArray<Node>[][];
+  }
+  
+  class Marker {
+    constructor(opts?: MarkerOptions);
+    setPosition(latLng: LatLng | LatLngLiteral): void;
+    setMap(map: Map | null): void;
+  }
+  
   class MVCArray<T> {
     constructor(array?: T[]);
     clear(): void;
@@ -13,5 +28,39 @@ declare namespace google.maps {
     forEach(callback: (elem: T, i: number) => void): void;
   }
   
-  // Add any other Google Maps types needed
+  interface MapOptions {
+    center?: LatLng | LatLngLiteral;
+    zoom?: number;
+    mapTypeControl?: boolean;
+    streetViewControl?: boolean;
+    fullscreenControl?: boolean;
+  }
+  
+  interface MarkerOptions {
+    position?: LatLng | LatLngLiteral;
+    map?: Map;
+    title?: string;
+  }
+  
+  interface LatLng {
+    lat(): number;
+    lng(): number;
+  }
+  
+  interface LatLngLiteral {
+    lat: number;
+    lng: number;
+  }
+  
+  interface MouseEvent {
+    latLng: LatLng;
+  }
+  
+  namespace event {
+    function addListener(instance: any, eventName: string, handler: Function): any;
+  }
+  
+  namespace ControlPosition {
+    const RIGHT_BOTTOM: number;
+  }
 }

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 
 interface GoogleMapsLocationProps {
@@ -27,7 +28,7 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({ apiKey, default
     };
 
     const initMap = () => {
-      if (mapRef.current && window.google) {
+      if (mapRef.current && window.google && window.google.maps) {
         const mapInstance = new window.google.maps.Map(mapRef.current, {
           center: defaultLocation,
           zoom: 12,
@@ -64,7 +65,9 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({ apiKey, default
         locationButton.style.fontSize = "1.5rem";
 
         // Add the button to the map
-        mapInstance.controls[window.google.maps.ControlPosition.RIGHT_BOTTOM].push(locationButton);
+        if (mapInstance.controls && window.google.maps.ControlPosition) {
+          mapInstance.controls[window.google.maps.ControlPosition.RIGHT_BOTTOM].push(locationButton);
+        }
 
         locationButton.addEventListener("click", () => {
           if (navigator.geolocation) {
@@ -87,15 +90,17 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({ apiKey, default
           }
         });
 
-        window.google.maps.event.addListener(mapInstance, 'click', (event: google.maps.MouseEvent) => {
-          const newLocation = {
-            lat: event.latLng.lat(),
-            lng: event.latLng.lng()
-          };
+        if (window.google.maps.event) {
+          window.google.maps.event.addListener(mapInstance, 'click', (event: google.maps.MouseEvent) => {
+            const newLocation = {
+              lat: event.latLng.lat(),
+              lng: event.latLng.lng()
+            };
 
-          initialMarker.setPosition(newLocation);
-          mapInstance.panTo(newLocation);
-        });
+            initialMarker.setPosition(newLocation);
+            mapInstance.panTo(newLocation);
+          });
+        }
       }
     };
 
