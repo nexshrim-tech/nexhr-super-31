@@ -14,18 +14,18 @@ export const useRealtime = (entity: Entity, events: Event[], onChanges: ChangeHa
     // Create a channel with a specific name
     const channelName = `${entity}-changes`;
     
-    // Build the channel with correct event configuration
+    // Create the channel
     const channel = supabase.channel(channelName);
     
-    // Add subscription for each event type separately
+    // Add event listeners for each event type
     events.forEach(event => {
       channel.on(
-        'postgres_changes',
-        {
-          event: event,
-          schema: 'public',
-          table: entity
-        },
+        'postgres_changes', 
+        { 
+          event: event, 
+          schema: 'public', 
+          table: entity 
+        }, 
         (payload) => {
           console.log(`Realtime change detected for ${entity} (${event}):`, payload);
           onChanges(payload);

@@ -17,12 +17,10 @@ export const enableRealtime = async () => {
       'payslip'
     ];
     
-    // Activate realtime for each table
-    for (const table of tables) {
-      // Note: In newer Supabase versions, realtime is enabled by default
-      // So we just log that we're subscribing to these tables
+    // Log that we're subscribing to these tables
+    tables.forEach(table => {
       console.log(`Enabling realtime for table: ${table}`);
-    }
+    });
     
     console.log('Realtime enabled for tables:', tables.join(', '));
     
