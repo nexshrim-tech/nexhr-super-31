@@ -11,24 +11,32 @@ export const useRealtime = (entity: Entity, events: Event[], onChanges: ChangeHa
   useEffect(() => {
     console.log(`Setting up realtime subscription for ${entity} table, events: ${events.join(', ')}`);
     
-    // Create a channel using the proper Supabase realtime API format
-    const channel = supabase
-      .channel(`${entity}-changes`)
-      .on(
-        'postgres_changes', 
-        { 
-          event: events,
+    // Create a channel with a specific name
+    const channelName = `${entity}-changes`;
+    
+    // Build the channel with correct event configuration
+    const channel = supabase.channel(channelName);
+    
+    // Add subscription for each event type separately
+    events.forEach(event => {
+      channel.on(
+        'postgres_changes',
+        {
+          event: event,
           schema: 'public',
           table: entity
         },
         (payload) => {
-          console.log(`Realtime change detected for ${entity}:`, payload);
+          console.log(`Realtime change detected for ${entity} (${event}):`, payload);
           onChanges(payload);
         }
-      )
-      .subscribe((status) => {
-        console.log(`Subscription status for ${entity}:`, status);
-      });
+      );
+    });
+    
+    // Subscribe to the channel
+    channel.subscribe((status) => {
+      console.log(`Subscription status for ${entity}:`, status);
+    });
 
     console.log(`Subscribed to realtime changes for ${entity} table, events: ${events.join(', ')}`);
 
