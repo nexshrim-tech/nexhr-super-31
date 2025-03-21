@@ -62,6 +62,14 @@ declare namespace google {
       BOTTOM_RIGHT: number;
     }
 
+    namespace event {
+      function addListener(instance: object, eventName: string, handler: (...args: any[]) => void): MapsEventListener;
+      function removeListener(listener: MapsEventListener): void;
+      function clearInstanceListeners(instance: object): void;
+    }
+
+    const ControlPosition: ControlPosition;
+
     interface MapOptions {
       center?: LatLng | LatLngLiteral;
       zoom?: number;

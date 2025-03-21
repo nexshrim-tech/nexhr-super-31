@@ -88,7 +88,7 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
   
   // Initialize map after script loads
   useEffect(() => {
-    if (mapLoaded && mapRef.current && window.google) {
+    if (mapLoaded && mapRef.current && window.google && window.google.maps) {
       initializeMap();
     }
   }, [mapLoaded, employeeData]);
@@ -101,7 +101,7 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
   }, [googleMapsApiKey, showApiKeyInput]);
   
   const initializeMap = () => {
-    if (!mapRef.current || !window.google) return;
+    if (!mapRef.current || !window.google || !window.google.maps) return;
     
     // Default location (center of India)
     const defaultLocation = { lat: 20.5937, lng: 78.9629 };
@@ -153,9 +153,9 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
     });
     
     // Add user location tracking if not in read-only mode
-    if (!readOnly && onLocationUpdate) {
+    if (!readOnly && onLocationUpdate && mapInstanceRef.current) {
       // Add click listener for location selection
-      mapInstanceRef.current.addListener('click', (e: google.maps.MapMouseEvent) => {
+      google.maps.event.addListener(mapInstanceRef.current, 'click', (e: google.maps.MapMouseEvent) => {
         if (e.latLng) {
           const lat = e.latLng.lat();
           const lng = e.latLng.lng();
@@ -232,9 +232,12 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
         }
       });
       
-      mapInstanceRef.current.controls[google.maps.ControlPosition.TOP_RIGHT].push(
-        locationButton
-      );
+      // Add the control to the map
+      if (mapInstanceRef.current.controls && google.maps.ControlPosition) {
+        mapInstanceRef.current.controls[google.maps.ControlPosition.TOP_RIGHT].push(
+          locationButton
+        );
+      }
     }
     
     // Fit bounds if there are markers
