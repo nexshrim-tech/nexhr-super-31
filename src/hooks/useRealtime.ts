@@ -11,11 +11,11 @@ export const useRealtime = (entity: Entity, events: Event[], onChanges: ChangeHa
   useEffect(() => {
     console.log(`Setting up realtime subscription for ${entity} table, events: ${events.join(', ')}`);
     
-    // Create channel with correct subscription format
+    // Create a channel with the correct format for Supabase JS client
     const channel = supabase
       .channel(`${entity}-changes`)
       .on(
-        'postgres_changes',
+        'postgres_changes', // This is the correct event type
         { 
           event: events,
           schema: 'public',
