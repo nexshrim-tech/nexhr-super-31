@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Loader2, CheckCircle } from "lucide-react";
 
 const Login = () => {
+  const [activeTab, setActiveTab] = useState("signin");
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +20,7 @@ const Login = () => {
   const [companySize, setCompanySize] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, loading: authLoading } = useAuth();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -31,37 +32,42 @@ const Login = () => {
 
   const handleSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
-    setIsLoading(true);
+    
+    if (!email || !password) {
+      toast({
+        title: "Missing information",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    setIsLoading(true);
     try {
       console.log("Handling sign in for:", email);
       await signIn(email, password);
       // Auth context will handle redirect and toast notification
     } catch (error: any) {
       console.error("Login error in component:", error);
-      toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials",
-        variant: "destructive",
-      });
+      // Error handling is done in the AuthContext
+    } finally {
       setIsLoading(false);
     }
   };
 
   const handleSignUp = async (event: React.FormEvent) => {
     event.preventDefault();
-    setIsLoading(true);
-
+    
     if (!name || !email || !password || !companyName || !phoneNumber || !companySize) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields.",
         variant: "destructive",
       });
-      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     try {
       console.log("Handling sign up for:", email);
       await signUp(email, password, {
@@ -70,26 +76,34 @@ const Login = () => {
         phoneNumber,
         companySize,
       });
-      
       // Auth context will handle redirect and notifications
     } catch (error: any) {
       console.error("Signup error in component:", error);
-      toast({
-        title: "Sign up failed",
-        description: error.message || "Please try again later",
-        variant: "destructive",
-      });
+      // Error handling is done in the AuthContext
+    } finally {
       setIsLoading(false);
     }
   };
   
   // Helper function to safely trigger tab click
   const switchTab = (tabValue: 'signin' | 'signup') => {
+    setActiveTab(tabValue);
     const tabElement = document.querySelector(`[data-value="${tabValue}"]`) as HTMLElement;
     if (tabElement && tabElement.click) {
       tabElement.click();
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-100 p-4 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-12 w-12 animate-spin text-nexhr-primary" />
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-100 p-4 flex items-center justify-center">
@@ -101,7 +115,7 @@ const Login = () => {
           <p className="text-gray-600 mt-2">HR Management & Payroll Solution</p>
         </div>
 
-        <Tabs defaultValue="signin" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-2 w-full mb-4">
             <TabsTrigger value="signin" data-value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup" data-value="signup">Sign Up</TabsTrigger>

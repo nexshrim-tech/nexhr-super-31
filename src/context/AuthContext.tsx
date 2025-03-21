@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error("Error fetching employee ID:", error);
-        throw error;
+        return;
       }
       
       console.log("Profile data:", data);
@@ -107,10 +107,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       console.log("Sign in successful:", data);
-      // Fetch user associations after login
-      if (data.user) {
-        await fetchUserAssociations(data.user.id);
-      }
       
       toast({
         title: "Login successful",
@@ -125,17 +121,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message || "Please check your credentials",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
+    if (!email || !password || !userData.name || !userData.companyName) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
       console.log("Attempting sign up for:", email, "with data:", userData);
       
-      // Create the user in Supabase Auth
+      // Create the user in Supabase Auth with metadata
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -143,10 +147,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             first_name: userData.name?.split(' ')[0] || '',
             last_name: userData.name?.split(' ').slice(1).join(' ') || '',
-            role: 'admin',
             company_name: userData.companyName,
             phone_number: userData.phoneNumber,
-            company_size: userData.companySize
+            company_size: userData.companySize,
+            role: 'admin'
           }
         }
       });
@@ -158,46 +162,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log("Sign up response:", data);
       
-      // Set default subscription as None
-      localStorage.setItem("subscription-plan", "None");
-      localStorage.setItem("new-user", "true");
-      
-      // Check if user was created correctly
+      // Check if user was created successfully
       if (data.user) {
         console.log("User created successfully with ID:", data.user.id);
         
-        // If we have a session, the user was created successfully and we can redirect
+        toast({
+          title: "Sign up successful",
+          description: "Your account has been created.",
+        });
+        
+        // If we have a session, the user was auto-confirmed
         if (data.session) {
           console.log("Session created with sign up, navigating to home");
-          setSession(data.session);
-          setUser(data.user);
-          
-          toast({
-            title: "Sign up successful",
-            description: "Welcome to NexHR!",
-          });
-          
           navigate("/");
         } else {
-          console.log("No session with sign up, email confirmation may be required");
+          // User might need to confirm their email
           toast({
-            title: "Sign up successful",
-            description: "Please check your email to verify your account.",
+            title: "Email verification",
+            description: "Please check your email to verify your account before logging in.",
           });
+          // Automatically switch to login tab
+          navigate("/login");
         }
       } else {
-        console.error("Sign up appeared to succeed but no user was created");
-        toast({
-          title: "Sign up issue",
-          description: "Account created but there was an issue. Please try logging in.",
-          variant: "destructive",
-        });
+        throw new Error("Failed to create user account");
       }
     } catch (error: any) {
       console.error("Sign up error:", error);
       toast({
         title: "Sign up failed",
-        description: error.message || "Please fill in all required fields",
+        description: error.message || "Please try again later",
         variant: "destructive",
       });
     } finally {
@@ -216,7 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error("Error fetching user associations:", error);
-        throw error;
+        return;
       }
       
       console.log("User associations:", data);
@@ -224,8 +218,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data.employee_id) {
           setEmployeeId(data.employee_id);
         }
-        
-        // Handle any additional profile data that's needed
       }
     } catch (error) {
       console.error('Error fetching user associations:', error);
@@ -259,7 +251,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signUp,
         signOut,
         loading,
-        isLoading: loading, // Alias for compatibility
+        isLoading: loading,
         employeeId
       }}
     >
