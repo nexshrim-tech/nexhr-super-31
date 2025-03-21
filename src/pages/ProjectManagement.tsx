@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -861,4 +862,138 @@ const ProjectManagement = () => {
                         <Button variant="outline" onClick={() => setIsCreateProjectOpen(false)}>
                           Cancel
                         </Button>
-                        <Button onClick={handleCreateProject} disabled={!newProject.
+                        <Button onClick={handleCreateProject} disabled={!newProject.name}>
+                          Create Project
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+              
+              {/* Projects Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredProjects.map(project => (
+                  <Card key={project.id} className="transition-shadow hover:shadow-md">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)} mr-2`} />
+                          <p className="text-xs text-gray-500">{project.projectId}</p>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setSelectedProject(project)}>
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedProject(project);
+                              setIsEditProjectOpen(true);
+                            }}>
+                              Edit
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <CardTitle className="text-lg mt-2 cursor-pointer" onClick={() => setSelectedProject(project)}>
+                        {project.name}
+                      </CardTitle>
+                      <div className="flex items-center mt-1 gap-2">
+                        <Badge variant="outline" className={getPriorityColor(project.priority)}>
+                          {project.priority}
+                        </Badge>
+                        <Badge variant="outline" className="capitalize">
+                          {project.status.replace('-', ' ')}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-500 line-clamp-2 min-h-[40px]">
+                        {project.description}
+                      </p>
+                      
+                      <div className="mt-4">
+                        <div className="flex justify-between text-xs text-gray-500 mb-1">
+                          <span>Progress</span>
+                          <span>{project.progress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div 
+                            className="bg-blue-600 h-1.5 rounded-full" 
+                            style={{ width: `${project.progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="flex -space-x-2">
+                          {project.assignees.slice(0, 3).map((assigneeId) => {
+                            const employee = sampleEmployees.find(e => e.id === assigneeId);
+                            return employee ? (
+                              <Avatar key={assigneeId} className="border-2 border-white h-7 w-7">
+                                <AvatarFallback className="text-xs">{employee.avatar}</AvatarFallback>
+                              </Avatar>
+                            ) : null;
+                          })}
+                          {project.assignees.length > 3 && (
+                            <div className="flex items-center justify-center h-7 w-7 rounded-full bg-gray-200 text-xs font-medium">
+                              +{project.assignees.length - 3}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {project.dueDate}
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="pt-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full justify-start text-gray-600 hover:text-gray-900"
+                        onClick={() => setSelectedProject(project)}
+                      >
+                        View Details
+                        <ChevronRight className="ml-auto h-4 w-4" />
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+              
+              {filteredProjects.length === 0 && (
+                <div className="text-center py-12 border border-dashed rounded-md mt-6">
+                  <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-4 text-lg font-medium">No Projects Found</h3>
+                  <p className="mt-1 text-gray-500">
+                    Try adjusting your search or filter criteria
+                  </p>
+                  <Button className="mt-4" onClick={() => setIsCreateProjectOpen(true)}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Create New Project
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Edit Project Dialog */}
+      <ProjectEdit
+        open={isEditProjectOpen}
+        onOpenChange={setIsEditProjectOpen}
+        project={selectedProject}
+        onSave={handleSaveProjectEdits}
+      />
+    </div>
+  );
+};
+
+export default ProjectManagement;
