@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { ChevronLeft, Upload, FileText, ArrowLeftCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const AddEmployee = () => {
   const navigate = useNavigate();
@@ -30,7 +32,9 @@ const AddEmployee = () => {
     employeeId: "",
     joinDate: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    bloodGroup: "",
+    hasDisability: false
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formProgress, setFormProgress] = useState(0);
@@ -99,8 +103,14 @@ const AddEmployee = () => {
     setFormData(prev => ({ ...prev, [id]: value }));
     
     const totalFields = Object.keys(formData).length;
-    const filledFields = Object.values(formData).filter(val => val.trim() !== "").length;
+    const filledFields = Object.values(formData).filter(val => 
+      typeof val === "string" ? val.trim() !== "" : true
+    ).length;
     setFormProgress(Math.floor((filledFields / totalFields) * 100));
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, hasDisability: checked }));
   };
 
   const handleSelectChange = (value: string, field: string) => {
@@ -292,6 +302,25 @@ const AddEmployee = () => {
                           </Select>
                         </div>
                         <div className="space-y-2">
+                          <Label htmlFor="bloodGroup">Blood Group</Label>
+                          <Select onValueChange={(value) => handleSelectChange(value, "bloodGroup")}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select blood group" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="A+">A+</SelectItem>
+                              <SelectItem value="A-">A-</SelectItem>
+                              <SelectItem value="B+">B+</SelectItem>
+                              <SelectItem value="B-">B-</SelectItem>
+                              <SelectItem value="AB+">AB+</SelectItem>
+                              <SelectItem value="AB-">AB-</SelectItem>
+                              <SelectItem value="O+">O+</SelectItem>
+                              <SelectItem value="O-">O-</SelectItem>
+                              <SelectItem value="unknown">Unknown</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
                           <Label htmlFor="nationality">Nationality</Label>
                           <Input id="nationality" placeholder="Enter nationality" onChange={handleInputChange} />
                         </div>
@@ -308,6 +337,21 @@ const AddEmployee = () => {
                               <SelectItem value="widowed">Widowed</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                        <div className="space-y-2 pt-2 col-span-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="hasDisability" 
+                              checked={formData.hasDisability}
+                              onCheckedChange={handleCheckboxChange}
+                            />
+                            <Label htmlFor="hasDisability" className="font-medium text-gray-700">
+                              Person with disability
+                            </Label>
+                          </div>
+                          <p className="text-xs text-gray-500 pl-6">
+                            This information is kept confidential and will only be used for inclusive workplace accommodations.
+                          </p>
                         </div>
                       </div>
                       <div className="flex justify-end space-x-2 pt-4">
