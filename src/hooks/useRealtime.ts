@@ -19,15 +19,19 @@ export const useRealtime = (entity: Entity, events: Event[], onChanges: ChangeHa
     
     // Add event listeners for each event type
     events.forEach(event => {
-      // Using the correct syntax for the current version of Supabase JS client
-      channel.on('postgres_changes', { 
-        event: event, 
-        schema: 'public', 
-        table: entity 
-      } as any, (payload) => {
-        console.log(`Realtime change detected for ${entity} (${event}):`, payload);
-        onChanges(payload);
-      });
+      // Using the correct syntax for the Supabase JS client
+      channel.on(
+        'postgres_changes', 
+        { 
+          event: event, 
+          schema: 'public', 
+          table: entity 
+        }, 
+        (payload) => {
+          console.log(`Realtime change detected for ${entity} (${event}):`, payload);
+          onChanges(payload);
+        }
+      );
     });
     
     // Subscribe to the channel

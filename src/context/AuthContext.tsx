@@ -11,6 +11,8 @@ type AuthContextType = {
   loading: boolean;
   isAdmin: boolean;
   customerId: number | null;
+  employeeId: number | null;  // Added missing property
+  isLoading: boolean;         // Added missing property
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, userData: any) => Promise<{ error: any, data: any }>;
   signOut: () => Promise<void>;
@@ -24,6 +26,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [customerId, setCustomerId] = useState<number | null>(null);
+  const [employeeId, setEmployeeId] = useState<number | null>(null); // Added state for employeeId
+  const [isLoading, setIsLoading] = useState(false); // Added state for isLoading
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -31,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
+      setIsLoading(true); // Set loading state when signing in
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -59,12 +64,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
       return { error };
+    } finally {
+      setIsLoading(false); // Reset loading state after signing in completes
     }
   };
 
   // Sign up new user
   const signUp = async (email: string, password: string, userData: any) => {
     try {
+      setIsLoading(true); // Set loading state when signing up
       console.log('Starting signup with data:', userData);
       
       // Create the auth user
@@ -147,12 +155,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
       return { error, data: null };
+    } finally {
+      setIsLoading(false); // Reset loading state after signing up completes
     }
   };
 
   // Sign out
   const signOut = async () => {
     try {
+      setIsLoading(true); // Set loading state when signing out
       await supabase.auth.signOut();
       toast({
         title: "Logged out",
@@ -166,6 +177,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "An error occurred during logout",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false); // Reset loading state after signing out completes
     }
   };
 
@@ -191,13 +204,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (!error && profileData) {
                 setIsAdmin(profileData.role === 'admin');
                 setCustomerId(profileData.customer_id);
+                setEmployeeId(profileData.employee_id || null); // Set employeeId from profile data
               } else {
                 setIsAdmin(false);
                 setCustomerId(null);
+                setEmployeeId(null);
               }
             } else {
               setIsAdmin(false);
               setCustomerId(null);
+              setEmployeeId(null);
             }
             
             setLoading(false);
@@ -220,9 +236,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!error && profileData) {
             setIsAdmin(profileData.role === 'admin');
             setCustomerId(profileData.customer_id);
+            setEmployeeId(profileData.employee_id || null); // Set employeeId from profile data
           } else {
             setIsAdmin(false);
             setCustomerId(null);
+            setEmployeeId(null);
           }
         }
         
@@ -254,6 +272,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     isAdmin,
     customerId,
+    employeeId,      // Include employeeId in the context value
+    isLoading,       // Include isLoading in the context value
     signIn,
     signUp,
     signOut,
