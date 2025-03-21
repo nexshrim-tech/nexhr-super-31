@@ -19,8 +19,6 @@ export type Database = {
           billpath: string | null
           customerid: number | null
           employeeid: number | null
-          new_customerid: string | null
-          new_employeeid: string | null
           purchasedate: string | null
           serialnumber: string | null
         }
@@ -33,8 +31,6 @@ export type Database = {
           billpath?: string | null
           customerid?: number | null
           employeeid?: number | null
-          new_customerid?: string | null
-          new_employeeid?: string | null
           purchasedate?: string | null
           serialnumber?: string | null
         }
@@ -47,8 +43,6 @@ export type Database = {
           billpath?: string | null
           customerid?: number | null
           employeeid?: number | null
-          new_customerid?: string | null
-          new_employeeid?: string | null
           purchasedate?: string | null
           serialnumber?: string | null
         }
@@ -75,8 +69,6 @@ export type Database = {
           checkouttimestamp: string | null
           customerid: number | null
           employeeid: number | null
-          new_customerid: string | null
-          new_employeeid: string | null
           selfieimagepath: string | null
           status: string | null
         }
@@ -85,8 +77,6 @@ export type Database = {
           checkouttimestamp?: string | null
           customerid?: number | null
           employeeid?: number | null
-          new_customerid?: string | null
-          new_employeeid?: string | null
           selfieimagepath?: string | null
           status?: string | null
         }
@@ -95,8 +85,6 @@ export type Database = {
           checkouttimestamp?: string | null
           customerid?: number | null
           employeeid?: number | null
-          new_customerid?: string | null
-          new_employeeid?: string | null
           selfieimagepath?: string | null
           status?: string | null
         }
@@ -208,7 +196,6 @@ export type Database = {
           departmentname: string | null
           departmentstatus: string | null
           managerid: number | null
-          new_customerid: string | null
           numberofemployees: number | null
         }
         Insert: {
@@ -218,7 +205,6 @@ export type Database = {
           departmentname?: string | null
           departmentstatus?: string | null
           managerid?: number | null
-          new_customerid?: string | null
           numberofemployees?: number | null
         }
         Update: {
@@ -228,7 +214,6 @@ export type Database = {
           departmentname?: string | null
           departmentstatus?: string | null
           managerid?: number | null
-          new_customerid?: string | null
           numberofemployees?: number | null
         }
         Relationships: [
@@ -272,8 +257,6 @@ export type Database = {
           leavebalance: number | null
           maritalstatus: string | null
           nationality: string | null
-          new_customerid: string | null
-          new_employeeid: string | null
           profilepicturepath: string | null
           state: string | null
           worklocation: string | null
@@ -302,8 +285,6 @@ export type Database = {
           leavebalance?: number | null
           maritalstatus?: string | null
           nationality?: string | null
-          new_customerid?: string | null
-          new_employeeid?: string | null
           profilepicturepath?: string | null
           state?: string | null
           worklocation?: string | null
@@ -332,8 +313,6 @@ export type Database = {
           leavebalance?: number | null
           maritalstatus?: string | null
           nationality?: string | null
-          new_customerid?: string | null
-          new_employeeid?: string | null
           profilepicturepath?: string | null
           state?: string | null
           worklocation?: string | null

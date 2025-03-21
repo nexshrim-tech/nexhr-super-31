@@ -13,9 +13,11 @@ type AuthContextType = {
   isAdmin: boolean;
   customerId: number | null;
   employeeId: number | null;
+  userProfile: any | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, userData: any) => Promise<{ error: any, data: any }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,8 +29,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [employeeId, setEmployeeId] = useState<number | null>(null);
+  const [userProfile, setUserProfile] = useState<any | null>(null);
   
   const authOperations = useAuthOperations();
+
+  // Function to refresh user profile data
+  const refreshProfile = async () => {
+    if (user) {
+      const profileData = await fetchUserProfile(user.id);
+      if (profileData) {
+        setIsAdmin(profileData.role === 'admin');
+        setCustomerId(profileData.customer_id);
+        setEmployeeId(profileData.employee_id);
+        setUserProfile(profileData);
+      }
+    }
+  };
 
   // Initialize auth state and set up listener
   useEffect(() => {
@@ -47,12 +63,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setIsAdmin(profileData.role === 'admin');
               setCustomerId(profileData.customer_id);
               setEmployeeId(profileData.employee_id);
+              setUserProfile(profileData);
             }
           } else {
             const defaultState = resetUserState();
             setIsAdmin(defaultState.isAdmin);
             setCustomerId(defaultState.customerId);
             setEmployeeId(defaultState.employeeId);
+            setUserProfile(null);
           }
           
           setLoading(false);
@@ -70,6 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAdmin(profileData.role === 'admin');
           setCustomerId(profileData.customer_id);
           setEmployeeId(profileData.employee_id);
+          setUserProfile(profileData);
         }
       }
       
@@ -95,7 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAdmin,
     customerId,
     employeeId,
+    userProfile,
     isLoading: authOperations.isLoading,
+    refreshProfile,
     ...authOperations
   };
 
