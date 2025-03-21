@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Mail, Lock, User, ArrowLeft, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -92,46 +91,12 @@ const Login = () => {
     }
     
     if (name && email && password && companyName && phoneNumber && companySize) {
-      let customerId = null;
-      
-      if (isAdmin) {
-        try {
-          const { data: customerData, error: customerError } = await supabase
-            .from('customer')
-            .insert({
-              name: companyName,
-              email: email,
-              phonenumber: phoneNumber,
-              companysize: companySize
-            })
-            .select('customerid')
-            .single();
-          
-          if (customerError) {
-            toast({
-              title: "Sign up failed",
-              description: customerError.message || "Error creating company record",
-              variant: "destructive",
-            });
-            setIsLoading(false);
-            return;
-          }
-          
-          customerId = customerData?.customerid;
-        } catch (error: any) {
-          toast({
-            title: "Sign up failed",
-            description: error.message || "Error during sign up process",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          return;
-        }
-      }
-      
       const { error } = await signUp(email, password, {
+        name: name,
         role: isAdmin ? 'admin' : 'employee',
-        customerId: customerId
+        companyName: companyName,
+        phoneNumber: phoneNumber,
+        companySize: companySize
       });
       
       if (error) {
