@@ -27,7 +27,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Trash } from "lucide-react";
+import { PlusCircle, Trash, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Define types
@@ -50,6 +50,7 @@ const ResourceManagement: React.FC<ResourceManagementProps> = ({ projectId }) =>
     assignedTo: "",
   });
   const [internalProjectId, setInternalProjectId] = useState("");
+  const [isEditingProjectId, setIsEditingProjectId] = useState(false);
   const { toast } = useToast();
 
   // Generate a random project ID on component mount
@@ -70,6 +71,10 @@ const ResourceManagement: React.FC<ResourceManagementProps> = ({ projectId }) =>
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleProjectIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInternalProjectId(e.target.value);
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -127,8 +132,20 @@ const ResourceManagement: React.FC<ResourceManagementProps> = ({ projectId }) =>
         <div className="flex items-center gap-3">
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Project ID</Label>
-            <div className="flex items-center bg-muted px-3 py-1 rounded-md text-sm font-medium">
-              {internalProjectId}
+            <div className="flex items-center">
+              <Input
+                value={internalProjectId}
+                onChange={handleProjectIdChange}
+                className="h-8 w-[180px] text-sm"
+              />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="ml-1 h-8 px-2" 
+                onClick={generateProjectId}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </div>
           </div>
           <Dialog>

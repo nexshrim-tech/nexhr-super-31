@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Edit3,
+  Hash,
+  RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, setHours, setMinutes, parse, isToday, isTomorrow, isYesterday } from "date-fns";
@@ -79,6 +81,7 @@ const sampleMeetings = [
     attendees: [1, 2, 3, 4, 5],
     status: "upcoming",
     meetUrl: "https://meet.google.com/abc-defg-hij",
+    meetingId: "M-ABC123",
   },
   {
     id: 2,
@@ -89,6 +92,7 @@ const sampleMeetings = [
     attendees: [1, 3, 5],
     status: "upcoming",
     meetUrl: "https://meet.google.com/klm-nopq-rst",
+    meetingId: "M-DEF456",
   },
   {
     id: 3,
@@ -99,6 +103,7 @@ const sampleMeetings = [
     attendees: [2, 4],
     status: "completed",
     meetUrl: "https://meet.google.com/uvw-xyz-123",
+    meetingId: "M-GHI789",
   },
 ];
 
@@ -122,6 +127,22 @@ const Meetings = () => {
     attendees: [] as number[],
     meetUrl: ""
   });
+
+  // Meeting ID state
+  const [meetingId, setMeetingId] = useState("");
+  const [searchAttendees, setSearchAttendees] = useState("");
+
+  // Generate random meeting ID on dialog open
+  useEffect(() => {
+    if (isCreateMeetingOpen) {
+      generateMeetingId();
+    }
+  }, [isCreateMeetingOpen]);
+
+  const generateMeetingId = () => {
+    const randomId = "M-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    setMeetingId(randomId);
+  };
 
   const handleCreateMeeting = () => {
     if (!newMeeting.title) {
@@ -161,7 +182,8 @@ const Meetings = () => {
       endTime: format(endDate, "yyyy-MM-dd'T'HH:mm"),
       attendees: newMeeting.attendees.length > 0 ? newMeeting.attendees : [1], // Default to current user
       status: "upcoming",
-      meetUrl: newMeeting.meetUrl || mockMeetUrl
+      meetUrl: newMeeting.meetUrl || mockMeetUrl,
+      meetingId: meetingId
     };
 
     setMeetings([...meetings, meeting]);
@@ -178,7 +200,7 @@ const Meetings = () => {
 
     toast({
       title: "Meeting scheduled",
-      description: `${meeting.title} has been scheduled successfully`
+      description: `${meeting.title} has been scheduled successfully with ID: ${meetingId}`
     });
   };
 
@@ -216,6 +238,13 @@ const Meetings = () => {
     
     return matchesSearch && matchesDate && matchesTab;
   });
+
+  // Filter employees for attendee selection
+  const filteredEmployees = sampleEmployees.filter(employee => 
+    !searchAttendees || 
+    employee.name.toLowerCase().includes(searchAttendees.toLowerCase()) ||
+    employee.email.toLowerCase().includes(searchAttendees.toLowerCase())
+  );
 
   const formatMeetingTime = (startTime: string, endTime: string) => {
     const start = new Date(startTime);
@@ -296,6 +325,31 @@ const Meetings = () => {
                         />
                       </div>
                       <div className="space-y-2">
+                        <label htmlFor="meeting-id" className="text-sm font-medium">
+                          Meeting ID
+                        </label>
+                        <div className="flex">
+                          <Input
+                            id="meeting-id"
+                            placeholder="Meeting ID"
+                            value={meetingId}
+                            onChange={(e) => setMeetingId(e.target.value)}
+                            className="flex-1 rounded-r-none border-r-0"
+                          />
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            className="rounded-l-none border-l-0"
+                            onClick={generateMeetingId}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Auto-generated meeting ID (editable)
+                        </p>
+                      </div>
+                      <div className="space-y-2">
                         <label htmlFor="meeting-description" className="text-sm font-medium">
                           Description (Optional)
                         </label>
@@ -345,9 +399,19 @@ const Meetings = () => {
                         <label className="text-sm font-medium">
                           Attendees
                         </label>
+                        <div className="relative mb-2">
+                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                          <Input
+                            type="search"
+                            placeholder="Search employees..."
+                            className="pl-8 w-full"
+                            value={searchAttendees}
+                            onChange={(e) => setSearchAttendees(e.target.value)}
+                          />
+                        </div>
                         <ScrollArea className="h-[150px] border rounded-md p-2">
                           <div className="space-y-2">
-                            {sampleEmployees.map((employee) => (
+                            {filteredEmployees.map((employee) => (
                               <div key={employee.id} className="flex items-center space-x-2">
                                 <input
                                   type="checkbox"
@@ -463,6 +527,9 @@ const Meetings = () => {
                                 <p className="text-sm font-medium truncate">{meeting.title}</p>
                                 <p className="text-xs text-gray-500">
                                   {formatMeetingTime(meeting.startTime, meeting.endTime)}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  ID: {meeting.meetingId}
                                 </p>
                               </div>
                               <Button 
@@ -632,6 +699,7 @@ const Meetings = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="p-4 bg-gray-50 rounded-md mt-2">
+                <p className="text-sm font-medium mb-2">Meeting ID: {selectedMeeting?.meetingId}</p>
                 <p className="text-sm font-medium mb-2">Meeting Link</p>
                 <div className="flex items-center gap-2">
                   <Input value={selectedMeeting?.meetUrl} readOnly />

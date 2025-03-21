@@ -24,7 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, CalendarDays, Clock, Users, Hash } from "lucide-react";
+import { Check, ChevronsUpDown, CalendarDays, Clock, Users, Hash, RefreshCw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -84,6 +84,10 @@ const ScheduleMeetingForm: React.FC<ScheduleMeetingFormProps> = ({ onSchedule })
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleMeetingIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMeetingId(e.target.value);
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,8 +152,8 @@ const ScheduleMeetingForm: React.FC<ScheduleMeetingFormProps> = ({ onSchedule })
                 <Input 
                   id="meetingId" 
                   value={meetingId} 
-                  readOnly 
-                  className="flex-1 rounded-r-none border-r-0 bg-gray-50"
+                  onChange={handleMeetingIdChange}
+                  className="flex-1 rounded-r-none border-r-0"
                 />
                 <Button 
                   type="button" 
@@ -157,10 +161,10 @@ const ScheduleMeetingForm: React.FC<ScheduleMeetingFormProps> = ({ onSchedule })
                   className="rounded-l-none border-l-0"
                   onClick={generateMeetingId}
                 >
-                  <Hash className="h-4 w-4" />
+                  <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Auto-generated unique meeting ID</p>
+              <p className="text-xs text-muted-foreground">Auto-generated unique meeting ID (editable)</p>
             </div>
             
             <div className="space-y-2">
