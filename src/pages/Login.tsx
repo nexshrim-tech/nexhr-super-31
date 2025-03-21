@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, Mail, Lock, User, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { ArrowRight, Mail, Lock, User, ArrowLeft, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -17,22 +18,14 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   
+  // New signup fields
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [companySize, setCompanySize] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
   
   const navigate = useNavigate();
-  const location = useLocation();
-  const { signIn, signUp, user, isLoading } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      const from = location.state?.from || "/";
-      navigate(from, { replace: true });
-    }
-  }, [user, navigate, location]);
+  const { toast } = useToast();
 
   const validatePassword = () => {
     if (password !== confirmPassword) {
@@ -43,36 +36,61 @@ const Login = () => {
     return true;
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    // Add your authentication logic here
     if (email && password) {
-      await signIn(email, password);
+      toast({
+        title: "Login successful",
+        description: "Welcome to NexHR!",
+      });
+      navigate("/");
+    } else {
+      toast({
+        title: "Login failed",
+        description: "Please enter valid credentials",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate password match
     if (!validatePassword()) {
+      toast({
+        title: "Password mismatch",
+        description: "Please ensure both passwords match",
+        variant: "destructive",
+      });
       return;
     }
     
-    if (name && email && password) {
-      const userData = {
-        name,
-        isAdmin,
-        companyName: companyName || name + "'s Company",
-        phoneNumber: phoneNumber || "",
-        companySize: companySize || "1-10"
-      };
+    // Add your sign up logic here
+    if (name && email && password && companyName && phoneNumber && companySize) {
+      // Mark as new user to show subscription modal on first dashboard load
+      localStorage.setItem("new-user", "true");
+      // Set default subscription as None
+      localStorage.setItem("subscription-plan", "None");
       
-      await signUp(email, password, userData);
+      toast({
+        title: "Sign up successful",
+        description: "Welcome to NexHR! Please check your email to verify your account.",
+      });
+      navigate("/");
+    } else {
+      toast({
+        title: "Sign up failed",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
     }
   };
 
   const toggleForm = () => {
     setIsSignUp(!isSignUp);
+    // Reset form fields
     setName("");
     setEmail("");
     setPassword("");
@@ -82,11 +100,11 @@ const Login = () => {
     setCompanyName("");
     setPhoneNumber("");
     setCompanySize("");
-    setIsAdmin(false);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4 relative">
+      {/* Back to Landing Page Button - Prominent Position */}
       <div className="fixed top-4 left-4 z-50">
         <Link to="/landing">
           <Button 
@@ -144,78 +162,55 @@ const Login = () => {
                   </div>
                   
                   <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="accountType" className="flex items-center">
+                    <Label htmlFor="companyName" className="flex items-center">
                       <Building2 className="h-4 w-4 mr-2 text-gray-500" />
-                      Account Type
+                      Company Name
                     </Label>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="isAdmin" 
-                        checked={isAdmin} 
-                        onCheckedChange={() => setIsAdmin(!isAdmin)}
-                        className="data-[state=checked]:bg-nexhr-primary data-[state=checked]:border-nexhr-primary"
-                      />
-                      <Label
-                        htmlFor="isAdmin"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        I am registering as a company admin
-                      </Label>
-                    </div>
+                    <Input
+                      id="companyName"
+                      type="text"
+                      placeholder="Acme Inc."
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                    />
                   </div>
                   
-                  {isAdmin && (
-                    <>
-                      <div className="space-y-2 animate-fade-in">
-                        <Label htmlFor="companyName" className="flex items-center">
-                          <Building2 className="h-4 w-4 mr-2 text-gray-500" />
-                          Company Name
-                        </Label>
-                        <Input
-                          id="companyName"
-                          type="text"
-                          placeholder="Acme Inc."
-                          value={companyName}
-                          onChange={(e) => setCompanyName(e.target.value)}
-                          className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2 animate-fade-in">
-                        <Label htmlFor="phoneNumber" className="flex items-center">
-                          <Phone className="h-4 w-4 mr-2 text-gray-500" />
-                          Phone Number
-                        </Label>
-                        <Input
-                          id="phoneNumber"
-                          type="tel"
-                          placeholder="+1 (555) 123-4567"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2 animate-fade-in">
-                        <Label htmlFor="companySize" className="flex items-center">
-                          <Users className="h-4 w-4 mr-2 text-gray-500" />
-                          Company Size
-                        </Label>
-                        <Select value={companySize} onValueChange={setCompanySize}>
-                          <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
-                            <SelectValue placeholder="Select company size" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1-10">1-10 employees</SelectItem>
-                            <SelectItem value="11-50">11-50 employees</SelectItem>
-                            <SelectItem value="51-200">51-200 employees</SelectItem>
-                            <SelectItem value="201-500">201-500 employees</SelectItem>
-                            <SelectItem value="501+">501+ employees</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  )}
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="phoneNumber" className="flex items-center">
+                      <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      placeholder="+1 (555) 123-4567"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="companySize" className="flex items-center">
+                      <Users className="h-4 w-4 mr-2 text-gray-500" />
+                      Company Size
+                    </Label>
+                    <Select value={companySize} onValueChange={setCompanySize} required>
+                      <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
+                        <SelectValue placeholder="Select company size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1-10">1-10 employees</SelectItem>
+                        <SelectItem value="11-50">11-50 employees</SelectItem>
+                        <SelectItem value="51-200">51-200 employees</SelectItem>
+                        <SelectItem value="201-500">201-500 employees</SelectItem>
+                        <SelectItem value="501+">501+ employees</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </>
               )}
               
@@ -315,19 +310,9 @@ const Login = () => {
               <Button 
                 type="submit" 
                 className="w-full group transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
-                disabled={isLoading}
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                    {isSignUp ? "Creating Account..." : "Signing in..."}
-                  </div>
-                ) : (
-                  <>
-                    {isSignUp ? "Create Account" : "Sign in"}
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
+                {isSignUp ? "Create Account" : "Sign in"}
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </form>
           </CardContent>
