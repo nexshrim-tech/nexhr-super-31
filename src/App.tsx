@@ -86,12 +86,12 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <SubscriptionProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <SubscriptionProvider>
           <AppRoutes />
           <Toaster />
-        </AuthProvider>
-      </SubscriptionProvider>
+        </SubscriptionProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

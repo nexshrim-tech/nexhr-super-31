@@ -9,6 +9,7 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isLoading: boolean;
   isAdmin: boolean;
   customerId: number | null;
   employeeId: number | null;
@@ -94,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAdmin,
     customerId,
     employeeId,
+    isLoading: authOperations.isLoading,
     ...authOperations
   };
 
