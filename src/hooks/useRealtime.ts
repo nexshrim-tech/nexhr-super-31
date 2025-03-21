@@ -14,12 +14,13 @@ export const useRealtime = (entity: Entity, events: Event[], onChanges: ChangeHa
     // Create a channel using the proper Supabase realtime API format
     const channel = supabase
       .channel(`${entity}-changes`)
-      .on('postgres_changes', 
-        {
+      .on(
+        'postgres_changes', 
+        { 
           event: events,
           schema: 'public',
           table: entity
-        }, 
+        },
         (payload) => {
           console.log(`Realtime change detected for ${entity}:`, payload);
           onChanges(payload);
