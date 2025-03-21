@@ -38,24 +38,30 @@ interface Resource {
   assignedTo: string;
 }
 
-const ResourceManagement = () => {
+interface ResourceManagementProps {
+  projectId?: number | string;
+}
+
+const ResourceManagement: React.FC<ResourceManagementProps> = ({ projectId }) => {
   const [resources, setResources] = useState<Resource[]>([]);
   const [newResource, setNewResource] = useState({
     name: "",
     type: "document",
     assignedTo: "",
   });
-  const [projectId, setProjectId] = useState("");
+  const [internalProjectId, setInternalProjectId] = useState("");
   const { toast } = useToast();
 
   // Generate a random project ID on component mount
   useEffect(() => {
     generateProjectId();
-  }, []);
+  }, [projectId]);
 
   const generateProjectId = () => {
-    const randomId = "PRJ-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-    setProjectId(randomId);
+    // If a projectId is passed, use it as part of the ID
+    const prefix = projectId ? `PRJ-${projectId}-` : "PRJ-";
+    const randomId = prefix + Math.random().toString(36).substring(2, 8).toUpperCase();
+    setInternalProjectId(randomId);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,7 +128,7 @@ const ResourceManagement = () => {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Project ID</Label>
             <div className="flex items-center bg-muted px-3 py-1 rounded-md text-sm font-medium">
-              {projectId}
+              {internalProjectId}
             </div>
           </div>
           <Dialog>
