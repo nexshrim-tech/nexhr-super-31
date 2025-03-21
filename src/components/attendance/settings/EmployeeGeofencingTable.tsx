@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -79,7 +80,7 @@ const EmployeeGeofencingTable = ({
     } : emp));
   };
 
-  return <Card className="w-full">
+  return <Card className="w-full max-w-none">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <MapPin className="h-4 w-4" />
@@ -93,15 +94,15 @@ const EmployeeGeofencingTable = ({
             <Input placeholder="Search employees..." className="pl-9 h-10" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </div>
           
-          <div className="border rounded-md overflow-hidden">
-            <Table>
+          <div className="border rounded-md overflow-auto">
+            <Table className="min-w-full">
               <TableHeader>
                 <TableRow className="hover:bg-muted/80">
                   <TableHead className="w-[15%] py-4 h-14">Employee ID</TableHead>
                   <TableHead className="w-[30%] py-4">Name</TableHead>
                   <TableHead className="w-[20%] py-4">Department</TableHead>
                   <TableHead className="w-[20%] py-4">Position</TableHead>
-                  <TableHead className="w-[15%] text-right py-4">Geofencing</TableHead>
+                  <TableHead className="w-[15%] text-right py-4 pr-6">Geofencing</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -110,7 +111,7 @@ const EmployeeGeofencingTable = ({
                       <TableCell className="py-4">{employee.name}</TableCell>
                       <TableCell className="py-4">{employee.department}</TableCell>
                       <TableCell className="py-4">{employee.position}</TableCell>
-                      <TableCell className="text-right py-4">
+                      <TableCell className="text-right py-4 pr-6">
                         <FeatureToggle title="" description="" enabled={employee.geofencingEnabled} onToggle={checked => toggleEmployeeGeofencing(employee.id, checked)} id={`geofencing-${employee.id}`} disabled={!masterGeofencingEnabled} size="small" />
                       </TableCell>
                     </TableRow>) : <TableRow>

@@ -3,8 +3,9 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, Mail, User, Edit } from "lucide-react";
+import { Phone, Mail, User, Edit, Droplet, Accessibility } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 interface EmployeeProfileCardProps {
   employee: {
@@ -14,6 +15,8 @@ interface EmployeeProfileCardProps {
     employeeId: string;
     role: string;
     avatar: string;
+    bloodGroup?: string;
+    hasDisability?: boolean;
   };
   isEditMode: boolean;
   onEditProfile: () => void;
@@ -60,6 +63,18 @@ const EmployeeProfileCard: React.FC<EmployeeProfileCardProps> = ({
               />
             ) : (
               <p className="text-sm text-gray-500">{employee.role}</p>
+            )}
+            
+            {employee.bloodGroup && !isEditMode && (
+              <Badge variant="outline" className="mt-2 bg-blue-50 text-blue-700 border-blue-200">
+                <Droplet className="h-3 w-3 mr-1" /> {employee.bloodGroup}
+              </Badge>
+            )}
+            
+            {employee.hasDisability && !isEditMode && (
+              <Badge variant="outline" className="mt-2 bg-purple-50 text-purple-700 border-purple-200">
+                <Accessibility className="h-3 w-3 mr-1" /> PWD
+              </Badge>
             )}
           </div>
           

@@ -1,309 +1,237 @@
 
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Download, Upload, Paperclip, File, Image, FileCode, FileArchive } from "lucide-react";
+import { PlusCircle, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Define types
 interface Resource {
   id: string;
   name: string;
   type: string;
-  uploadedBy: string;
-  uploadDate: string;
+  assignedTo: string;
 }
 
-// Sample resources
-const sampleResources: Resource[] = [
-  {
-    id: "1",
-    name: "Project Requirements.docx",
+const ResourceManagement = () => {
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [newResource, setNewResource] = useState({
+    name: "",
     type: "document",
-    uploadedBy: "Olivia Rhye",
-    uploadDate: "2025-03-15"
-  },
-  {
-    id: "2",
-    name: "Design Mockups.psd",
-    type: "image",
-    uploadedBy: "Phoenix Baker",
-    uploadDate: "2025-03-20"
-  },
-  {
-    id: "3",
-    name: "API Documentation.pdf",
-    type: "document",
-    uploadedBy: "Lana Steiner",
-    uploadDate: "2025-03-25"
-  },
-  {
-    id: "4",
-    name: "Source Code.zip",
-    type: "archive",
-    uploadedBy: "Demi Wilkinson",
-    uploadDate: "2025-03-30"
-  }
-];
-
-interface ResourceManagementProps {
-  projectId: number;
-}
-
-const ResourceManagement: React.FC<ResourceManagementProps> = ({ projectId }) => {
-  const [resources, setResources] = useState<Resource[]>(sampleResources);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+    assignedTo: "",
+  });
+  const [projectId, setProjectId] = useState("");
   const { toast } = useToast();
-  
-  const handleFileUpload = (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
-    const fileName = formData.get('fileName') as string;
-    const fileType = formData.get('fileType') as string;
-    
-    // Normally we'd handle the actual file upload to a server here
-    
-    // Create a new resource entry
-    const newResource: Resource = {
-      id: String(resources.length + 1),
-      name: fileName,
-      type: fileType,
-      uploadedBy: "Current User", // Would be the logged-in user
-      uploadDate: new Date().toISOString().split('T')[0]
+
+  // Generate a random project ID on component mount
+  useEffect(() => {
+    generateProjectId();
+  }, []);
+
+  const generateProjectId = () => {
+    const randomId = "PRJ-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    setProjectId(randomId);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewResource((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setNewResource((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const addResource = () => {
+    if (!newResource.name || !newResource.type || !newResource.assignedTo) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const resource: Resource = {
+      id: Math.random().toString(36).substring(2, 9),
+      ...newResource,
     };
-    
-    setResources([...resources, newResource]);
-    setUploadDialogOpen(false);
-    
+
+    setResources((prev) => [...prev, resource]);
+    setNewResource({
+      name: "",
+      type: "document",
+      assignedTo: "",
+    });
+
     toast({
-      title: "File uploaded",
-      description: `${fileName} has been uploaded successfully.`
+      title: "Resource added",
+      description: "The resource has been added to the project.",
     });
   };
-  
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case "document":
-        return <FileText className="h-5 w-5 text-blue-500" />;
-      case "image":
-        return <Image className="h-5 w-5 text-green-500" />;
-      case "code":
-        return <FileCode className="h-5 w-5 text-purple-500" />;
-      case "archive":
-        return <FileArchive className="h-5 w-5 text-yellow-500" />;
-      default:
-        return <File className="h-5 w-5 text-gray-500" />;
-    }
+
+  const removeResource = (id: string) => {
+    setResources((prev) => prev.filter((resource) => resource.id !== id));
+    toast({
+      title: "Resource removed",
+      description: "The resource has been removed from the project.",
+    });
   };
-  
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Project Resources</CardTitle>
-        <Button onClick={() => setUploadDialogOpen(true)}>
-          <Upload className="mr-2 h-4 w-4" />
-          Upload Resource
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="all">
-          <TabsList className="mb-4">
-            <TabsTrigger value="all">All Resources</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="images">Images</TabsTrigger>
-            <TabsTrigger value="code">Code</TabsTrigger>
-            <TabsTrigger value="archives">Archives</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all" className="mt-0">
-            <ScrollArea className="h-[300px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Uploaded By</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {resources.map((resource) => (
-                    <TableRow key={resource.id}>
-                      <TableCell className="flex items-center space-x-2">
-                        {getFileIcon(resource.type)}
-                        <span>{resource.name}</span>
-                      </TableCell>
-                      <TableCell className="capitalize">{resource.type}</TableCell>
-                      <TableCell>{resource.uploadedBy}</TableCell>
-                      <TableCell>{new Date(resource.uploadDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </TabsContent>
-          
-          <TabsContent value="documents" className="mt-0">
-            <ScrollArea className="h-[300px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Uploaded By</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {resources.filter(r => r.type === "document").map((resource) => (
-                    <TableRow key={resource.id}>
-                      <TableCell className="flex items-center space-x-2">
-                        {getFileIcon(resource.type)}
-                        <span>{resource.name}</span>
-                      </TableCell>
-                      <TableCell>{resource.uploadedBy}</TableCell>
-                      <TableCell>{new Date(resource.uploadDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </TabsContent>
-          
-          <TabsContent value="images" className="mt-0">
-            <ScrollArea className="h-[300px]">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-                {resources.filter(r => r.type === "image").map((resource) => (
-                  <div key={resource.id} className="border rounded-md p-4 space-y-2">
-                    <div className="bg-gray-100 h-32 rounded-md flex items-center justify-center">
-                      <Image className="h-10 w-10 text-gray-500" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium truncate">{resource.name}</span>
-                      <Button variant="ghost" size="sm">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{resource.uploadedBy}</span>
-                      <span>{new Date(resource.uploadDate).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-          
-          <TabsContent value="code" className="mt-0">
-            <div className="flex items-center justify-center h-[200px] text-gray-500">
-              No code files found.
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h3 className="text-lg font-medium">Project Resources</h3>
+          <p className="text-sm text-muted-foreground">
+            Manage resources for this project
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Project ID</Label>
+            <div className="flex items-center bg-muted px-3 py-1 rounded-md text-sm font-medium">
+              {projectId}
             </div>
-          </TabsContent>
-          
-          <TabsContent value="archives" className="mt-0">
-            <ScrollArea className="h-[300px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Uploaded By</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {resources.filter(r => r.type === "archive").map((resource) => (
-                    <TableRow key={resource.id}>
-                      <TableCell className="flex items-center space-x-2">
-                        {getFileIcon(resource.type)}
-                        <span>{resource.name}</span>
-                      </TableCell>
-                      <TableCell>{resource.uploadedBy}</TableCell>
-                      <TableCell>{new Date(resource.uploadDate).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-      
-      {/* Upload File Dialog */}
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Upload Resource</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleFileUpload}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fileName">File Name</Label>
-                <Input id="fileName" name="fileName" required />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="fileInput">Select File</Label>
-                <div className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center text-gray-500">
-                  <Paperclip className="h-8 w-8 mb-2" />
-                  <p className="text-sm mb-1">Drag and drop or click to upload</p>
-                  <p className="text-xs text-gray-400">Max file size: 50MB</p>
-                  <Input id="fileInput" type="file" className="mt-4" />
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Resource
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Resource</DialogTitle>
+                <DialogDescription>
+                  Add a new resource to this project.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Resource Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={newResource.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter resource name"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="type">Resource Type</Label>
+                  <Select
+                    value={newResource.type}
+                    onValueChange={(value) => handleSelectChange("type", value)}
+                  >
+                    <SelectTrigger id="type">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="document">Document</SelectItem>
+                      <SelectItem value="image">Image</SelectItem>
+                      <SelectItem value="video">Video</SelectItem>
+                      <SelectItem value="spreadsheet">Spreadsheet</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="assignedTo">Assigned To</Label>
+                  <Input
+                    id="assignedTo"
+                    name="assignedTo"
+                    value={newResource.assignedTo}
+                    onChange={handleInputChange}
+                    placeholder="Enter assignee name"
+                  />
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="fileType">File Type</Label>
-                <Select name="fileType" defaultValue="document">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="document">Document</SelectItem>
-                    <SelectItem value="image">Image</SelectItem>
-                    <SelectItem value="code">Code</SelectItem>
-                    <SelectItem value="archive">Archive</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => setUploadDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                Upload
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </Card>
+              <DialogFooter>
+                <Button type="submit" onClick={addResource}>
+                  Add Resource
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[40%]">Name</TableHead>
+              <TableHead className="w-[30%]">Type</TableHead>
+              <TableHead className="w-[20%]">Assigned To</TableHead>
+              <TableHead className="w-[10%] text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {resources.length > 0 ? (
+              resources.map((resource) => (
+                <TableRow key={resource.id}>
+                  <TableCell className="font-medium">{resource.name}</TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {resource.type}
+                    </span>
+                  </TableCell>
+                  <TableCell>{resource.assignedTo}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeResource(resource.id)}
+                    >
+                      <Trash className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} className="h-32 text-center">
+                  No resources added yet. Add your first resource.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
 };
 
