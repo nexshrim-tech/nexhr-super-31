@@ -2,487 +2,422 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import PricingSection from "@/components/PricingSection";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  ArrowRight, 
-  CheckCircle2, 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  FileText, 
-  BarChart2, 
-  Briefcase,
-  Sparkles,
-  MapPin,
-  MessageSquare,
-  Video,
-  Shield,
-  Clock,
-  Laptop
-} from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Check, ChevronRight, ArrowRight, Shield, Clock, Users, FileText, Building, Database } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
-const Landing = () => {
+const LandingPage = () => {
+  const { user } = useAuth();
+  
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="bg-white py-4 px-6 border-b sticky top-0 z-10 backdrop-blur-sm bg-white/80">
-        <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2 font-bold text-xl">
-            <span className="logo">NEX</span>
-            <span>HR</span>
-          </div>
-          <div className="space-x-2">
-            <Button asChild variant="ghost" className="hover:bg-gray-100">
-              <Link to="/login">Login</Link>
-            </Button>
-            <Button asChild className="bg-nexhr-primary hover:bg-nexhr-primary/90">
-              <Link to="/login">Sign Up</Link>
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex flex-col">
+      {/* Navigation */}
+      <header className="w-full py-4 px-6 flex justify-between items-center border-b bg-white">
+        <div className="flex items-center">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
+            NexHR
+          </h1>
+        </div>
+        <div className="space-x-4">
+          {user ? (
+            <div className="flex items-center gap-4">
+              <Link to="/">
+                <Button>Dashboard</Button>
+              </Link>
+              <Link to="/logout">
+                <Button variant="outline">Log Out</Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <Link to="/login">
+                <Button variant="outline">Log In</Button>
+              </Link>
+              <Link to="/login?tab=signup">
+                <Button>Sign Up</Button>
+              </Link>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="animate-float absolute -right-20 top-20 w-72 h-72 bg-nexhr-primary/10 rounded-full blur-3xl"></div>
-        <div className="animate-float-delayed absolute -left-20 bottom-20 w-72 h-72 bg-purple-400/10 rounded-full blur-3xl"></div>
-        
-        <div className="container mx-auto px-6 relative">
-          <div className="flex flex-col md:flex-row items-center gap-12">
-            <div className="md:w-1/2 space-y-6 animate-fade-in">
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-nexhr-primary/10 text-nexhr-primary text-sm font-medium mb-2">
-                <Sparkles className="w-4 h-4 mr-2" />
-                <span>Simplify HR Management</span>
-              </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Modern HR <span className="text-nexhr-primary">Management</span> Solution
-              </h1>
-              <p className="text-gray-600 text-lg md:text-xl">
-                Streamline your HR operations with our comprehensive HR management system. Everything you need in one place.
-              </p>
-              <div className="pt-4 flex flex-wrap gap-4">
-                <Button asChild size="lg" className="group bg-nexhr-primary hover:bg-nexhr-primary/90">
-                  <Link to="/login">
-                    Get Started
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <a href="#features">Learn More</a>
-                </Button>
-              </div>
-              <div className="flex flex-wrap items-center gap-6 pt-6 text-sm text-gray-500">
-                <div className="flex items-center">
-                  <CheckCircle2 className="text-nexhr-green h-5 w-5 mr-2" />
-                  <span>No credit card required</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle2 className="text-nexhr-green h-5 w-5 mr-2" />
-                  <span>Free plan available</span>
-                </div>
-                <div className="flex items-center">
-                  <CheckCircle2 className="text-nexhr-green h-5 w-5 mr-2" />
-                  <span>Cancel anytime</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="md:w-1/2 relative animate-scale-in" style={{animationDelay: "0.3s"}}>
-              <div className="bg-white p-2 rounded-2xl shadow-xl border border-gray-100 relative z-10 transform transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
-                <img
-                  src="/placeholder.svg"
-                  alt="NexHR Dashboard"
-                  className="w-full h-auto rounded-xl"
-                />
-                <div className="absolute -bottom-4 -right-4 bg-nexhr-primary text-white px-4 py-2 rounded-lg text-sm font-medium">
-                  All-in-one solution
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 blur-3xl -z-10 rounded-full"></div>
-            </div>
+      <section className="w-full max-w-7xl mx-auto px-6 py-16 flex flex-col lg:flex-row items-center gap-12">
+        <div className="flex-1 space-y-6">
+          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
+            Simplify HR & Payroll Management
+          </h1>
+          <p className="text-lg text-gray-600">
+            An all-in-one HR platform designed to streamline your employee management, 
+            attendance tracking, payroll processing, and more.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <Link to={user ? "/" : "/login?tab=signup"}>
+              <Button size="lg" className="gap-2">
+                {user ? "Go to Dashboard" : "Get Started"}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="#pricing">
+              <Button size="lg" variant="outline" className="gap-2">
+                View Pricing
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
-      </section>
-
-      {/* Features Highlight */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Employee Management",
-                description: "Complete employee profiles with document management",
-                icon: <Users className="h-6 w-6 text-nexhr-primary" />,
-                delay: 0.1
-              },
-              {
-                title: "Attendance Tracking",
-                description: "Track attendance with geofencing and location verification",
-                icon: <Clock className="h-6 w-6 text-nexhr-primary" />,
-                delay: 0.2
-              },
-              {
-                title: "Real-time Location Tracking",
-                description: "Monitor employee locations and optimize field operations",
-                icon: <MapPin className="h-6 w-6 text-nexhr-primary" />,
-                delay: 0.3
-              },
-            ].map((feature, index) => (
-              <div 
-                key={index} 
-                className="flex items-start gap-4 p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in"
-                style={{animationDelay: `${feature.delay}s`}}
-              >
-                <div className="bg-nexhr-primary/10 p-3 rounded-lg">
-                  {feature.icon}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-1">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="flex-1 flex justify-center">
+          <img 
+            src="/lovable-uploads/5f84f812-bedb-480e-ac18-b71a9a3e45e8.png" 
+            alt="NexHR Dashboard" 
+            className="rounded-lg shadow-xl w-full max-w-xl object-cover"
+          />
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-50">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16 animate-fade-in">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need For HR Management</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              NexHR provides a comprehensive set of tools to help you manage your workforce efficiently.
+      <section className="w-full bg-gray-50 py-16">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">All-In-One HR Solution</h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              NexHR provides a comprehensive suite of tools to manage your entire HR workflow,
+              from hiring to retirement, and everything in between.
             </p>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Employee Management",
-                description: "Maintain detailed employee profiles with all relevant information in one place.",
-                icon: <Users className="h-10 w-10 text-nexhr-primary" />,
-                delay: 0.1
-              },
-              {
-                title: "Attendance Tracking",
-                description: "Track employee attendance, time-offs, and leaves with ease.",
-                icon: <Calendar className="h-10 w-10 text-nexhr-primary" />,
-                delay: 0.2
-              },
-              {
-                title: "Payroll Management",
-                description: "Streamline your payroll process with automated calculations and payment tracking.",
-                icon: <DollarSign className="h-10 w-10 text-nexhr-primary" />,
-                delay: 0.3
-              },
-              {
-                title: "Document Management",
-                description: "Store and manage important documents securely in the cloud.",
-                icon: <FileText className="h-10 w-10 text-nexhr-primary" />,
-                delay: 0.4
-              },
-              {
-                title: "Performance Analytics",
-                description: "Get insights into employee performance with detailed analytics and reports.",
-                icon: <BarChart2 className="h-10 w-10 text-nexhr-primary" />,
-                delay: 0.5
-              },
-              {
-                title: "Project Management",
-                description: "Assign and track projects, monitor progress, and manage resources efficiently.",
-                icon: <Briefcase className="h-10 w-10 text-nexhr-primary" />,
-                delay: 0.6
-              },
-              {
-                title: "Location Tracking",
-                description: "Monitor field employees' locations in real-time with accurate GPS tracking.",
-                icon: <MapPin className="h-10 w-10 text-nexhr-primary" />,
-                delay: 0.7
-              },
-              {
-                title: "Team Communication",
-                description: "Built-in messaging system for seamless team collaboration and communication.",
-                icon: <MessageSquare className="h-10 w-10 text-nexhr-primary" />,
-                delay: 0.8
-              },
-              {
-                title: "Video Meetings",
-                description: "Host virtual meetings and interviews directly within the platform.",
-                icon: <Video className="h-10 w-10 text-nexhr-primary" />,
-                delay: 0.9
-              }
-            ].map((feature, index) => (
-              <div 
-                key={index} 
-                className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in hover:-translate-y-1"
-                style={{animationDelay: `${feature.delay}s`}}
-              >
-                <div className="inline-block p-3 bg-nexhr-primary/10 rounded-xl mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="rounded-full bg-blue-100 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                <Users className="h-6 w-6 text-blue-600" />
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">How NexHR Works</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Get started with NexHR in just a few simple steps
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {[
-              {
-                step: "1",
-                title: "Sign Up",
-                description: "Create your account and choose your subscription plan",
-                icon: <Users className="h-8 w-8 text-white" />,
-                delay: 0.1
-              },
-              {
-                step: "2",
-                title: "Set Up Your Company",
-                description: "Add your company details and configure your preferences",
-                icon: <Briefcase className="h-8 w-8 text-white" />,
-                delay: 0.2
-              },
-              {
-                step: "3",
-                title: "Add Employees",
-                description: "Import your employee data or add them manually",
-                icon: <Users className="h-8 w-8 text-white" />,
-                delay: 0.3
-              },
-              {
-                step: "4",
-                title: "Start Managing",
-                description: "Use all features based on your subscription plan",
-                icon: <Laptop className="h-8 w-8 text-white" />,
-                delay: 0.4
-              }
-            ].map((item, index) => (
-              <div 
-                key={index} 
-                className="relative animate-fade-in"
-                style={{animationDelay: `${item.delay}s`}}
-              >
-                <div className="bg-nexhr-primary text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mb-4 mx-auto">
-                  {item.step}
-                </div>
-                {index < 3 && (
-                  <div className="hidden md:block absolute top-6 left-1/2 w-full h-0.5 bg-gray-200">
-                  </div>
-                )}
-                <div className="text-center">
-                  <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                  <p className="text-gray-600">{item.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Security & Compliance */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="lg:w-1/2">
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-600 text-sm font-medium mb-4">
-                <Shield className="w-4 h-4 mr-2" />
-                <span>Security & Compliance</span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Your Data is Safe With Us</h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-6 w-6 text-green-500 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-lg">End-to-End Encryption</h3>
-                    <p className="text-gray-600">All your sensitive data is encrypted both in transit and at rest.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-6 w-6 text-green-500 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-lg">GDPR Compliant</h3>
-                    <p className="text-gray-600">Our platform is fully compliant with GDPR and other privacy regulations.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-6 w-6 text-green-500 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-lg">Regular Backups</h3>
-                    <p className="text-gray-600">Your data is backed up regularly to prevent any loss of information.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-6 w-6 text-green-500 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-lg">Role-Based Access Control</h3>
-                    <p className="text-gray-600">Define who can access what data with granular permission settings.</p>
-                  </div>
-                </div>
-              </div>
+              <h3 className="text-xl font-semibold mb-2">Employee Management</h3>
+              <p className="text-gray-600">
+                Maintain comprehensive employee profiles with all relevant information in one place.
+              </p>
             </div>
-            <div className="lg:w-1/2">
-              <div className="relative">
-                <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 z-10 relative">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2 bg-gray-50 p-4 rounded-lg flex items-center gap-3">
-                      <Shield className="h-8 w-8 text-green-500" />
-                      <div>
-                        <div className="text-sm font-medium">Security Status</div>
-                        <div className="text-green-500 font-semibold">Protected</div>
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-500 mb-1">Data Encryption</div>
-                      <div className="font-medium">Enabled</div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-500 mb-1">Last Backup</div>
-                      <div className="font-medium">Today, 03:45 AM</div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-500 mb-1">Compliance</div>
-                      <div className="font-medium">GDPR, HIPAA</div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="text-sm text-gray-500 mb-1">Access Control</div>
-                      <div className="font-medium">Role-Based</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-green-500/10 blur-2xl -z-10 rounded-full"></div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="rounded-full bg-green-100 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                <Clock className="h-6 w-6 text-green-600" />
               </div>
+              <h3 className="text-xl font-semibold mb-2">Attendance Tracking</h3>
+              <p className="text-gray-600">
+                Track employee attendance with geolocation and photo verification for accuracy.
+              </p>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="rounded-full bg-purple-100 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                <FileText className="h-6 w-6 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Document Management</h3>
+              <p className="text-gray-600">
+                Generate and manage HR documents, contracts, and employee records securely.
+              </p>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="rounded-full bg-yellow-100 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                <Building className="h-6 w-6 text-yellow-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Department Management</h3>
+              <p className="text-gray-600">
+                Organize employees by department, assign managers, and track budgets.
+              </p>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="rounded-full bg-red-100 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                <Database className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Asset Management</h3>
+              <p className="text-gray-600">
+                Track company assets assigned to employees and manage their lifecycle.
+              </p>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+              <div className="rounded-full bg-indigo-100 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                <Shield className="h-6 w-6 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Data Security</h3>
+              <p className="text-gray-600">
+                Enterprise-grade security to protect your sensitive HR data and employee information.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <PricingSection />
-
-      {/* Testimonials */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Customers Say</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Trusted by companies of all sizes around the world
+      <section id="pricing" className="w-full py-16">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Pricing Plans</h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Choose the plan that fits your organization's needs and scale as you grow.
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                quote: "NexHR has transformed how we manage our employees. The location tracking feature is a game-changer for our field operations.",
-                author: "Sarah Johnson",
-                role: "HR Director, TechCorp",
-                image: "https://github.com/shadcn.png"
-              },
-              {
-                quote: "The attendance system with geofencing is incredibly accurate. We've reduced time theft by 45% since implementing NexHR.",
-                author: "Michael Chen",
-                role: "Operations Manager, Logistix",
-                image: "https://github.com/shadcn.png"
-              },
-              {
-                quote: "What impressed me most is how easy it was to get everyone onboarded. The messaging system has improved our internal communications tremendously.",
-                author: "Emily Rodriguez",
-                role: "CEO, StartupX",
-                image: "https://github.com/shadcn.png"
-              }
-            ].map((testimonial, index) => (
-              <div 
-                key={index} 
-                className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                <div className="mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
-                  ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card className="border border-gray-200">
+              <CardHeader>
+                <CardTitle>Starter</CardTitle>
+                <div className="mt-2 flex items-baseline">
+                  <span className="text-3xl font-bold">₹20,000</span>
+                  <span className="text-gray-500 ml-1 text-sm">/year</span>
                 </div>
-                <p className="text-gray-700 mb-6 italic">"{testimonial.quote}"</p>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={testimonial.image} alt={testimonial.author} />
-                    <AvatarFallback>{testimonial.author.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{testimonial.author}</div>
-                    <div className="text-sm text-gray-500">{testimonial.role}</div>
-                  </div>
-                </div>
+                <p className="text-sm text-gray-500 mt-2">For small teams up to 10 employees</p>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Employee Management</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Attendance Tracking</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Leave Management</span>
+                  </li>
+                  <li className="flex items-start opacity-50">
+                    <Check className="h-5 w-5 text-gray-300 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Document Generation</span>
+                  </li>
+                  <li className="flex items-start opacity-50">
+                    <Check className="h-5 w-5 text-gray-300 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Salary Management</span>
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Link to="/login?tab=signup" className="w-full">
+                  <Button className="w-full" variant="outline">
+                    Get Started
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+            
+            <Card className="border-2 border-nexhr-primary shadow-md relative">
+              <div className="bg-nexhr-primary text-white text-center py-1 text-sm font-medium">
+                Most Popular
               </div>
-            ))}
+              <CardHeader>
+                <CardTitle>Professional</CardTitle>
+                <div className="mt-2 flex items-baseline">
+                  <span className="text-3xl font-bold">₹30,000</span>
+                  <span className="text-gray-500 ml-1 text-sm">/year</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">For growing teams up to 30 employees</p>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>All Starter features</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Document Generation</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Salary Management</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Asset Management</span>
+                  </li>
+                  <li className="flex items-start opacity-50">
+                    <Check className="h-5 w-5 text-gray-300 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Help Desk</span>
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Link to="/login?tab=signup" className="w-full">
+                  <Button className="w-full">
+                    Get Started
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+            
+            <Card className="border border-gray-200">
+              <CardHeader>
+                <CardTitle>Business</CardTitle>
+                <div className="mt-2 flex items-baseline">
+                  <span className="text-3xl font-bold">₹50,000</span>
+                  <span className="text-gray-500 ml-1 text-sm">/year</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">For teams up to 100 employees</p>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>All Professional features</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Expense Management</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Help Desk</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Project Management</span>
+                  </li>
+                  <li className="flex items-start opacity-50">
+                    <Check className="h-5 w-5 text-gray-300 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Advanced Analytics</span>
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Link to="/login?tab=signup" className="w-full">
+                  <Button className="w-full" variant="outline">
+                    Get Started
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+            
+            <Card className="border border-gray-200">
+              <CardHeader>
+                <CardTitle>Enterprise</CardTitle>
+                <div className="mt-2 flex items-baseline">
+                  <span className="text-3xl font-bold">Custom</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">For organizations with 100+ employees</p>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>All Business features</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Advanced Analytics</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Custom Implementation</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>White-labeling Options</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>Dedicated Support</span>
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Link to="/login?tab=signup" className="w-full">
+                  <Button className="w-full" variant="outline">
+                    Contact Sales
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-nexhr-primary to-purple-600 text-white">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 animate-fade-in">Ready to Transform Your HR Management?</h2>
-          <p className="text-white/80 max-w-2xl mx-auto mb-8 text-lg animate-fade-in" style={{animationDelay: "0.2s"}}>
-            Join thousands of companies that use NexHR to streamline their HR operations and boost productivity.
+      <section className="w-full bg-nexhr-primary py-16">
+        <div className="max-w-5xl mx-auto px-6 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to streamline your HR operations?
+          </h2>
+          <p className="text-white text-opacity-90 text-lg mb-8 max-w-3xl mx-auto">
+            Join thousands of companies that use NexHR to simplify their HR management
+            and focus on what matters most: their people and business.
           </p>
-          <Button asChild size="lg" variant="default" className="bg-white text-nexhr-primary hover:bg-gray-100 animate-fade-in" style={{animationDelay: "0.3s"}}>
-            <Link to="/login">Get Started For Free</Link>
-          </Button>
+          <Link to="/login?tab=signup">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="bg-white hover:bg-gray-100 text-nexhr-primary border-white"
+            >
+              Start Your Free Trial
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-6 md:mb-0">
-              <div className="flex items-center space-x-2 font-bold text-xl">
-                <span className="logo">NEX</span>
-                <span>HR</span>
-              </div>
-              <p className="text-gray-400 mt-2">Modern HR Management Solution</p>
+      <footer className="w-full bg-gray-800 text-white py-12">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-xl font-bold mb-4">NexHR</h3>
+              <p className="text-gray-400">
+                Simplifying HR management for businesses of all sizes.
+              </p>
             </div>
-            <div className="flex flex-wrap gap-8">
-              <div>
-                <h4 className="font-semibold mb-4">Product</h4>
-                <ul className="space-y-2">
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-4">Company</h4>
-                <ul className="space-y-2">
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Careers</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-4">Legal</h4>
-                <ul className="space-y-2">
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Terms of Service</a></li>
-                </ul>
-              </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-gray-400 hover:text-white">Features</a></li>
+                <li><a href="#pricing" className="text-gray-400 hover:text-white">Pricing</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Integrations</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Roadmap</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Resources</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-gray-400 hover:text-white">Documentation</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Blog</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Support</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Community</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-gray-400 hover:text-white">About Us</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Careers</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white">Privacy Policy</a></li>
+              </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} NexHR. All rights reserved.</p>
+          
+          <div className="border-t border-gray-700 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400">© 2023 NexHR. All rights reserved.</p>
+            <div className="flex space-x-4 mt-4 md:mt-0">
+              <a href="#" className="text-gray-400 hover:text-white">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
+                </svg>
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                </svg>
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </footer>
@@ -490,4 +425,4 @@ const Landing = () => {
   );
 };
 
-export default Landing;
+export default LandingPage;

@@ -1176,6 +1176,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      link_employee_to_user: {
+        Args: {
+          user_id: string
+          employee_id_param: number
+        }
+        Returns: undefined
+      }
       update_profile_customer: {
         Args: {
           user_id: string

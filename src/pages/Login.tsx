@@ -1,340 +1,313 @@
 
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
-import { ArrowRight, Mail, Lock, User, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { Loader2, CheckCircle } from "lucide-react";
 
 const Login = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  
-  // New signup fields
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [companySize, setCompanySize] = useState("");
-  
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, signUp, user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const { signIn, signUp, user } = useAuth();
 
-  useEffect(() => {
+  // Redirect if already logged in
+  React.useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate("/");
     }
   }, [user, navigate]);
 
-  const validatePassword = () => {
-    if (password !== confirmPassword) {
-      setPasswordError("Passwords do not match");
-      return false;
-    }
-    setPasswordError("");
-    return true;
-  };
+  const handleSignIn = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsLoading(true);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email && password) {
+    try {
       await signIn(email, password);
-    } else {
-      toast({
-        title: "Login failed",
-        description: "Please enter valid credentials",
-        variant: "destructive",
-      });
+      // Auth context will automatically redirect on success
+    } catch (error) {
+      console.error("Login error:", error);
+      setIsLoading(false);
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate password match
-    if (!validatePassword()) {
+  const handleSignUp = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsLoading(true);
+
+    if (!name || !email || !password || !companyName || !phoneNumber || !companySize) {
       toast({
-        title: "Password mismatch",
-        description: "Please ensure both passwords match",
+        title: "Missing information",
+        description: "Please fill in all required fields.",
         variant: "destructive",
       });
+      setIsLoading(false);
       return;
     }
-    
-    if (name && email && password && companyName && phoneNumber && companySize) {
-      const userData = {
+
+    try {
+      await signUp(email, password, {
         name,
         companyName,
         phoneNumber,
-        companySize
-      };
-      
-      await signUp(email, password, userData);
-    } else {
-      toast({
-        title: "Sign up failed",
-        description: "Please fill in all required fields",
-        variant: "destructive",
+        companySize,
       });
+      
+      // Mark as new user to trigger subscription modal
+      localStorage.setItem("new-user", "true");
+      
+      toast({
+        title: "Account created successfully",
+        description: "Welcome to NexHR! Please choose a subscription plan to continue.",
+      });
+      
+      // Auth context will handle redirect on successful signup
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      setIsLoading(false);
     }
   };
 
-  const toggleForm = () => {
-    setIsSignUp(!isSignUp);
-    // Reset form fields
-    setName("");
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
-    setPasswordError("");
-    setRememberMe(false);
-    setCompanyName("");
-    setPhoneNumber("");
-    setCompanySize("");
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4 relative">
-      {/* Back to Landing Page Button - Prominent Position */}
-      <div className="fixed top-4 left-4 z-50">
-        <Link to="/landing">
-          <Button 
-            className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
-            size="lg"
-          >
-            <Home className="h-5 w-5" />
-            Back to Landing Page
-          </Button>
-        </Link>
-      </div>
-      
-      <div className="w-full max-w-md space-y-8 animate-fade-in relative">
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="text-4xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
-              NEX<span className="font-normal">HR</span>
-            </div>
-          </div>
-          <h2 className="mt-2 text-3xl font-extrabold text-gray-900">
-            {isSignUp ? "Create your account" : "Welcome back"}
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {isSignUp ? "Sign up to get started with NexHR" : "Sign in to your account to continue"}
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-100 p-4 flex items-center justify-center">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
+            NexHR
+          </h1>
+          <p className="text-gray-600 mt-2">HR Management & Payroll Solution</p>
         </div>
-        
-        <Card className="w-full shadow-lg border-t-4 border-t-nexhr-primary transition-all duration-300 hover:shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-xl">{isSignUp ? "Sign up" : "Sign in"}</CardTitle>
-            <CardDescription>
-              {isSignUp 
-                ? "Enter your information to create an account" 
-                : "Enter your email and password to access your account"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-4">
-              {isSignUp && (
-                <>
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="name" className="flex items-center">
-                      <User className="h-4 w-4 mr-2 text-gray-500" />
-                      Full Name
-                    </Label>
+
+        <Tabs defaultValue="signin" className="w-full">
+          <TabsList className="grid grid-cols-2 w-full mb-4">
+            <TabsTrigger value="signin">Sign In</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="signin">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sign In</CardTitle>
+                <CardDescription>
+                  Enter your credentials to access your account
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="text-sm font-medium">
+                      Email
+                    </label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="example@company.com"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="password" className="text-sm font-medium">
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        className="text-xs text-gray-500 hover:text-nexhr-primary"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+              <CardFooter className="flex justify-center border-t pt-4">
+                <p className="text-xs text-gray-500">
+                  Don't have an account?{" "}
+                  <button
+                    onClick={() => document.querySelector('[data-value="signup"]')?.click()}
+                    className="text-nexhr-primary hover:underline"
+                  >
+                    Sign Up
+                  </button>
+                </p>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create an Account</CardTitle>
+                <CardDescription>
+                  Register your company to get started with NexHR
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="name" className="text-sm font-medium">
+                      Your Name
+                    </label>
                     <Input
                       id="name"
-                      type="text"
                       placeholder="John Doe"
+                      required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      required
-                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
                     />
                   </div>
-                  
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="companyName" className="flex items-center">
-                      <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+                  <div className="space-y-2">
+                    <label htmlFor="company" className="text-sm font-medium">
                       Company Name
-                    </Label>
+                    </label>
                     <Input
-                      id="companyName"
-                      type="text"
-                      placeholder="Acme Inc."
+                      id="company"
+                      placeholder="Your Company Ltd."
+                      required
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      required
-                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
                     />
                   </div>
-                  
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="phoneNumber" className="flex items-center">
-                      <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                  <div className="space-y-2">
+                    <label htmlFor="phone" className="text-sm font-medium">
                       Phone Number
-                    </Label>
+                    </label>
                     <Input
-                      id="phoneNumber"
-                      type="tel"
-                      placeholder="+1 (555) 123-4567"
+                      id="phone"
+                      placeholder="+1 (555) 000-0000"
+                      required
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
-                      required
-                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
                     />
                   </div>
-                  
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="companySize" className="flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-gray-500" />
+                  <div className="space-y-2">
+                    <label htmlFor="companySize" className="text-sm font-medium">
                       Company Size
-                    </Label>
-                    <Select value={companySize} onValueChange={setCompanySize} required>
-                      <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
-                        <SelectValue placeholder="Select company size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1-10">1-10 employees</SelectItem>
-                        <SelectItem value="11-50">11-50 employees</SelectItem>
-                        <SelectItem value="51-200">51-200 employees</SelectItem>
-                        <SelectItem value="201-500">201-500 employees</SelectItem>
-                        <SelectItem value="501+">501+ employees</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center">
-                  <Mail className="h-4 w-4 mr-2 text-gray-500" />
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="example@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="flex items-center">
-                    <Lock className="h-4 w-4 mr-2 text-gray-500" />
-                    Password
-                  </Label>
-                  {!isSignUp && (
-                    <Link
-                      to="/forgot-password"
-                      className="text-xs text-nexhr-primary hover:underline transition-all duration-300"
+                    </label>
+                    <select
+                      id="companySize"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={companySize}
+                      onChange={(e) => setCompanySize(e.target.value)}
+                      required
                     >
-                      Forgot password?
-                    </Link>
-                  )}
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                />
-              </div>
-              
-              {isSignUp && (
-                <div className="space-y-2">
-                  <Label 
-                    htmlFor="confirmPassword" 
-                    className={`flex items-center ${passwordError ? "text-red-500" : ""}`}
-                  >
-                    <Lock className={`h-4 w-4 mr-2 ${passwordError ? "text-red-500" : "text-gray-500"}`} />
-                    Confirm Password
-                  </Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (password && e.target.value) {
-                        validatePassword();
-                      }
-                    }}
-                    required
-                    className={`transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent ${
-                      passwordError ? "border-red-500 focus:ring-red-500" : ""
-                    }`}
-                  />
-                  {passwordError && (
-                    <div className="flex items-center text-xs text-red-500 mt-1">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      {passwordError}
+                      <option value="" disabled>Select company size</option>
+                      <option value="1-10">1-10 employees</option>
+                      <option value="11-50">11-50 employees</option>
+                      <option value="51-200">51-200 employees</option>
+                      <option value="201-500">201-500 employees</option>
+                      <option value="500+">500+ employees</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="signup-email" className="text-sm font-medium">
+                      Email
+                    </label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="example@company.com"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="signup-password" className="text-sm font-medium">
+                      Password
+                    </label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="••••••••"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <p className="text-xs text-gray-500">
+                      Password must be at least 8 characters
+                    </p>
+                  </div>
+
+                  <div className="flex items-start space-x-2 pt-2">
+                    <div className="h-5 w-5 mt-0.5">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
                     </div>
-                  )}
-                </div>
-              )}
-              
-              {!isSignUp && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="remember"
-                    checked={rememberMe}
-                    onCheckedChange={() => setRememberMe(!rememberMe)}
-                    className="data-[state=checked]:bg-nexhr-primary data-[state=checked]:border-nexhr-primary"
-                  />
-                  <Label
-                    htmlFor="remember"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    <p className="text-xs text-gray-500">
+                      By creating an account, you agree to our Terms of Service and
+                      Privacy Policy
+                    </p>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading}
                   >
-                    Remember me
-                  </Label>
-                </div>
-              )}
-              
-              <Button 
-                type="submit" 
-                className="w-full group transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
-              >
-                {isSignUp ? "Create Account" : "Sign in"}
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="flex justify-center border-t pt-6">
-            <p className="text-sm text-gray-600">
-              {isSignUp ? "Already have an account? " : "Don't have an account? "}
-              <button 
-                onClick={toggleForm} 
-                className="text-nexhr-primary hover:underline transition-all duration-300 font-medium"
-              >
-                {isSignUp ? "Sign in" : "Sign up"}
-              </button>
-            </p>
-          </CardFooter>
-        </Card>
-        
-        <p className="text-center text-sm text-gray-600 animate-fade-in" style={{animationDelay: "0.3s"}}>
-          By continuing, you agree to our 
-          <a href="#" className="text-nexhr-primary hover:underline ml-1">Terms of Service</a>
-          <span className="mx-1">and</span>
-          <a href="#" className="text-nexhr-primary hover:underline">Privacy Policy</a>
-        </p>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating account
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+              <CardFooter className="flex justify-center border-t pt-4">
+                <p className="text-xs text-gray-500">
+                  Already have an account?{" "}
+                  <button
+                    onClick={() => document.querySelector('[data-value="signin"]')?.click()}
+                    className="text-nexhr-primary hover:underline"
+                  >
+                    Sign In
+                  </button>
+                </p>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        <div className="text-center mt-8">
+          <Link to="/landing" className="text-sm text-gray-500 hover:text-nexhr-primary">
+            Back to Landing Page
+          </Link>
+        </div>
       </div>
     </div>
   );
