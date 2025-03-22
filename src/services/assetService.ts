@@ -1,5 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { fetchEmployeeById } from "./employeeService";
 
 export interface Asset {
   assetid: number;
@@ -198,7 +198,7 @@ export const fetchEmployees = async () => {
   try {
     const { data, error } = await supabase
       .from('employee')
-      .select('employeeid, firstname, lastname')
+      .select('employeeid, firstname, lastname, jobtitle')
       .order('firstname');
     
     if (error) throw error;

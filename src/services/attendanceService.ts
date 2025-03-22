@@ -56,16 +56,18 @@ export const fetchAttendanceRecords = async (
     
     if (error) throw error;
     
-    // Create a simple array to avoid excessive type instantiation
+    // Create a simple array with explicit typing to avoid excessive type instantiation
     const records: AttendanceRecord[] = [];
     
     if (data) {
-      for (const record of data) {
+      // Process each record individually to avoid type recursion
+      for (let i = 0; i < data.length; i++) {
+        const record = data[i];
         const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
         const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
         
-        // Create each record individually to avoid nested type issues
-        const attendanceRecord: AttendanceRecord = {
+        // Create each record with explicit type
+        records.push({
           employeeId: record.employeeid,
           employeeName: record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : 'Unknown',
           date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
@@ -73,9 +75,7 @@ export const fetchAttendanceRecords = async (
           checkOut: checkOutDate ? checkOutDate.toTimeString().slice(0, 5) : '',
           status: record.status || 'Unknown',
           selfiePath: record.selfieimagepath
-        };
-        
-        records.push(attendanceRecord);
+        });
       }
     }
     

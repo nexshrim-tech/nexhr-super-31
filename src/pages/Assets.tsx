@@ -9,10 +9,12 @@ import AssetDialogs from '@/components/assets/AssetDialogs';
 import { useAuth } from '@/context/AuthContext';
 import { Separator } from "@/components/ui/separator";
 
+// Define a proper Employee interface that matches the database structure
 interface Employee {
-  id: number;
-  name: string;
-  avatar: string;
+  employeeid: number;
+  firstname: string;
+  lastname: string;
+  avatar?: string;
 }
 
 const Assets = () => {
