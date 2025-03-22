@@ -56,28 +56,28 @@ export const fetchAttendanceRecords = async (
     
     if (error) throw error;
     
-    // Create a simpler approach to avoid excessive type instantiation
-    const records: AttendanceRecord[] = [];
-    
-    if (data) {
-      for (const record of data) {
-        const employee = record.employee || { firstname: '', lastname: '' };
-        const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
-        const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
-        
-        records.push({
-          employeeId: record.employeeid,
-          employeeName: `${employee.firstname} ${employee.lastname}`,
-          date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
-          checkIn: checkInDate ? checkInDate.toTimeString().slice(0, 5) : '',
-          checkOut: checkOutDate ? checkOutDate.toTimeString().slice(0, 5) : '',
-          status: record.status || 'Unknown',
-          selfiePath: record.selfieimagepath
-        });
-      }
-    }
-    
-    return records;
+    // Even simpler approach to avoid excessive type instantiation
+    return data ? data.map(record => {
+      // Extract employee data safely
+      const employeeData = record.employee || {};
+      const firstName = employeeData.firstname || '';
+      const lastName = employeeData.lastname || '';
+      
+      // Parse dates
+      const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
+      const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
+      
+      // Return a well-formed AttendanceRecord
+      return {
+        employeeId: record.employeeid,
+        employeeName: `${firstName} ${lastName}`,
+        date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
+        checkIn: checkInDate ? checkInDate.toTimeString().slice(0, 5) : '',
+        checkOut: checkOutDate ? checkOutDate.toTimeString().slice(0, 5) : '',
+        status: record.status || 'Unknown',
+        selfiePath: record.selfieimagepath
+      };
+    }) : [];
   } catch (error) {
     console.error('Error fetching attendance records:', error);
     throw error;
