@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
-      // Create the user in Supabase Auth - FIXED: Use app_metadata instead of data
+      // Create the user in Supabase Auth - Use app_metadata instead of raw_user_meta_data
       const { data, error } = await supabase.auth.signUp({
         email,
         password,

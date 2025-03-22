@@ -24,8 +24,8 @@ const AddEmployee = () => {
   const { user } = useAuth();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [departmentOptions, setDepartmentOptions<{id: number, name: string}[]>([]);
-  const [formData, setFormData({
+  const [departmentOptions, setDepartmentOptions] = useState<{id: number, name: string}[]>([]);
+  const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     fatherName: "",
@@ -55,9 +55,9 @@ const AddEmployee = () => {
     ifscCode: "",
     accountType: ""
   });
-  const [formErrors, setFormErrors<Record<string, string>>({});
-  const [formProgress, setFormProgress(0);
-  const [documents, setDocuments({
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [formProgress, setFormProgress] = useState(0);
+  const [documents, setDocuments] = useState({
     aadharCard: null as File | null,
     panCard: null as File | null
   });

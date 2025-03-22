@@ -74,15 +74,14 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
         locationButton.style.height = "40px";
         locationButton.style.fontSize = "1.5rem";
 
-        // Fixed: Add the button to the map using the proper control position
+        // Fixed: Use a div as control container
         if (mapInstance.controls && google.maps.ControlPosition) {
           // Create a container div to hold the button
           const controlDiv = document.createElement('div');
           controlDiv.appendChild(locationButton);
           
           // Use RIGHT_BOTTOM position and push the container div
-          const controlPosition = google.maps.ControlPosition.RIGHT_BOTTOM;
-          mapInstance.controls[controlPosition].push(controlDiv);
+          mapInstance.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(controlDiv);
         }
 
         locationButton.addEventListener("click", () => {
@@ -141,9 +140,6 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
     return () => {
       // Clean up markers
       markers.forEach(marker => marker.setMap(null));
-      
-      // Don't remove the script on unmount as it might be used by other components
-      // Instead just clean up resources related to this instance
     };
   }, [apiKey, defaultLocation, readOnly, onLocationUpdate]);
 
