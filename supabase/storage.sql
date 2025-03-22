@@ -1,5 +1,5 @@
 
--- Create a storage bucket for asset bills
+-- Create a storage bucket for asset bills if it doesn't exist
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('asset-bills', 'Asset Bills', true)
 ON CONFLICT (id) DO NOTHING;

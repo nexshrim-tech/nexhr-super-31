@@ -30,6 +30,38 @@ export interface AssetFormData {
   billFile?: File | null;
 }
 
+// Convert database asset to frontend format
+export const mapAssetForFrontend = (asset: Asset) => {
+  return {
+    id: asset.assetid,
+    name: asset.assetname,
+    type: asset.assettype,
+    serialNumber: asset.serialnumber,
+    status: asset.assetstatus,
+    value: asset.assetvalue,
+    purchaseDate: asset.purchasedate,
+    assignedTo: asset.employee ? {
+      name: `${asset.employee.firstname} ${asset.employee.lastname}`,
+      avatar: `${asset.employee.firstname[0]}${asset.employee.lastname[0]}`
+    } : null,
+    bill: asset.billpath
+  };
+};
+
+// Convert frontend data to database format
+export const mapAssetForDatabase = (formData: AssetFormData, customerId: number): Omit<Asset, 'assetid'> => {
+  return {
+    assetname: formData.assetname,
+    assettype: formData.assettype,
+    serialnumber: formData.serialnumber,
+    assetstatus: formData.assetstatus,
+    assetvalue: parseFloat(formData.assetvalue),
+    purchasedate: formData.purchasedate,
+    customerid: customerId,
+    employeeid: formData.assignedTo ? parseInt(formData.assignedTo) : null
+  };
+};
+
 // Fetch all assets for current customer
 export const fetchAssets = async (): Promise<Asset[]> => {
   try {
@@ -62,7 +94,7 @@ export const fetchAssets = async (): Promise<Asset[]> => {
 };
 
 // Create a new asset
-export const createAsset = async (assetData: Partial<Asset>, billFile?: File): Promise<Asset> => {
+export const createAsset = async (assetData: Omit<Asset, 'assetid'>, billFile?: File): Promise<Asset> => {
   try {
     // If there's a bill file, upload it first
     let billPath = null;
@@ -76,13 +108,16 @@ export const createAsset = async (assetData: Partial<Asset>, billFile?: File): P
       billPath = fileName;
     }
 
-    // Now create the asset with the bill path if available
+    // Create the asset with the bill path
+    const dataToInsert = {
+      ...assetData,
+      billpath: billPath
+    };
+
+    // Now create the asset
     const { data, error } = await supabase
       .from('assetmanagement')
-      .insert({
-        ...assetData,
-        billpath: billPath
-      })
+      .insert(dataToInsert)
       .select()
       .single();
     
@@ -109,13 +144,16 @@ export const updateAsset = async (assetId: number, assetData: Partial<Asset>, bi
       billPath = fileName;
     }
 
-    // Now update the asset with the new bill path if available
+    // Prepare update data
+    const updateData = {
+      ...assetData,
+      billpath: billPath
+    };
+
+    // Update the asset
     const { data, error } = await supabase
       .from('assetmanagement')
-      .update({
-        ...assetData,
-        billpath: billPath
-      })
+      .update(updateData)
       .eq('assetid', assetId)
       .select()
       .single();
