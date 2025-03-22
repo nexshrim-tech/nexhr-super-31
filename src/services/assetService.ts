@@ -130,10 +130,9 @@ export const createAsset = async (assetData: Omit<Asset, 'assetid'>, billFile?: 
 };
 
 // Update an existing asset
-export const updateAsset = async (assetId: number, assetData: Partial<Asset>, billFile?: File): Promise<Asset> => {
+export const updateAsset = async (assetId: number, assetData: Partial<Omit<Asset, 'assetid'>>, billFile?: File): Promise<Asset> => {
   try {
     // If there's a new bill file, upload it first
-    let billPath = assetData.billpath;
     if (billFile) {
       const fileName = `${Date.now()}-${billFile.name}`;
       const { data: fileData, error: fileError } = await supabase.storage
@@ -141,19 +140,15 @@ export const updateAsset = async (assetId: number, assetData: Partial<Asset>, bi
         .upload(fileName, billFile);
       
       if (fileError) throw fileError;
-      billPath = fileName;
+      
+      // Add bill path to update data
+      assetData.billpath = fileName;
     }
-
-    // Prepare update data
-    const updateData = {
-      ...assetData,
-      billpath: billPath
-    };
 
     // Update the asset
     const { data, error } = await supabase
       .from('assetmanagement')
-      .update(updateData)
+      .update(assetData)
       .eq('assetid', assetId)
       .select()
       .single();
