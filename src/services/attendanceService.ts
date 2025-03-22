@@ -55,7 +55,7 @@ export const fetchAttendanceRecords = async (
     
     if (error) throw error;
     
-    // Simplify the mapping to avoid excessive type instantiation
+    // Simplify and fix the mapping to avoid excessive type instantiation
     const records: AttendanceRecord[] = [];
     
     if (data) {
@@ -63,8 +63,7 @@ export const fetchAttendanceRecords = async (
         const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
         const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
         
-        records.push({
-          // Use record index as the id if no specific id field exists
+        const attendanceRecord: AttendanceRecord = {
           employeeId: record.employeeid,
           employeeName: record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : 'Unknown',
           date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
@@ -72,7 +71,9 @@ export const fetchAttendanceRecords = async (
           checkOut: checkOutDate ? checkOutDate.toTimeString().slice(0, 5) : '',
           status: record.status || 'Unknown',
           selfiePath: record.selfieimagepath,
-        });
+        };
+        
+        records.push(attendanceRecord);
       }
     }
     
