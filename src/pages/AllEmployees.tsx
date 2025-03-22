@@ -34,35 +34,22 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Employee } from "@/types/documents";
+import { Employee as DocumentEmployee } from "@/types/documents";
+import { Employee } from "@/components/employees/EmployeeEditDialog";
 
 interface Department {
   departmentname: string;
 }
 
-interface EmployeeData {
-  employeeid: number;
-  id: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  department: string;
-  jobtitle: string;
-  status: string;
-  avatar: string;
-  role: string;
-  name: string;
-}
-
 const AllEmployees = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeData | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
-  const [employees, setEmployees] = useState<EmployeeData[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -157,19 +144,19 @@ const AllEmployees = () => {
     }
   );
 
-  const handleViewEmployee = (employee: EmployeeData) => {
+  const handleViewEmployee = (employee: Employee) => {
     navigate(`/employee/${employee.employeeid}`);
   };
-  
-  const handleSaveEmployee = async (editedEmployee: EmployeeData) => {
+
+  const handleSaveEmployee = async (editedEmployee: Employee) => {
     try {
       if (!selectedEmployee) return;
       
       const { error } = await supabase
         .from('employee')
         .update({
-          firstname: editedEmployee.firstname,
-          lastname: editedEmployee.lastname,
+          firstname: editedEmployee.firstname || editedEmployee.name.split(' ')[0],
+          lastname: editedEmployee.lastname || editedEmployee.name.split(' ')[1] || '',
           email: editedEmployee.email,
           jobtitle: editedEmployee.jobtitle,
         })
@@ -403,7 +390,7 @@ const AllEmployees = () => {
           <EmployeeEditDialog 
             isOpen={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
-            employee={selectedEmployee as Employee}
+            employee={selectedEmployee}
             onSave={handleSaveEmployee}
           />
 
