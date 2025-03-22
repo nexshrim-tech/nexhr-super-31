@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Asset, AssetFormData, fetchAssets, createAsset, updateAsset, deleteAsset, fetchEmployees, getCurrentCustomerId, mapAssetForFrontend } from '@/services/assetService';
@@ -11,7 +10,6 @@ import AssetDialogs from '@/components/assets/AssetDialogs';
 import { useAuth } from '@/context/AuthContext';
 import { Separator } from "@/components/ui/separator";
 
-// Updated type definition to match AssetForm component
 interface Employee {
   id: number;
   name: string;
@@ -38,7 +36,6 @@ const Assets = () => {
     assignedTo: ''
   });
 
-  // Updated formData to match the AssetForm component's expected format
   const [formData, setFormData] = useState<{
     name: string;
     type: string;
@@ -61,17 +58,14 @@ const Assets = () => {
     billFile: null
   });
 
-  // Fetch assets on component mount
   useEffect(() => {
     const loadAssets = async () => {
       setLoading(true);
       try {
-        // Get current customer ID
         const custId = customerData?.customerid || await getCurrentCustomerId();
         setCustomerId(custId);
 
         if (custId) {
-          // Fetch employee list for the dropdown
           const employeeList = await fetchEmployees();
           setEmployees(employeeList.map(emp => ({
             id: emp.employeeid,
@@ -79,7 +73,6 @@ const Assets = () => {
             avatar: `${emp.firstname[0]}${emp.lastname[0]}`
           })));
 
-          // Fetch assets
           const assetList = await fetchAssets();
           setAssets(assetList);
           setFilteredAssets(assetList);
@@ -99,7 +92,6 @@ const Assets = () => {
     loadAssets();
   }, [toast, customerData]);
 
-  // Apply filters
   useEffect(() => {
     let result = [...assets];
 
@@ -157,7 +149,6 @@ const Assets = () => {
     });
   };
 
-  // Map form data to service format
   const mapFormToServiceData = (formData: typeof Assets.prototype.formData): AssetFormData => {
     return {
       assetname: formData.name,

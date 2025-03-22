@@ -18,6 +18,15 @@ const Index = () => {
   const { setShowSubscriptionModal } = useSubscription();
   const isMobile = useIsMobile();
   
+  // Mock employee data for the dashboard
+  const mockEmployee = {
+    id: 1,
+    name: "John Doe",
+    role: "Developer",
+    location: { lat: 37.7749, lng: -122.4194 },
+    lastActive: "2 minutes ago"
+  };
+  
   return (
     <div className="flex min-h-screen bg-gray-50 overflow-hidden">
       <SidebarNav />
@@ -60,7 +69,11 @@ const Index = () => {
                 <ExpenseGraph />
               </div>
               <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg">
-                <EmployeeLocation />
+                <EmployeeLocation 
+                  employee={mockEmployee}
+                  selected={true}
+                  onClick={() => console.log("Employee location clicked")}
+                />
               </div>
             </div>
             <div className="space-y-4 sm:space-y-6">

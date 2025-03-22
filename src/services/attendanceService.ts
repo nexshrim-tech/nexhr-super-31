@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceRecord {
@@ -59,10 +58,9 @@ export const fetchAttendanceRecords = async (
     // Map database records to frontend format
     const records: AttendanceRecord[] = (data || []).map(record => {
       const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
-      const checkOutDate = record.checkoutimestamp ? new Date(record.checkoutimestamp) : null;
+      const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
       
       return {
-        id: record.id,
         employeeId: record.employeeid,
         employeeName: record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : 'Unknown',
         date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
@@ -138,7 +136,7 @@ export const updateAttendanceRecord = async (
     }
     
     if (updates.date && updates.checkOut) {
-      updateData.checkoutimestamp = new Date(`${updates.date}T${updates.checkOut}`).toISOString();
+      updateData.checkouttimestamp = new Date(`${updates.date}T${updates.checkOut}`).toISOString();
     }
     
     if (updates.status) {

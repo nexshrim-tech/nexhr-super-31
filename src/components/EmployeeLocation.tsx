@@ -1,15 +1,24 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { Employee } from "@/pages/Track";
 
 export interface EmployeeLocationProps {
-  employee: Employee;
-  selected: boolean;
-  onClick: () => void;
+  employee: {
+    id: number;
+    name: string;
+    role: string;
+    location?: { lat: number; lng: number } | null;
+    lastActive: string;
+  };
+  selected?: boolean;
+  onClick?: () => void;
 }
 
-const EmployeeLocation: React.FC<EmployeeLocationProps> = ({ employee, selected, onClick }) => {
+const EmployeeLocation: React.FC<EmployeeLocationProps> = ({ 
+  employee, 
+  selected = false, 
+  onClick = () => {} 
+}) => {
   return (
     <div
       className={`p-4 rounded-lg mb-2 cursor-pointer transition-colors ${

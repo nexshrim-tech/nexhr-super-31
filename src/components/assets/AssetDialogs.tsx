@@ -11,17 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import AssetForm from "@/components/assets/AssetForm";
 import AssetDetails from "@/components/assets/AssetDetails";
-
-interface Asset {
-  id: number;
-  name: string;
-  type: string;
-  serialNumber: string;
-  purchaseDate: string;
-  value: number;
-  assignedTo: { name: string; avatar: string } | null;
-  status: string;
-}
+import { Asset } from "@/services/assetService";
 
 interface Employee {
   id: number;
@@ -29,60 +19,65 @@ interface Employee {
   avatar: string;
 }
 
-interface AssetFormData {
-  id?: number;
-  name: string;
-  type: string;
-  serialNumber: string;
-  purchaseDate: string;
-  value: string;
-  assignedTo: string | null;
-  status: string;
-}
-
-interface AssetDialogsProps {
-  isAddAssetDialogOpen: boolean;
-  setIsAddAssetDialogOpen: (isOpen: boolean) => void;
-  isEditAssetDialogOpen: boolean;
-  setIsEditAssetDialogOpen: (isOpen: boolean) => void;
-  isViewAssetDialogOpen: boolean;
-  setIsViewAssetDialogOpen: (isOpen: boolean) => void;
-  currentAsset: Asset | null;
-  formData: AssetFormData;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSelectChange: (name: string, value: string) => void;
-  handleDateSelect: (selectedDate: Date | undefined) => void;
-  date: Date | undefined;
-  assetTypes: string[];
+export interface AssetDialogsProps {
+  isCreateOpen: boolean;
+  isEditOpen: boolean;
+  isDeleteOpen: boolean;
+  isViewOpen: boolean;
+  onCreateClose: () => void;
+  onEditClose: () => void;
+  onDeleteClose: () => void;
+  onViewClose: () => void;
+  onConfirmDelete: () => Promise<void>;
+  formData: {
+    name: string;
+    type: string;
+    serialNumber: string;
+    purchaseDate: string;
+    value: string;
+    assignedTo: string | null;
+    status: string;
+    billDocument?: string;
+    billFile?: File | null;
+  };
+  setFormData: React.Dispatch<React.SetStateAction<{
+    name: string;
+    type: string;
+    serialNumber: string;
+    purchaseDate: string;
+    value: string;
+    assignedTo: string | null;
+    status: string;
+    billDocument?: string;
+    billFile?: File | null;
+  }>>;
+  onCreateSubmit: (formData: any) => Promise<void>;
+  onEditSubmit: (formData: any) => Promise<void>;
   employees: Employee[];
-  handleAddAsset: () => void;
-  handleEditAsset: () => void;
-  handleEditAssetOpen: (asset: Asset) => void;
+  selectedAsset: Asset | null;
 }
 
 const AssetDialogs: React.FC<AssetDialogsProps> = ({
-  isAddAssetDialogOpen,
-  setIsAddAssetDialogOpen,
-  isEditAssetDialogOpen,
-  setIsEditAssetDialogOpen,
-  isViewAssetDialogOpen,
-  setIsViewAssetDialogOpen,
-  currentAsset,
+  isCreateOpen,
+  isEditOpen,
+  isDeleteOpen,
+  isViewOpen,
+  onCreateClose,
+  onEditClose,
+  onDeleteClose,
+  onViewClose,
+  onConfirmDelete,
   formData,
-  handleInputChange,
-  handleSelectChange,
-  handleDateSelect,
-  date,
-  assetTypes,
+  setFormData,
+  onCreateSubmit,
+  onEditSubmit,
   employees,
-  handleAddAsset,
-  handleEditAsset,
-  handleEditAssetOpen
+  selectedAsset
 }) => {
   return (
     <>
       {/* Add Asset Dialog */}
-      <Dialog open={isAddAssetDialogOpen} onOpenChange={setIsAddAssetDialogOpen}>
+      <Dialog open={isCreateOpen} onOpenChange={onCreateClose}>
         <DialogContent className="max-w-md md:max-w-lg mx-auto">
           <DialogHeader>
             <DialogTitle>Add New Asset</DialogTitle>
@@ -92,22 +87,18 @@ const AssetDialogs: React.FC<AssetDialogsProps> = ({
           </DialogHeader>
           <AssetForm 
             formData={formData} 
-            handleInputChange={handleInputChange}
-            handleSelectChange={handleSelectChange}
-            handleDateSelect={handleDateSelect}
-            date={date}
-            assetTypes={assetTypes}
+            setFormData={setFormData}
             employees={employees}
           />
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setIsAddAssetDialogOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-            <Button onClick={handleAddAsset} className="w-full sm:w-auto">Add Asset</Button>
+            <Button variant="outline" onClick={onCreateClose} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={() => onCreateSubmit(formData)} className="w-full sm:w-auto">Add Asset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit Asset Dialog */}
-      <Dialog open={isEditAssetDialogOpen} onOpenChange={setIsEditAssetDialogOpen}>
+      <Dialog open={isEditOpen} onOpenChange={onEditClose}>
         <DialogContent className="max-w-md md:max-w-lg mx-auto">
           <DialogHeader>
             <DialogTitle>Edit Asset</DialogTitle>
@@ -115,40 +106,48 @@ const AssetDialogs: React.FC<AssetDialogsProps> = ({
               Update the details for this asset.
             </DialogDescription>
           </DialogHeader>
-          {currentAsset && (
-            <>
-              <AssetForm 
-                formData={formData} 
-                handleInputChange={handleInputChange}
-                handleSelectChange={handleSelectChange}
-                handleDateSelect={handleDateSelect}
-                date={date}
-                assetTypes={assetTypes}
-                employees={employees}
-              />
-              <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" onClick={() => setIsEditAssetDialogOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-                <Button onClick={handleEditAsset} className="w-full sm:w-auto">Update Asset</Button>
-              </DialogFooter>
-            </>
-          )}
+          <AssetForm 
+            formData={formData} 
+            setFormData={setFormData}
+            employees={employees}
+          />
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={onEditClose} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={() => onEditSubmit(formData)} className="w-full sm:w-auto">Update Asset</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Asset Dialog */}
+      <Dialog open={isDeleteOpen} onOpenChange={onDeleteClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Asset</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this asset? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={onDeleteClose} className="w-full sm:w-auto">Cancel</Button>
+            <Button variant="destructive" onClick={onConfirmDelete} className="w-full sm:w-auto">Delete</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* View Asset Dialog */}
-      <Dialog open={isViewAssetDialogOpen} onOpenChange={setIsViewAssetDialogOpen}>
+      <Dialog open={isViewOpen} onOpenChange={onViewClose}>
         <DialogContent className="max-w-md md:max-w-lg mx-auto">
           <DialogHeader>
             <DialogTitle>Asset Details</DialogTitle>
           </DialogHeader>
-          {currentAsset && (
+          {selectedAsset && (
             <AssetDetails 
-              asset={currentAsset}
+              asset={selectedAsset}
               onEdit={() => {
-                setIsViewAssetDialogOpen(false);
-                handleEditAssetOpen(currentAsset);
+                onViewClose();
+                // Additional actions if needed
               }}
-              onClose={() => setIsViewAssetDialogOpen(false)}
+              onClose={onViewClose}
             />
           )}
         </DialogContent>
