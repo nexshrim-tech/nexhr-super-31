@@ -1,11 +1,10 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import UserHeader from "@/components/UserHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import GoogleMapsLocation from "@/components/GoogleMapsLocation";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { useSubscription } from "@/context/SubscriptionContext";
@@ -47,89 +46,51 @@ const Track = () => {
     );
   }
   
-  // Fetch employee locations on component mount
-  useEffect(() => {
-    fetchEmployeeLocations();
-  }, []);
-  
-  // Fetch employee locations from database
-  const fetchEmployeeLocations = async () => {
+  // Mock fetch employee locations (backend functionality removed)
+  const fetchEmployeeLocations = () => {
     setIsLoading(true);
+    // Mock data - this would normally come from a database
+    const mockData: EmployeeLocation[] = [
+      {
+        employeeid: 1,
+        firstname: "John",
+        lastname: "Doe",
+        latitude: 37.7749,
+        longitude: -122.4194,
+        timestamp: new Date().toISOString()
+      }
+    ];
     
-    try {
-      // Join track and employee tables to get location and employee info
-      const { data, error } = await supabase
-        .from('track')
-        .select(`
-          trackid,
-          latitude,
-          longitude,
-          timestamp,
-          employeeid,
-          employee:employeeid (
-            firstname,
-            lastname
-          )
-        `)
-        .order('timestamp', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Process data for map component
-      const processedData = (data || []).map(item => ({
-        employeeid: item.employeeid,
-        firstname: item.employee?.firstname || 'Unknown',
-        lastname: item.employee?.lastname || 'User',
-        latitude: item.latitude,
-        longitude: item.longitude,
-        timestamp: item.timestamp
-      }));
-      
-      setEmployeeLocations(processedData);
-    } catch (error) {
-      console.error("Error fetching employee locations:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load employee locations",
-        variant: "destructive"
-      });
-    } finally {
+    // Simulating an API delay
+    setTimeout(() => {
+      setEmployeeLocations(mockData);
       setIsLoading(false);
-    }
+    }, 500);
   };
   
-  // Update employee location
+  // Mock update employee location (backend functionality removed)
   const updateMyLocation = async (latitude: number, longitude: number) => {
-    if (!employeeId) {
-      toast({
-        title: "Error",
-        description: "Cannot update location: No employee ID found",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     try {
-      const { error } = await supabase
-        .from('track')
-        .insert([
-          {
-            employeeid: employeeId,
-            latitude,
-            longitude,
-            timestamp: new Date().toISOString()
-          }
-        ]);
+      // In a real app, this would store the location in a database
+      console.log("Location update requested:", { latitude, longitude });
       
-      if (error) throw error;
-      
+      // Mock successful update
       toast({
-        title: "Location updated",
-        description: "Your location has been updated successfully"
+        title: "Location update simulated",
+        description: "Backend functionality has been removed as requested"
       });
       
-      // Refresh location data
-      fetchEmployeeLocations();
+      // Add to local state to simulate the update
+      const updatedLocations = [...employeeLocations];
+      updatedLocations.unshift({
+        employeeid: employeeId || 1,
+        firstname: "Current",
+        lastname: "User",
+        latitude,
+        longitude,
+        timestamp: new Date().toISOString()
+      });
+      setEmployeeLocations(updatedLocations);
     } catch (error) {
       console.error("Error updating location:", error);
       toast({

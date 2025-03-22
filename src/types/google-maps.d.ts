@@ -5,7 +5,7 @@ declare namespace google.maps {
     setCenter(latLng: LatLng | LatLngLiteral): void;
     setZoom(zoom: number): void;
     panTo(latLng: LatLng | LatLngLiteral): void;
-    controls: MVCArray<Node>[][];
+    controls: { [index: number]: MVCArray<Node> };
     fitBounds(bounds: LatLngBounds): void;
   }
   

@@ -74,12 +74,15 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
         locationButton.style.height = "40px";
         locationButton.style.fontSize = "1.5rem";
 
-        // Add the button to the map - fixed the type issue with controls
-        if (mapInstance.controls && window.google.maps.ControlPosition) {
-          // Create a div as a container to hold our button
+        // Fixed: Add the button to the map using the proper control position
+        if (mapInstance.controls && google.maps.ControlPosition) {
+          // Instead of pushing directly, we need to handle the control properly
           const controlDiv = document.createElement('div');
           controlDiv.appendChild(locationButton);
-          mapInstance.controls[window.google.maps.ControlPosition.RIGHT_BOTTOM].push(controlDiv);
+          
+          // Use index to properly access the control array
+          const controlPosition = google.maps.ControlPosition.RIGHT_BOTTOM;
+          mapInstance.controls[controlPosition].push(controlDiv);
         }
 
         locationButton.addEventListener("click", () => {
