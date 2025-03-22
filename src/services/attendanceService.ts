@@ -17,6 +17,23 @@ export interface AttendanceRecord {
   selfiePath?: string;
 }
 
+// Define a type for the database record to avoid excessive type inference
+interface AttendanceDbRecord {
+  id?: number;
+  employeeid: number;
+  customerid: number;
+  checkintimestamp: string;
+  checkouttimestamp?: string;
+  status: string;
+  selfieimagepath?: string;
+  employee?: {
+    employeeid: number;
+    firstname?: string;
+    lastname?: string;
+    jobtitle?: string;
+  };
+}
+
 // Fetch attendance records for a specific customer
 export const fetchAttendanceRecords = async (
   customerId: number,
@@ -63,9 +80,9 @@ export const fetchAttendanceRecords = async (
     
     // Process each record manually to avoid complex type derivations
     for (let i = 0; i < data.length; i++) {
-      const record = data[i];
+      const record = data[i] as AttendanceDbRecord;
       // Access employee data with proper type checking
-      const employee = record.employee as any || {};
+      const employee = record.employee || {};
       
       // Parse dates
       const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
@@ -96,17 +113,20 @@ export const fetchAttendanceRecords = async (
   }
 };
 
+// Interface for attendance record creation
+interface AddAttendanceInput {
+  employeeId: number;
+  date: string;
+  checkIn: string;
+  checkOut?: string;
+  status: string;
+  selfiePath?: string;
+}
+
 // Add a new attendance record
 export const addAttendanceRecord = async (
   customerId: number,
-  record: {
-    employeeId: number;
-    date: string;
-    checkIn: string;
-    checkOut?: string;
-    status: string;
-    selfiePath?: string;
-  }
+  record: AddAttendanceInput
 ): Promise<any> => {
   try {
     // Format timestamps
