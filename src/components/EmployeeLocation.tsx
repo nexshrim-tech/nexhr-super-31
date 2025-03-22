@@ -2,7 +2,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 
-interface EmployeeLocationProps {
+export interface EmployeeLocationProps {
   employee: {
     id: number;
     name: string;

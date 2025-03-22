@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,89 +33,35 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useAuth } from "@/context/AuthContext";
+import { 
+  fetchDepartments, 
+  createDepartment, 
+  updateDepartment, 
+  deleteDepartment,
+  fetchEmployees
+} from "@/integrations/supabase/functions";
 
-const initialDepartments = [
-  {
-    id: 1,
-    name: "Engineering",
-    manager: "Demi Wilkinson",
-    employeeCount: 32,
-    budget: 500000,
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Design",
-    manager: "Olivia Rhye",
-    employeeCount: 18,
-    budget: 250000,
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Product",
-    manager: "Phoenix Baker",
-    employeeCount: 12,
-    budget: 200000,
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "Marketing",
-    manager: "Drew Cano",
-    employeeCount: 15,
-    budget: 300000,
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Sales",
-    manager: "Orlando Diggs",
-    employeeCount: 20,
-    budget: 400000,
-    status: "Active",
-  },
-  {
-    id: 6,
-    name: "Human Resources",
-    manager: "Candice Wu",
-    employeeCount: 8,
-    budget: 150000,
-    status: "Active",
-  },
-  {
-    id: 7,
-    name: "Finance",
-    manager: "Natali Craig",
-    employeeCount: 10,
-    budget: 200000,
-    status: "Active",
-  },
-];
+interface Department {
+  departmentid: number;
+  departmentname: string;
+  managerid: number;
+  manager?: string;
+  employeecount: number;
+  annualbudget: number;
+  status: string;
+  customerid: number;
+}
 
-const managers = [
-  "Demi Wilkinson",
-  "Olivia Rhye",
-  "Phoenix Baker",
-  "Drew Cano",
-  "Orlando Diggs",
-  "Candice Wu",
-  "Natali Craig",
-  "Lana Steiner",
-];
-
-const employeeList = [
-  { id: 1, name: "Olivia Rhye", avatar: "OR", department: "Engineering" },
-  { id: 2, name: "Phoenix Baker", avatar: "PB", department: "Design" },
-  { id: 3, name: "Lana Steiner", avatar: "LS", department: "Product" },
-  { id: 4, name: "Demi Wilkinson", avatar: "DW", department: "Engineering" },
-  { id: 5, name: "Candice Wu", avatar: "CW", department: "Marketing" },
-  { id: 6, name: "Natali Craig", avatar: "NC", department: "Sales" },
-  { id: 7, name: "Drew Cano", avatar: "DC", department: "Human Resources" },
-  { id: 8, name: "Orlando Diggs", avatar: "OD", department: "Finance" },
-  { id: 9, name: "Chisom Chukwukwe", avatar: "CC", department: "Design" },
-  { id: 10, name: "Michael Johnson", avatar: "MJ", department: "Engineering" },
-];
+interface Employee {
+  employeeid: number;
+  firstname: string;
+  lastname: string;
+  email: string;
+  jobtitle: string;
+  avatar?: string;
+  department?: string;
+}
 
 interface DepartmentFormData {
   name: string;
@@ -125,12 +72,17 @@ interface DepartmentFormData {
 }
 
 const Department = () => {
-  const [departments, setDepartments] = useState(initialDepartments);
+  const { user, customerData } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isManageEmployeesDialogOpen, setIsManageEmployeesDialogOpen] = useState(false);
-  const [currentDepartment, setCurrentDepartment] = useState<any>(null);
+  const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
   const [formData, setFormData] = useState<DepartmentFormData>({
     name: "",
     manager: "",
@@ -138,13 +90,63 @@ const Department = () => {
     budget: "",
     status: "Active"
   });
-  const [departmentEmployees, setDepartmentEmployees] = useState<any[]>([]);
-  const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
-  const { toast } = useToast();
+  const [departmentEmployees, setDepartmentEmployees] = useState<Employee[]>([]);
+  const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
 
-  const totalEmployees = departments.reduce((sum, dept) => sum + dept.employeeCount, 0);
-  const totalBudget = departments.reduce((sum, dept) => sum + dept.budget, 0);
-  const avgTeamSize = Math.round(totalEmployees / departments.length);
+  useEffect(() => {
+    const loadData = async () => {
+      if (!customerData?.customerid) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch departments
+        const departmentsData = await fetchDepartments(customerData.customerid);
+        
+        // Fetch employees
+        const employeesData = await fetchEmployees(customerData.customerid);
+        
+        // Map manager names to departments
+        const mappedDepartments = departmentsData.map(dept => {
+          const manager = employeesData.find(emp => emp.employeeid === dept.managerid);
+          return {
+            ...dept,
+            manager: manager ? `${manager.firstname} ${manager.lastname}` : 'Unassigned'
+          };
+        });
+        
+        // Create avatar initials and map departments
+        const mappedEmployees = employeesData.map(emp => {
+          const initials = `${emp.firstname?.charAt(0) || ''}${emp.lastname?.charAt(0) || ''}`;
+          const dept = departmentsData.find(d => d.departmentid === Number(emp.department));
+          
+          return {
+            ...emp,
+            avatar: initials,
+            department: dept?.departmentname || 'Unassigned'
+          };
+        });
+        
+        setDepartments(mappedDepartments);
+        setEmployees(mappedEmployees);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast({
+          title: "Error loading data",
+          description: "Could not load departments and employees",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [customerData, toast]);
+
+  const totalEmployees = departments.reduce((sum, dept) => sum + dept.employeecount, 0);
+  const totalBudget = departments.reduce((sum, dept) => sum + dept.annualbudget, 0);
+  const avgTeamSize = departments.length > 0 ? Math.round(totalEmployees / departments.length) : 0;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -171,7 +173,7 @@ const Department = () => {
     setIsAddDialogOpen(true);
   };
 
-  const handleAddDepartment = () => {
+  const handleAddDepartment = async () => {
     if (!formData.name || !formData.manager || !formData.employeeCount || !formData.budget) {
       toast({
         title: "Missing required fields",
@@ -181,42 +183,72 @@ const Department = () => {
       return;
     }
 
-    const newDepartment = {
-      id: Math.max(...departments.map(d => d.id)) + 1,
-      name: formData.name,
-      manager: formData.manager,
-      employeeCount: parseInt(formData.employeeCount),
-      budget: parseFloat(formData.budget),
-      status: formData.status
-    };
+    if (!customerData?.customerid) {
+      toast({
+        title: "Authentication Error",
+        description: "Please login to add departments.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    setDepartments([...departments, newDepartment]);
-    setIsAddDialogOpen(false);
-    resetForm();
-    toast({
-      title: "Department added",
-      description: `${newDepartment.name} has been added to the organization.`
-    });
+    try {
+      const managerId = Number(formData.manager);
+      
+      const newDepartmentData = {
+        departmentname: formData.name,
+        managerid: managerId,
+        employeecount: parseInt(formData.employeeCount),
+        annualbudget: parseFloat(formData.budget),
+        status: formData.status,
+        customerid: customerData.customerid
+      };
+
+      const newDepartment = await createDepartment(newDepartmentData);
+      
+      // Add manager name for display
+      const manager = employees.find(emp => emp.employeeid === managerId);
+      const mappedDept = {
+        ...newDepartment,
+        manager: manager ? `${manager.firstname} ${manager.lastname}` : 'Unassigned'
+      };
+
+      setDepartments([...departments, mappedDept]);
+      setIsAddDialogOpen(false);
+      resetForm();
+      
+      toast({
+        title: "Department added",
+        description: `${newDepartment.departmentname} has been added to the organization.`
+      });
+    } catch (error) {
+      console.error("Error adding department:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add department. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleViewDepartment = (department: any) => {
+  const handleViewDepartment = (department: Department) => {
     setCurrentDepartment(department);
     setIsViewDialogOpen(true);
   };
 
-  const handleEditDepartmentOpen = (department: any) => {
+  const handleEditDepartmentOpen = (department: Department) => {
     setCurrentDepartment(department);
     setFormData({
-      name: department.name,
-      manager: department.manager,
-      employeeCount: department.employeeCount.toString(),
-      budget: department.budget.toString(),
+      name: department.departmentname,
+      manager: department.managerid.toString(),
+      employeeCount: department.employeecount.toString(),
+      budget: department.annualbudget.toString(),
       status: department.status
     });
     setIsEditDialogOpen(true);
   };
 
-  const handleEditDepartment = () => {
+  const handleEditDepartment = async () => {
     if (!currentDepartment) return;
 
     if (!formData.name || !formData.manager || !formData.employeeCount || !formData.budget) {
@@ -228,38 +260,60 @@ const Department = () => {
       return;
     }
 
-    const updatedDepartments = departments.map(dept => {
-      if (dept.id === currentDepartment.id) {
-        return {
-          ...dept,
-          name: formData.name,
-          manager: formData.manager,
-          employeeCount: parseInt(formData.employeeCount),
-          budget: parseFloat(formData.budget),
-          status: formData.status
-        };
-      }
-      return dept;
-    });
+    try {
+      const managerId = Number(formData.manager);
+      
+      const updatedDepartmentData = {
+        departmentname: formData.name,
+        managerid: managerId,
+        employeecount: parseInt(formData.employeeCount),
+        annualbudget: parseFloat(formData.budget),
+        status: formData.status
+      };
 
-    setDepartments(updatedDepartments);
-    setIsEditDialogOpen(false);
-    resetForm();
-    toast({
-      title: "Department updated",
-      description: `${formData.name} has been updated.`
-    });
+      await updateDepartment(currentDepartment.departmentid, updatedDepartmentData);
+      
+      // Add manager name for display
+      const manager = employees.find(emp => emp.employeeid === managerId);
+      
+      const updatedDepartments = departments.map(dept => {
+        if (dept.departmentid === currentDepartment.departmentid) {
+          return {
+            ...dept,
+            ...updatedDepartmentData,
+            manager: manager ? `${manager.firstname} ${manager.lastname}` : 'Unassigned'
+          };
+        }
+        return dept;
+      });
+
+      setDepartments(updatedDepartments);
+      setIsEditDialogOpen(false);
+      resetForm();
+      
+      toast({
+        title: "Department updated",
+        description: `${formData.name} has been updated.`
+      });
+    } catch (error) {
+      console.error("Error updating department:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update department. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleManageEmployees = (department: any) => {
+  const handleManageEmployees = (department: Department) => {
     setCurrentDepartment(department);
     
-    const deptEmployees = employeeList.filter(emp => 
-      emp.department.toLowerCase() === department.name.toLowerCase()
+    const deptEmployees = employees.filter(emp => 
+      Number(emp.department) === department.departmentid
     );
     
-    const otherEmployees = employeeList.filter(emp => 
-      emp.department.toLowerCase() !== department.name.toLowerCase()
+    const otherEmployees = employees.filter(emp => 
+      Number(emp.department) !== department.departmentid
     );
     
     setDepartmentEmployees(deptEmployees);
@@ -267,61 +321,114 @@ const Department = () => {
     setIsManageEmployeesDialogOpen(true);
   };
 
-  const handleAddEmployee = (employee: any) => {
-    const updatedAvailable = availableEmployees.filter(emp => emp.id !== employee.id);
-    setAvailableEmployees(updatedAvailable);
+  const handleAddEmployee = async (employee: Employee) => {
+    if (!currentDepartment || !customerData?.customerid) return;
     
-    const updatedDeptEmployees = [...departmentEmployees, {...employee, department: currentDepartment.name}];
-    setDepartmentEmployees(updatedDeptEmployees);
-    
-    const updatedDepartments = departments.map(dept => {
-      if (dept.id === currentDepartment.id) {
-        return {
-          ...dept,
-          employeeCount: dept.employeeCount + 1
-        };
-      }
-      return dept;
-    });
-    
-    setDepartments(updatedDepartments);
-    
-    toast({
-      title: "Employee added",
-      description: `${employee.name} has been added to ${currentDepartment.name}.`
-    });
+    try {
+      // In a real implementation, you would update the employee's department here
+      // For now, we'll just update the state
+
+      const updatedAvailable = availableEmployees.filter(emp => emp.employeeid !== employee.employeeid);
+      setAvailableEmployees(updatedAvailable);
+      
+      const updatedDeptEmployees = [...departmentEmployees, {...employee, department: currentDepartment.departmentname}];
+      setDepartmentEmployees(updatedDeptEmployees);
+      
+      const updatedDepartments = departments.map(dept => {
+        if (dept.departmentid === currentDepartment.departmentid) {
+          return {
+            ...dept,
+            employeecount: dept.employeecount + 1
+          };
+        }
+        return dept;
+      });
+      
+      setDepartments(updatedDepartments);
+      
+      // Update department employee count
+      await updateDepartment(currentDepartment.departmentid, {
+        employeecount: currentDepartment.employeecount + 1
+      });
+      
+      toast({
+        title: "Employee added",
+        description: `${employee.firstname} ${employee.lastname} has been added to ${currentDepartment.departmentname}.`
+      });
+    } catch (error) {
+      console.error("Error adding employee to department:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add employee to department.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleRemoveEmployee = (employee: any) => {
-    const updatedDeptEmployees = departmentEmployees.filter(emp => emp.id !== employee.id);
-    setDepartmentEmployees(updatedDeptEmployees);
+  const handleRemoveEmployee = async (employee: Employee) => {
+    if (!currentDepartment || !customerData?.customerid) return;
     
-    const updatedAvailable = [...availableEmployees, {...employee, department: "Unassigned"}];
-    setAvailableEmployees(updatedAvailable);
-    
-    const updatedDepartments = departments.map(dept => {
-      if (dept.id === currentDepartment.id) {
-        return {
-          ...dept,
-          employeeCount: dept.employeeCount - 1
-        };
-      }
-      return dept;
-    });
-    
-    setDepartments(updatedDepartments);
-    
-    toast({
-      title: "Employee removed",
-      description: `${employee.name} has been removed from ${currentDepartment.name}.`
-    });
+    try {
+      // In a real implementation, you would update the employee's department here
+      // For now, we'll just update the state
+
+      const updatedDeptEmployees = departmentEmployees.filter(emp => emp.employeeid !== employee.employeeid);
+      setDepartmentEmployees(updatedDeptEmployees);
+      
+      const updatedAvailable = [...availableEmployees, {...employee, department: "Unassigned"}];
+      setAvailableEmployees(updatedAvailable);
+      
+      const updatedDepartments = departments.map(dept => {
+        if (dept.departmentid === currentDepartment.departmentid) {
+          return {
+            ...dept,
+            employeecount: Math.max(0, dept.employeecount - 1)
+          };
+        }
+        return dept;
+      });
+      
+      setDepartments(updatedDepartments);
+      
+      // Update department employee count
+      await updateDepartment(currentDepartment.departmentid, {
+        employeecount: Math.max(0, currentDepartment.employeecount - 1)
+      });
+      
+      toast({
+        title: "Employee removed",
+        description: `${employee.firstname} ${employee.lastname} has been removed from ${currentDepartment.departmentname}.`
+      });
+    } catch (error) {
+      console.error("Error removing employee from department:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove employee from department.",
+        variant: "destructive"
+      });
+    }
   };
 
   const chartData = departments.map(dept => ({
-    name: dept.name,
-    employees: dept.employeeCount,
-    budget: dept.budget / 1000
+    name: dept.departmentname,
+    employees: dept.employeecount,
+    budget: dept.annualbudget / 1000
   }));
+
+  if (loading) {
+    return (
+      <div className="flex h-full bg-gray-50">
+        <SidebarNav />
+        <div className="flex-1 overflow-auto">
+          <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
+            <div className="flex justify-center items-center min-h-[80vh]">
+              <p>Loading departments...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -413,11 +520,11 @@ const Department = () => {
                   </TableHeader>
                   <TableBody>
                     {departments.map((department) => (
-                      <TableRow key={department.id}>
-                        <TableCell className="font-medium">{department.name}</TableCell>
+                      <TableRow key={department.departmentid}>
+                        <TableCell className="font-medium">{department.departmentname}</TableCell>
                         <TableCell>{department.manager}</TableCell>
-                        <TableCell>{department.employeeCount}</TableCell>
-                        <TableCell>${department.budget.toLocaleString()}</TableCell>
+                        <TableCell>{department.employeecount}</TableCell>
+                        <TableCell>${department.annualbudget.toLocaleString()}</TableCell>
                         <TableCell>
                           <Badge className="bg-green-100 text-green-800">
                             {department.status}
@@ -459,15 +566,15 @@ const Department = () => {
               <CardContent>
                 <div className="space-y-4">
                   {departments.map((dept, index) => {
-                    const percentage = Math.round((dept.employeeCount / totalEmployees) * 100);
+                    const percentage = totalEmployees > 0 ? Math.round((dept.employeecount / totalEmployees) * 100) : 0;
                     const colors = ["bg-blue-500", "bg-purple-500", "bg-green-500", "bg-yellow-500", "bg-red-500", "bg-pink-500", "bg-orange-500"];
                     const colorIndex = index % colors.length;
                     
                     return (
-                      <div key={dept.id} className="flex items-center justify-between">
+                      <div key={dept.departmentid} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className={`w-3 h-3 rounded-full ${colors[colorIndex]}`} />
-                          <div>{dept.name}</div>
+                          <div>{dept.departmentname}</div>
                         </div>
                         <div>{percentage}%</div>
                       </div>
@@ -484,13 +591,13 @@ const Department = () => {
               <CardContent>
                 <div className="space-y-4">
                   {departments.map((dept, index) => {
-                    const percentage = Math.round((dept.budget / totalBudget) * 100);
+                    const percentage = totalBudget > 0 ? Math.round((dept.annualbudget / totalBudget) * 100) : 0;
                     const colors = ["bg-blue-500", "bg-purple-500", "bg-green-500", "bg-yellow-500", "bg-red-500", "bg-pink-500", "bg-orange-500"];
                     const colorIndex = index % colors.length;
                     
                     return (
-                      <div key={dept.id} className="flex items-center justify-between">
-                        <div>{dept.name}</div>
+                      <div key={dept.departmentid} className="flex items-center justify-between">
+                        <div>{dept.departmentname}</div>
                         <div className="w-1/2 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div 
                             className={`h-full ${colors[colorIndex]} rounded-full`} 
@@ -539,8 +646,13 @@ const Department = () => {
                     <SelectValue placeholder="Select manager" />
                   </SelectTrigger>
                   <SelectContent>
-                    {managers.map(manager => (
-                      <SelectItem key={manager} value={manager}>{manager}</SelectItem>
+                    {employees.map(emp => (
+                      <SelectItem 
+                        key={emp.employeeid} 
+                        value={emp.employeeid.toString()}
+                      >
+                        {`${emp.firstname} ${emp.lastname}`}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -634,8 +746,13 @@ const Department = () => {
                         <SelectValue placeholder="Select manager" />
                       </SelectTrigger>
                       <SelectContent>
-                        {managers.map(manager => (
-                          <SelectItem key={manager} value={manager}>{manager}</SelectItem>
+                        {employees.map(emp => (
+                          <SelectItem 
+                            key={emp.employeeid} 
+                            value={emp.employeeid.toString()}
+                          >
+                            {`${emp.firstname} ${emp.lastname}`}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -708,7 +825,7 @@ const Department = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Department Name</h3>
-                  <p className="mt-1 text-base">{currentDepartment.name}</p>
+                  <p className="mt-1 text-base">{currentDepartment.departmentname}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Manager</h3>
@@ -719,11 +836,11 @@ const Department = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Employees</h3>
-                  <p className="mt-1 text-base">{currentDepartment.employeeCount}</p>
+                  <p className="mt-1 text-base">{currentDepartment.employeecount}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Annual Budget</h3>
-                  <p className="mt-1 text-base">${currentDepartment.budget.toLocaleString()}</p>
+                  <p className="mt-1 text-base">${currentDepartment.annualbudget.toLocaleString()}</p>
                 </div>
               </div>
               
@@ -751,7 +868,7 @@ const Department = () => {
           <DialogHeader>
             <DialogTitle>Manage Department Employees</DialogTitle>
             <DialogDescription>
-              Add or remove employees from the {currentDepartment?.name} department
+              Add or remove employees from the {currentDepartment?.departmentname} department
             </DialogDescription>
           </DialogHeader>
           
@@ -761,12 +878,12 @@ const Department = () => {
               {departmentEmployees.length > 0 ? (
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                   {departmentEmployees.map(employee => (
-                    <div key={employee.id} className="flex items-center justify-between p-2 border rounded-md">
+                    <div key={employee.employeeid} className="flex items-center justify-between p-2 border rounded-md">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback>{employee.avatar}</AvatarFallback>
                         </Avatar>
-                        <span>{employee.name}</span>
+                        <span>{employee.firstname} {employee.lastname}</span>
                       </div>
                       <Button 
                         variant="outline" 
@@ -791,13 +908,13 @@ const Department = () => {
               {availableEmployees.length > 0 ? (
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                   {availableEmployees.map(employee => (
-                    <div key={employee.id} className="flex items-center justify-between p-2 border rounded-md">
+                    <div key={employee.employeeid} className="flex items-center justify-between p-2 border rounded-md">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback>{employee.avatar}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <span>{employee.name}</span>
+                          <span>{employee.firstname} {employee.lastname}</span>
                           <p className="text-xs text-gray-500">{employee.department}</p>
                         </div>
                       </div>

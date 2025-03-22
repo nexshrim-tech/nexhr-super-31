@@ -781,6 +781,38 @@ export type Database = {
         }
         Relationships: []
       }
+      project_assignments: {
+        Row: {
+          assignment_id: number
+          created_at: string | null
+          customerid: number | null
+          employeeid: number | null
+          projectid: number | null
+        }
+        Insert: {
+          assignment_id?: number
+          created_at?: string | null
+          customerid?: number | null
+          employeeid?: number | null
+          projectid?: number | null
+        }
+        Update: {
+          assignment_id?: number
+          created_at?: string | null
+          customerid?: number | null
+          employeeid?: number | null
+          projectid?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_assignments_projectid_fkey"
+            columns: ["projectid"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["projectid"]
+          },
+        ]
+      }
       projectcomment: {
         Row: {
           commentid: number
