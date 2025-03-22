@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -30,104 +30,116 @@ import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import EmployeeListHeader from "@/components/employees/EmployeeListHeader";
 import EmployeePagination from "@/components/employees/EmployeePagination";
 import UserHeader from "@/components/UserHeader";
-import { Sparkles, Key, Eye, Edit } from "lucide-react";
+import { Sparkles, Key, Eye, Edit, Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-const employees = [
-  {
-    id: "EMP001",
-    name: "Olivia Rhye",
-    email: "olivia@nexhr.com",
-    department: "Design",
-    role: "UI Designer",
-    status: "Active",
-    avatar: "OR",
-  },
-  {
-    id: "EMP002",
-    name: "Phoenix Baker",
-    email: "phoenix@nexhr.com",
-    department: "Product",
-    role: "Product Manager",
-    status: "Active",
-    avatar: "PB",
-  },
-  {
-    id: "EMP003",
-    name: "Lana Steiner",
-    email: "lana@nexhr.com",
-    department: "Engineering",
-    role: "Frontend Developer",
-    status: "On Leave",
-    avatar: "LS",
-  },
-  {
-    id: "EMP004",
-    name: "Demi Wilkinson",
-    email: "demi@nexhr.com",
-    department: "Engineering",
-    role: "Backend Developer",
-    status: "Active",
-    avatar: "DW",
-  },
-  {
-    id: "EMP005",
-    name: "Candice Wu",
-    email: "candice@nexhr.com",
-    department: "Engineering",
-    role: "Full Stack Developer",
-    status: "Active",
-    avatar: "CW",
-  },
-  {
-    id: "EMP006",
-    name: "Natali Craig",
-    email: "natali@nexhr.com",
-    department: "Design",
-    role: "UX Designer",
-    status: "Inactive",
-    avatar: "NC",
-  },
-  {
-    id: "EMP007",
-    name: "Drew Cano",
-    email: "drew@nexhr.com",
-    department: "Marketing",
-    role: "Marketing Manager",
-    status: "Active",
-    avatar: "DC",
-  },
-  {
-    id: "EMP008",
-    name: "Orlando Diggs",
-    email: "orlando@nexhr.com",
-    department: "Sales",
-    role: "Sales Manager",
-    status: "Active",
-    avatar: "OD",
-  },
-];
+interface EmployeeData {
+  employeeid: number;
+  id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  department: string;
+  jobtitle: string;
+  status: string;
+  avatar: string;
+  departmentname?: string; // From join with department table
+}
 
 const AllEmployees = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeData | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [employees, setEmployees] = useState<EmployeeData[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Fetch employees on component mount
+  useEffect(() => {
+    fetchEmployees();
+  }, [user]);
+
+  // Fetch employees from Supabase
+  const fetchEmployees = async () => {
+    setLoading(true);
+    try {
+      // Get customer ID from profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('customer_id')
+        .eq('id', user?.id)
+        .single();
+      
+      if (!profileData?.customer_id) {
+        console.error("Customer ID not found in profile");
+        return;
+      }
+
+      // Get employees with department names
+      const { data, error } = await supabase
+        .from('employee')
+        .select(`
+          employeeid,
+          firstname,
+          lastname,
+          email,
+          jobtitle,
+          department,
+          department:department(departmentname)
+        `)
+        .eq('customerid', profileData.customer_id);
+
+      if (error) {
+        console.error("Error fetching employees:", error);
+        throw error;
+      }
+
+      if (data) {
+        // Transform the data to match the expected format
+        const formattedEmployees = data.map(emp => ({
+          employeeid: emp.employeeid,
+          id: `EMP${emp.employeeid.toString().padStart(3, '0')}`,
+          firstname: emp.firstname || '',
+          lastname: emp.lastname || '',
+          email: emp.email || '',
+          jobtitle: emp.jobtitle || '',
+          department: emp.department?.departmentname || 'Unassigned',
+          status: 'Active', // Default status
+          avatar: `${emp.firstname?.[0] || ''}${emp.lastname?.[0] || ''}`
+        }));
+
+        setEmployees(formattedEmployees);
+      }
+    } catch (error) {
+      console.error("Error in fetchEmployees:", error);
+      toast({
+        title: "Failed to load employees",
+        description: "There was an error loading the employee list. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredEmployees = employees.filter(
     (employee) => {
       const matchesSearch = 
-        employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.firstname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.jobtitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.id.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesDepartment = 
@@ -138,19 +150,51 @@ const AllEmployees = () => {
     }
   );
 
-  const handleViewEmployee = (employee: any) => {
-    navigate(`/employee/${employee.id}`);
+  const handleViewEmployee = (employee: EmployeeData) => {
+    navigate(`/employee/${employee.employeeid}`);
   };
   
-  const handleSaveEmployee = () => {
-    setIsEditDialogOpen(false);
-    toast({
-      title: "Employee updated",
-      description: "Employee information has been updated successfully."
-    });
+  const handleSaveEmployee = async (editedEmployee: any) => {
+    try {
+      if (!selectedEmployee) return;
+      
+      // Update employee in Supabase
+      const { error } = await supabase
+        .from('employee')
+        .update({
+          firstname: editedEmployee.firstname,
+          lastname: editedEmployee.lastname,
+          email: editedEmployee.email,
+          jobtitle: editedEmployee.jobtitle,
+          // Update other fields as needed
+        })
+        .eq('employeeid', selectedEmployee.employeeid);
+
+      if (error) {
+        throw error;
+      }
+
+      // Refresh employee list
+      fetchEmployees();
+      
+      setIsEditDialogOpen(false);
+      toast({
+        title: "Employee updated",
+        description: "Employee information has been updated successfully."
+      });
+    } catch (error: any) {
+      console.error("Error updating employee:", error);
+      toast({
+        title: "Error updating employee",
+        description: error.message || "An error occurred while updating the employee.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
+    if (!selectedEmployee) return;
+    
     if (newPassword !== confirmPassword) {
       toast({
         title: "Passwords don't match",
@@ -169,13 +213,32 @@ const AllEmployees = () => {
       return;
     }
 
-    toast({
-      title: "Password updated",
-      description: `Password has been updated for ${selectedEmployee.name}.`
-    });
-    setIsPasswordDialogOpen(false);
-    setNewPassword("");
-    setConfirmPassword("");
+    try {
+      // Update password in Supabase
+      const { error } = await supabase
+        .from('employee')
+        .update({ employeepassword: newPassword })
+        .eq('employeeid', selectedEmployee.employeeid);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Password updated",
+        description: `Password has been updated for ${selectedEmployee.firstname} ${selectedEmployee.lastname}.`
+      });
+      setIsPasswordDialogOpen(false);
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      console.error("Error updating password:", error);
+      toast({
+        title: "Error updating password",
+        description: error.message || "An error occurred while updating the password.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -221,100 +284,117 @@ const AllEmployees = () => {
               </div>
             </CardHeader>
             <CardContent className={isMobile ? "p-2" : "p-4 sm:p-6"}>
-              <div className="rounded-md border overflow-hidden shadow-sm overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-gradient-to-r from-gray-50 to-gray-100">
-                    <TableRow>
-                      {!isMobile && <TableHead>Employee ID</TableHead>}
-                      <TableHead className="min-w-[200px]">Name</TableHead>
-                      {!isMobile && <TableHead>Department</TableHead>}
-                      {!isMobile && <TableHead>Role</TableHead>}
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredEmployees.map((employee) => (
-                      <TableRow key={employee.id} className="hover:bg-gray-50 transition-colors">
-                        {!isMobile && <TableCell className="font-medium">{employee.id}</TableCell>}
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8 sm:h-9 sm:w-9 border-2 border-white shadow-sm">
-                              <AvatarFallback className="bg-gradient-to-br from-nexhr-primary to-purple-600 text-white text-xs sm:text-sm">
-                                {employee.avatar}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium text-sm sm:text-base">{employee.name}</div>
-                              <div className="text-xs sm:text-sm text-gray-500">{employee.email}</div>
-                              {isMobile && (
-                                <div className="text-xs text-gray-500 mt-1">{employee.department} • {employee.role}</div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        {!isMobile && <TableCell>{employee.department}</TableCell>}
-                        {!isMobile && <TableCell>{employee.role}</TableCell>}
-                        <TableCell>
-                          <Badge
-                            className={`${
-                              employee.status === "Active"
-                                ? "bg-green-100 text-green-800 border border-green-200"
-                                : employee.status === "On Leave"
-                                ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                : "bg-gray-100 text-gray-800 border border-gray-200"
-                            } transition-colors text-xs`}
-                          >
-                            {employee.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="flex items-center gap-1 hover:bg-gray-100 transition-colors text-xs"
-                              onClick={() => {
-                                setSelectedEmployee(employee);
-                                setIsEditDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="h-3 w-3" />
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="flex items-center gap-1 hover:bg-indigo-100 hover:text-indigo-700 transition-colors text-xs"
-                              onClick={() => {
-                                setSelectedEmployee(employee);
-                                setIsPasswordDialogOpen(true);
-                              }}
-                            >
-                              <Key className="h-3 w-3" />
-                              Password
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="flex items-center gap-1 hover:bg-nexhr-primary/10 hover:text-nexhr-primary transition-colors text-xs"
-                              onClick={() => handleViewEmployee(employee)}
-                            >
-                              <Eye className="h-3 w-3" />
-                              View
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              
-              <EmployeePagination 
-                filteredCount={filteredEmployees.length} 
-                totalCount={employees.length} 
-              />
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-nexhr-primary" />
+                  <span className="ml-2 text-gray-600">Loading employees...</span>
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-md border overflow-hidden shadow-sm overflow-x-auto">
+                    <Table>
+                      <TableHeader className="bg-gradient-to-r from-gray-50 to-gray-100">
+                        <TableRow>
+                          {!isMobile && <TableHead>Employee ID</TableHead>}
+                          <TableHead className="min-w-[200px]">Name</TableHead>
+                          {!isMobile && <TableHead>Department</TableHead>}
+                          {!isMobile && <TableHead>Role</TableHead>}
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredEmployees.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={isMobile ? 3 : 6} className="text-center py-8 text-gray-500">
+                              No employees found. Add employees to your organization.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          filteredEmployees.map((employee) => (
+                            <TableRow key={employee.employeeid} className="hover:bg-gray-50 transition-colors">
+                              {!isMobile && <TableCell className="font-medium">{employee.id}</TableCell>}
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8 sm:h-9 sm:w-9 border-2 border-white shadow-sm">
+                                    <AvatarFallback className="bg-gradient-to-br from-nexhr-primary to-purple-600 text-white text-xs sm:text-sm">
+                                      {employee.avatar}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="font-medium text-sm sm:text-base">{employee.firstname} {employee.lastname}</div>
+                                    <div className="text-xs sm:text-sm text-gray-500">{employee.email}</div>
+                                    {isMobile && (
+                                      <div className="text-xs text-gray-500 mt-1">{employee.department} • {employee.jobtitle}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              {!isMobile && <TableCell>{employee.department}</TableCell>}
+                              {!isMobile && <TableCell>{employee.jobtitle}</TableCell>}
+                              <TableCell>
+                                <Badge
+                                  className={`${
+                                    employee.status === "Active"
+                                      ? "bg-green-100 text-green-800 border border-green-200"
+                                      : employee.status === "On Leave"
+                                      ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                      : "bg-gray-100 text-gray-800 border border-gray-200"
+                                  } transition-colors text-xs`}
+                                >
+                                  {employee.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="flex items-center gap-1 hover:bg-gray-100 transition-colors text-xs"
+                                    onClick={() => {
+                                      setSelectedEmployee(employee);
+                                      setIsEditDialogOpen(true);
+                                    }}
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                    Edit
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="flex items-center gap-1 hover:bg-indigo-100 hover:text-indigo-700 transition-colors text-xs"
+                                    onClick={() => {
+                                      setSelectedEmployee(employee);
+                                      setIsPasswordDialogOpen(true);
+                                    }}
+                                  >
+                                    <Key className="h-3 w-3" />
+                                    Password
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="flex items-center gap-1 hover:bg-nexhr-primary/10 hover:text-nexhr-primary transition-colors text-xs"
+                                    onClick={() => handleViewEmployee(employee)}
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                    View
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  
+                  <EmployeePagination 
+                    filteredCount={filteredEmployees.length} 
+                    totalCount={employees.length} 
+                  />
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -331,7 +411,7 @@ const AllEmployees = () => {
               <DialogHeader>
                 <DialogTitle>Change Password</DialogTitle>
                 <DialogDescription>
-                  {selectedEmployee && `Set a new password for ${selectedEmployee.name}`}
+                  {selectedEmployee && `Set a new password for ${selectedEmployee.firstname} ${selectedEmployee.lastname}`}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">

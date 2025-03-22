@@ -76,11 +76,11 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({
 
         // Fixed: Add the button to the map using the proper control position
         if (mapInstance.controls && google.maps.ControlPosition) {
-          // Instead of pushing directly, we need to handle the control properly
+          // Create a container div to hold the button
           const controlDiv = document.createElement('div');
           controlDiv.appendChild(locationButton);
           
-          // Use index to properly access the control array
+          // Use RIGHT_BOTTOM position and push the container div
           const controlPosition = google.maps.ControlPosition.RIGHT_BOTTOM;
           mapInstance.controls[controlPosition].push(controlDiv);
         }
