@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Asset, AssetFormData, fetchAssets, createAsset, updateAsset, deleteAsset, fetchEmployees, getCurrentCustomerId, mapAssetForFrontend } from '@/services/assetService';
@@ -361,7 +362,10 @@ const Assets = () => {
         setFormData={setFormData}
         onCreateSubmit={handleCreateAsset}
         onEditSubmit={handleEditAsset}
-        employees={employees}
+        employees={employees.map(emp => ({
+          id: String(emp.id), // Convert id to string to match the expected type
+          name: emp.name
+        }))}
         selectedAsset={selectedAsset}
       />
     </div>

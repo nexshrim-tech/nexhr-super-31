@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Dialog,
@@ -14,9 +13,9 @@ import AssetDetails from "@/components/assets/AssetDetails";
 import { Asset, mapAssetForFrontend } from "@/services/assetService";
 
 interface Employee {
-  id: number;
+  id: string;
   name: string;
-  avatar: string;
+  avatar?: string;
 }
 
 export interface AssetDialogsProps {

@@ -20,9 +20,9 @@ import {
 } from "@/components/ui/select";
 
 interface Employee {
-  id: number;
+  id: string; // Changed to string to match the expected type
   name: string;
-  avatar: string;
+  avatar?: string; // Made optional
 }
 
 interface AssetFormProps {
@@ -216,7 +216,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
           <SelectContent className="pointer-events-auto">
             <SelectItem value="not-assigned">Not Assigned</SelectItem>
             {employees.map(employee => (
-              <SelectItem key={employee.id} value={employee.id.toString()}>
+              <SelectItem key={employee.id} value={employee.id}>
                 {employee.name}
               </SelectItem>
             ))}

@@ -56,21 +56,26 @@ export const fetchAttendanceRecords = async (
     
     if (error) throw error;
     
-    // Map database records to frontend format
-    const records: AttendanceRecord[] = (data || []).map(record => {
-      const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
-      const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
-      
-      return {
-        employeeId: record.employeeid,
-        employeeName: record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : 'Unknown',
-        date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
-        checkIn: checkInDate ? checkInDate.toTimeString().slice(0, 5) : '',
-        checkOut: checkOutDate ? checkOutDate.toTimeString().slice(0, 5) : '',
-        status: record.status || 'Unknown',
-        selfiePath: record.selfieimagepath,
-      };
-    });
+    // Simplify the mapping to avoid excessive type instantiation
+    const records: AttendanceRecord[] = [];
+    
+    if (data) {
+      for (const record of data) {
+        const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
+        const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
+        
+        records.push({
+          id: record.id,
+          employeeId: record.employeeid,
+          employeeName: record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : 'Unknown',
+          date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
+          checkIn: checkInDate ? checkInDate.toTimeString().slice(0, 5) : '',
+          checkOut: checkOutDate ? checkOutDate.toTimeString().slice(0, 5) : '',
+          status: record.status || 'Unknown',
+          selfiePath: record.selfieimagepath,
+        });
+      }
+    }
     
     return records;
   } catch (error) {
