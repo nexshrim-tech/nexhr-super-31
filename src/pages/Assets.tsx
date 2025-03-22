@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -9,152 +10,117 @@ import AssetTable from "@/components/assets/AssetTable";
 import FilterSection from "@/components/assets/FilterSection";
 import AssetDialogs from "@/components/assets/AssetDialogs";
 
-const initialAssetData = [
-  {
-    id: 1,
-    name: "MacBook Pro M1",
-    type: "Laptop",
-    serialNumber: "MBP2021001",
-    purchaseDate: "2021-06-15",
-    value: 1999.99,
-    assignedTo: { name: "Olivia Rhye", avatar: "OR" },
-    status: "Assigned",
-  },
-  {
-    id: 2,
-    name: "Dell XPS 15",
-    type: "Laptop",
-    serialNumber: "XPS2022001",
-    purchaseDate: "2022-01-10",
-    value: 1599.99,
-    assignedTo: { name: "Phoenix Baker", avatar: "PB" },
-    status: "Assigned",
-  },
-  {
-    id: 3,
-    name: "iPhone 13 Pro",
-    type: "Mobile Phone",
-    serialNumber: "IP13P2021001",
-    purchaseDate: "2021-09-25",
-    value: 999.99,
-    assignedTo: { name: "Lana Steiner", avatar: "LS" },
-    status: "Assigned",
-  },
-  {
-    id: 4,
-    name: "Samsung Galaxy S22",
-    type: "Mobile Phone",
-    serialNumber: "SGS22001",
-    purchaseDate: "2022-02-15",
-    value: 899.99,
-    assignedTo: null,
-    status: "Available",
-  },
-  {
-    id: 5,
-    name: "LG Ultrawide Monitor 34\"",
-    type: "Monitor",
-    serialNumber: "LGM34001",
-    purchaseDate: "2021-11-20",
-    value: 699.99,
-    assignedTo: { name: "Demi Wilkinson", avatar: "DW" },
-    status: "Assigned",
-  },
-  {
-    id: 6,
-    name: "Logitech MX Master 3",
-    type: "Mouse",
-    serialNumber: "LMX3001",
-    purchaseDate: "2021-08-05",
-    value: 99.99,
-    assignedTo: { name: "Candice Wu", avatar: "CW" },
-    status: "Assigned",
-  },
-  {
-    id: 7,
-    name: "HP Color LaserJet Pro",
-    type: "Printer",
-    serialNumber: "HPLJP001",
-    purchaseDate: "2022-03-10",
-    value: 399.99,
-    assignedTo: null,
-    status: "In Maintenance",
-  },
-];
-
-const employees = [
-  { id: 1, name: "Olivia Rhye", avatar: "OR" },
-  { id: 2, name: "Phoenix Baker", avatar: "PB" },
-  { id: 3, name: "Lana Steiner", avatar: "LS" },
-  { id: 4, name: "Demi Wilkinson", avatar: "DW" },
-  { id: 5, name: "Candice Wu", avatar: "CW" },
-  { id: 6, name: "Natali Craig", avatar: "NC" },
-  { id: 7, name: "Drew Cano", avatar: "DC" },
-];
-
-const assetTypes = [
-  "Laptop", 
-  "Desktop", 
-  "Mobile Phone", 
-  "Tablet", 
-  "Monitor", 
-  "Keyboard", 
-  "Mouse", 
-  "Headset", 
-  "Printer", 
-  "Scanner", 
-  "Projector", 
-  "Camera", 
-  "Other"
-];
-
-interface AssetFormData {
-  id?: number;
-  name: string;
-  type: string;
-  serialNumber: string;
-  purchaseDate: string;
-  value: string;
-  assignedTo: string | null;
-  status: string;
-}
+// Import asset services
+import { 
+  fetchAssets, 
+  createAsset, 
+  updateAsset, 
+  deleteAsset, 
+  fetchEmployees,
+  getCurrentCustomerId,
+  Asset,
+  AssetFormData
+} from "@/services/assetService";
 
 const Assets = () => {
-  const [assetData, setAssetData] = useState(initialAssetData);
+  const [assetData, setAssetData] = useState<Asset[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddAssetDialogOpen, setIsAddAssetDialogOpen] = useState(false);
   const [isEditAssetDialogOpen, setIsEditAssetDialogOpen] = useState(false);
   const [isViewAssetDialogOpen, setIsViewAssetDialogOpen] = useState(false);
-  const [currentAsset, setCurrentAsset] = useState<any>(null);
+  const [currentAsset, setCurrentAsset] = useState<Asset | null>(null);
   const [formData, setFormData] = useState<AssetFormData>({
-    name: "",
-    type: "",
-    serialNumber: "",
-    purchaseDate: "",
-    value: "",
+    assetname: "",
+    assettype: "",
+    serialnumber: "",
+    purchasedate: "",
+    assetvalue: "",
     assignedTo: null,
-    status: "Available"
+    assetstatus: "Available",
+    billFile: null
   });
   const [date, setDate] = useState<Date | undefined>();
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [customerId, setCustomerId] = useState<number | null>(null);
   const { toast } = useToast();
 
+  const assetTypes = [
+    "Laptop", 
+    "Desktop", 
+    "Mobile Phone", 
+    "Tablet", 
+    "Monitor", 
+    "Keyboard", 
+    "Mouse", 
+    "Headset", 
+    "Printer", 
+    "Scanner", 
+    "Projector", 
+    "Camera", 
+    "Other"
+  ];
+
+  // Fetch assets and employees when component mounts
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Get current customer ID
+        const custId = await getCurrentCustomerId();
+        setCustomerId(custId);
+        
+        // Fetch assets
+        const assets = await fetchAssets();
+        setAssetData(assets);
+        
+        // Fetch employees for assignment
+        const emps = await fetchEmployees();
+        setEmployees(emps);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast({
+          title: "Error loading data",
+          description: "Failed to load assets and employees. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [toast]);
+
+  // Filter assets based on search term
   const filteredAssets = assetData.filter(asset => 
-    asset.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    asset.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    asset.type.toLowerCase().includes(searchTerm.toLowerCase())
+    asset.assetname?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    asset.serialnumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    asset.assettype?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Handle select input changes
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddAsset = () => {
-    if (!formData.name || !formData.type || !formData.serialNumber || !formData.purchaseDate) {
+  // Handle file input changes
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFormData(prev => ({ ...prev, billFile: e.target.files?.[0] || null }));
+    }
+  };
+
+  // Add a new asset
+  const handleAddAsset = async () => {
+    if (!formData.assetname || !formData.assettype || !formData.serialnumber || !formData.purchasedate) {
       toast({
         title: "Missing required fields",
         description: "Please fill in all required fields.",
@@ -163,30 +129,46 @@ const Assets = () => {
       return;
     }
 
-    const newAsset = {
-      id: Math.max(...assetData.map(a => a.id)) + 1,
-      name: formData.name,
-      type: formData.type,
-      serialNumber: formData.serialNumber,
-      purchaseDate: formData.purchaseDate,
-      value: parseFloat(formData.value),
-      assignedTo: formData.assignedTo ? employees.find(e => e.id.toString() === formData.assignedTo) || null : null,
-      status: formData.status
-    };
+    try {
+      // Prepare asset data
+      const newAssetData: Partial<Asset> = {
+        assetname: formData.assetname,
+        assettype: formData.assettype,
+        serialnumber: formData.serialnumber,
+        purchasedate: formData.purchasedate,
+        assetvalue: parseFloat(formData.assetvalue),
+        employeeid: formData.assignedTo ? parseInt(formData.assignedTo) : undefined,
+        assetstatus: formData.assetstatus,
+        customerid: customerId || undefined
+      };
 
-    setAssetData([...assetData, newAsset]);
-    setIsAddAssetDialogOpen(false);
-    resetForm();
-    toast({
-      title: "Asset added",
-      description: `${newAsset.name} has been added to the inventory.`
-    });
+      // Create asset with bill file if provided
+      const newAsset = await createAsset(newAssetData, formData.billFile || undefined);
+      
+      // Update asset list
+      setAssetData(prev => [...prev, newAsset]);
+      setIsAddAssetDialogOpen(false);
+      resetForm();
+      
+      toast({
+        title: "Asset added",
+        description: `${newAsset.assetname} has been added to the inventory.`
+      });
+    } catch (error) {
+      console.error("Error adding asset:", error);
+      toast({
+        title: "Error adding asset",
+        description: "Failed to add asset. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleEditAsset = () => {
+  // Edit an existing asset
+  const handleEditAsset = async () => {
     if (!currentAsset) return;
 
-    if (!formData.name || !formData.type || !formData.serialNumber || !formData.purchaseDate) {
+    if (!formData.assetname || !formData.assettype || !formData.serialnumber || !formData.purchasedate) {
       toast({
         title: "Missing required fields",
         description: "Please fill in all required fields.",
@@ -195,93 +177,165 @@ const Assets = () => {
       return;
     }
 
-    const updatedAssets = assetData.map(asset => {
-      if (asset.id === currentAsset.id) {
-        return {
-          ...asset,
-          name: formData.name,
-          type: formData.type,
-          serialNumber: formData.serialNumber,
-          purchaseDate: formData.purchaseDate,
-          value: parseFloat(formData.value),
-          assignedTo: formData.assignedTo ? employees.find(e => e.id.toString() === formData.assignedTo) || null : null,
-          status: formData.status
-        };
-      }
-      return asset;
-    });
+    try {
+      // Prepare asset data
+      const editedAssetData: Partial<Asset> = {
+        assetname: formData.assetname,
+        assettype: formData.assettype,
+        serialnumber: formData.serialnumber,
+        purchasedate: formData.purchasedate,
+        assetvalue: parseFloat(formData.assetvalue),
+        employeeid: formData.assignedTo ? parseInt(formData.assignedTo) : undefined,
+        assetstatus: formData.assetstatus
+      };
 
-    setAssetData(updatedAssets);
-    setIsEditAssetDialogOpen(false);
-    resetForm();
-    toast({
-      title: "Asset updated",
-      description: `${formData.name} has been updated in the inventory.`
-    });
+      // Update asset with bill file if provided
+      const updatedAsset = await updateAsset(
+        currentAsset.assetid, 
+        editedAssetData, 
+        formData.billFile || undefined
+      );
+      
+      // Update asset list
+      setAssetData(prev => prev.map(asset => 
+        asset.assetid === currentAsset.assetid ? updatedAsset : asset
+      ));
+      
+      setIsEditAssetDialogOpen(false);
+      resetForm();
+      
+      toast({
+        title: "Asset updated",
+        description: `${updatedAsset.assetname} has been updated in the inventory.`
+      });
+    } catch (error) {
+      console.error("Error updating asset:", error);
+      toast({
+        title: "Error updating asset",
+        description: "Failed to update asset. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleViewAsset = (asset: any) => {
+  // Handle delete asset
+  const handleDeleteAsset = async (assetId: number) => {
+    try {
+      await deleteAsset(assetId);
+      
+      // Update asset list
+      setAssetData(prev => prev.filter(asset => asset.assetid !== assetId));
+      
+      toast({
+        title: "Asset deleted",
+        description: "Asset has been removed from the inventory."
+      });
+    } catch (error) {
+      console.error("Error deleting asset:", error);
+      toast({
+        title: "Error deleting asset",
+        description: "Failed to delete asset. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // View asset details
+  const handleViewAsset = (asset: Asset) => {
     setCurrentAsset(asset);
     setIsViewAssetDialogOpen(true);
   };
 
-  const handleEditAssetOpen = (asset: any) => {
+  // Open edit asset dialog
+  const handleEditAssetOpen = (asset: Asset) => {
     setCurrentAsset(asset);
     
-    const employeeId = asset.assignedTo 
-      ? employees.find(e => e.name === asset.assignedTo.name)?.id.toString() 
-      : null;
-    
     setFormData({
-      name: asset.name,
-      type: asset.type,
-      serialNumber: asset.serialNumber,
-      purchaseDate: asset.purchaseDate,
-      value: asset.value.toString(),
-      assignedTo: employeeId,
-      status: asset.status
+      assetname: asset.assetname,
+      assettype: asset.assettype,
+      serialnumber: asset.serialnumber,
+      purchasedate: asset.purchasedate,
+      assetvalue: asset.assetvalue.toString(),
+      assignedTo: asset.employeeid ? asset.employeeid.toString() : null,
+      assetstatus: asset.assetstatus,
+      billFile: null
     });
     
-    if (asset.purchaseDate) {
-      setDate(new Date(asset.purchaseDate));
+    if (asset.purchasedate) {
+      setDate(new Date(asset.purchasedate));
     }
     
     setIsEditAssetDialogOpen(true);
   };
 
+  // Reset form data
   const resetForm = () => {
     setFormData({
-      name: "",
-      type: "",
-      serialNumber: "",
-      purchaseDate: "",
-      value: "",
+      assetname: "",
+      assettype: "",
+      serialnumber: "",
+      purchasedate: "",
+      assetvalue: "",
       assignedTo: null,
-      status: "Available"
+      assetstatus: "Available",
+      billFile: null
     });
     setDate(undefined);
     setCurrentAsset(null);
   };
 
+  // Open add asset dialog
   const openAddAssetDialog = () => {
     resetForm();
     setIsAddAssetDialogOpen(true);
   };
 
+  // Handle date selection
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
     if (selectedDate) {
       setFormData(prev => ({
         ...prev,
-        purchaseDate: format(selectedDate, 'yyyy-MM-dd')
+        purchasedate: format(selectedDate, 'yyyy-MM-dd')
       }));
     }
   };
 
+  // Export assets to CSV
   const handleExport = () => {
+    // Create CSV content
+    const headers = ["Asset Name", "Type", "Serial Number", "Status", "Value", "Purchase Date", "Assigned To"];
+    
+    const csvData = filteredAssets.map(asset => [
+      asset.assetname,
+      asset.assettype,
+      asset.serialnumber,
+      asset.assetstatus,
+      asset.assetvalue,
+      asset.purchasedate,
+      asset.employee ? `${asset.employee.firstname} ${asset.employee.lastname}` : "Unassigned"
+    ]);
+    
+    // Convert to CSV format
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `asset-inventory-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
     toast({
-      title: "Export started",
-      description: "Your asset inventory is being exported to CSV"
+      title: "Export complete",
+      description: "Your asset inventory has been exported to CSV"
     });
   };
 
@@ -319,6 +373,8 @@ const Assets = () => {
               onSearchChange={(e) => setSearchTerm(e.target.value)}
               onEdit={handleEditAssetOpen}
               onView={handleViewAsset}
+              onDelete={handleDeleteAsset}
+              isLoading={isLoading}
             />
           </div>
         </div>
@@ -335,6 +391,7 @@ const Assets = () => {
         formData={formData}
         handleInputChange={handleInputChange}
         handleSelectChange={handleSelectChange}
+        handleFileChange={handleFileChange}
         handleDateSelect={handleDateSelect}
         date={date}
         assetTypes={assetTypes}

@@ -139,17 +139,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       console.log("Attempting sign up for:", email, "with data:", userData);
       
-      const nameParts = userData.name.split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-      
-      // Create the user in Supabase Auth - Fix: use data property instead of meta
+      // Create the user in Supabase Auth - Using data field (not meta)
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {  // Changed from 'meta' to 'data'
+          data: {
             role: 'admin',
+            name: userData.name,
             company_name: userData.companyName,
             company_size: userData.companySize,
             phone_number: userData.phoneNumber
@@ -168,21 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         console.log("User created successfully with ID:", data.user.id);
         
-        // Manually create a profile since the trigger might be failing
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            role: 'admin'
-          });
-          
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-        } else {
-          console.log("Profile created successfully");
-        }
-        
-        // Create customer record manually since the trigger might be failing
+        // Create customer record manually
         const { data: customerData, error: customerError } = await supabase
           .from('customer')
           .insert({
@@ -200,10 +183,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log("Customer created successfully:", customerData[0]);
           
           // Update profile with customer_id
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ customer_id: customerData[0].customerid })
-            .eq('id', data.user.id);
+          const { error: updateError } = await supabase.rpc(
+            'update_profile_customer',
+            { 
+              user_id: data.user.id, 
+              customer_id_param: customerData[0].customerid 
+            }
+          );
             
           if (updateError) {
             console.error("Error updating profile with customer ID:", updateError);

@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState("signin");
@@ -18,6 +19,7 @@ const Login = () => {
   const [companyName, setCompanyName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [companySize, setCompanySize] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { signIn, signUp, user, loading: authLoading } = useAuth();
@@ -32,13 +34,10 @@ const Login = () => {
 
   const handleSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
+    setError(null);
     
     if (!email || !password) {
-      toast({
-        title: "Missing information",
-        description: "Please enter both email and password.",
-        variant: "destructive",
-      });
+      setError("Please enter both email and password.");
       return;
     }
 
@@ -49,7 +48,7 @@ const Login = () => {
       // Auth context will handle redirect and toast notification
     } catch (error: any) {
       console.error("Login error in component:", error);
-      // Error handling is done in the AuthContext
+      setError(error.message || "Login failed. Please check your credentials and try again.");
     } finally {
       setIsLoading(false);
     }
@@ -57,13 +56,15 @@ const Login = () => {
 
   const handleSignUp = async (event: React.FormEvent) => {
     event.preventDefault();
+    setError(null);
     
     if (!name || !email || !password || !companyName || !phoneNumber || !companySize) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
+      setError("Please fill in all required fields.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
       return;
     }
 
@@ -79,7 +80,7 @@ const Login = () => {
       // Auth context will handle redirect and notifications
     } catch (error: any) {
       console.error("Signup error in component:", error);
-      // Error handling is done in the AuthContext
+      setError(error.message || "Signup failed. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +89,7 @@ const Login = () => {
   // Helper function to safely trigger tab click
   const switchTab = (tabValue: 'signin' | 'signup') => {
     setActiveTab(tabValue);
+    setError(null);
     const tabElement = document.querySelector(`[data-value="${tabValue}"]`) as HTMLElement;
     if (tabElement && tabElement.click) {
       tabElement.click();
@@ -114,6 +116,14 @@ const Login = () => {
           </h1>
           <p className="text-gray-600 mt-2">HR Management & Payroll Solution</p>
         </div>
+
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-2 w-full mb-4">
@@ -286,7 +296,7 @@ const Login = () => {
                       onChange={(e) => setPassword(e.target.value)}
                     />
                     <p className="text-xs text-gray-500">
-                      Password must be at least 8 characters
+                      Password must be at least 6 characters
                     </p>
                   </div>
 
