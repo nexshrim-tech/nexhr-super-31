@@ -56,31 +56,31 @@ export const fetchAttendanceRecords = async (
     
     if (error) throw error;
     
-    // Simplified approach to avoid excessive type instantiation
+    // Create an empty array with the specific type to avoid type inference issues
     const result: AttendanceRecord[] = [];
     
-    if (data) {
-      // Process each record individually to avoid complex type derivations
-      data.forEach(record => {
-        // Extract employee data safely with type assertion
-        const employeeData = record.employee || {};
-        const firstName = typeof employeeData === 'object' && 'firstname' in employeeData ? employeeData.firstname : '';
-        const lastName = typeof employeeData === 'object' && 'lastname' in employeeData ? employeeData.lastname : '';
-        
-        // Parse dates
-        const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
-        const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
-        
-        // Create and push a new attendance record
-        result.push({
-          employeeId: record.employeeid,
-          employeeName: `${firstName} ${lastName}`,
-          date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
-          checkIn: checkInDate ? checkInDate.toTimeString().slice(0, 5) : '',
-          checkOut: checkOutDate ? checkOutDate.toTimeString().slice(0, 5) : '',
-          status: record.status || 'Unknown',
-          selfiePath: record.selfieimagepath
-        });
+    if (!data) return result;
+    
+    // Process each record manually to avoid complex type derivations
+    for (let i = 0; i < data.length; i++) {
+      const record = data[i];
+      // Access employee data with proper type checking
+      const employee = record.employee as any || {};
+      
+      // Parse dates
+      const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
+      const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
+      
+      // Build a record with primitive values to avoid complex type inference
+      result.push({
+        id: record.id,
+        employeeId: record.employeeid,
+        employeeName: `${employee.firstname || ''} ${employee.lastname || ''}`,
+        date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
+        checkIn: checkInDate ? checkInDate.toTimeString().slice(0, 5) : '',
+        checkOut: checkOutDate ? checkOutDate.toTimeString().slice(0, 5) : '',
+        status: record.status || 'Unknown',
+        selfiePath: record.selfieimagepath
       });
     }
     
