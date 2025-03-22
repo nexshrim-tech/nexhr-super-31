@@ -1,7 +1,21 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Asset, AssetFormData, fetchAssets, createAsset, updateAsset, deleteAsset, fetchEmployees, getCurrentCustomerId, mapAssetForFrontend } from '@/services/assetService';
+import { 
+  Asset, 
+  AssetFormData, 
+  fetchAssets, 
+  createAsset, 
+  updateAsset, 
+  deleteAsset, 
+  getCurrentCustomerId, 
+  mapAssetForFrontend 
+} from '@/services/assetService';
+import { 
+  Employee, 
+  fetchEmployees as fetchEmployeesList,
+  mapEmployeesToListItems,
+  EmployeeListItem 
+} from '@/services/employeeService';
 import AssetTable from '@/components/assets/AssetTable';
 import AssetStats from '@/components/assets/AssetStats';
 import FilterSection from '@/components/assets/FilterSection';
@@ -9,19 +23,12 @@ import AssetDialogs from '@/components/assets/AssetDialogs';
 import { useAuth } from '@/context/AuthContext';
 import { Separator } from "@/components/ui/separator";
 
-// Define a proper Employee interface that matches the database structure
-interface Employee {
-  employeeid: number;
-  firstname: string;
-  lastname: string;
-  avatar?: string;
-}
-
 const Assets = () => {
   const { toast } = useToast();
   const { user, customerData } = useAuth();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeeListItems, setEmployeeListItems] = useState<EmployeeListItem[]>([]);
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -67,12 +74,11 @@ const Assets = () => {
         setCustomerId(custId);
 
         if (custId) {
-          const employeeList = await fetchEmployees();
-          setEmployees(employeeList.map(emp => ({
-            id: emp.employeeid,
-            name: `${emp.firstname} ${emp.lastname}`,
-            avatar: `${emp.firstname[0]}${emp.lastname[0]}`
-          })));
+          const employeeData = await fetchEmployeesList(custId);
+          setEmployees(employeeData);
+          
+          const employeeItems = mapEmployeesToListItems(employeeData);
+          setEmployeeListItems(employeeItems);
 
           const assetList = await fetchAssets();
           setAssets(assetList);
@@ -336,7 +342,7 @@ const Assets = () => {
 
       <FilterSection 
         assets={assets} 
-        employees={employees} 
+        employees={employeeListItems} 
         filters={filters} 
         onFilterChange={handleFilterChange} 
         onClearFilters={handleClearFilters}
@@ -364,11 +370,7 @@ const Assets = () => {
         setFormData={setFormData}
         onCreateSubmit={handleCreateAsset}
         onEditSubmit={handleEditAsset}
-        employees={employees.map(emp => ({
-          id: emp.id.toString(), // Convert number to string
-          name: emp.name,
-          avatar: emp.avatar
-        }))}
+        employees={employeeListItems}
         selectedAsset={selectedAsset}
       />
     </div>

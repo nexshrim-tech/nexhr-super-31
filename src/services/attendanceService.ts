@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceRecord {
@@ -23,7 +22,7 @@ export const fetchAttendanceRecords = async (
   startDate?: string,
   endDate?: string,
   employeeId?: number
-) => {
+): Promise<AttendanceRecord[]> => {
   try {
     let query = supabase
       .from('attendance')
@@ -56,17 +55,15 @@ export const fetchAttendanceRecords = async (
     
     if (error) throw error;
     
-    // Create a simple array with explicit typing to avoid excessive type instantiation
+    // Use a simpler approach to avoid excessive type instantiation
     const records: AttendanceRecord[] = [];
     
     if (data) {
       // Process each record individually to avoid type recursion
-      for (let i = 0; i < data.length; i++) {
-        const record = data[i];
+      for (const record of data) {
         const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
         const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
         
-        // Create each record with explicit type
         records.push({
           employeeId: record.employeeid,
           employeeName: record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : 'Unknown',

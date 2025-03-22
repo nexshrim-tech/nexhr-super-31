@@ -19,7 +19,7 @@ export interface Employee {
 }
 
 export interface EmployeeListItem {
-  id: number | string;
+  id: string; // Changed to string for consistency across the app
   name: string;
   position?: string;
   department?: string;
@@ -103,12 +103,17 @@ export const fetchEmployeeById = async (employeeId: number): Promise<Employee | 
 // Map employee data to a standardized format for UI components
 export const mapEmployeeToListItem = (employee: Employee): EmployeeListItem => {
   return {
-    id: employee.employeeid,
+    id: employee.employeeid.toString(), // Convert to string for consistency
     name: `${employee.firstname} ${employee.lastname}`,
     position: employee.jobtitle,
     email: employee.email,
     avatar: employee.profilepicturepath || `${employee.firstname[0]}${employee.lastname[0]}`
   };
+};
+
+// Map multiple employees to list items
+export const mapEmployeesToListItems = (employees: Employee[]): EmployeeListItem[] => {
+  return employees.map(mapEmployeeToListItem);
 };
 
 // Get employee department name
@@ -135,4 +140,3 @@ export const getEmployeeAvatar = (employee: Employee): string => {
   }
   return `${employee.firstname?.[0] || ''}${employee.lastname?.[0] || ''}`;
 };
-

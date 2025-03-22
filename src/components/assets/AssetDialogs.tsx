@@ -11,12 +11,7 @@ import { Button } from "@/components/ui/button";
 import AssetForm from "@/components/assets/AssetForm";
 import AssetDetails from "@/components/assets/AssetDetails";
 import { Asset, mapAssetForFrontend } from "@/services/assetService";
-
-interface Employee {
-  id: string;
-  name: string;
-  avatar?: string;
-}
+import { EmployeeListItem } from "@/services/employeeService";
 
 export interface AssetDialogsProps {
   isCreateOpen: boolean;
@@ -52,7 +47,7 @@ export interface AssetDialogsProps {
   }>>;
   onCreateSubmit: (formData: any) => Promise<void>;
   onEditSubmit: (formData: any) => Promise<void>;
-  employees: Employee[];
+  employees: EmployeeListItem[];
   selectedAsset: Asset | null;
 }
 

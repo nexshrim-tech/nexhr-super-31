@@ -1,5 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { fetchEmployeeById } from "./employeeService";
+import { Employee, fetchEmployeeById } from "./employeeService";
 
 export interface Asset {
   assetid: number;

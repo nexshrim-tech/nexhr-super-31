@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface Employee {
-  id: string; // Using string type to match the component props
-  name: string;
-  avatar?: string;
-}
+import { EmployeeListItem } from '@/services/employeeService';
 
 interface AssetFormProps {
   formData: {
@@ -48,7 +42,7 @@ interface AssetFormProps {
     billDocument?: string;
     billFile?: File | null;
   }>>;
-  employees: Employee[];
+  employees: EmployeeListItem[];
 }
 
 const AssetForm: React.FC<AssetFormProps> = ({
