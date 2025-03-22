@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Asset, AssetFormData, fetchAssets, createAsset, updateAsset, deleteAsset, fetchEmployees, getCurrentCustomerId, mapAssetForFrontend } from '@/services/assetService';
 import AssetTable from '@/components/assets/AssetTable';
-import AssetForm from '@/components/assets/AssetForm';
 import AssetStats from '@/components/assets/AssetStats';
-import AssetDetails from '@/components/assets/AssetDetails';
 import FilterSection from '@/components/assets/FilterSection';
 import AssetDialogs from '@/components/assets/AssetDialogs';
 import { useAuth } from '@/context/AuthContext';
@@ -320,7 +318,7 @@ const Assets = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-semibold">Asset Management</h1>
         <button
-          onClick={openCreateDialog}
+          onClick={() => setIsCreateDialogOpen(true)}
           className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90"
         >
           Add New Asset

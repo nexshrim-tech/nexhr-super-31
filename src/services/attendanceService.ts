@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceRecord {
@@ -103,7 +104,7 @@ export const addAttendanceRecord = async (
         employeeid: record.employeeId,
         customerid: customerId,
         checkintimestamp: checkInTimestamp,
-        checkoutimestamp: checkOutTimestamp,
+        checkouttimestamp: checkOutTimestamp,
         status: record.status,
         selfieimagepath: record.selfiePath
       })

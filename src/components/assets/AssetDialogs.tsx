@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import AssetForm from "@/components/assets/AssetForm";
 import AssetDetails from "@/components/assets/AssetDetails";
-import { Asset } from "@/services/assetService";
+import { Asset, mapAssetForFrontend } from "@/services/assetService";
 
 interface Employee {
   id: number;
@@ -142,10 +142,9 @@ const AssetDialogs: React.FC<AssetDialogsProps> = ({
           </DialogHeader>
           {selectedAsset && (
             <AssetDetails 
-              asset={selectedAsset}
+              asset={mapAssetForFrontend(selectedAsset)}
               onEdit={() => {
                 onViewClose();
-                // Additional actions if needed
               }}
               onClose={onViewClose}
             />
