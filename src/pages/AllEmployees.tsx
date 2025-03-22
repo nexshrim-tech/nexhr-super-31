@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { useNavigate } from "react-router-dom";
@@ -35,6 +34,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Employee } from "@/types/documents";
 
 interface Department {
   departmentname: string;
@@ -50,8 +50,8 @@ interface EmployeeData {
   jobtitle: string;
   status: string;
   avatar: string;
-  role?: string; // Added to match the Employee type
-  name?: string; // Added to match the Employee type
+  role: string;
+  name: string;
 }
 
 const AllEmployees = () => {
@@ -69,16 +69,13 @@ const AllEmployees = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Fetch employees on component mount
   useEffect(() => {
     fetchEmployees();
   }, [user]);
 
-  // Fetch employees from Supabase
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      // Get customer ID from profile
       const { data: profileData } = await supabase
         .from('profiles')
         .select('customer_id')
@@ -90,7 +87,6 @@ const AllEmployees = () => {
         return;
       }
 
-      // Get employees with department names
       const { data, error } = await supabase
         .from('employee')
         .select(`
@@ -110,9 +106,7 @@ const AllEmployees = () => {
       }
 
       if (data) {
-        // Transform the data to match the expected format
         const formattedEmployees = data.map(emp => {
-          // Fixed: Safely access department object which might be null
           const departmentName = emp.department ? 
             (emp.department as unknown as Department).departmentname : 'Unassigned';
           
@@ -121,12 +115,12 @@ const AllEmployees = () => {
             id: `EMP${emp.employeeid.toString().padStart(3, '0')}`,
             firstname: emp.firstname || '',
             lastname: emp.lastname || '',
-            name: `${emp.firstname || ''} ${emp.lastname || ''}`, // Added name property
+            name: `${emp.firstname || ''} ${emp.lastname || ''}`,
             email: emp.email || '',
             jobtitle: emp.jobtitle || '',
             department: departmentName,
-            role: 'employee', // Added role property
-            status: 'Active', // Default status
+            role: 'employee',
+            status: 'Active',
             avatar: `${emp.firstname?.[0] || ''}${emp.lastname?.[0] || ''}`
           };
         });
@@ -167,11 +161,10 @@ const AllEmployees = () => {
     navigate(`/employee/${employee.employeeid}`);
   };
   
-  const handleSaveEmployee = async (editedEmployee: any) => {
+  const handleSaveEmployee = async (editedEmployee: EmployeeData) => {
     try {
       if (!selectedEmployee) return;
       
-      // Update employee in Supabase
       const { error } = await supabase
         .from('employee')
         .update({
@@ -179,7 +172,6 @@ const AllEmployees = () => {
           lastname: editedEmployee.lastname,
           email: editedEmployee.email,
           jobtitle: editedEmployee.jobtitle,
-          // Update other fields as needed
         })
         .eq('employeeid', selectedEmployee.employeeid);
 
@@ -187,7 +179,6 @@ const AllEmployees = () => {
         throw error;
       }
 
-      // Refresh employee list
       fetchEmployees();
       
       setIsEditDialogOpen(false);
@@ -227,7 +218,6 @@ const AllEmployees = () => {
     }
 
     try {
-      // Update password in Supabase
       const { error } = await supabase
         .from('employee')
         .update({ employeepassword: newPassword })
@@ -273,7 +263,6 @@ const AllEmployees = () => {
           
           <EmployeeListHeader />
 
-          {/* Today's Attendance Widget */}
           <div className="mb-6 transform hover:scale-[1.01] transition-all duration-300 dashboard-card shadow-md hover:shadow-lg rounded-lg overflow-hidden border border-gray-200">
             <TodaysAttendance />
           </div>
@@ -414,11 +403,10 @@ const AllEmployees = () => {
           <EmployeeEditDialog 
             isOpen={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
-            employee={selectedEmployee}
+            employee={selectedEmployee as Employee}
             onSave={handleSaveEmployee}
           />
 
-          {/* Password Change Dialog */}
           <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
