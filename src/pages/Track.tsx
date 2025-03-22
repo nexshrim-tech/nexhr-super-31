@@ -7,7 +7,7 @@ import LocationMap from '@/components/LocationMap';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-interface Employee {
+export interface Employee {
   id: number;
   name: string;
   role: string;

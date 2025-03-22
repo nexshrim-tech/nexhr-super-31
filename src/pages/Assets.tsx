@@ -11,11 +11,18 @@ import AssetDialogs from '@/components/assets/AssetDialogs';
 import { useAuth } from '@/context/AuthContext';
 import { Separator } from "@/components/ui/separator";
 
+// Updated type definition to match AssetForm component
+interface Employee {
+  id: number;
+  name: string;
+  avatar: string;
+}
+
 const Assets = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, customerData } = useAuth();
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [employees, setEmployees] = useState<{ id: string; name: string }[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -31,14 +38,26 @@ const Assets = () => {
     assignedTo: ''
   });
 
-  const [formData, setFormData] = useState<AssetFormData>({
-    assetname: '',
-    assettype: '',
-    serialnumber: '',
-    purchasedate: '',
-    assetvalue: '',
+  // Updated formData to match the AssetForm component's expected format
+  const [formData, setFormData] = useState<{
+    name: string;
+    type: string;
+    serialNumber: string;
+    purchaseDate: string;
+    value: string;
+    assignedTo: string | null;
+    status: string;
+    billDocument?: string;
+    billFile?: File | null;
+  }>({
+    name: '',
+    type: '',
+    serialNumber: '',
+    purchaseDate: '',
+    value: '',
     assignedTo: null,
-    assetstatus: 'Available',
+    status: 'Available',
+    billDocument: '',
     billFile: null
   });
 
@@ -48,15 +67,16 @@ const Assets = () => {
       setLoading(true);
       try {
         // Get current customer ID
-        const custId = await getCurrentCustomerId();
+        const custId = customerData?.customerid || await getCurrentCustomerId();
         setCustomerId(custId);
 
         if (custId) {
           // Fetch employee list for the dropdown
           const employeeList = await fetchEmployees();
           setEmployees(employeeList.map(emp => ({
-            id: emp.employeeid.toString(),
-            name: `${emp.firstname} ${emp.lastname}`
+            id: emp.employeeid,
+            name: `${emp.firstname} ${emp.lastname}`,
+            avatar: `${emp.firstname[0]}${emp.lastname[0]}`
           })));
 
           // Fetch assets
@@ -77,7 +97,7 @@ const Assets = () => {
     };
 
     loadAssets();
-  }, [toast]);
+  }, [toast, customerData]);
 
   // Apply filters
   useEffect(() => {
@@ -125,18 +145,33 @@ const Assets = () => {
 
   const resetFormData = () => {
     setFormData({
-      assetname: '',
-      assettype: '',
-      serialnumber: '',
-      purchasedate: '',
-      assetvalue: '',
+      name: '',
+      type: '',
+      serialNumber: '',
+      purchaseDate: '',
+      value: '',
       assignedTo: null,
-      assetstatus: 'Available',
+      status: 'Available',
+      billDocument: '',
       billFile: null
     });
   };
 
-  const handleCreateAsset = async (formData: AssetFormData) => {
+  // Map form data to service format
+  const mapFormToServiceData = (formData: typeof Assets.prototype.formData): AssetFormData => {
+    return {
+      assetname: formData.name,
+      assettype: formData.type,
+      serialnumber: formData.serialNumber,
+      purchasedate: formData.purchaseDate,
+      assetvalue: formData.value,
+      assignedTo: formData.assignedTo,
+      assetstatus: formData.status,
+      billFile: formData.billFile
+    };
+  };
+
+  const handleCreateAsset = async (formDataInput: typeof Assets.prototype.formData) => {
     if (!customerId) {
       toast({
         title: 'Error',
@@ -148,18 +183,20 @@ const Assets = () => {
 
     try {
       setLoading(true);
+      const serviceFormData = mapFormToServiceData(formDataInput);
+      
       const newAsset = await createAsset(
         {
-          assetname: formData.assetname,
-          assettype: formData.assettype,
-          serialnumber: formData.serialnumber,
-          assetstatus: formData.assetstatus,
-          assetvalue: parseFloat(formData.assetvalue),
-          purchasedate: formData.purchasedate,
+          assetname: serviceFormData.assetname,
+          assettype: serviceFormData.assettype,
+          serialnumber: serviceFormData.serialnumber,
+          assetstatus: serviceFormData.assetstatus,
+          assetvalue: parseFloat(serviceFormData.assetvalue),
+          purchasedate: serviceFormData.purchasedate,
           customerid: customerId,
-          employeeid: formData.assignedTo ? parseInt(formData.assignedTo) : null
+          employeeid: serviceFormData.assignedTo ? parseInt(serviceFormData.assignedTo) : null
         },
-        formData.billFile || undefined
+        serviceFormData.billFile || undefined
       );
 
       setAssets(prev => [...prev, newAsset]);
@@ -181,23 +218,25 @@ const Assets = () => {
     }
   };
 
-  const handleEditAsset = async (formData: AssetFormData) => {
+  const handleEditAsset = async (formDataInput: typeof Assets.prototype.formData) => {
     if (!selectedAsset || !customerId) return;
 
     try {
       setLoading(true);
+      const serviceFormData = mapFormToServiceData(formDataInput);
+      
       const updatedAsset = await updateAsset(
         selectedAsset.assetid,
         {
-          assetname: formData.assetname,
-          assettype: formData.assettype,
-          serialnumber: formData.serialnumber,
-          assetstatus: formData.assetstatus,
-          assetvalue: parseFloat(formData.assetvalue),
-          purchasedate: formData.purchasedate,
-          employeeid: formData.assignedTo ? parseInt(formData.assignedTo) : null
+          assetname: serviceFormData.assetname,
+          assettype: serviceFormData.assettype,
+          serialnumber: serviceFormData.serialnumber,
+          assetstatus: serviceFormData.assetstatus,
+          assetvalue: parseFloat(serviceFormData.assetvalue),
+          purchasedate: serviceFormData.purchasedate,
+          employeeid: serviceFormData.assignedTo ? parseInt(serviceFormData.assignedTo) : null
         },
-        formData.billFile || undefined
+        serviceFormData.billFile || undefined
       );
 
       setAssets(prev => 
@@ -262,13 +301,14 @@ const Assets = () => {
   const handleEditClick = (asset: Asset) => {
     setSelectedAsset(asset);
     setFormData({
-      assetname: asset.assetname,
-      assettype: asset.assettype,
-      serialnumber: asset.serialnumber,
-      purchasedate: asset.purchasedate,
-      assetvalue: asset.assetvalue.toString(),
+      name: asset.assetname,
+      type: asset.assettype,
+      serialNumber: asset.serialnumber,
+      purchaseDate: asset.purchasedate,
+      value: asset.assetvalue.toString(),
       assignedTo: asset.employeeid ? asset.employeeid.toString() : null,
-      assetstatus: asset.assetstatus,
+      status: asset.assetstatus,
+      billDocument: asset.billpath,
       billFile: null
     });
     setIsEditDialogOpen(true);

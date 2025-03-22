@@ -1,57 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import SidebarNav from "@/components/SidebarNav";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Eye, Pen, Plus, UserPlus, UserMinus, BarChart } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { useAuth } from "@/context/AuthContext";
-import { 
-  fetchDepartments, 
-  createDepartment, 
-  updateDepartment, 
-  deleteDepartment,
-  fetchEmployees
-} from "@/integrations/supabase/functions";
 
-interface Department {
-  departmentid: number;
-  departmentname: string;
-  managerid: number;
-  manager?: string;
-  employeecount: number;
-  annualbudget: number;
-  status: string;
-  customerid: number;
-}
+import React, { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Pencil, Plus, Trash2, Users } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 interface Employee {
   employeeid: number;
@@ -59,94 +19,85 @@ interface Employee {
   lastname: string;
   email: string;
   jobtitle: string;
-  avatar?: string;
-  department?: string;
 }
 
-interface DepartmentFormData {
-  name: string;
-  manager: string;
-  employeeCount: string;
-  budget: string;
-  status: string;
+interface Department {
+  departmentid: number;
+  departmentname: string;
+  managerid: number;
+  numberofemployees: number;
+  annualbudget: number;
+  departmentstatus: string;
+  customerid: number;
+  manager?: string;
 }
 
 const Department = () => {
-  const { user, customerData } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const { customerData } = useAuth();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isManageEmployeesDialogOpen, setIsManageEmployeesDialogOpen] = useState(false);
-  const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
-  const [formData, setFormData] = useState<DepartmentFormData>({
-    name: "",
-    manager: "",
-    employeeCount: "",
-    budget: "",
-    status: "Active"
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    departmentname: '',
+    managerid: '',
+    numberofemployees: 0,
+    annualbudget: 0,
+    departmentstatus: 'Active'
   });
-  const [departmentEmployees, setDepartmentEmployees] = useState<Employee[]>([]);
-  const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
 
   useEffect(() => {
-    const loadData = async () => {
+    const fetchDepartments = async () => {
       if (!customerData?.customerid) return;
-      
+
       try {
         setLoading(true);
         
+        // Fetch employees first (for manager selection)
+        const { data: employeeData, error: employeeError } = await supabase
+          .from('employee')
+          .select('employeeid, firstname, lastname, email, jobtitle')
+          .eq('customerid', customerData.customerid);
+        
+        if (employeeError) throw employeeError;
+        setEmployees(employeeData || []);
+        
         // Fetch departments
-        const departmentsData = await fetchDepartments(customerData.customerid);
+        const { data: departmentData, error: departmentError } = await supabase
+          .from('department')
+          .select('*')
+          .eq('customerid', customerData.customerid);
         
-        // Fetch employees
-        const employeesData = await fetchEmployees(customerData.customerid);
+        if (departmentError) throw departmentError;
         
-        // Map manager names to departments
-        const mappedDepartments = departmentsData.map(dept => {
-          const manager = employeesData.find(emp => emp.employeeid === dept.managerid);
+        // Map departments to include manager name
+        const mappedDepartments = (departmentData || []).map(dept => {
+          const manager = employeeData?.find(emp => emp.employeeid === dept.managerid);
           return {
             ...dept,
-            manager: manager ? `${manager.firstname} ${manager.lastname}` : 'Unassigned'
-          };
-        });
-        
-        // Create avatar initials and map departments
-        const mappedEmployees = employeesData.map(emp => {
-          const initials = `${emp.firstname?.charAt(0) || ''}${emp.lastname?.charAt(0) || ''}`;
-          const dept = departmentsData.find(d => d.departmentid === Number(emp.department));
-          
-          return {
-            ...emp,
-            avatar: initials,
-            department: dept?.departmentname || 'Unassigned'
+            manager: manager ? `${manager.firstname} ${manager.lastname}` : 'Not Assigned'
           };
         });
         
         setDepartments(mappedDepartments);
-        setEmployees(mappedEmployees);
       } catch (error) {
-        console.error("Error loading data:", error);
+        console.error('Error fetching departments:', error);
         toast({
-          title: "Error loading data",
-          description: "Could not load departments and employees",
-          variant: "destructive"
+          title: 'Error',
+          description: 'Failed to fetch departments. Please try again.',
+          variant: 'destructive',
         });
       } finally {
         setLoading(false);
       }
     };
-    
-    loadData();
-  }, [customerData, toast]);
 
-  const totalEmployees = departments.reduce((sum, dept) => sum + dept.employeecount, 0);
-  const totalBudget = departments.reduce((sum, dept) => sum + dept.annualbudget, 0);
-  const avgTeamSize = departments.length > 0 ? Math.round(totalEmployees / departments.length) : 0;
+    fetchDepartments();
+  }, [customerData, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -159,787 +110,468 @@ const Department = () => {
 
   const resetForm = () => {
     setFormData({
-      name: "",
-      manager: "",
-      employeeCount: "",
-      budget: "",
-      status: "Active"
+      departmentname: '',
+      managerid: '',
+      numberofemployees: 0,
+      annualbudget: 0,
+      departmentstatus: 'Active'
     });
-    setCurrentDepartment(null);
   };
 
-  const openAddDialog = () => {
-    resetForm();
-    setIsAddDialogOpen(true);
-  };
-
-  const handleAddDepartment = async () => {
-    if (!formData.name || !formData.manager || !formData.employeeCount || !formData.budget) {
-      toast({
-        title: "Missing required fields",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!customerData?.customerid) {
-      toast({
-        title: "Authentication Error",
-        description: "Please login to add departments.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleCreateDepartment = async () => {
+    if (!customerData?.customerid) return;
+    
     try {
-      const managerId = Number(formData.manager);
-      
-      const newDepartmentData = {
-        departmentname: formData.name,
-        managerid: managerId,
-        employeecount: parseInt(formData.employeeCount),
-        annualbudget: parseFloat(formData.budget),
-        status: formData.status,
+      const newDepartment = {
+        departmentname: formData.departmentname,
+        managerid: formData.managerid ? parseInt(formData.managerid) : null,
+        numberofemployees: formData.numberofemployees,
+        annualbudget: formData.annualbudget,
+        departmentstatus: formData.departmentstatus,
         customerid: customerData.customerid
       };
-
-      const newDepartment = await createDepartment(newDepartmentData);
       
-      // Add manager name for display
-      const manager = employees.find(emp => emp.employeeid === managerId);
-      const mappedDept = {
-        ...newDepartment,
-        manager: manager ? `${manager.firstname} ${manager.lastname}` : 'Unassigned'
+      const { data, error } = await supabase
+        .from('department')
+        .insert(newDepartment)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Add manager name to the new department
+      const manager = employees.find(emp => emp.employeeid === parseInt(formData.managerid));
+      const departmentWithManager = {
+        ...data,
+        manager: manager ? `${manager.firstname} ${manager.lastname}` : 'Not Assigned'
       };
-
-      setDepartments([...departments, mappedDept]);
-      setIsAddDialogOpen(false);
-      resetForm();
+      
+      setDepartments(prev => [...prev, departmentWithManager]);
       
       toast({
-        title: "Department added",
-        description: `${newDepartment.departmentname} has been added to the organization.`
+        title: 'Success',
+        description: 'Department created successfully',
       });
+      
+      setIsCreateDialogOpen(false);
+      resetForm();
     } catch (error) {
-      console.error("Error adding department:", error);
+      console.error('Error creating department:', error);
       toast({
-        title: "Error",
-        description: "Failed to add department. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to create department. Please try again.',
+        variant: 'destructive',
       });
     }
   };
 
-  const handleViewDepartment = (department: Department) => {
-    setCurrentDepartment(department);
-    setIsViewDialogOpen(true);
+  const handleEditDepartment = async () => {
+    if (!selectedDepartment || !customerData?.customerid) return;
+    
+    try {
+      const updatedDepartment = {
+        departmentname: formData.departmentname,
+        managerid: formData.managerid ? parseInt(formData.managerid) : null,
+        numberofemployees: formData.numberofemployees,
+        annualbudget: formData.annualbudget,
+        departmentstatus: formData.departmentstatus,
+      };
+      
+      const { data, error } = await supabase
+        .from('department')
+        .update(updatedDepartment)
+        .eq('departmentid', selectedDepartment.departmentid)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Add manager name to the updated department
+      const manager = employees.find(emp => emp.employeeid === parseInt(formData.managerid));
+      const departmentWithManager = {
+        ...data,
+        manager: manager ? `${manager.firstname} ${manager.lastname}` : 'Not Assigned'
+      };
+      
+      setDepartments(prev => 
+        prev.map(dept => 
+          dept.departmentid === selectedDepartment.departmentid ? departmentWithManager : dept
+        )
+      );
+      
+      toast({
+        title: 'Success',
+        description: 'Department updated successfully',
+      });
+      
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating department:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update department. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleEditDepartmentOpen = (department: Department) => {
-    setCurrentDepartment(department);
+  const handleDeleteDepartment = async () => {
+    if (!selectedDepartment) return;
+    
+    try {
+      const { error } = await supabase
+        .from('department')
+        .delete()
+        .eq('departmentid', selectedDepartment.departmentid);
+      
+      if (error) throw error;
+      
+      setDepartments(prev => 
+        prev.filter(dept => dept.departmentid !== selectedDepartment.departmentid)
+      );
+      
+      toast({
+        title: 'Success',
+        description: 'Department deleted successfully',
+      });
+      
+      setIsDeleteDialogOpen(false);
+      setSelectedDepartment(null);
+    } catch (error) {
+      console.error('Error deleting department:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete department. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEditClick = (department: Department) => {
+    setSelectedDepartment(department);
     setFormData({
-      name: department.departmentname,
-      manager: department.managerid.toString(),
-      employeeCount: department.employeecount.toString(),
-      budget: department.annualbudget.toString(),
-      status: department.status
+      departmentname: department.departmentname,
+      managerid: department.managerid ? department.managerid.toString() : '',
+      numberofemployees: department.numberofemployees,
+      annualbudget: department.annualbudget,
+      departmentstatus: department.departmentstatus
     });
     setIsEditDialogOpen(true);
   };
 
-  const handleEditDepartment = async () => {
-    if (!currentDepartment) return;
-
-    if (!formData.name || !formData.manager || !formData.employeeCount || !formData.budget) {
-      toast({
-        title: "Missing required fields",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const managerId = Number(formData.manager);
-      
-      const updatedDepartmentData = {
-        departmentname: formData.name,
-        managerid: managerId,
-        employeecount: parseInt(formData.employeeCount),
-        annualbudget: parseFloat(formData.budget),
-        status: formData.status
-      };
-
-      await updateDepartment(currentDepartment.departmentid, updatedDepartmentData);
-      
-      // Add manager name for display
-      const manager = employees.find(emp => emp.employeeid === managerId);
-      
-      const updatedDepartments = departments.map(dept => {
-        if (dept.departmentid === currentDepartment.departmentid) {
-          return {
-            ...dept,
-            ...updatedDepartmentData,
-            manager: manager ? `${manager.firstname} ${manager.lastname}` : 'Unassigned'
-          };
-        }
-        return dept;
-      });
-
-      setDepartments(updatedDepartments);
-      setIsEditDialogOpen(false);
-      resetForm();
-      
-      toast({
-        title: "Department updated",
-        description: `${formData.name} has been updated.`
-      });
-    } catch (error) {
-      console.error("Error updating department:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update department. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const handleDeleteClick = (department: Department) => {
+    setSelectedDepartment(department);
+    setIsDeleteDialogOpen(true);
   };
-
-  const handleManageEmployees = (department: Department) => {
-    setCurrentDepartment(department);
-    
-    const deptEmployees = employees.filter(emp => 
-      Number(emp.department) === department.departmentid
-    );
-    
-    const otherEmployees = employees.filter(emp => 
-      Number(emp.department) !== department.departmentid
-    );
-    
-    setDepartmentEmployees(deptEmployees);
-    setAvailableEmployees(otherEmployees);
-    setIsManageEmployeesDialogOpen(true);
-  };
-
-  const handleAddEmployee = async (employee: Employee) => {
-    if (!currentDepartment || !customerData?.customerid) return;
-    
-    try {
-      // In a real implementation, you would update the employee's department here
-      // For now, we'll just update the state
-
-      const updatedAvailable = availableEmployees.filter(emp => emp.employeeid !== employee.employeeid);
-      setAvailableEmployees(updatedAvailable);
-      
-      const updatedDeptEmployees = [...departmentEmployees, {...employee, department: currentDepartment.departmentname}];
-      setDepartmentEmployees(updatedDeptEmployees);
-      
-      const updatedDepartments = departments.map(dept => {
-        if (dept.departmentid === currentDepartment.departmentid) {
-          return {
-            ...dept,
-            employeecount: dept.employeecount + 1
-          };
-        }
-        return dept;
-      });
-      
-      setDepartments(updatedDepartments);
-      
-      // Update department employee count
-      await updateDepartment(currentDepartment.departmentid, {
-        employeecount: currentDepartment.employeecount + 1
-      });
-      
-      toast({
-        title: "Employee added",
-        description: `${employee.firstname} ${employee.lastname} has been added to ${currentDepartment.departmentname}.`
-      });
-    } catch (error) {
-      console.error("Error adding employee to department:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add employee to department.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleRemoveEmployee = async (employee: Employee) => {
-    if (!currentDepartment || !customerData?.customerid) return;
-    
-    try {
-      // In a real implementation, you would update the employee's department here
-      // For now, we'll just update the state
-
-      const updatedDeptEmployees = departmentEmployees.filter(emp => emp.employeeid !== employee.employeeid);
-      setDepartmentEmployees(updatedDeptEmployees);
-      
-      const updatedAvailable = [...availableEmployees, {...employee, department: "Unassigned"}];
-      setAvailableEmployees(updatedAvailable);
-      
-      const updatedDepartments = departments.map(dept => {
-        if (dept.departmentid === currentDepartment.departmentid) {
-          return {
-            ...dept,
-            employeecount: Math.max(0, dept.employeecount - 1)
-          };
-        }
-        return dept;
-      });
-      
-      setDepartments(updatedDepartments);
-      
-      // Update department employee count
-      await updateDepartment(currentDepartment.departmentid, {
-        employeecount: Math.max(0, currentDepartment.employeecount - 1)
-      });
-      
-      toast({
-        title: "Employee removed",
-        description: `${employee.firstname} ${employee.lastname} has been removed from ${currentDepartment.departmentname}.`
-      });
-    } catch (error) {
-      console.error("Error removing employee from department:", error);
-      toast({
-        title: "Error",
-        description: "Failed to remove employee from department.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const chartData = departments.map(dept => ({
-    name: dept.departmentname,
-    employees: dept.employeecount,
-    budget: dept.annualbudget / 1000
-  }));
-
-  if (loading) {
-    return (
-      <div className="flex h-full bg-gray-50">
-        <SidebarNav />
-        <div className="flex-1 overflow-auto">
-          <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-            <div className="flex justify-center items-center min-h-[80vh]">
-              <p>Loading departments...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="flex h-full bg-gray-50">
-      <SidebarNav />
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold">Departments</h1>
-              <p className="text-gray-500">Manage organization departments</p>
-            </div>
-            <Button className="flex items-center gap-2" onClick={openAddDialog}>
-              <Plus className="h-4 w-4" />
-              Add Department
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Total Departments</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-semibold">{departments.length}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Total Employees</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-semibold">{totalEmployees}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Total Budget</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-semibold">${(totalBudget / 1000000).toFixed(1)}M</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Avg Team Size</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-semibold">{avgTeamSize}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-base">Department Analytics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsBarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <XAxis dataKey="name" />
-                    <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                    <Tooltip />
-                    <Bar yAxisId="left" dataKey="employees" fill="#8884d8" name="Employees" />
-                    <Bar yAxisId="right" dataKey="budget" fill="#82ca9d" name="Budget (thousands)" />
-                  </RechartsBarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Department List</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Department Name</TableHead>
-                      <TableHead>Manager</TableHead>
-                      <TableHead>Employees</TableHead>
-                      <TableHead>Annual Budget</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {departments.map((department) => (
-                      <TableRow key={department.departmentid}>
-                        <TableCell className="font-medium">{department.departmentname}</TableCell>
-                        <TableCell>{department.manager}</TableCell>
-                        <TableCell>{department.employeecount}</TableCell>
-                        <TableCell>${department.annualbudget.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <Badge className="bg-green-100 text-green-800">
-                            {department.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleManageEmployees(department)}
-                            >
-                              <UserPlus className="h-4 w-4 mr-1" />
-                              <span className="hidden md:inline">Employees</span>
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => handleEditDepartmentOpen(department)}>
-                              <Pen className="h-4 w-4 mr-1" />
-                              <span className="hidden md:inline">Edit</span>
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => handleViewDepartment(department)}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              <span className="hidden md:inline">View</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid md:grid-cols-2 gap-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Department Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {departments.map((dept, index) => {
-                    const percentage = totalEmployees > 0 ? Math.round((dept.employeecount / totalEmployees) * 100) : 0;
-                    const colors = ["bg-blue-500", "bg-purple-500", "bg-green-500", "bg-yellow-500", "bg-red-500", "bg-pink-500", "bg-orange-500"];
-                    const colorIndex = index % colors.length;
-                    
-                    return (
-                      <div key={dept.departmentid} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${colors[colorIndex]}`} />
-                          <div>{dept.departmentname}</div>
-                        </div>
-                        <div>{percentage}%</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Budget Allocation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {departments.map((dept, index) => {
-                    const percentage = totalBudget > 0 ? Math.round((dept.annualbudget / totalBudget) * 100) : 0;
-                    const colors = ["bg-blue-500", "bg-purple-500", "bg-green-500", "bg-yellow-500", "bg-red-500", "bg-pink-500", "bg-orange-500"];
-                    const colorIndex = index % colors.length;
-                    
-                    return (
-                      <div key={dept.departmentid} className="flex items-center justify-between">
-                        <div>{dept.departmentname}</div>
-                        <div className="w-1/2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${colors[colorIndex]} rounded-full`} 
-                            style={{ width: `${percentage}%` }} 
-                          />
-                        </div>
-                        <div>{percentage}%</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Department Management</h1>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Department
+        </Button>
       </div>
 
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md md:max-w-lg mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Departments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{departments.length}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Active Departments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {departments.filter(d => d.departmentstatus === 'Active').length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {departments.reduce((sum, dept) => sum + dept.numberofemployees, 0)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Departments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-4">Loading departments...</div>
+          ) : departments.length === 0 ? (
+            <div className="text-center py-4">
+              <Users className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-gray-500">No departments found. Create your first department.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Department Name</TableHead>
+                  <TableHead>Manager</TableHead>
+                  <TableHead>Employees</TableHead>
+                  <TableHead>Budget</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {departments.map((department) => (
+                  <TableRow key={department.departmentid}>
+                    <TableCell className="font-medium">{department.departmentname}</TableCell>
+                    <TableCell>{department.manager}</TableCell>
+                    <TableCell>{department.numberofemployees}</TableCell>
+                    <TableCell>${department.annualbudget.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        department.departmentstatus === 'Active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {department.departmentstatus}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleEditClick(department)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDeleteClick(department)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Create Department Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Department</DialogTitle>
-            <DialogDescription>
-              Enter the details for the new department.
-            </DialogDescription>
+            <DialogTitle>Create New Department</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Department Name *</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter department name"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="manager">Manager *</Label>
-                <Select 
-                  value={formData.manager} 
-                  onValueChange={(value) => handleSelectChange("manager", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select manager" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map(emp => (
-                      <SelectItem 
-                        key={emp.employeeid} 
-                        value={emp.employeeid.toString()}
-                      >
-                        {`${emp.firstname} ${emp.lastname}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="departmentname" className="text-right">
+                Department Name
+              </Label>
+              <Input
+                id="departmentname"
+                name="departmentname"
+                value={formData.departmentname}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="employeeCount">Number of Employees *</Label>
-                <Input
-                  id="employeeCount"
-                  name="employeeCount"
-                  type="number"
-                  min="0"
-                  value={formData.employeeCount}
-                  onChange={handleInputChange}
-                  placeholder="Enter employee count"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="budget">Annual Budget ($) *</Label>
-                <Input
-                  id="budget"
-                  name="budget"
-                  type="number"
-                  step="1000"
-                  min="0"
-                  value={formData.budget}
-                  onChange={handleInputChange}
-                  placeholder="Enter annual budget"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="status">Status *</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="manager" className="text-right">
+                Manager
+              </Label>
               <Select 
-                value={formData.status} 
-                onValueChange={(value) => handleSelectChange("status", value)}
+                value={formData.managerid} 
+                onValueChange={(value) => handleSelectChange('managerid', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a manager" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map(employee => (
+                    <SelectItem key={employee.employeeid} value={employee.employeeid.toString()}>
+                      {employee.firstname} {employee.lastname}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="numberofemployees" className="text-right">
+                No. of Employees
+              </Label>
+              <Input
+                id="numberofemployees"
+                name="numberofemployees"
+                type="number"
+                value={formData.numberofemployees}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="annualbudget" className="text-right">
+                Annual Budget ($)
+              </Label>
+              <Input
+                id="annualbudget"
+                name="annualbudget"
+                type="number"
+                value={formData.annualbudget}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                Status
+              </Label>
+              <Select 
+                value={formData.departmentstatus} 
+                onValueChange={(value) => handleSelectChange('departmentstatus', value)}
+              >
+                <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Active">Active</SelectItem>
                   <SelectItem value="Inactive">Inactive</SelectItem>
-                  <SelectItem value="On Hold">On Hold</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-            <Button onClick={handleAddDepartment} className="w-full sm:w-auto">Add Department</Button>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateDepartment}>Create Department</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Edit Department Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md md:max-w-lg mx-auto">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Department</DialogTitle>
-            <DialogDescription>
-              Update the details for this department.
-            </DialogDescription>
           </DialogHeader>
-          {currentDepartment && (
-            <>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-name">Department Name *</Label>
-                    <Input
-                      id="edit-name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="Enter department name"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-manager">Manager *</Label>
-                    <Select 
-                      value={formData.manager} 
-                      onValueChange={(value) => handleSelectChange("manager", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select manager" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map(emp => (
-                          <SelectItem 
-                            key={emp.employeeid} 
-                            value={emp.employeeid.toString()}
-                          >
-                            {`${emp.firstname} ${emp.lastname}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-employeeCount">Number of Employees *</Label>
-                    <Input
-                      id="edit-employeeCount"
-                      name="employeeCount"
-                      type="number"
-                      min="0"
-                      value={formData.employeeCount}
-                      onChange={handleInputChange}
-                      placeholder="Enter employee count"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-budget">Annual Budget ($) *</Label>
-                    <Input
-                      id="edit-budget"
-                      name="budget"
-                      type="number"
-                      step="1000"
-                      min="0"
-                      value={formData.budget}
-                      onChange={handleInputChange}
-                      placeholder="Enter annual budget"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="edit-status">Status *</Label>
-                  <Select 
-                    value={formData.status} 
-                    onValueChange={(value) => handleSelectChange("status", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
-                      <SelectItem value="On Hold">On Hold</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="w-full sm:w-auto">Cancel</Button>
-                <Button onClick={handleEditDepartment} className="w-full sm:w-auto">Update Department</Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-md md:max-w-lg mx-auto">
-          <DialogHeader>
-            <DialogTitle>Department Details</DialogTitle>
-          </DialogHeader>
-          {currentDepartment && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Department Name</h3>
-                  <p className="mt-1 text-base">{currentDepartment.departmentname}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Manager</h3>
-                  <p className="mt-1 text-base">{currentDepartment.manager}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Employees</h3>
-                  <p className="mt-1 text-base">{currentDepartment.employeecount}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500">Annual Budget</h3>
-                  <p className="mt-1 text-base">${currentDepartment.annualbudget.toLocaleString()}</p>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                <div className="mt-1">
-                  <Badge className="bg-green-100 text-green-800">{currentDepartment.status}</Badge>
-                </div>
-              </div>
-              
-              <div className="pt-4 flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
-                <Button onClick={() => {
-                  setIsViewDialogOpen(false);
-                  handleEditDepartmentOpen(currentDepartment);
-                }}>Edit</Button>
-              </div>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-departmentname" className="text-right">
+                Department Name
+              </Label>
+              <Input
+                id="edit-departmentname"
+                name="departmentname"
+                value={formData.departmentname}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isManageEmployeesDialogOpen} onOpenChange={setIsManageEmployeesDialogOpen}>
-        <DialogContent className="max-w-3xl mx-auto">
-          <DialogHeader>
-            <DialogTitle>Manage Department Employees</DialogTitle>
-            <DialogDescription>
-              Add or remove employees from the {currentDepartment?.departmentname} department
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            <div>
-              <h3 className="font-medium mb-3">Current Employees</h3>
-              {departmentEmployees.length > 0 ? (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                  {departmentEmployees.map(employee => (
-                    <div key={employee.employeeid} className="flex items-center justify-between p-2 border rounded-md">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>{employee.avatar}</AvatarFallback>
-                        </Avatar>
-                        <span>{employee.firstname} {employee.lastname}</span>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleRemoveEmployee(employee)}
-                      >
-                        <UserMinus className="h-4 w-4" />
-                      </Button>
-                    </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-manager" className="text-right">
+                Manager
+              </Label>
+              <Select 
+                value={formData.managerid} 
+                onValueChange={(value) => handleSelectChange('managerid', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a manager" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map(employee => (
+                    <SelectItem key={employee.employeeid} value={employee.employeeid.toString()}>
+                      {employee.firstname} {employee.lastname}
+                    </SelectItem>
                   ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 border rounded-md text-gray-500">
-                  No employees in this department
-                </div>
-              )}
+                </SelectContent>
+              </Select>
             </div>
-            
-            <div>
-              <h3 className="font-medium mb-3">Available Employees</h3>
-              {availableEmployees.length > 0 ? (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                  {availableEmployees.map(employee => (
-                    <div key={employee.employeeid} className="flex items-center justify-between p-2 border rounded-md">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>{employee.avatar}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <span>{employee.firstname} {employee.lastname}</span>
-                          <p className="text-xs text-gray-500">{employee.department}</p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-green-500 hover:text-green-700 hover:bg-green-50"
-                        onClick={() => handleAddEmployee(employee)}
-                      >
-                        <UserPlus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 border rounded-md text-gray-500">
-                  No available employees
-                </div>
-              )}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-numberofemployees" className="text-right">
+                No. of Employees
+              </Label>
+              <Input
+                id="edit-numberofemployees"
+                name="numberofemployees"
+                type="number"
+                value={formData.numberofemployees}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-annualbudget" className="text-right">
+                Annual Budget ($)
+              </Label>
+              <Input
+                id="edit-annualbudget"
+                name="annualbudget"
+                type="number"
+                value={formData.annualbudget}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-status" className="text-right">
+                Status
+              </Label>
+              <Select 
+                value={formData.departmentstatus} 
+                onValueChange={(value) => handleSelectChange('departmentstatus', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          
-          <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={() => setIsManageEmployeesDialogOpen(false)}>
-              Done
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditDepartment}>Update Department</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <p className="py-4">
+            Are you sure you want to delete the department 
+            <span className="font-bold mx-1">{selectedDepartment?.departmentname}</span>?
+            This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteDepartment}>
+              Delete Department
             </Button>
           </DialogFooter>
         </DialogContent>

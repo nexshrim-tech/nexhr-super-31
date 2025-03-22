@@ -1,15 +1,10 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
+import { Employee } from "@/pages/Track";
 
 export interface EmployeeLocationProps {
-  employee: {
-    id: number;
-    name: string;
-    role: string;
-    location: { lat: number; lng: number } | null;
-    lastActive: string;
-  };
+  employee: Employee;
   selected: boolean;
   onClick: () => void;
 }
