@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,9 +20,9 @@ import {
 } from "@/components/ui/select";
 
 interface Employee {
-  id: string; // Using string type to match AssetDialogsProps
+  id: string; // Using string type to match the component props
   name: string;
-  avatar?: string; // Made optional
+  avatar?: string;
 }
 
 interface AssetFormProps {

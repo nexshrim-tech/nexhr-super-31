@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceRecord {
@@ -55,7 +56,7 @@ export const fetchAttendanceRecords = async (
     
     if (error) throw error;
     
-    // Simplify and fix the mapping to avoid excessive type instantiation
+    // Create a simple array to avoid excessive type instantiation
     const records: AttendanceRecord[] = [];
     
     if (data) {
@@ -63,6 +64,7 @@ export const fetchAttendanceRecords = async (
         const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
         const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
         
+        // Create each record individually to avoid nested type issues
         const attendanceRecord: AttendanceRecord = {
           employeeId: record.employeeid,
           employeeName: record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : 'Unknown',
@@ -70,7 +72,7 @@ export const fetchAttendanceRecords = async (
           checkIn: checkInDate ? checkInDate.toTimeString().slice(0, 5) : '',
           checkOut: checkOutDate ? checkOutDate.toTimeString().slice(0, 5) : '',
           status: record.status || 'Unknown',
-          selfiePath: record.selfieimagepath,
+          selfiePath: record.selfieimagepath
         };
         
         records.push(attendanceRecord);
