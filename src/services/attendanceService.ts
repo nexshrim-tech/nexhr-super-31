@@ -73,7 +73,8 @@ export const fetchAttendanceRecords = async (
       
       // Build a record with primitive values to avoid complex type inference
       result.push({
-        id: record.id,
+        // Use the database record ID if available, otherwise undefined
+        ...(record.attendance_id !== undefined ? { id: record.attendance_id } : {}),
         employeeId: record.employeeid,
         employeeName: `${employee.firstname || ''} ${employee.lastname || ''}`,
         date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
@@ -102,7 +103,7 @@ export const addAttendanceRecord = async (
     status: string;
     selfiePath?: string;
   }
-) => {
+): Promise<any> => {
   try {
     // Format timestamps
     const checkInTimestamp = new Date(`${record.date}T${record.checkIn}`).toISOString();
