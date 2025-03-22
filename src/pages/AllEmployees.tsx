@@ -36,6 +36,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+interface Department {
+  departmentname: string;
+}
+
 interface EmployeeData {
   employeeid: number;
   id: string;
@@ -46,7 +50,8 @@ interface EmployeeData {
   jobtitle: string;
   status: string;
   avatar: string;
-  departmentname?: string; // From join with department table
+  role?: string; // Added to match the Employee type
+  name?: string; // Added to match the Employee type
 }
 
 const AllEmployees = () => {
@@ -106,17 +111,25 @@ const AllEmployees = () => {
 
       if (data) {
         // Transform the data to match the expected format
-        const formattedEmployees = data.map(emp => ({
-          employeeid: emp.employeeid,
-          id: `EMP${emp.employeeid.toString().padStart(3, '0')}`,
-          firstname: emp.firstname || '',
-          lastname: emp.lastname || '',
-          email: emp.email || '',
-          jobtitle: emp.jobtitle || '',
-          department: emp.department?.departmentname || 'Unassigned',
-          status: 'Active', // Default status
-          avatar: `${emp.firstname?.[0] || ''}${emp.lastname?.[0] || ''}`
-        }));
+        const formattedEmployees = data.map(emp => {
+          // Fixed: Safely access department object which might be null
+          const departmentName = emp.department ? 
+            (emp.department as unknown as Department).departmentname : 'Unassigned';
+          
+          return {
+            employeeid: emp.employeeid,
+            id: `EMP${emp.employeeid.toString().padStart(3, '0')}`,
+            firstname: emp.firstname || '',
+            lastname: emp.lastname || '',
+            name: `${emp.firstname || ''} ${emp.lastname || ''}`, // Added name property
+            email: emp.email || '',
+            jobtitle: emp.jobtitle || '',
+            department: departmentName,
+            role: 'employee', // Added role property
+            status: 'Active', // Default status
+            avatar: `${emp.firstname?.[0] || ''}${emp.lastname?.[0] || ''}`
+          };
+        });
 
         setEmployees(formattedEmployees);
       }

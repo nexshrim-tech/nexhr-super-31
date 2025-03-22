@@ -143,13 +143,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
-      // Create the user in Supabase Auth - Use app_metadata instead of raw_user_meta_data
+      // Create the user in Supabase Auth - Fix: use data property instead of meta
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {}, // Keep user_metadata empty
-          meta: {  // Use app_metadata instead
+          data: {  // Changed from 'meta' to 'data'
             role: 'admin',
             company_name: userData.companyName,
             company_size: userData.companySize,
