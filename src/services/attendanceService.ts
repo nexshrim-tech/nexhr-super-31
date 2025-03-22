@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceRecord {
@@ -71,10 +70,7 @@ export const fetchAttendanceRecords = async (
       const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
       const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
       
-      // Build a record with primitive values to avoid complex type inference
-      result.push({
-        // Use the database record ID if available, otherwise undefined
-        ...(record.attendance_id !== undefined ? { id: record.attendance_id } : {}),
+      const recordObj: AttendanceRecord = {
         employeeId: record.employeeid,
         employeeName: `${employee.firstname || ''} ${employee.lastname || ''}`,
         date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',
@@ -82,7 +78,14 @@ export const fetchAttendanceRecords = async (
         checkOut: checkOutDate ? checkOutDate.toTimeString().slice(0, 5) : '',
         status: record.status || 'Unknown',
         selfiePath: record.selfieimagepath
-      });
+      };
+
+      // Add id if it exists with the correct property name
+      if ('id' in record) {
+        recordObj.id = record.id;
+      }
+      
+      result.push(recordObj);
     }
     
     return result;
