@@ -1,15 +1,33 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-interface GoogleMapsLocationProps {
-  apiKey: string;
-  defaultLocation: { lat: number; lng: number };
+interface EmployeeLocation {
+  employeeid: number;
+  firstname: string;
+  lastname: string;
+  latitude: number;
+  longitude: number;
+  timestamp: string;
 }
 
-const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({ apiKey, defaultLocation }) => {
+interface GoogleMapsLocationProps {
+  apiKey: string;
+  defaultLocation?: { lat: number; lng: number };
+  employeeData?: EmployeeLocation[];
+  readOnly?: boolean;
+  onLocationUpdate?: (latitude: number, longitude: number) => Promise<void>;
+}
+
+const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({ 
+  apiKey, 
+  defaultLocation = { lat: 37.7749, lng: -122.4194 }, // Default to San Francisco
+  employeeData = [],
+  readOnly = false,
+  onLocationUpdate
+}) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [marker, setMarker] = useState<google.maps.Marker | null>(null);
+  const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
 
   useEffect(() => {
     const loadGoogleMapsScript = () => {
@@ -39,14 +57,6 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({ apiKey, default
 
         setMap(mapInstance);
 
-        const initialMarker = new window.google.maps.Marker({
-          position: defaultLocation,
-          map: mapInstance,
-          title: "Current Location",
-        });
-
-        setMarker(initialMarker);
-
         // Create the location button correctly
         const locationButton = document.createElement("button");
         locationButton.textContent = "📍";
@@ -64,9 +74,12 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({ apiKey, default
         locationButton.style.height = "40px";
         locationButton.style.fontSize = "1.5rem";
 
-        // Add the button to the map
+        // Add the button to the map - fixed the type issue with controls
         if (mapInstance.controls && window.google.maps.ControlPosition) {
-          mapInstance.controls[window.google.maps.ControlPosition.RIGHT_BOTTOM].push(locationButton);
+          // Create a div as a container to hold our button
+          const controlDiv = document.createElement('div');
+          controlDiv.appendChild(locationButton);
+          mapInstance.controls[window.google.maps.ControlPosition.RIGHT_BOTTOM].push(controlDiv);
         }
 
         locationButton.addEventListener("click", () => {
@@ -79,7 +92,11 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({ apiKey, default
                 };
 
                 mapInstance.setCenter(newLocation);
-                initialMarker.setPosition(newLocation);
+                
+                // If we're not read-only, update the user's location
+                if (!readOnly && onLocationUpdate) {
+                  onLocationUpdate(newLocation.lat, newLocation.lng);
+                }
               },
               (error) => {
                 console.error("Error getting location:", error);
@@ -90,19 +107,27 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({ apiKey, default
           }
         });
 
-        if (window.google.maps.event) {
+        if (!readOnly && window.google.maps.event) {
           window.google.maps.event.addListener(mapInstance, 'click', (event: google.maps.MouseEvent) => {
             const newLocation = {
               lat: event.latLng.lat(),
               lng: event.latLng.lng()
             };
 
-            initialMarker.setPosition(newLocation);
+            // If onLocationUpdate is provided, call it with the new location
+            if (onLocationUpdate) {
+              onLocationUpdate(newLocation.lat, newLocation.lng);
+            }
+            
             mapInstance.panTo(newLocation);
           });
         }
       }
     };
+
+    // Clear any existing markers
+    markers.forEach(marker => marker.setMap(null));
+    setMarkers([]);
 
     if (!window.google) {
       loadGoogleMapsScript();
@@ -111,13 +136,54 @@ const GoogleMapsLocation: React.FC<GoogleMapsLocationProps> = ({ apiKey, default
     }
 
     return () => {
-      const script = document.querySelector(`script[src*="maps.googleapis.com"]`);
-      if (script) {
-        script.remove();
-        console.log('Google Maps script removed.');
-      }
+      // Clean up markers
+      markers.forEach(marker => marker.setMap(null));
+      
+      // Don't remove the script on unmount as it might be used by other components
+      // Instead just clean up resources related to this instance
     };
-  }, [apiKey, defaultLocation]);
+  }, [apiKey, defaultLocation, readOnly, onLocationUpdate]);
+
+  // Add effect to render employee markers when employee data changes
+  useEffect(() => {
+    if (!map || !employeeData.length) return;
+
+    // Clear existing markers
+    markers.forEach(marker => marker.setMap(null));
+    
+    // Create new markers for each employee
+    const newMarkers = employeeData.map(employee => {
+      const marker = new google.maps.Marker({
+        position: { lat: employee.latitude, lng: employee.longitude },
+        map: map,
+        title: `${employee.firstname} ${employee.lastname}`,
+      });
+      
+      return marker;
+    });
+    
+    setMarkers(newMarkers);
+    
+    // If there are markers, fit the map to show all of them
+    if (newMarkers.length > 0 && map) {
+      const bounds = new google.maps.LatLngBounds();
+      newMarkers.forEach(marker => {
+        if (marker.getPosition()) {
+          bounds.extend(marker.getPosition()!);
+        }
+      });
+      map.fitBounds(bounds);
+      
+      // If only one marker, zoom in a bit
+      if (newMarkers.length === 1) {
+        map.setZoom(14);
+      }
+    }
+    
+    return () => {
+      newMarkers.forEach(marker => marker.setMap(null));
+    };
+  }, [map, employeeData]);
 
   return (
     <div style={{ width: '100%', height: '400px' }} ref={mapRef} id="map" />

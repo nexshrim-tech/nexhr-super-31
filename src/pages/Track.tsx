@@ -173,9 +173,14 @@ const Track = () => {
                   </CardHeader>
                   <CardContent>
                     <GoogleMapsLocation 
+                      apiKey="your-google-maps-api-key" // Replace with your actual API key
                       employeeData={employeeLocations}
                       readOnly={false}
                       onLocationUpdate={updateMyLocation}
+                      defaultLocation={employeeLocations.length > 0 
+                        ? { lat: employeeLocations[0].latitude, lng: employeeLocations[0].longitude }
+                        : { lat: 37.7749, lng: -122.4194 } // Default to San Francisco
+                      }
                     />
                   </CardContent>
                 </Card>

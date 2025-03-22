@@ -6,12 +6,14 @@ declare namespace google.maps {
     setZoom(zoom: number): void;
     panTo(latLng: LatLng | LatLngLiteral): void;
     controls: MVCArray<Node>[][];
+    fitBounds(bounds: LatLngBounds): void;
   }
   
   class Marker {
     constructor(opts?: MarkerOptions);
     setPosition(latLng: LatLng | LatLngLiteral): void;
     setMap(map: Map | null): void;
+    getPosition(): LatLng | null;
   }
   
   class MVCArray<T> {
@@ -26,6 +28,17 @@ declare namespace google.maps {
     removeAt(i: number): T;
     setAt(i: number, elem: T): void;
     forEach(callback: (elem: T, i: number) => void): void;
+  }
+
+  class LatLngBounds {
+    constructor(sw?: LatLng | LatLngLiteral, ne?: LatLng | LatLngLiteral);
+    extend(point: LatLng | LatLngLiteral): LatLngBounds;
+    getCenter(): LatLng;
+    isEmpty(): boolean;
+    toJSON(): object;
+    toSpan(): LatLng;
+    toString(): string;
+    union(other: LatLngBounds): LatLngBounds;
   }
   
   interface MapOptions {
