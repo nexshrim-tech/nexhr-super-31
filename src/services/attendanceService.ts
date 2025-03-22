@@ -82,7 +82,7 @@ export const fetchAttendanceRecords = async (
     for (let i = 0; i < data.length; i++) {
       const record = data[i] as AttendanceDbRecord;
       // Access employee data with proper type checking
-      const employee = record.employee || {};
+      const employee = record.employee || { firstname: '', lastname: '' };
       
       // Parse dates
       const checkInDate = record.checkintimestamp ? new Date(record.checkintimestamp) : null;
@@ -155,15 +155,18 @@ export const addAttendanceRecord = async (
   }
 };
 
+// Update interface to help with type safety
+interface AttendanceRecordUpdate {
+  checkIn?: string;
+  checkOut?: string;
+  status?: string;
+  date?: string;
+}
+
 // Update an existing attendance record
 export const updateAttendanceRecord = async (
   recordId: number,
-  updates: {
-    checkIn?: string;
-    checkOut?: string;
-    status?: string;
-    date?: string;
-  }
+  updates: AttendanceRecordUpdate
 ): Promise<any> => {
   try {
     // Prepare update data
