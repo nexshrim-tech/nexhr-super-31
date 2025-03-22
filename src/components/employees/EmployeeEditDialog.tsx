@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Eye, EyeOff, Lock } from "lucide-react";
 
-export interface Employee {
+interface Employee {
   id: string;
   name: string;
   email: string;
@@ -24,22 +24,18 @@ export interface Employee {
   role: string;
   status: string;
   avatar: string;
-  firstname?: string;
-  lastname?: string;
-  jobtitle?: string;
   phone?: string;
   dob?: string;
   gender?: string;
   address?: string;
   joinDate?: string;
-  employeeid?: number;
 }
 
 interface EmployeeEditDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   employee: Employee | null;
-  onSave: (employee: Employee) => void;
+  onSave: () => void;
 }
 
 const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
@@ -136,7 +132,7 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
       return;
     }
     
-    onSave(formData as Employee);
+    onSave();
     toast({
       title: "Employee updated",
       description: "Employee information has been updated successfully.",

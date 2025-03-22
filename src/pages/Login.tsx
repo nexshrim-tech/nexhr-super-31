@@ -1,292 +1,341 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-});
-
-const signupSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string().min(6, { message: "Please confirm your password" }),
-  role: z.enum(["admin", "employee"]),
-  companyName: z.string().optional(),
-  companySize: z.string().optional(),
-  phoneNumber: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-}).refine(
-  (data) => {
-    if (data.role === "admin") {
-      return !!data.companyName && !!data.companySize && !!data.phoneNumber;
-    }
-    return true;
-  },
-  {
-    message: "Company information is required for admin accounts",
-    path: ["companyName"],
-  }
-);
-
-type LoginFormData = z.infer<typeof loginSchema>;
-type SignupFormData = z.infer<typeof signupSchema>;
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/ui/use-toast";
+import { ArrowRight, Mail, Lock, User, ArrowLeft, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Login = () => {
-  const [activeTab, setActiveTab] = useState<string>("login");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { signIn, signUp } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  
+  // New signup fields
+  const [name, setName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [companySize, setCompanySize] = useState("");
+  
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const loginForm = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
+  const validatePassword = () => {
+    if (password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return false;
+    }
+    setPasswordError("");
+    return true;
+  };
 
-  const signupForm = useForm<SignupFormData>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
-      role: "employee",
-    },
-  });
-
-  const onSignIn = async (data: LoginFormData) => {
-    setIsLoading(true);
-    try {
-      await signIn(data.email, data.password);
-    } catch (error) {
-      console.error("Login error:", error);
-    } finally {
-      setIsLoading(false);
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Add your authentication logic here
+    if (email && password) {
+      toast({
+        title: "Login successful",
+        description: "Welcome to NexHR!",
+      });
+      navigate("/");
+    } else {
+      toast({
+        title: "Login failed",
+        description: "Please enter valid credentials",
+        variant: "destructive",
+      });
     }
   };
 
-  const onSignUp = async (data: SignupFormData) => {
-    setIsLoading(true);
-    try {
-      const { email, password, role, companyName, companySize, phoneNumber } = data;
-      const userData = { role, companyName, companySize, phoneNumber };
+  const handleSignUp = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate password match
+    if (!validatePassword()) {
+      toast({
+        title: "Password mismatch",
+        description: "Please ensure both passwords match",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Add your sign up logic here
+    if (name && email && password && companyName && phoneNumber && companySize) {
+      // Mark as new user to show subscription modal on first dashboard load
+      localStorage.setItem("new-user", "true");
+      // Set default subscription as None
+      localStorage.setItem("subscription-plan", "None");
       
-      const result = await signUp(email, password, userData);
-      
-      if (!result.error) {
-        setActiveTab("login");
-        signupForm.reset();
-      }
-    } catch (error) {
-      console.error("Signup error:", error);
-    } finally {
-      setIsLoading(false);
+      toast({
+        title: "Sign up successful",
+        description: "Welcome to NexHR! Please check your email to verify your account.",
+      });
+      navigate("/");
+    } else {
+      toast({
+        title: "Sign up failed",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
     }
   };
 
-  const watchRole = signupForm.watch("role");
+  const toggleForm = () => {
+    setIsSignUp(!isSignUp);
+    // Reset form fields
+    setName("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setPasswordError("");
+    setRememberMe(false);
+    setCompanyName("");
+    setPhoneNumber("");
+    setCompanySize("");
+  };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">HRMS Login</CardTitle>
-          <CardDescription className="text-center">
-            Sign in to access your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(onSignIn)} className="space-y-4">
-                  <FormField
-                    control={loginForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="name@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={loginForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign In"}
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <Form {...signupForm}>
-                <form onSubmit={signupForm.handleSubmit(onSignUp)} className="space-y-4">
-                  <FormField
-                    control={signupForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="name@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={signupForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={signupForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={signupForm.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Role</FormLabel>
-                        <FormControl>
-                          <select
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            {...field}
-                          >
-                            <option value="employee">Employee</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {watchRole === "admin" && (
-                    <>
-                      <FormField
-                        control={signupForm.control}
-                        name="companyName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Company Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your Company Name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={signupForm.control}
-                        name="companySize"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Company Size</FormLabel>
-                            <FormControl>
-                              <select
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                {...field}
-                              >
-                                <option value="">Select size</option>
-                                <option value="1-10">1-10 employees</option>
-                                <option value="11-50">11-50 employees</option>
-                                <option value="51-200">51-200 employees</option>
-                                <option value="201-500">201-500 employees</option>
-                                <option value="501+">501+ employees</option>
-                              </select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={signupForm.control}
-                        name="phoneNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your Phone Number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </>
-                  )}
-                  
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating Account..." : "Create Account"}
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <div className="text-sm text-center text-gray-500">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4 relative">
+      {/* Back to Landing Page Button - Prominent Position */}
+      <div className="fixed top-4 left-4 z-50">
+        <Link to="/landing">
+          <Button 
+            className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+            size="lg"
+          >
+            <Home className="h-5 w-5" />
+            Back to Landing Page
+          </Button>
+        </Link>
+      </div>
+      
+      <div className="w-full max-w-md space-y-8 animate-fade-in relative">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="text-4xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
+              NEX<span className="font-normal">HR</span>
+            </div>
           </div>
-        </CardFooter>
-      </Card>
+          <h2 className="mt-2 text-3xl font-extrabold text-gray-900">
+            {isSignUp ? "Create your account" : "Welcome back"}
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            {isSignUp ? "Sign up to get started with NexHR" : "Sign in to your account to continue"}
+          </p>
+        </div>
+        
+        <Card className="w-full shadow-lg border-t-4 border-t-nexhr-primary transition-all duration-300 hover:shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-xl">{isSignUp ? "Sign up" : "Sign in"}</CardTitle>
+            <CardDescription>
+              {isSignUp 
+                ? "Enter your information to create an account" 
+                : "Enter your email and password to access your account"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-4">
+              {isSignUp && (
+                <>
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="name" className="flex items-center">
+                      <User className="h-4 w-4 mr-2 text-gray-500" />
+                      Full Name
+                    </Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="companyName" className="flex items-center">
+                      <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+                      Company Name
+                    </Label>
+                    <Input
+                      id="companyName"
+                      type="text"
+                      placeholder="Acme Inc."
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="phoneNumber" className="flex items-center">
+                      <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      placeholder="+1 (555) 123-4567"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="companySize" className="flex items-center">
+                      <Users className="h-4 w-4 mr-2 text-gray-500" />
+                      Company Size
+                    </Label>
+                    <Select value={companySize} onValueChange={setCompanySize} required>
+                      <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
+                        <SelectValue placeholder="Select company size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1-10">1-10 employees</SelectItem>
+                        <SelectItem value="11-50">11-50 employees</SelectItem>
+                        <SelectItem value="51-200">51-200 employees</SelectItem>
+                        <SelectItem value="201-500">201-500 employees</SelectItem>
+                        <SelectItem value="501+">501+ employees</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center">
+                  <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="example@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="flex items-center">
+                    <Lock className="h-4 w-4 mr-2 text-gray-500" />
+                    Password
+                  </Label>
+                  {!isSignUp && (
+                    <Link
+                      to="/forgot-password"
+                      className="text-xs text-nexhr-primary hover:underline transition-all duration-300"
+                    >
+                      Forgot password?
+                    </Link>
+                  )}
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                />
+              </div>
+              
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label 
+                    htmlFor="confirmPassword" 
+                    className={`flex items-center ${passwordError ? "text-red-500" : ""}`}
+                  >
+                    <Lock className={`h-4 w-4 mr-2 ${passwordError ? "text-red-500" : "text-gray-500"}`} />
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (password && e.target.value) {
+                        validatePassword();
+                      }
+                    }}
+                    required
+                    className={`transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent ${
+                      passwordError ? "border-red-500 focus:ring-red-500" : ""
+                    }`}
+                  />
+                  {passwordError && (
+                    <div className="flex items-center text-xs text-red-500 mt-1">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {passwordError}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {!isSignUp && (
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={() => setRememberMe(!rememberMe)}
+                    className="data-[state=checked]:bg-nexhr-primary data-[state=checked]:border-nexhr-primary"
+                  />
+                  <Label
+                    htmlFor="remember"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Remember me
+                  </Label>
+                </div>
+              )}
+              
+              <Button 
+                type="submit" 
+                className="w-full group transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+              >
+                {isSignUp ? "Create Account" : "Sign in"}
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-center border-t pt-6">
+            <p className="text-sm text-gray-600">
+              {isSignUp ? "Already have an account? " : "Don't have an account? "}
+              <button 
+                onClick={toggleForm} 
+                className="text-nexhr-primary hover:underline transition-all duration-300 font-medium"
+              >
+                {isSignUp ? "Sign in" : "Sign up"}
+              </button>
+            </p>
+          </CardFooter>
+        </Card>
+        
+        <p className="text-center text-sm text-gray-600 animate-fade-in" style={{animationDelay: "0.3s"}}>
+          By continuing, you agree to our 
+          <a href="#" className="text-nexhr-primary hover:underline ml-1">Terms of Service</a>
+          <span className="mx-1">and</span>
+          <a href="#" className="text-nexhr-primary hover:underline">Privacy Policy</a>
+        </p>
+      </div>
     </div>
   );
 };

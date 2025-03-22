@@ -15,16 +15,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RefreshCw } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import { fetchEmployees } from '@/integrations/supabase/functions';
-import { useAuth } from '@/context/AuthContext';
 
-interface Employee {
-  employeeid: number;
-  firstname: string;
-  lastname: string;
-  jobtitle?: string;
-  avatar?: string;
-}
+// Sample employee data
+const sampleEmployees = [
+  { id: 1, name: "Olivia Rhye", avatar: "OR", role: "Designer" },
+  { id: 2, name: "Phoenix Baker", avatar: "PB", role: "Developer" },
+  { id: 3, name: "Lana Steiner", avatar: "LS", role: "Manager" },
+  { id: 4, name: "Demi Wilkinson", avatar: "DW", role: "QA Engineer" },
+  { id: 5, name: "Candice Wu", avatar: "CW", role: "Product Owner" },
+];
 
 interface ProjectEditProps {
   open: boolean;
@@ -34,7 +33,6 @@ interface ProjectEditProps {
 }
 
 const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, onSave }) => {
-  const { customerData } = useAuth();
   const [editedProject, setEditedProject] = useState({
     id: 0,
     name: '',
@@ -48,8 +46,6 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
     comments: [] as any[],
     projectId: ''
   });
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (project && project.id) {
@@ -63,36 +59,6 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
       });
     }
   }, [project]);
-
-  useEffect(() => {
-    const loadEmployees = async () => {
-      if (!customerData?.customerid) return;
-      
-      try {
-        setLoading(true);
-        const data = await fetchEmployees(customerData.customerid);
-        
-        // Map employee data to include avatar
-        const mappedEmployees = data.map((emp: any) => ({
-          employeeid: emp.employeeid,
-          firstname: emp.firstname,
-          lastname: emp.lastname,
-          jobtitle: emp.jobtitle,
-          avatar: `${emp.firstname?.charAt(0) || ''}${emp.lastname?.charAt(0) || ''}`
-        }));
-        
-        setEmployees(mappedEmployees);
-      } catch (error) {
-        console.error("Error loading employees:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    if (open) {
-      loadEmployees();
-    }
-  }, [open, customerData]);
 
   const generateProjectId = () => {
     const prefix = "PRJ-";
@@ -142,13 +108,7 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
   };
 
   const handleSave = () => {
-    // Convert from front-end model to database model if needed
-    const projectToSave = {
-      ...editedProject,
-      // Map any additional fields if needed
-    };
-    
-    onSave(projectToSave);
+    onSave(editedProject);
     onOpenChange(false);
   };
 
@@ -261,35 +221,31 @@ const ProjectEdit: React.FC<ProjectEditProps> = ({ open, onOpenChange, project, 
             <label className="text-sm font-medium">
               Assign Team Members
             </label>
-            {loading ? (
-              <div className="text-center py-4">Loading employees...</div>
-            ) : (
-              <ScrollArea className="h-[150px] border rounded-md p-2">
-                <div className="space-y-2">
-                  {employees.map((employee) => (
-                    <div key={employee.employeeid} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`employee-edit-${employee.employeeid}`}
-                        className="rounded border-gray-300"
-                        checked={editedProject.assignees.includes(employee.employeeid)}
-                        onChange={() => handleAssigneeChange(employee.employeeid)}
-                      />
-                      <label 
-                        htmlFor={`employee-edit-${employee.employeeid}`}
-                        className="text-sm font-medium flex items-center gap-2"
-                      >
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback>{employee.avatar}</AvatarFallback>
-                        </Avatar>
-                        <span>{employee.firstname} {employee.lastname}</span>
-                        <span className="text-xs text-gray-500">({employee.jobtitle || 'Employee'})</span>
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
+            <ScrollArea className="h-[150px] border rounded-md p-2">
+              <div className="space-y-2">
+                {sampleEmployees.map((employee) => (
+                  <div key={employee.id} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`employee-edit-${employee.id}`}
+                      className="rounded border-gray-300"
+                      checked={editedProject.assignees.includes(employee.id)}
+                      onChange={() => handleAssigneeChange(employee.id)}
+                    />
+                    <label 
+                      htmlFor={`employee-edit-${employee.id}`}
+                      className="text-sm font-medium flex items-center gap-2"
+                    >
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback>{employee.avatar}</AvatarFallback>
+                      </Avatar>
+                      <span>{employee.name}</span>
+                      <span className="text-xs text-gray-500">({employee.role})</span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         </div>
         <DialogFooter>

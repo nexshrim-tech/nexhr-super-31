@@ -1,3 +1,4 @@
+
 import React from "react";
 import { 
   Dialog, 
@@ -10,8 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Check, X, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -27,59 +26,14 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   forceOpen = false
 }) => {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const [isProcessing, setIsProcessing] = React.useState(false);
   
-  const handleSubscribe = async (plan: string) => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please login to subscribe to a plan",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsProcessing(true);
-    
-    try {
-      const { data: planData, error: planError } = await supabase
-        .from('plans')
-        .select('planid')
-        .eq('planname', plan)
-        .single();
-        
-      if (planError) throw planError;
-      
-      // Get current customer ID safely
-      const { data: customerId, error: customerIdError } = await supabase.rpc('get_current_customer_id');
-      
-      if (customerIdError) throw customerIdError;
-      
-      const { error: updateError } = await supabase
-        .from('customer')
-        .update({ planid: planData.planid })
-        .eq('customerid', customerId);
-        
-      if (updateError) throw updateError;
-      
-      toast({
-        title: "Subscription activated",
-        description: `Your ${plan} plan is now active. Enjoy all premium features!`,
-      });
-      
-      localStorage.setItem("subscription-plan", plan);
-      onSubscribe(plan);
-    } catch (error) {
-      console.error("Subscription error:", error);
-      toast({
-        title: "Subscription failed",
-        description: "There was an error processing your subscription.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleSubscribe = (plan: string) => {
+    // In a real app, this would trigger payment processing
+    toast({
+      title: "Subscription activated",
+      description: `Your ${plan} plan is now active. Enjoy all premium features!`,
+    });
+    onSubscribe(plan);
   };
 
   return (
@@ -136,7 +90,6 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 onClick={() => handleSubscribe("Starter")}
                 className="mt-6 w-full" 
                 variant="outline"
-                disabled={isProcessing}
               >
                 Choose Plan
               </Button>
@@ -176,8 +129,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               
               <Button 
                 onClick={() => handleSubscribe("Professional")}
-                className="mt-6 w-full"
-                disabled={isProcessing}
+                className="mt-6 w-full" 
               >
                 Choose Plan
               </Button>
@@ -270,7 +222,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         
         {!forceOpen && (
           <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={onClose} disabled={isProcessing}>
+            <Button variant="outline" onClick={onClose}>
               Maybe Later
             </Button>
           </DialogFooter>

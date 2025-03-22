@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,23 +9,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChevronLeft, Upload, FileText, ArrowLeftCircle, Loader2 } from "lucide-react";
+import { ChevronLeft, Upload, FileText, ArrowLeftCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 
 const AddEmployee = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
   const { toast } = useToast();
   const { features } = useSubscription();
-  const { user } = useAuth();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [departmentOptions, setDepartmentOptions] = useState<{id: number, name: string}[]>([]);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -38,22 +34,7 @@ const AddEmployee = () => {
     password: "",
     confirmPassword: "",
     bloodGroup: "",
-    hasDisability: false,
-    gender: "",
-    maritalStatus: "",
-    nationality: "",
-    employmentType: "",
-    workLocation: "",
-    address: "",
-    city: "",
-    state: "",
-    country: "",
-    zipCode: "",
-    bankName: "",
-    branchName: "",
-    accountNumber: "",
-    ifscCode: "",
-    accountType: ""
+    hasDisability: false
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formProgress, setFormProgress] = useState(0);
@@ -61,41 +42,6 @@ const AddEmployee = () => {
     aadharCard: null as File | null,
     panCard: null as File | null
   });
-
-  // Fetch departments on component mount
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
-
-  // Fetch departments from Supabase
-  const fetchDepartments = async () => {
-    try {
-      // Get customer ID from profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('customer_id')
-        .eq('id', user?.id)
-        .single();
-      
-      if (profileData?.customer_id) {
-        const { data, error } = await supabase
-          .from('department')
-          .select('departmentid, departmentname')
-          .eq('customerid', profileData.customer_id);
-        
-        if (error) throw error;
-        
-        if (data) {
-          setDepartmentOptions(data.map(dept => ({
-            id: dept.departmentid,
-            name: dept.departmentname
-          })));
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-    }
-  };
 
   if (!features.employeeManagement) {
     return (
@@ -156,7 +102,6 @@ const AddEmployee = () => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
     
-    // Calculate form progress
     const totalFields = Object.keys(formData).length;
     const filledFields = Object.values(formData).filter(val => 
       typeof val === "string" ? val.trim() !== "" : true
@@ -192,128 +137,24 @@ const AddEmployee = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Updated to save employee to Supabase
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (validateForm()) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields correctly.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    try {
-      // Get customer ID from profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('customer_id')
-        .eq('id', user?.id)
-        .single();
-      
-      if (!profileData?.customer_id) {
-        throw new Error("Customer ID not found");
-      }
-
-      const customerID = profileData.customer_id;
-      
-      // Parse date of birth
-      let dob = null;
-      if (formData.joinDate) {
-        dob = new Date(formData.joinDate).toISOString();
-      }
-      
-      // Parse joining date
-      let joiningDate = null;
-      if (formData.joinDate) {
-        joiningDate = new Date(formData.joinDate).toISOString();
-      }
-      
-      // Insert employee data
-      const { data: employeeData, error: employeeError } = await supabase
-        .from('employee')
-        .insert({
-          firstname: formData.firstName,
-          lastname: formData.lastName,
-          email: formData.email,
-          customerid: customerID,
-          jobtitle: formData.jobTitle,
-          department: formData.department ? parseInt(formData.department) : null,
-          joiningdate: joiningDate,
-          gender: formData.gender,
-          dateofbirth: dob,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          country: formData.country,
-          zipcode: formData.zipCode,
-          maritalstatus: formData.maritalStatus,
-          fathersname: formData.fatherName,
-          nationality: formData.nationality,
-          bloodgroup: formData.bloodGroup,
-          employmenttype: formData.employmentType,
-          worklocation: formData.workLocation,
-          disabilitystatus: formData.hasDisability ? 'Yes' : 'No',
-          employeepassword: formData.password // In a real app, this should be hashed
-        })
-        .select();
-      
-      if (employeeError) {
-        throw employeeError;
-      }
-      
-      // If bank details were provided
-      if (formData.bankName && formData.accountNumber && employeeData && employeeData[0]) {
-        const { error: bankError } = await supabase
-          .from('employeebankdetails')
-          .insert({
-            employeeid: employeeData[0].employeeid,
-            bankname: formData.bankName,
-            branchname: formData.branchName,
-            accountnumber: formData.accountNumber,
-            ifsccode: formData.ifscCode,
-            accounttype: formData.accountType
-          });
-        
-        if (bankError) {
-          console.error("Error saving bank details:", bankError);
-        }
-      }
-      
-      // Upload profile picture if provided
-      if (avatarPreview && employeeData && employeeData[0]) {
-        // For this example, we'll simulate success without actual storage
-        console.log("Would upload profile picture for employee ID:", employeeData[0].employeeid);
-      }
-      
-      // Upload documents if provided
-      if (documents.aadharCard || documents.panCard) {
-        // For this example, we'll simulate success without actual storage
-        console.log("Would upload documents for employee ID:", employeeData ? employeeData[0].employeeid : "unknown");
-      }
-      
-      toast({
-        title: "Employee Added Successfully",
-        description: "The employee has been added to your organization.",
+        title: "Employee information saved",
+        description: "The employee has been successfully added to the system.",
       });
       
       setTimeout(() => {
         navigate("/");
       }, 2000);
-      
-    } catch (error: any) {
-      console.error('Error adding employee:', error);
+    } else {
       toast({
-        title: "Error Adding Employee",
-        description: error.message || "There was an error adding the employee. Please try again.",
-        variant: "destructive"
+        title: "Validation Error",
+        description: "Please fill in all required fields correctly.",
+        variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -546,21 +387,11 @@ const AddEmployee = () => {
                               <SelectValue placeholder="Select department" />
                             </SelectTrigger>
                             <SelectContent>
-                              {departmentOptions.length > 0 ? (
-                                departmentOptions.map(dept => (
-                                  <SelectItem key={dept.id} value={dept.id.toString()}>
-                                    {dept.name}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <>
-                                  <SelectItem value="engineering">Engineering</SelectItem>
-                                  <SelectItem value="design">Design</SelectItem>
-                                  <SelectItem value="marketing">Marketing</SelectItem>
-                                  <SelectItem value="hr">HR</SelectItem>
-                                  <SelectItem value="finance">Finance</SelectItem>
-                                </>
-                              )}
+                              <SelectItem value="engineering">Engineering</SelectItem>
+                              <SelectItem value="design">Design</SelectItem>
+                              <SelectItem value="marketing">Marketing</SelectItem>
+                              <SelectItem value="hr">HR</SelectItem>
+                              <SelectItem value="finance">Finance</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -667,8 +498,8 @@ const AddEmployee = () => {
                           <Input id="state" placeholder="Enter state or province" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="zipCode">Zip/Postal Code</Label>
-                          <Input id="zipCode" placeholder="Enter zip or postal code" onChange={handleInputChange} />
+                          <Label htmlFor="zip">Zip/Postal Code</Label>
+                          <Input id="zip" placeholder="Enter zip or postal code" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="country">Country</Label>
@@ -684,23 +515,23 @@ const AddEmployee = () => {
                     <TabsContent value="bank" className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="bankName">Bank Name</Label>
-                          <Input id="bankName" placeholder="Enter bank name" onChange={handleInputChange} />
+                          <Label htmlFor="bank-name">Bank Name</Label>
+                          <Input id="bank-name" placeholder="Enter bank name" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="branchName">Branch Name</Label>
-                          <Input id="branchName" placeholder="Enter branch name" onChange={handleInputChange} />
+                          <Label htmlFor="branch-name">Branch Name</Label>
+                          <Input id="branch-name" placeholder="Enter branch name" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="accountNumber">Account Number</Label>
-                          <Input id="accountNumber" placeholder="Enter account number" onChange={handleInputChange} />
+                          <Label htmlFor="account-number">Account Number</Label>
+                          <Input id="account-number" placeholder="Enter account number" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="ifscCode">IFSC Code</Label>
-                          <Input id="ifscCode" placeholder="Enter IFSC code" onChange={handleInputChange} />
+                          <Label htmlFor="ifsc-code">IFSC Code</Label>
+                          <Input id="ifsc-code" placeholder="Enter IFSC code" onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="accountType">Account Type</Label>
+                          <Label htmlFor="account-type">Account Type</Label>
                           <Select onValueChange={(value) => handleSelectChange(value, "accountType")}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select account type" />
@@ -791,15 +622,7 @@ const AddEmployee = () => {
 
                       <div className="flex justify-end space-x-2 pt-4">
                         <Button variant="outline" onClick={() => setActiveTab("bank")}>Previous</Button>
-                        <Button onClick={handleSubmit} disabled={isSubmitting}>
-                          {isSubmitting ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-                            </>
-                          ) : (
-                            "Save Employee"
-                          )}
-                        </Button>
+                        <Button onClick={handleSubmit}>Save Employee</Button>
                       </div>
                     </TabsContent>
                   </Tabs>

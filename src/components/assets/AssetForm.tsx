@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EmployeeListItem } from '@/services/employeeService';
 
 interface AssetFormProps {
   formData: {
@@ -29,72 +29,26 @@ interface AssetFormProps {
     assignedTo: string | null;
     status: string;
     billDocument?: string;
-    billFile?: File | null;
   };
-  setFormData: React.Dispatch<React.SetStateAction<{
-    name: string;
-    type: string;
-    serialNumber: string;
-    purchaseDate: string;
-    value: string;
-    assignedTo: string | null;
-    status: string;
-    billDocument?: string;
-    billFile?: File | null;
-  }>>;
-  employees: EmployeeListItem[];
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleSelectChange: (name: string, value: string) => void;
+  handleDateSelect: (date: Date | undefined) => void;
+  handleFileUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  date: Date | undefined;
+  assetTypes: string[];
+  employees: { id: number; name: string; avatar: string }[];
 }
 
 const AssetForm: React.FC<AssetFormProps> = ({
   formData,
-  setFormData,
+  handleInputChange,
+  handleSelectChange,
+  handleDateSelect,
+  handleFileUpload,
+  date,
+  assetTypes,
   employees
 }) => {
-  // Create a date object from the date string
-  const date = formData.purchaseDate ? new Date(formData.purchaseDate) : undefined;
-  
-  // Asset types for select dropdown
-  const assetTypes = ["Computer", "Laptop", "Mobile", "Furniture", "Vehicle", "Software", "Office Equipment", "Other"];
-
-  // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Handle select changes
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Handle date selection
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setFormData(prev => ({
-        ...prev,
-        purchaseDate: date.toISOString().split('T')[0]
-      }));
-    }
-  };
-
-  // Handle file upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData(prev => ({
-        ...prev,
-        billDocument: file.name,
-        billFile: file
-      }));
-    }
-  };
-
   return (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -210,7 +164,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
           <SelectContent className="pointer-events-auto">
             <SelectItem value="not-assigned">Not Assigned</SelectItem>
             {employees.map(employee => (
-              <SelectItem key={employee.id} value={employee.id}>
+              <SelectItem key={employee.id} value={employee.id.toString()}>
                 {employee.name}
               </SelectItem>
             ))}
