@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceRecord {
@@ -80,8 +81,8 @@ export const fetchAttendanceRecords = async (
         selfiePath: record.selfieimagepath
       };
 
-      // Add id if it exists with the correct property name
-      if ('id' in record) {
+      // Add id if it exists with the correct property name - with explicit type casting
+      if ('id' in record && typeof record.id === 'number') {
         recordObj.id = record.id;
       }
       
@@ -143,7 +144,7 @@ export const updateAttendanceRecord = async (
     status?: string;
     date?: string;
   }
-) => {
+): Promise<any> => {
   try {
     // Prepare update data
     const updateData: Record<string, any> = {};
@@ -175,7 +176,7 @@ export const updateAttendanceRecord = async (
 };
 
 // Delete an attendance record
-export const deleteAttendanceRecord = async (recordId: number) => {
+export const deleteAttendanceRecord = async (recordId: number): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('attendance')
@@ -196,7 +197,7 @@ export const trackEmployeeLocation = async (
   customerId: number,
   latitude: number,
   longitude: number
-) => {
+): Promise<any> => {
   try {
     const { data, error } = await supabase
       .from('track')
@@ -218,7 +219,7 @@ export const trackEmployeeLocation = async (
 };
 
 // Fetch attendance settings
-export const fetchAttendanceSettings = async (customerId: number) => {
+export const fetchAttendanceSettings = async (customerId: number): Promise<any> => {
   try {
     const { data, error } = await supabase
       .from('attendancesettings')
@@ -254,7 +255,7 @@ export const updateAttendanceSettings = async (
     geofencingEnabled: boolean;
     photoVerificationEnabled: boolean;
   }
-) => {
+): Promise<any> => {
   try {
     // Check if settings exist
     const { data: existingSettings, error: fetchError } = await supabase
@@ -300,7 +301,7 @@ export const updateAttendanceSettings = async (
 };
 
 // Get office locations for geofencing
-export const getOfficeLocations = async (customerId: number) => {
+export const getOfficeLocations = async (customerId: number): Promise<any> => {
   try {
     const { data, error } = await supabase
       .from('officelocation')
@@ -325,7 +326,7 @@ export const upsertOfficeLocation = async (
     longitude: number;
     radius: number;
   }
-) => {
+): Promise<any> => {
   try {
     const locationData = {
       latitude: location.latitude,
