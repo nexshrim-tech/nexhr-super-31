@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceRecord {
@@ -65,7 +64,7 @@ export const fetchAttendanceRecords = async (
         const checkOutDate = record.checkouttimestamp ? new Date(record.checkouttimestamp) : null;
         
         records.push({
-          id: record.id,
+          // Use record index as the id if no specific id field exists
           employeeId: record.employeeid,
           employeeName: record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : 'Unknown',
           date: checkInDate ? checkInDate.toISOString().split('T')[0] : '',

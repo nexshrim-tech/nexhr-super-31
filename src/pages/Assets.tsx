@@ -364,7 +364,8 @@ const Assets = () => {
         onEditSubmit={handleEditAsset}
         employees={employees.map(emp => ({
           id: String(emp.id), // Convert id to string to match the expected type
-          name: emp.name
+          name: emp.name,
+          avatar: emp.avatar
         }))}
         selectedAsset={selectedAsset}
       />
