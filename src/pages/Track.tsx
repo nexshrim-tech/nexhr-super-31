@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,8 +27,6 @@ const Track = () => {
     const fetchEmployees = async () => {
       try {
         setLoading(true);
-        // Here you would fetch employee location data from your Supabase database
-        // For demonstration, we're using mock data
         const mockEmployees: Employee[] = [
           {
             id: 1,

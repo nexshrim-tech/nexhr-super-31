@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Download, Maximize, Minimize, Info, UserPlus, Search, Calendar, Eye } from "lucide-react";
@@ -11,6 +10,13 @@ import { Badge } from "@/components/ui/badge";
 interface LocationMapProps {
   employeeId?: number;
   defaultView?: boolean;
+  employee?: {
+    id: number;
+    name: string;
+    role: string;
+    location: { lat: number; lng: number } | null;
+    lastActive: string;
+  };
 }
 
 // Mock employee data for the map with timestamps for movement tracking
@@ -69,7 +75,9 @@ const employees = [
   }
 ];
 
-const LocationMap = ({ employeeId, defaultView = true }: LocationMapProps) => {
+const LocationMap: React.FC<LocationMapProps> = ({ employee, employeeId, defaultView = true }) => {
+  // If employee is provided, use their ID
+  const effectiveEmployeeId = employee?.id || employeeId;
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);

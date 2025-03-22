@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Asset, AssetFormData, fetchAssets, createAsset, updateAsset, deleteAsset, fetchEmployees, getCurrentCustomerId, mapAssetForFrontend } from '@/services/assetService';
-import { AssetTable } from '@/components/assets/AssetTable';
-import { AssetForm } from '@/components/assets/AssetForm';
-import { AssetStats } from '@/components/assets/AssetStats';
-import { AssetDetails } from '@/components/assets/AssetDetails';
-import { FilterSection } from '@/components/assets/FilterSection';
-import { AssetDialogs } from '@/components/assets/AssetDialogs';
+import AssetTable from '@/components/assets/AssetTable';
+import AssetForm from '@/components/assets/AssetForm';
+import AssetStats from '@/components/assets/AssetStats';
+import AssetDetails from '@/components/assets/AssetDetails';
+import FilterSection from '@/components/assets/FilterSection';
+import AssetDialogs from '@/components/assets/AssetDialogs';
 import { useAuth } from '@/context/AuthContext';
 import { Separator } from "@/components/ui/separator";
 
