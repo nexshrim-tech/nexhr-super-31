@@ -78,12 +78,14 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <SubscriptionProvider>
-        <AppRoutes />
-        <Toaster />
-      </SubscriptionProvider>
-    </AuthProvider>
+    <>
+      <AuthProvider>
+        <SubscriptionProvider>
+          <AppRoutes />
+          <Toaster />
+        </SubscriptionProvider>
+      </AuthProvider>
+    </>
   );
 }
 

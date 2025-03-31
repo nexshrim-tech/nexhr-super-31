@@ -2,54 +2,78 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Attendance {
-  id?: number;
-  employeeid?: number;
-  checkintimestamp?: string;
-  checkouttimestamp?: string;
-  status?: string;
-  selfieimagepath?: string;
-  customerid?: number;
+  attendanceid: number;
+  employeeid: number;
+  attendancedate: string;
+  status: string;
+  notes?: string;
+  latitude?: string;
+  longitude?: string;
 }
 
 export interface AttendanceSettings {
-  attendancesettingid?: number;
-  customerid?: number;
-  employeeid?: number;
-  workstarttime?: string;
-  latethreshold?: string;
-  geofencingenabled?: boolean;
-  photoverificationenabled?: boolean;
+  attendancesettingid: number;
+  customerid: number;
+  employeeid: number;
+  geofencingenabled: boolean;
+  latethreshold: string;  // Changed from unknown to string
+  photoverificationenabled: boolean;
+  workstarttime: string;
 }
 
-export const getAttendanceRecords = async (customerId?: number, employeeId?: number): Promise<Attendance[]> => {
+export const getAttendance = async (employeeId?: number, startDate?: string, endDate?: string): Promise<Attendance[]> => {
   try {
     let query = supabase
       .from('attendance')
       .select('*');
     
-    if (customerId) {
-      query = query.eq('customerid', customerId);
-    }
-    
     if (employeeId) {
       query = query.eq('employeeid', employeeId);
     }
     
-    const { data, error } = await query.order('checkintimestamp', { ascending: false });
+    if (startDate) {
+      query = query.gte('attendancedate', startDate);
+    }
+    
+    if (endDate) {
+      query = query.lte('attendancedate', endDate);
+    }
+    
+    const { data, error } = await query.order('attendancedate', { ascending: false });
 
     if (error) {
-      console.error('Error fetching attendance records:', error);
+      console.error('Error fetching attendance:', error);
       throw error;
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getAttendanceRecords:', error);
+    console.error('Error in getAttendance:', error);
     throw error;
   }
 };
 
-export const markAttendance = async (attendance: Attendance): Promise<Attendance> => {
+export const getAttendanceById = async (id: number): Promise<Attendance | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('attendance')
+      .select('*')
+      .eq('attendanceid', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching attendance by ID:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in getAttendanceById:', error);
+    throw error;
+  }
+};
+
+export const addAttendance = async (attendance: Omit<Attendance, 'attendanceid'>): Promise<Attendance> => {
   try {
     const { data, error } = await supabase
       .from('attendance')
@@ -58,23 +82,23 @@ export const markAttendance = async (attendance: Attendance): Promise<Attendance
       .single();
 
     if (error) {
-      console.error('Error marking attendance:', error);
+      console.error('Error adding attendance:', error);
       throw error;
     }
 
     return data;
   } catch (error) {
-    console.error('Error in markAttendance:', error);
+    console.error('Error in addAttendance:', error);
     throw error;
   }
 };
 
-export const updateAttendance = async (id: number, attendance: Partial<Attendance>): Promise<Attendance> => {
+export const updateAttendance = async (id: number, attendance: Omit<Partial<Attendance>, 'attendanceid'>): Promise<Attendance> => {
   try {
     const { data, error } = await supabase
       .from('attendance')
       .update(attendance)
-      .eq('id', id)
+      .eq('attendanceid', id)
       .select()
       .single();
 
@@ -90,28 +114,41 @@ export const updateAttendance = async (id: number, attendance: Partial<Attendanc
   }
 };
 
-export const getAttendanceSettings = async (customerId?: number, employeeId?: number): Promise<AttendanceSettings | null> => {
+export const deleteAttendance = async (id: number): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('attendance')
+      .delete()
+      .eq('attendanceid', id);
+
+    if (error) {
+      console.error('Error deleting attendance:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteAttendance:', error);
+    throw error;
+  }
+};
+
+export const getAttendanceSettings = async (employeeId?: number): Promise<AttendanceSettings[]> => {
   try {
     let query = supabase
       .from('attendancesettings')
       .select('*');
     
-    if (customerId) {
-      query = query.eq('customerid', customerId);
-    }
-    
     if (employeeId) {
       query = query.eq('employeeid', employeeId);
     }
     
-    const { data, error } = await query.maybeSingle();
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching attendance settings:', error);
       throw error;
     }
 
-    return data;
+    return data || [];
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
     throw error;
@@ -160,6 +197,25 @@ export const createAttendanceSettings = async (
     return data;
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);
+    throw error;
+  }
+};
+
+export const bulkCreateAttendanceSettings = async (settings: Omit<AttendanceSettings, 'attendancesettingid'>[]): Promise<AttendanceSettings[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .insert(settings)
+      .select();
+
+    if (error) {
+      console.error('Error bulk creating attendance settings:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in bulkCreateAttendanceSettings:', error);
     throw error;
   }
 };
