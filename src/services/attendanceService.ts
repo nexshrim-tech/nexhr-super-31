@@ -219,7 +219,7 @@ export const createAttendanceSettings = async (
 };
 
 export const bulkCreateAttendanceSettings = async (
-  settings: Omit<AttendanceSettings, 'attendancesettingid'>[]
+  settings: Array<Omit<AttendanceSettings, 'attendancesettingid'>>
 ): Promise<AttendanceSettings[]> => {
   try {
     const { data, error } = await supabase
