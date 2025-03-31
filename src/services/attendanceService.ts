@@ -2,19 +2,24 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Attendance {
-  attendanceid: number;
+  attendanceid?: number;
   employeeid: number;
-  attendancedate: string;
+  attendancedate?: string;
   status: string;
   notes?: string;
   latitude?: string;
   longitude?: string;
+  // Database schema fields
+  checkintimestamp?: string;
+  checkouttimestamp?: string;
+  customerid?: number;
+  selfieimagepath?: string;
 }
 
 export interface AttendanceSettings {
-  attendancesettingid: number;
-  customerid: number;
-  employeeid: number;
+  attendancesettingid?: number;
+  customerid?: number;
+  employeeid?: number;
   geofencingenabled: boolean;
   latethreshold: string;  // Changed from unknown to string
   photoverificationenabled: boolean;
@@ -32,21 +37,21 @@ export const getAttendance = async (employeeId?: number, startDate?: string, end
     }
     
     if (startDate) {
-      query = query.gte('attendancedate', startDate);
+      query = query.gte('checkintimestamp', startDate);
     }
     
     if (endDate) {
-      query = query.lte('attendancedate', endDate);
+      query = query.lte('checkintimestamp', endDate);
     }
     
-    const { data, error } = await query.order('attendancedate', { ascending: false });
+    const { data, error } = await query.order('checkintimestamp', { ascending: false });
 
     if (error) {
       console.error('Error fetching attendance:', error);
       throw error;
     }
 
-    return data || [];
+    return data as Attendance[] || [];
   } catch (error) {
     console.error('Error in getAttendance:', error);
     throw error;
@@ -66,7 +71,7 @@ export const getAttendanceById = async (id: number): Promise<Attendance | null> 
       throw error;
     }
 
-    return data;
+    return data as Attendance;
   } catch (error) {
     console.error('Error in getAttendanceById:', error);
     throw error;
@@ -86,14 +91,14 @@ export const addAttendance = async (attendance: Omit<Attendance, 'attendanceid'>
       throw error;
     }
 
-    return data;
+    return data as Attendance;
   } catch (error) {
     console.error('Error in addAttendance:', error);
     throw error;
   }
 };
 
-export const updateAttendance = async (id: number, attendance: Omit<Partial<Attendance>, 'attendanceid'>): Promise<Attendance> => {
+export const updateAttendance = async (id: number, attendance: Partial<Omit<Attendance, 'attendanceid'>>): Promise<Attendance> => {
   try {
     const { data, error } = await supabase
       .from('attendance')
@@ -107,7 +112,7 @@ export const updateAttendance = async (id: number, attendance: Omit<Partial<Atte
       throw error;
     }
 
-    return data;
+    return data as Attendance;
   } catch (error) {
     console.error('Error in updateAttendance:', error);
     throw error;
@@ -148,7 +153,13 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
       throw error;
     }
 
-    return data || [];
+    // Transform latethreshold from unknown to string if needed
+    const formattedData = data?.map(item => ({
+      ...item,
+      latethreshold: String(item.latethreshold) // Ensure latethreshold is a string
+    }));
+
+    return formattedData as AttendanceSettings[] || [];
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
     throw error;
@@ -157,7 +168,7 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
 
 export const updateAttendanceSettings = async (
   id: number, 
-  settings: Omit<Partial<AttendanceSettings>, 'attendancesettingid'>
+  settings: Partial<Omit<AttendanceSettings, 'attendancesettingid'>>
 ): Promise<AttendanceSettings> => {
   try {
     const { data, error } = await supabase
@@ -172,7 +183,10 @@ export const updateAttendanceSettings = async (
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      latethreshold: String(data.latethreshold)
+    } as AttendanceSettings;
   } catch (error) {
     console.error('Error in updateAttendanceSettings:', error);
     throw error;
@@ -194,14 +208,19 @@ export const createAttendanceSettings = async (
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      latethreshold: String(data.latethreshold)
+    } as AttendanceSettings;
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);
     throw error;
   }
 };
 
-export const bulkCreateAttendanceSettings = async (settings: Omit<AttendanceSettings, 'attendancesettingid'>[]): Promise<AttendanceSettings[]> => {
+export const bulkCreateAttendanceSettings = async (
+  settings: Omit<AttendanceSettings, 'attendancesettingid'>[]
+): Promise<AttendanceSettings[]> => {
   try {
     const { data, error } = await supabase
       .from('attendancesettings')
@@ -213,7 +232,13 @@ export const bulkCreateAttendanceSettings = async (settings: Omit<AttendanceSett
       throw error;
     }
 
-    return data || [];
+    // Transform latethreshold from unknown to string if needed
+    const formattedData = data?.map(item => ({
+      ...item,
+      latethreshold: String(item.latethreshold) // Ensure latethreshold is a string
+    }));
+
+    return formattedData as AttendanceSettings[] || [];
   } catch (error) {
     console.error('Error in bulkCreateAttendanceSettings:', error);
     throw error;
