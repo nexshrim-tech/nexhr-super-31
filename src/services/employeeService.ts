@@ -19,7 +19,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
     const { data, error } = await supabase
       .from('employee')
       .select('*')
-      .eq('customerid', customerId || '')
+      .eq('customerid', customerId || null)
       .order('employeeid');
 
     if (error) {
@@ -74,7 +74,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
   }
 };
 
-export const updateEmployee = async (id: number, employee: Partial<Employee>): Promise<Employee> => {
+export const updateEmployee = async (id: number, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
   try {
     const { data, error } = await supabase
       .from('employee')

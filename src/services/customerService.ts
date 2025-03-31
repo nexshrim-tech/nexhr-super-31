@@ -49,7 +49,7 @@ export const getCurrentCustomer = async (user: User): Promise<Customer | null> =
   }
 };
 
-export const updateCustomer = async (id: number, customer: Partial<Customer>): Promise<Customer> => {
+export const updateCustomer = async (id: number, customer: Omit<Partial<Customer>, 'customerid'>): Promise<Customer> => {
   try {
     const { data, error } = await supabase
       .from('customer')

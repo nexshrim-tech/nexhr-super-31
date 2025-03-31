@@ -120,7 +120,7 @@ export const getAttendanceSettings = async (customerId?: number, employeeId?: nu
 
 export const updateAttendanceSettings = async (
   id: number, 
-  settings: Partial<AttendanceSettings>
+  settings: Omit<Partial<AttendanceSettings>, 'attendancesettingid'>
 ): Promise<AttendanceSettings> => {
   try {
     const { data, error } = await supabase
@@ -143,7 +143,7 @@ export const updateAttendanceSettings = async (
 };
 
 export const createAttendanceSettings = async (
-  settings: AttendanceSettings
+  settings: Omit<AttendanceSettings, 'attendancesettingid'>
 ): Promise<AttendanceSettings> => {
   try {
     const { data, error } = await supabase

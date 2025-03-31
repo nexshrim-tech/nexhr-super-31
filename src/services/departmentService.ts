@@ -75,7 +75,7 @@ export const addDepartment = async (department: Omit<Department, 'departmentid'>
   }
 };
 
-export const updateDepartment = async (id: number, department: Partial<Department>): Promise<Department> => {
+export const updateDepartment = async (id: number, department: Omit<Partial<Department>, 'departmentid'>): Promise<Department> => {
   try {
     const { data, error } = await supabase
       .from('department')
