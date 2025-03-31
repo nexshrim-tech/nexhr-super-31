@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Mail, Lock, User, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
@@ -75,38 +74,50 @@ const Login = () => {
     
     setIsLoading(true);
     
-    // Add your sign up logic here
-    if (name && email && password && companyName && phoneNumber && companySize) {
-      try {
-        const metadata = {
-          company_name: companyName,
-          company_size: companySize,
-          phone_number: phoneNumber,
-          full_name: name
+    try {
+      if (name && email && password) {
+        const userData = {
+          full_name: name,
+          role: companyName ? 'admin' : 'employee'
         };
         
-        await signUp(email, password, metadata);
+        if (companyName) {
+          userData['company_name'] = companyName;
+          userData['company_size'] = companySize;
+          userData['phone_number'] = phoneNumber;
+        }
+        
+        console.log("Signup data:", userData);
+        
+        await signUp(email, password, userData);
+        
+        toast({
+          title: "Sign up initiated",
+          description: "Please check your email for verification",
+        });
         
         // Reset form
-        setIsSignUp(false);
         setEmail("");
         setPassword("");
+        setConfirmPassword("");
         setName("");
         setCompanyName("");
         setPhoneNumber("");
         setCompanySize("");
-      } catch (error) {
-        // Error is handled in the signUp function
-        console.error("Signup error:", error);
-      } finally {
-        setIsLoading(false);
+        
+        // Switch to login view after signup
+        setIsSignUp(false);
+      } else {
+        toast({
+          title: "Sign up failed",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
       }
-    } else {
-      toast({
-        title: "Sign up failed",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
+    } catch (error) {
+      // Error is handled in the signUp function
+      console.error("Signup error:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -195,7 +206,6 @@ const Login = () => {
                       placeholder="Acme Inc."
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      required
                       className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
                     />
                   </div>
@@ -211,7 +221,6 @@ const Login = () => {
                       placeholder="+1 (555) 123-4567"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
-                      required
                       className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
                     />
                   </div>
@@ -221,7 +230,7 @@ const Login = () => {
                       <Users className="h-4 w-4 mr-2 text-gray-500" />
                       Company Size
                     </Label>
-                    <Select value={companySize} onValueChange={setCompanySize} required>
+                    <Select value={companySize} onValueChange={setCompanySize}>
                       <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
                         <SelectValue placeholder="Select company size" />
                       </SelectTrigger>
@@ -333,9 +342,10 @@ const Login = () => {
               <Button 
                 type="submit" 
                 className="w-full group transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+                disabled={isLoading}
               >
-                {isSignUp ? "Create Account" : "Sign in"}
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                {isLoading ? "Processing..." : (isSignUp ? "Create Account" : "Sign in")}
+                {!isLoading && <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />}
               </Button>
             </form>
           </CardContent>
@@ -345,6 +355,7 @@ const Login = () => {
               <button 
                 onClick={toggleForm} 
                 className="text-nexhr-primary hover:underline transition-all duration-300 font-medium"
+                disabled={isLoading}
               >
                 {isSignUp ? "Sign in" : "Sign up"}
               </button>

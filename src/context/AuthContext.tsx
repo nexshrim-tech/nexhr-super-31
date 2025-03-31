@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {
@@ -73,19 +74,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       console.error('Error signing in:', error.message);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, metadata: any) => {
     try {
-      const { error } = await supabase.auth.signUp({ 
+      setIsLoading(true);
+      console.log('Signing up with metadata:', metadata);
+      
+      const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
-          data: {
-            ...metadata,
-            role: metadata.companyName ? 'admin' : 'employee'
-          }
+          data: metadata
         }
       });
       
@@ -98,18 +101,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
       
+      console.log('Sign up successful:', data);
+      
       toast({
         title: "Sign up successful",
         description: "Please check your email to verify your account.",
       });
+      
+      // Don't navigate automatically, wait for email verification
     } catch (error: any) {
       console.error('Error signing up:', error.message);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
         throw error;
@@ -122,6 +132,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
