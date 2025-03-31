@@ -67,7 +67,10 @@ export const getAttendanceById = async (id: number): Promise<Attendance | null> 
   }
 };
 
-export const addAttendance = async (attendance: Omit<Attendance, 'attendanceid'>): Promise<Attendance> => {
+// Using a different type to avoid circular references
+type AttendanceInput = Omit<Attendance, 'attendanceid'>;
+
+export const addAttendance = async (attendance: AttendanceInput): Promise<Attendance> => {
   try {
     const { data, error } = await supabase
       .from('attendance')
@@ -86,7 +89,19 @@ export const addAttendance = async (attendance: Omit<Attendance, 'attendanceid'>
   }
 };
 
-export const updateAttendance = async (id: number, attendance: Partial<Attendance>): Promise<Attendance> => {
+// Using a simpler type that's explicitly defined to avoid circularity
+export const updateAttendance = async (id: number, attendance: {
+  employeeid?: number;
+  attendancedate?: string;
+  status?: string;
+  notes?: string;
+  latitude?: string;
+  longitude?: string;
+  checkintimestamp?: string;
+  checkouttimestamp?: string;
+  customerid?: number;
+  selfieimagepath?: string;
+}): Promise<Attendance> => {
   try {
     const { data, error } = await supabase
       .from('attendance')
