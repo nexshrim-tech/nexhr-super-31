@@ -19,7 +19,6 @@ const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  // New signup fields
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -30,7 +29,6 @@ const Login = () => {
   const { user, signIn, signUp } = useAuth();
 
   useEffect(() => {
-    // If user is already logged in, redirect to dashboard
     if (user) {
       navigate('/');
     }
@@ -52,7 +50,6 @@ const Login = () => {
     try {
       await signIn(email, password);
     } catch (error) {
-      // Error is handled in the signIn function
       console.error("Login error:", error);
     } finally {
       setIsLoading(false);
@@ -62,7 +59,6 @@ const Login = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate password match
     if (!validatePassword()) {
       toast({
         title: "Password mismatch",
@@ -96,7 +92,6 @@ const Login = () => {
           description: "Please check your email for verification",
         });
         
-        // Reset form
         setEmail("");
         setPassword("");
         setConfirmPassword("");
@@ -105,7 +100,6 @@ const Login = () => {
         setPhoneNumber("");
         setCompanySize("");
         
-        // Switch to login view after signup
         setIsSignUp(false);
       } else {
         toast({
@@ -114,8 +108,7 @@ const Login = () => {
           variant: "destructive",
         });
       }
-    } catch (error) {
-      // Error is handled in the signUp function
+    } catch (error: any) {
       console.error("Signup error:", error);
     } finally {
       setIsLoading(false);
@@ -124,7 +117,6 @@ const Login = () => {
 
   const toggleForm = () => {
     setIsSignUp(!isSignUp);
-    // Reset form fields
     setName("");
     setEmail("");
     setPassword("");
@@ -138,7 +130,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4 relative">
-      {/* Back to Landing Page Button - Prominent Position */}
       <div className="fixed top-4 left-4 z-50">
         <Link to="/landing">
           <Button 
