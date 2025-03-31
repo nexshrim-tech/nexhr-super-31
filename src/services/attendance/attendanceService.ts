@@ -79,7 +79,6 @@ export const addAttendance = async (attendance: Omit<Attendance, 'attendanceid'>
       throw error;
     }
 
-    // Fix: Changed from single() to ensuring we get the first entry from the array
     return (data && data[0]) as Attendance;
   } catch (error) {
     console.error('Error in addAttendance:', error);
@@ -87,7 +86,7 @@ export const addAttendance = async (attendance: Omit<Attendance, 'attendanceid'>
   }
 };
 
-export const updateAttendance = async (id: number, attendance: Partial<Omit<Attendance, 'attendanceid'>>): Promise<Attendance> => {
+export const updateAttendance = async (id: number, attendance: Partial<Attendance>): Promise<Attendance> => {
   try {
     const { data, error } = await supabase
       .from('attendance')
@@ -100,7 +99,6 @@ export const updateAttendance = async (id: number, attendance: Partial<Omit<Atte
       throw error;
     }
 
-    // Fix: Changed from single() to ensuring we get the first entry from the array
     return (data && data[0]) as Attendance;
   } catch (error) {
     console.error('Error in updateAttendance:', error);
