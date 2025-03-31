@@ -2,21 +2,30 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 const Logout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signOut } = useAuth();
 
   useEffect(() => {
-    // Simulate logout
-    setTimeout(() => {
-      toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of your account.",
-      });
-      navigate("/login");
-    }, 500);
-  }, [navigate, toast]);
+    const performLogout = async () => {
+      try {
+        await signOut();
+      } catch (error) {
+        console.error("Logout error:", error);
+        toast({
+          title: "Error logging out",
+          description: "An error occurred while logging out.",
+          variant: "destructive",
+        });
+        navigate('/');
+      }
+    };
+
+    performLogout();
+  }, [navigate, toast, signOut]);
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-100">

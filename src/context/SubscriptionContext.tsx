@@ -1,5 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
+import { getSubscriptionPlan, updateSubscriptionPlan, getCurrentCustomer } from "../services/customerService";
 
 export type SubscriptionPlan = "None" | "Starter" | "Professional" | "Business" | "Enterprise";
 
@@ -9,6 +11,7 @@ interface SubscriptionContextType {
   isSubscribed: boolean;
   showSubscriptionModal: boolean;
   setShowSubscriptionModal: (show: boolean) => void;
+  customerId: number | null;
   features: {
     employeeManagement: boolean;
     attendanceTracking: boolean;
@@ -26,13 +29,10 @@ interface SubscriptionContextType {
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [plan, setPlan] = useState<SubscriptionPlan>(() => {
-    const savedPlan = localStorage.getItem("subscription-plan");
-    return (savedPlan as SubscriptionPlan) || "None";
-  });
-  
+  const { user } = useAuth();
+  const [plan, setPlan] = useState<SubscriptionPlan>("None");
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  
+  const [customerId, setCustomerId] = useState<number | null>(null);
   const isSubscribed = plan !== "None";
   
   // Define which features are available for each plan
@@ -49,37 +49,60 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     advancedAnalytics: ["Enterprise"].includes(plan),
   };
   
-  // Save plan to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("subscription-plan", plan);
+    const fetchSubscription = async () => {
+      if (user) {
+        try {
+          const customer = await getCurrentCustomer(user);
+          if (customer) {
+            setCustomerId(customer.customerid);
+            const planName = await getSubscriptionPlan(customer.customerid);
+            setPlan(planName as SubscriptionPlan || "None");
+            
+            // Show subscription modal for new users with no plan
+            if (planName === "None") {
+              const isNewUser = localStorage.getItem("new-user") === "true";
+              if (isNewUser) {
+                // Show the modal after a delay on first load for new users
+                const timer = setTimeout(() => {
+                  setShowSubscriptionModal(true);
+                  localStorage.removeItem("new-user");
+                }, 1500);
+                
+                return () => clearTimeout(timer);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching subscription:", error);
+        }
+      }
+    };
     
-    // If user just subscribed, hide the subscription modal and show a success message
-    if (plan !== "None") {
-      setShowSubscriptionModal(false);
-    }
-    // Only show the subscription modal for new users with no plan
-    else if (plan === "None") {
-      const isNewUser = localStorage.getItem("new-user") === "true";
-      if (isNewUser) {
-        // Show the modal after a delay on first load for new users
-        const timer = setTimeout(() => {
-          setShowSubscriptionModal(true);
-          localStorage.removeItem("new-user");
-        }, 1500);
-        
-        return () => clearTimeout(timer);
+    fetchSubscription();
+  }, [user]);
+  
+  const handleSetPlan = async (newPlan: SubscriptionPlan) => {
+    setPlan(newPlan);
+    
+    if (user && customerId) {
+      try {
+        await updateSubscriptionPlan(customerId, newPlan);
+      } catch (error) {
+        console.error("Error updating subscription plan:", error);
       }
     }
-  }, [plan]);
+  };
   
   return (
     <SubscriptionContext.Provider
       value={{
         plan,
-        setPlan,
+        setPlan: handleSetPlan,
         isSubscribed,
         showSubscriptionModal,
         setShowSubscriptionModal,
+        customerId,
         features,
       }}
     >

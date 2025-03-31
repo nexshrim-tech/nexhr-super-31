@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowRight, Mail, Lock, User, ArrowLeft, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
+import { ArrowRight, Mail, Lock, User, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -17,6 +18,7 @@ const Login = () => {
   const [passwordError, setPasswordError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // New signup fields
   const [name, setName] = useState("");
@@ -26,6 +28,14 @@ const Login = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, signIn, signUp } = useAuth();
+
+  useEffect(() => {
+    // If user is already logged in, redirect to dashboard
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const validatePassword = () => {
     if (password !== confirmPassword) {
@@ -36,25 +46,21 @@ const Login = () => {
     return true;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add your authentication logic here
-    if (email && password) {
-      toast({
-        title: "Login successful",
-        description: "Welcome to NexHR!",
-      });
-      navigate("/");
-    } else {
-      toast({
-        title: "Login failed",
-        description: "Please enter valid credentials",
-        variant: "destructive",
-      });
+    setIsLoading(true);
+    
+    try {
+      await signIn(email, password);
+    } catch (error) {
+      // Error is handled in the signIn function
+      console.error("Login error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate password match
@@ -67,24 +73,41 @@ const Login = () => {
       return;
     }
     
+    setIsLoading(true);
+    
     // Add your sign up logic here
     if (name && email && password && companyName && phoneNumber && companySize) {
-      // Mark as new user to show subscription modal on first dashboard load
-      localStorage.setItem("new-user", "true");
-      // Set default subscription as None
-      localStorage.setItem("subscription-plan", "None");
-      
-      toast({
-        title: "Sign up successful",
-        description: "Welcome to NexHR! Please check your email to verify your account.",
-      });
-      navigate("/");
+      try {
+        const metadata = {
+          company_name: companyName,
+          company_size: companySize,
+          phone_number: phoneNumber,
+          full_name: name
+        };
+        
+        await signUp(email, password, metadata);
+        
+        // Reset form
+        setIsSignUp(false);
+        setEmail("");
+        setPassword("");
+        setName("");
+        setCompanyName("");
+        setPhoneNumber("");
+        setCompanySize("");
+      } catch (error) {
+        // Error is handled in the signUp function
+        console.error("Signup error:", error);
+      } finally {
+        setIsLoading(false);
+      }
     } else {
       toast({
         title: "Sign up failed",
         description: "Please fill in all required fields",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
   };
 

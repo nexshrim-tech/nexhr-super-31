@@ -1,3 +1,4 @@
+
 import { Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import Index from "@/pages/Index";
@@ -22,8 +23,10 @@ import TasksReminders from "@/pages/TasksReminders";
 import Track from "@/pages/Track";
 import AllEmployees from "@/pages/AllEmployees";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
+import { AuthProvider } from "./context/AuthContext";
 import SubscriptionModal from "./components/SubscriptionModal";
 import { useSubscription } from "./context/SubscriptionContext";
+import RequireAuth from "./components/RequireAuth";
 
 function SubscriptionModalWrapper() {
   const { showSubscriptionModal, setShowSubscriptionModal, setPlan, plan } = useSubscription();
@@ -47,26 +50,26 @@ function AppRoutes() {
     <>
       <SubscriptionModalWrapper />
       <Routes>
-        <Route path="/" element={<Index />} />
+        <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
         <Route path="/landing" element={<Landing />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/add-employee" element={<AddEmployee />} />
-        <Route path="/employee/:id" element={<EmployeeDetails />} />
-        <Route path="/all-employees" element={<AllEmployees />} />
-        <Route path="/assets" element={<Assets />} />
-        <Route path="/attendance" element={<Attendance />} />
-        <Route path="/department" element={<Department />} />
-        <Route path="/document-generator" element={<DocumentGenerator />} />
-        <Route path="/expenses" element={<Expenses />} />
-        <Route path="/help-desk" element={<HelpDesk />} />
-        <Route path="/leave-management" element={<LeaveManagement />} />
+        <Route path="/add-employee" element={<RequireAuth><AddEmployee /></RequireAuth>} />
+        <Route path="/employee/:id" element={<RequireAuth><EmployeeDetails /></RequireAuth>} />
+        <Route path="/all-employees" element={<RequireAuth><AllEmployees /></RequireAuth>} />
+        <Route path="/assets" element={<RequireAuth><Assets /></RequireAuth>} />
+        <Route path="/attendance" element={<RequireAuth><Attendance /></RequireAuth>} />
+        <Route path="/department" element={<RequireAuth><Department /></RequireAuth>} />
+        <Route path="/document-generator" element={<RequireAuth><DocumentGenerator /></RequireAuth>} />
+        <Route path="/expenses" element={<RequireAuth><Expenses /></RequireAuth>} />
+        <Route path="/help-desk" element={<RequireAuth><HelpDesk /></RequireAuth>} />
+        <Route path="/leave-management" element={<RequireAuth><LeaveManagement /></RequireAuth>} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/meetings" element={<Meetings />} />
-        <Route path="/messenger" element={<Messenger />} />
-        <Route path="/project-management" element={<ProjectManagement />} />
-        <Route path="/salary" element={<Salary />} />
-        <Route path="/tasks-reminders" element={<TasksReminders />} />
-        <Route path="/track" element={<Track />} />
+        <Route path="/meetings" element={<RequireAuth><Meetings /></RequireAuth>} />
+        <Route path="/messenger" element={<RequireAuth><Messenger /></RequireAuth>} />
+        <Route path="/project-management" element={<RequireAuth><ProjectManagement /></RequireAuth>} />
+        <Route path="/salary" element={<RequireAuth><Salary /></RequireAuth>} />
+        <Route path="/tasks-reminders" element={<RequireAuth><TasksReminders /></RequireAuth>} />
+        <Route path="/track" element={<RequireAuth><Track /></RequireAuth>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
@@ -75,10 +78,12 @@ function AppRoutes() {
 
 function App() {
   return (
-    <SubscriptionProvider>
-      <AppRoutes />
-      <Toaster />
-    </SubscriptionProvider>
+    <AuthProvider>
+      <SubscriptionProvider>
+        <AppRoutes />
+        <Toaster />
+      </SubscriptionProvider>
+    </AuthProvider>
   );
 }
 
