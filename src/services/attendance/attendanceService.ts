@@ -72,15 +72,15 @@ export const addAttendance = async (attendance: Omit<Attendance, 'attendanceid'>
     const { data, error } = await supabase
       .from('attendance')
       .insert([attendance])
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error('Error adding attendance:', error);
       throw error;
     }
 
-    return data as Attendance;
+    // Fix: Changed from single() to ensuring we get the first entry from the array
+    return (data && data[0]) as Attendance;
   } catch (error) {
     console.error('Error in addAttendance:', error);
     throw error;
@@ -93,15 +93,15 @@ export const updateAttendance = async (id: number, attendance: Partial<Omit<Atte
       .from('attendance')
       .update(attendance)
       .eq('attendanceid', id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error('Error updating attendance:', error);
       throw error;
     }
 
-    return data as Attendance;
+    // Fix: Changed from single() to ensuring we get the first entry from the array
+    return (data && data[0]) as Attendance;
   } catch (error) {
     console.error('Error in updateAttendance:', error);
     throw error;
