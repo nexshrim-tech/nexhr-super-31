@@ -15,6 +15,22 @@ export interface Attendance {
   selfieimagepath?: string;
 }
 
+// Define separate input types to avoid type circularity
+export type AttendanceInput = Omit<Attendance, 'attendanceid'>;
+
+export type AttendanceUpdateInput = {
+  employeeid?: number;
+  attendancedate?: string;
+  status?: string;
+  notes?: string;
+  latitude?: string;
+  longitude?: string;
+  checkintimestamp?: string;
+  checkouttimestamp?: string;
+  customerid?: number;
+  selfieimagepath?: string;
+};
+
 export const getAttendance = async (employeeId?: number, startDate?: string, endDate?: string): Promise<Attendance[]> => {
   try {
     let query = supabase
@@ -67,9 +83,6 @@ export const getAttendanceById = async (id: number): Promise<Attendance | null> 
   }
 };
 
-// Using a different type to avoid circular references
-type AttendanceInput = Omit<Attendance, 'attendanceid'>;
-
 export const addAttendance = async (attendance: AttendanceInput): Promise<Attendance> => {
   try {
     const { data, error } = await supabase
@@ -89,19 +102,7 @@ export const addAttendance = async (attendance: AttendanceInput): Promise<Attend
   }
 };
 
-// Using a simpler type that's explicitly defined to avoid circularity
-export const updateAttendance = async (id: number, attendance: {
-  employeeid?: number;
-  attendancedate?: string;
-  status?: string;
-  notes?: string;
-  latitude?: string;
-  longitude?: string;
-  checkintimestamp?: string;
-  checkouttimestamp?: string;
-  customerid?: number;
-  selfieimagepath?: string;
-}): Promise<Attendance> => {
+export const updateAttendance = async (id: number, attendance: AttendanceUpdateInput): Promise<Attendance> => {
   try {
     const { data, error } = await supabase
       .from('attendance')
