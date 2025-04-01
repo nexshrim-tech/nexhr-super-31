@@ -15,18 +15,7 @@ export interface Attendance {
   selfieimagepath?: string;
 }
 
-// Define separate input types to avoid type circularity
+// Input types defined separately to avoid circular references
 export type AttendanceInput = Omit<Attendance, 'attendanceid'>;
 
-export type AttendanceUpdateInput = {
-  employeeid?: number;
-  attendancedate?: string;
-  status?: string;
-  notes?: string;
-  latitude?: string;
-  longitude?: string;
-  checkintimestamp?: string;
-  checkouttimestamp?: string;
-  customerid?: number;
-  selfieimagepath?: string;
-};
+export type AttendanceUpdateInput = Partial<Omit<Attendance, 'attendanceid'>>;

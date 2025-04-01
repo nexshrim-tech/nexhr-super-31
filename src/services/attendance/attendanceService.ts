@@ -1,6 +1,10 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Attendance, AttendanceInput, AttendanceUpdateInput } from './attendanceTypes';
 
+/**
+ * Retrieves attendance records with optional filtering
+ */
 export const getAttendance = async (employeeId?: number, startDate?: string, endDate?: string): Promise<Attendance[]> => {
   try {
     let query = supabase
@@ -33,6 +37,9 @@ export const getAttendance = async (employeeId?: number, startDate?: string, end
   }
 };
 
+/**
+ * Retrieves a single attendance record by ID
+ */
 export const getAttendanceById = async (id: number): Promise<Attendance | null> => {
   try {
     const { data, error } = await supabase
@@ -53,6 +60,9 @@ export const getAttendanceById = async (id: number): Promise<Attendance | null> 
   }
 };
 
+/**
+ * Creates a new attendance record
+ */
 export const addAttendance = async (attendance: AttendanceInput): Promise<Attendance> => {
   try {
     const { data, error } = await supabase
@@ -72,6 +82,9 @@ export const addAttendance = async (attendance: AttendanceInput): Promise<Attend
   }
 };
 
+/**
+ * Updates an existing attendance record
+ */
 export const updateAttendance = async (id: number, attendance: AttendanceUpdateInput): Promise<Attendance> => {
   try {
     const { data, error } = await supabase
@@ -92,6 +105,9 @@ export const updateAttendance = async (id: number, attendance: AttendanceUpdateI
   }
 };
 
+/**
+ * Deletes an attendance record
+ */
 export const deleteAttendance = async (id: number): Promise<void> => {
   try {
     const { error } = await supabase
@@ -108,5 +124,3 @@ export const deleteAttendance = async (id: number): Promise<void> => {
     throw error;
   }
 };
-
-export * from './attendanceTypes';
