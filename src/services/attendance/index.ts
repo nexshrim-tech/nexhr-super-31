@@ -1,4 +1,4 @@
 
 // Export attendance services
-export * from './attendanceService';
+export * from './attendanceServices';
 export * from './attendanceSettingsService';
