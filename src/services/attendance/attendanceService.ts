@@ -1,7 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Define simplified types for attendance
+/**
+ * Simplified interface for attendance records
+ */
 export interface AttendanceRecord {
   attendanceid?: number;
   employeeid: number;
@@ -16,7 +18,7 @@ export interface AttendanceRecord {
   selfieimagepath?: string;
 }
 
-// Use simpler type definitions to avoid excessive type instantiation
+// Simple type aliases instead of complex nested types
 export type CreateAttendanceRecord = Omit<AttendanceRecord, 'attendanceid'>;
 export type UpdateAttendanceRecord = Partial<AttendanceRecord>;
 
