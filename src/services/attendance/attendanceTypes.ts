@@ -1,6 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
-
+// Define the basic Attendance type
 export interface Attendance {
   attendanceid?: number;
   employeeid: number;
@@ -15,8 +14,8 @@ export interface Attendance {
   selfieimagepath?: string;
 }
 
-// Input types defined separately to avoid circular references
-export type AttendanceInput = Omit<Attendance, 'attendanceid'>;
+// For creating new attendance records
+export type CreateAttendanceDto = Omit<Attendance, 'attendanceid'>;
 
-// Update input doesn't need to include all fields
-export type AttendanceUpdateInput = Partial<Omit<Attendance, 'attendanceid'>>;
+// For updating existing attendance records
+export type UpdateAttendanceDto = Partial<CreateAttendanceDto>;

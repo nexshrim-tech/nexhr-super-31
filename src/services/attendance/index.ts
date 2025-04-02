@@ -1,4 +1,4 @@
 
-// Export all attendance services for easy imports
+// Export all attendance services and types
 export * from './attendanceService';
 export * from './attendanceTypes';
