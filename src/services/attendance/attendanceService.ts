@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Simplified interface for attendance records
+ * Interface for attendance records
  */
 export interface AttendanceRecord {
   attendanceid?: number;
@@ -18,7 +18,7 @@ export interface AttendanceRecord {
   selfieimagepath?: string;
 }
 
-// Simple type aliases instead of complex nested types
+// Simple type aliases for create and update operations
 export type CreateAttendanceRecord = Omit<AttendanceRecord, 'attendanceid'>;
 export type UpdateAttendanceRecord = Partial<AttendanceRecord>;
 
