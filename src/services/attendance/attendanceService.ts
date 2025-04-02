@@ -1,6 +1,24 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Attendance, CreateAttendanceDto, UpdateAttendanceDto } from './attendanceTypes';
+
+// Define simplified types for attendance
+export interface AttendanceRecord {
+  attendanceid?: number;
+  employeeid: number;
+  attendancedate?: string;
+  status: string;
+  notes?: string;
+  latitude?: string;
+  longitude?: string;
+  checkintimestamp?: string;
+  checkouttimestamp?: string;
+  customerid?: number;
+  selfieimagepath?: string;
+}
+
+// Use simpler type definitions to avoid excessive type instantiation
+export type CreateAttendanceRecord = Omit<AttendanceRecord, 'attendanceid'>;
+export type UpdateAttendanceRecord = Partial<AttendanceRecord>;
 
 /**
  * Get attendance records with optional filtering
@@ -9,7 +27,7 @@ export async function getAttendance(
   employeeId?: number, 
   startDate?: string, 
   endDate?: string
-): Promise<Attendance[]> {
+): Promise<AttendanceRecord[]> {
   let query = supabase
     .from('attendance')
     .select('*');
@@ -33,13 +51,13 @@ export async function getAttendance(
     throw error;
   }
 
-  return data as Attendance[] || [];
+  return data || [];
 }
 
 /**
  * Get a single attendance record by ID
  */
-export async function getAttendanceById(id: number): Promise<Attendance | null> {
+export async function getAttendanceById(id: number): Promise<AttendanceRecord | null> {
   const { data, error } = await supabase
     .from('attendance')
     .select('*')
@@ -51,16 +69,16 @@ export async function getAttendanceById(id: number): Promise<Attendance | null> 
     throw error;
   }
 
-  return data as Attendance;
+  return data;
 }
 
 /**
  * Create a new attendance record
  */
-export async function addAttendance(attendance: CreateAttendanceDto): Promise<Attendance> {
+export async function createAttendance(record: CreateAttendanceRecord): Promise<AttendanceRecord> {
   const { data, error } = await supabase
     .from('attendance')
-    .insert([attendance])
+    .insert([record])
     .select();
 
   if (error) {
@@ -68,7 +86,7 @@ export async function addAttendance(attendance: CreateAttendanceDto): Promise<At
     throw error;
   }
 
-  return data[0] as Attendance;
+  return data[0];
 }
 
 /**
@@ -76,11 +94,11 @@ export async function addAttendance(attendance: CreateAttendanceDto): Promise<At
  */
 export async function updateAttendance(
   id: number, 
-  attendance: UpdateAttendanceDto
-): Promise<Attendance> {
+  updates: UpdateAttendanceRecord
+): Promise<AttendanceRecord> {
   const { data, error } = await supabase
     .from('attendance')
-    .update(attendance)
+    .update(updates)
     .eq('attendanceid', id)
     .select();
 
@@ -89,7 +107,7 @@ export async function updateAttendance(
     throw error;
   }
 
-  return data[0] as Attendance;
+  return data[0];
 }
 
 /**
