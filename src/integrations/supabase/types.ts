@@ -9,6 +9,339 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          attendanceid: number
+          checkintime: string | null
+          checkouttime: string | null
+          customerid: number | null
+          date: string | null
+          employeeid: number | null
+          leaveend: string | null
+          leavestart: string | null
+          leavestatus: string | null
+          leavetype: string | null
+          location: string | null
+          notes: string | null
+          status: string | null
+          workhours: number | null
+        }
+        Insert: {
+          attendanceid?: number
+          checkintime?: string | null
+          checkouttime?: string | null
+          customerid?: number | null
+          date?: string | null
+          employeeid?: number | null
+          leaveend?: string | null
+          leavestart?: string | null
+          leavestatus?: string | null
+          leavetype?: string | null
+          location?: string | null
+          notes?: string | null
+          status?: string | null
+          workhours?: number | null
+        }
+        Update: {
+          attendanceid?: number
+          checkintime?: string | null
+          checkouttime?: string | null
+          customerid?: number | null
+          date?: string | null
+          employeeid?: number | null
+          leaveend?: string | null
+          leavestart?: string | null
+          leavestatus?: string | null
+          leavetype?: string | null
+          location?: string | null
+          notes?: string | null
+          status?: string | null
+          workhours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_customerid_fkey"
+            columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+          {
+            foreignKeyName: "attendance_employeeid_fkey"
+            columns: ["employeeid"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["employeeid"]
+          },
+        ]
+      }
+      customer: {
+        Row: {
+          accountcreationdate: string | null
+          address: string | null
+          contactemail: string | null
+          contactperson: string | null
+          customerid: number
+          name: string
+          subscriptionenddate: string | null
+          subscriptionplan: string | null
+          subscriptionstatus: string | null
+        }
+        Insert: {
+          accountcreationdate?: string | null
+          address?: string | null
+          contactemail?: string | null
+          contactperson?: string | null
+          customerid?: number
+          name: string
+          subscriptionenddate?: string | null
+          subscriptionplan?: string | null
+          subscriptionstatus?: string | null
+        }
+        Update: {
+          accountcreationdate?: string | null
+          address?: string | null
+          contactemail?: string | null
+          contactperson?: string | null
+          customerid?: number
+          name?: string
+          subscriptionenddate?: string | null
+          subscriptionplan?: string | null
+          subscriptionstatus?: string | null
+        }
+        Relationships: []
+      }
+      department: {
+        Row: {
+          customerid: number | null
+          departmentid: number
+          description: string | null
+          name: string
+        }
+        Insert: {
+          customerid?: number | null
+          departmentid?: number
+          description?: string | null
+          name: string
+        }
+        Update: {
+          customerid?: number | null
+          departmentid?: number
+          description?: string | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_customerid_fkey"
+            columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+        ]
+      }
+      document: {
+        Row: {
+          documentid: number
+          documentnumber: string | null
+          employeeid: number | null
+          expirydate: string | null
+          filepath: string
+          issuedate: string | null
+          name: string
+          notes: string | null
+          type: string | null
+          uploaddate: string | null
+          verificationstatus: string | null
+        }
+        Insert: {
+          documentid?: number
+          documentnumber?: string | null
+          employeeid?: number | null
+          expirydate?: string | null
+          filepath: string
+          issuedate?: string | null
+          name: string
+          notes?: string | null
+          type?: string | null
+          uploaddate?: string | null
+          verificationstatus?: string | null
+        }
+        Update: {
+          documentid?: number
+          documentnumber?: string | null
+          employeeid?: number | null
+          expirydate?: string | null
+          filepath?: string
+          issuedate?: string | null
+          name?: string
+          notes?: string | null
+          type?: string | null
+          uploaddate?: string | null
+          verificationstatus?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_employeeid_fkey"
+            columns: ["employeeid"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["employeeid"]
+          },
+        ]
+      }
+      employee: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          customerid: number | null
+          dateofbirth: string | null
+          department: number | null
+          education: string | null
+          email: string
+          employeeid: number
+          employeestatus: string | null
+          employeetype: string | null
+          employmenthistory: string | null
+          firstname: string
+          gender: string | null
+          jobtitle: string | null
+          joiningdate: string | null
+          lastname: string
+          monthlysalary: number | null
+          phonenumber: string | null
+          postalcode: string | null
+          probationenddate: string | null
+          profilepicturepath: string | null
+          salary: number | null
+          state: string | null
+          terminationdate: string | null
+          workauthorization: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          customerid?: number | null
+          dateofbirth?: string | null
+          department?: number | null
+          education?: string | null
+          email: string
+          employeeid?: number
+          employeestatus?: string | null
+          employeetype?: string | null
+          employmenthistory?: string | null
+          firstname: string
+          gender?: string | null
+          jobtitle?: string | null
+          joiningdate?: string | null
+          lastname: string
+          monthlysalary?: number | null
+          phonenumber?: string | null
+          postalcode?: string | null
+          probationenddate?: string | null
+          profilepicturepath?: string | null
+          salary?: number | null
+          state?: string | null
+          terminationdate?: string | null
+          workauthorization?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          customerid?: number | null
+          dateofbirth?: string | null
+          department?: number | null
+          education?: string | null
+          email?: string
+          employeeid?: number
+          employeestatus?: string | null
+          employeetype?: string | null
+          employmenthistory?: string | null
+          firstname?: string
+          gender?: string | null
+          jobtitle?: string | null
+          joiningdate?: string | null
+          lastname?: string
+          monthlysalary?: number | null
+          phonenumber?: string | null
+          postalcode?: string | null
+          probationenddate?: string | null
+          profilepicturepath?: string | null
+          salary?: number | null
+          state?: string | null
+          terminationdate?: string | null
+          workauthorization?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_customerid_fkey"
+            columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+          {
+            foreignKeyName: "employee_department_fkey"
+            columns: ["department"]
+            isOneToOne: false
+            referencedRelation: "department"
+            referencedColumns: ["departmentid"]
+          },
+        ]
+      }
+      payroll: {
+        Row: {
+          baseamount: number | null
+          bonusamount: number | null
+          deductions: number | null
+          employeeid: number | null
+          netamount: number | null
+          paymentdate: string | null
+          paymentreference: string | null
+          paymentstatus: string | null
+          payperiod: string | null
+          payrollid: number
+          taxes: number | null
+        }
+        Insert: {
+          baseamount?: number | null
+          bonusamount?: number | null
+          deductions?: number | null
+          employeeid?: number | null
+          netamount?: number | null
+          paymentdate?: string | null
+          paymentreference?: string | null
+          paymentstatus?: string | null
+          payperiod?: string | null
+          payrollid?: number
+          taxes?: number | null
+        }
+        Update: {
+          baseamount?: number | null
+          bonusamount?: number | null
+          deductions?: number | null
+          employeeid?: number | null
+          netamount?: number | null
+          paymentdate?: string | null
+          paymentreference?: string | null
+          paymentstatus?: string | null
+          payperiod?: string | null
+          payrollid?: number
+          taxes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_employeeid_fkey"
+            columns: ["employeeid"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["employeeid"]
+          },
+        ]
+      }
       posts: {
         Row: {
           content: string | null
@@ -41,6 +374,7 @@ export type Database = {
           company_name: string | null
           company_size: string | null
           created_at: string | null
+          customerid: number | null
           full_name: string | null
           id: string
           phone_number: string | null
@@ -51,6 +385,7 @@ export type Database = {
           company_name?: string | null
           company_size?: string | null
           created_at?: string | null
+          customerid?: number | null
           full_name?: string | null
           id: string
           phone_number?: string | null
@@ -61,13 +396,22 @@ export type Database = {
           company_name?: string | null
           company_size?: string | null
           created_at?: string | null
+          customerid?: number | null
           full_name?: string | null
           id?: string
           phone_number?: string | null
           role?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_customerid_fkey"
+            columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+        ]
       }
     }
     Views: {

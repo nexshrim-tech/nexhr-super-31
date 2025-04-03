@@ -3,12 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface Department {
   departmentid: number;
-  departmentname: string;
+  name: string;
+  description?: string;
   customerid?: number;
-  numberofemployees?: number;
-  annualbudget?: number;
-  managerid?: number;
-  departmentstatus?: string;
 }
 
 export const getDepartments = async (customerId?: number): Promise<Department[]> => {
@@ -21,7 +18,7 @@ export const getDepartments = async (customerId?: number): Promise<Department[]>
       query = query.eq('customerid', customerId);
     }
     
-    const { data, error } = await query.order('departmentname');
+    const { data, error } = await query.order('name');
 
     if (error) {
       console.error('Error fetching departments:', error);

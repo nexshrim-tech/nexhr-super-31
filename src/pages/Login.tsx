@@ -10,6 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Mail, Lock, User, Home, Phone, Building2, Users, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -19,11 +23,16 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"personal" | "company">("personal");
   
+  // Personal info
   const [name, setName] = useState("");
+  
+  // Company info
   const [companyName, setCompanyName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [companySize, setCompanySize] = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -72,16 +81,16 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      if (name && email && password) {
-        const userData = {
+      if (email && password) {
+        const userData: any = {
           full_name: name,
-          role: companyName ? 'admin' : 'employee'
+          role: activeTab === 'company' ? 'admin' : 'employee'
         };
         
-        if (companyName) {
-          userData['company_name'] = companyName;
-          userData['company_size'] = companySize;
-          userData['phone_number'] = phoneNumber;
+        if (activeTab === 'company') {
+          userData.company_name = companyName;
+          userData.company_size = companySize;
+          userData.phone_number = phoneNumber;
         }
         
         console.log("Signup data:", userData);
@@ -100,6 +109,7 @@ const Login = () => {
         setCompanyName("");
         setPhoneNumber("");
         setCompanySize("");
+        setCompanyAddress("");
         
         setIsSignUp(false);
       } else {
@@ -127,6 +137,8 @@ const Login = () => {
     setCompanyName("");
     setPhoneNumber("");
     setCompanySize("");
+    setCompanyAddress("");
+    setActiveTab("personal");
   };
 
   return (
@@ -168,126 +180,166 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-4">
-              {isSignUp && (
-                <>
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="name" className="flex items-center">
-                      <User className="h-4 w-4 mr-2 text-gray-500" />
-                      Full Name
-                    </Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="John Doe"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                    />
-                  </div>
+            {isSignUp ? (
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <Tabs 
+                  value={activeTab} 
+                  onValueChange={(v) => setActiveTab(v as "personal" | "company")}
+                  className="w-full"
+                >
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="personal" className="text-sm">
+                      <User className="h-4 w-4 mr-2" />
+                      Personal Account
+                    </TabsTrigger>
+                    <TabsTrigger value="company" className="text-sm">
+                      <Building2 className="h-4 w-4 mr-2" />
+                      Company Account
+                    </TabsTrigger>
+                  </TabsList>
                   
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="companyName" className="flex items-center">
-                      <Building2 className="h-4 w-4 mr-2 text-gray-500" />
-                      Company Name
-                    </Label>
-                    <Input
-                      id="companyName"
-                      type="text"
-                      placeholder="Acme Inc."
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                    />
-                  </div>
+                  <TabsContent value="personal" className="space-y-4">
+                    <div className="space-y-2 animate-fade-in">
+                      <Label htmlFor="name" className="flex items-center">
+                        <User className="h-4 w-4 mr-2 text-gray-500" />
+                        Full Name <span className="text-red-500 ml-1">*</span>
+                      </Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="John Doe"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                      />
+                    </div>
+                  </TabsContent>
                   
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="phoneNumber" className="flex items-center">
-                      <Phone className="h-4 w-4 mr-2 text-gray-500" />
-                      Phone Number
-                    </Label>
-                    <Input
-                      id="phoneNumber"
-                      type="tel"
-                      placeholder="+1 (555) 123-4567"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2 animate-fade-in">
-                    <Label htmlFor="companySize" className="flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-gray-500" />
-                      Company Size
-                    </Label>
-                    <Select value={companySize} onValueChange={setCompanySize}>
-                      <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
-                        <SelectValue placeholder="Select company size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1-10">1-10 employees</SelectItem>
-                        <SelectItem value="11-50">11-50 employees</SelectItem>
-                        <SelectItem value="51-200">51-200 employees</SelectItem>
-                        <SelectItem value="201-500">201-500 employees</SelectItem>
-                        <SelectItem value="501+">501+ employees</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center">
-                  <Mail className="h-4 w-4 mr-2 text-gray-500" />
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="example@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                  <TabsContent value="company" className="space-y-4">
+                    <div className="space-y-2 animate-fade-in">
+                      <Label htmlFor="name" className="flex items-center">
+                        <User className="h-4 w-4 mr-2 text-gray-500" />
+                        Full Name <span className="text-red-500 ml-1">*</span>
+                      </Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="John Doe"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2 animate-fade-in">
+                      <Label htmlFor="companyName" className="flex items-center">
+                        <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+                        Company Name <span className="text-red-500 ml-1">*</span>
+                      </Label>
+                      <Input
+                        id="companyName"
+                        type="text"
+                        placeholder="Acme Inc."
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        required
+                        className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2 animate-fade-in">
+                      <Label htmlFor="phoneNumber" className="flex items-center">
+                        <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                        Phone Number
+                      </Label>
+                      <Input
+                        id="phoneNumber"
+                        type="tel"
+                        placeholder="+1 (555) 123-4567"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2 animate-fade-in">
+                      <Label htmlFor="companySize" className="flex items-center">
+                        <Users className="h-4 w-4 mr-2 text-gray-500" />
+                        Company Size
+                      </Label>
+                      <Select value={companySize} onValueChange={setCompanySize}>
+                        <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
+                          <SelectValue placeholder="Select company size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1-10">1-10 employees</SelectItem>
+                          <SelectItem value="11-50">11-50 employees</SelectItem>
+                          <SelectItem value="51-200">51-200 employees</SelectItem>
+                          <SelectItem value="201-500">201-500 employees</SelectItem>
+                          <SelectItem value="501+">501+ employees</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2 animate-fade-in">
+                      <Label htmlFor="companyAddress" className="flex items-center">
+                        <Home className="h-4 w-4 mr-2 text-gray-500" />
+                        Company Address
+                      </Label>
+                      <Textarea
+                        id="companyAddress"
+                        placeholder="123 Business St, Suite 101, City, State, ZIP"
+                        value={companyAddress}
+                        onChange={(e) => setCompanyAddress(e.target.value)}
+                        className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent resize-none h-20"
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+                
+                <Separator className="my-4" />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                    Email <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="example@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                  />
+                </div>
+                
+                <div className="space-y-2">
                   <Label htmlFor="password" className="flex items-center">
                     <Lock className="h-4 w-4 mr-2 text-gray-500" />
-                    Password
+                    Password <span className="text-red-500 ml-1">*</span>
                   </Label>
-                  {!isSignUp && (
-                    <Link
-                      to="/forgot-password"
-                      className="text-xs text-nexhr-primary hover:underline transition-all duration-300"
-                    >
-                      Forgot password?
-                    </Link>
-                  )}
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                  />
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-                />
-              </div>
-              
-              {isSignUp && (
+                
                 <div className="space-y-2">
                   <Label 
                     htmlFor="confirmPassword" 
                     className={`flex items-center ${passwordError ? "text-red-500" : ""}`}
                   >
                     <Lock className={`h-4 w-4 mr-2 ${passwordError ? "text-red-500" : "text-gray-500"}`} />
-                    Confirm Password
+                    Confirm Password <span className="text-red-500 ml-1">*</span>
                   </Label>
                   <Input
                     id="confirmPassword"
@@ -312,9 +364,82 @@ const Login = () => {
                     </div>
                   )}
                 </div>
-              )}
-              
-              {!isSignUp && (
+                
+                <div className="mt-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="link"
+                        className="text-xs text-nexhr-primary p-0 h-auto font-normal"
+                      >
+                        What happens after I sign up?
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 text-sm">
+                      <div className="space-y-2">
+                        <h4 className="font-semibold">After signing up:</h4>
+                        <ol className="list-decimal pl-5 space-y-1">
+                          <li>You'll receive a verification email</li>
+                          <li>Click the link in the email to verify your account</li>
+                          <li>You'll be able to log in to NexHR</li>
+                          <li>You can customize your HR system and add employees</li>
+                        </ol>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full group transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Processing..." : "Create Account"}
+                  {!isLoading && <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="example@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="flex items-center">
+                      <Lock className="h-4 w-4 mr-2 text-gray-500" />
+                      Password
+                    </Label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-xs text-nexhr-primary hover:underline transition-all duration-300"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+                  />
+                </div>
+                
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="remember"
@@ -329,17 +454,17 @@ const Login = () => {
                     Remember me
                   </Label>
                 </div>
-              )}
-              
-              <Button 
-                type="submit" 
-                className="w-full group transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
-                disabled={isLoading}
-              >
-                {isLoading ? "Processing..." : (isSignUp ? "Create Account" : "Sign in")}
-                {!isLoading && <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />}
-              </Button>
-            </form>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full group transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Processing..." : "Sign in"}
+                  {!isLoading && <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+                </Button>
+              </form>
+            )}
           </CardContent>
           <CardFooter className="flex justify-center border-t pt-6">
             <p className="text-sm text-gray-600">

@@ -11,16 +11,37 @@ export interface Employee {
   joiningdate?: string;
   profilepicturepath?: string;
   customerid?: number;
-  // Add more fields as needed
+  // Additional fields
+  phonenumber?: string;
+  address?: string;
+  salary?: number;
+  gender?: string;
+  dateofbirth?: string;
+  education?: string;
+  employeetype?: string;
+  employeestatus?: string;
+  workauthorization?: string;
+  employmenthistory?: string;
+  monthlysalary?: number;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalcode?: string;
+  terminationdate?: string;
+  probationenddate?: string;
 }
 
 export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('employee')
-      .select('*')
-      .eq('customerid', customerId || null)
-      .order('employeeid');
+      .select('*');
+    
+    if (customerId) {
+      query = query.eq('customerid', customerId);
+    }
+    
+    const { data, error } = await query.order('employeeid');
 
     if (error) {
       console.error('Error fetching employees:', error);
