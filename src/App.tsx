@@ -12,10 +12,12 @@ import { ProtectedRoute } from '@/lib/protected-route';
 // Import pages
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
-import Dashboard from '@/pages/Dashboard';
+import Index from '@/pages/Index';  // Changed from Dashboard to Index
 import Expenses from '@/pages/Expenses';
 import Salary from '@/pages/Salary';
 import Employees from '@/pages/Employees';
+import Logout from '@/pages/Logout';
+import LeaveManagement from '@/pages/LeaveManagement';
 
 const App: React.FC = () => {
   return (
@@ -25,13 +27,14 @@ const App: React.FC = () => {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/logout" element={<Logout />} />
 
           {/* Protected Routes */}
           <Route 
             path="/dashboard" 
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Index />
               </ProtectedRoute>
             } 
           />
@@ -56,6 +59,14 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute requiredRoles={['admin', 'hr']}>
                 <Employees />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/leave" 
+            element={
+              <ProtectedRoute>
+                <LeaveManagement />
               </ProtectedRoute>
             } 
           />
