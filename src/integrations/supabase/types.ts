@@ -292,6 +292,69 @@ export type Database = {
           },
         ]
       }
+      expense: {
+        Row: {
+          amount: number
+          approvedby: string | null
+          attachmentpath: string | null
+          category: string
+          created_at: string | null
+          customerid: number | null
+          date: string
+          description: string
+          employeeid: number | null
+          expenseid: number
+          notes: string | null
+          status: string
+          submittedby: string
+        }
+        Insert: {
+          amount: number
+          approvedby?: string | null
+          attachmentpath?: string | null
+          category: string
+          created_at?: string | null
+          customerid?: number | null
+          date: string
+          description: string
+          employeeid?: number | null
+          expenseid?: number
+          notes?: string | null
+          status?: string
+          submittedby: string
+        }
+        Update: {
+          amount?: number
+          approvedby?: string | null
+          attachmentpath?: string | null
+          category?: string
+          created_at?: string | null
+          customerid?: number | null
+          date?: string
+          description?: string
+          employeeid?: number | null
+          expenseid?: number
+          notes?: string | null
+          status?: string
+          submittedby?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_customerid_fkey"
+            columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+          {
+            foreignKeyName: "expense_employeeid_fkey"
+            columns: ["employeeid"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["employeeid"]
+          },
+        ]
+      }
       payroll: {
         Row: {
           baseamount: number | null
