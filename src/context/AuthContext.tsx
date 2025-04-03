@@ -89,7 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
         options: {
           data: metadata,
-          // Pass metadata as app_metadata instead of user_metadata
           emailRedirectTo: `${window.location.origin}/login`
         }
       });

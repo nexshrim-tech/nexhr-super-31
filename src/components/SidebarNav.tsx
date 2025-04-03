@@ -1,232 +1,211 @@
 
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useNavigate, NavLink, useLocation } from "react-router-dom";
 import {
-  BarChart2,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  DollarSign,
+  Users, 
+  Home, 
+  CalendarClock, 
+  DollarSign, 
+  CircleUser, 
+  ReceiptText, 
+  Files, 
+  FileCog, 
+  HelpCircle, 
+  MessageSquare, 
+  Settings, 
+  LogOut, 
+  Building2, 
+  Timer, 
   FileText,
-  HelpCircle,
-  Home,
-  LayoutDashboard,
-  LogOut,
-  Map,
-  Menu,
-  MessageSquare,
-  Users,
-  Video,
+  ShieldCheck,
   Briefcase,
-  CreditCard,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useSubscription } from '@/context/SubscriptionContext';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  Bell,
+  Computer
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/context/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-const SidebarNav: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const isMobile = useIsMobile();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+const SidebarNav = () => {
+  const navigate = useNavigate();
   const location = useLocation();
-  const currentPath = location.pathname;
-  const { setShowSubscriptionModal } = useSubscription();
-  const [isScrolling, setIsScrolling] = useState(false);
+  const isMobile = useIsMobile();
+  const { signOut } = useAuth();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolling(window.scrollY > 100);
-    };
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const menu = [
-    { name: 'Overview', icon: <LayoutDashboard className="w-5 h-5" />, path: '/' },
-    { name: 'Add employee', icon: <Users className="w-5 h-5" />, path: '/add-employee' },
-    { name: 'All Employee', icon: <Users className="w-5 h-5" />, path: '/all-employees' },
-    { name: 'Attendance', icon: <Calendar className="w-5 h-5" />, path: '/attendance' },
-    { name: 'Task & reminders', icon: <FileText className="w-5 h-5" />, path: '/tasks-reminders' },
-    { name: 'Expenses', icon: <DollarSign className="w-5 h-5" />, path: '/expenses' },
-    { name: 'Leave management', icon: <Calendar className="w-5 h-5" />, path: '/leave-management' },
-    { name: 'Salary', icon: <DollarSign className="w-5 h-5" />, path: '/salary' },
-    { name: 'Track', icon: <Map className="w-5 h-5" />, path: '/track' },
-    { name: 'Assets', icon: <BarChart2 className="w-5 h-5" />, path: '/assets' },
-    { name: 'Department', icon: <Users className="w-5 h-5" />, path: '/department' },
-    { name: 'Messenger', icon: <MessageSquare className="w-5 h-5" />, path: '/messenger' },
-    { name: 'Meetings', icon: <Video className="w-5 h-5" />, path: '/meetings' },
-    { name: 'Projects', icon: <Briefcase className="w-5 h-5" />, path: '/project-management' },
-    { name: 'Help desk', icon: <HelpCircle className="w-5 h-5" />, path: '/help-desk' },
-    { name: 'Document Generator', icon: <FileText className="w-5 h-5" />, path: '/document-generator' },
+  // Define navigation menu items
+  const mainNavItems = [
+    { icon: Home, label: "Dashboard", path: "/" },
+    { icon: Users, label: "Employees", path: "/all-employees" },
+    { icon: CalendarClock, label: "Attendance", path: "/attendance" },
+    { icon: DollarSign, label: "Salary", path: "/salary" },
+    { icon: ReceiptText, label: "Expenses", path: "/expenses" },
+    { icon: Files, label: "Documents", path: "/document-generator" },
+    { icon: Bell, label: "Tasks & Reminders", path: "/tasks-reminders" },
+    { icon: Timer, label: "Time Tracking", path: "/track" },
+    { icon: Building2, label: "Department", path: "/department" },
+    { icon: Briefcase, label: "Assets", path: "/assets" },
+    { icon: MessageSquare, label: "Posts", path: "/posts" },
   ];
 
-  const toggleSidebar = () => {
-    setCollapsed(!collapsed);
-  };
+  const managementNavItems = [
+    { icon: MessageSquare, label: "Messenger", path: "/messenger" },
+    { icon: ShieldCheck, label: "Leave Management", path: "/leave-management" },
+    { icon: Computer, label: "Help Desk", path: "/help-desk" },
+    { icon: FileText, label: "Projects", path: "/project-management" },
+    { icon: FileCog, label: "Meetings", path: "/meetings" },
+  ];
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
+  const isActive = (path: string) => location.pathname === path;
 
-  const isActive = (path: string) => {
-    if (path === '/' && currentPath === '/') return true;
-    if (path !== '/' && currentPath.startsWith(path)) return true;
-    return false;
-  };
-
-  if (isMobile) {
+  const NavItem = ({ icon: Icon, label, path }: { icon: any; label: string; path: string }) => {
+    const active = isActive(path);
     return (
-      <>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="fixed top-3 left-3 z-50 bg-white/80 backdrop-blur-sm shadow-sm" 
-          onClick={toggleMobileMenu}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setMobileMenuOpen(false)}>
-            <div 
-              className="w-64 h-full bg-white overflow-hidden flex flex-col animate-slide-in-right shadow-xl" 
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-4 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 font-semibold px-2 py-4">
-                    <span className="logo">NEX</span>
-                    <span>HR</span>
-                  </div>
-                  <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
-                    <ChevronLeft className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-              <ScrollArea className="flex-1 px-2 py-4">
-                {menu.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.path}
-                    className={`flex items-center space-x-3 rounded-md py-3 px-3 text-sm font-medium mb-1 hover:bg-gray-100 transition-colors ${
-                      isActive(item.path) 
-                        ? 'bg-nexhr-primary/10 text-nexhr-primary font-semibold' 
-                        : 'text-gray-700'
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span className={isActive(item.path) ? 'text-nexhr-primary' : ''}>
-                      {item.icon}
-                    </span>
-                    <span>{item.name}</span>
-                  </Link>
-                ))}
-                
-                <Button
-                  onClick={() => {
-                    setShowSubscriptionModal(true);
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full mt-4 flex items-center justify-start space-x-3 rounded-md py-3 px-3 text-sm font-medium bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90"
-                >
-                  <CreditCard className="w-5 h-5" />
-                  <span>Manage Subscription</span>
-                </Button>
-              </ScrollArea>
-              <div className="border-t p-4 bg-white">
-                <Link
-                  to="/logout"
-                  className="flex items-center space-x-3 rounded-md py-3 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span>Logout</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-      </>
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <NavLink to={path} className="w-full">
+              <Button
+                variant={active ? "default" : "ghost"}
+                size="lg"
+                className={cn(
+                  "w-full justify-start gap-3 hover:bg-accent text-left font-normal",
+                  active ? "bg-accent text-accent-foreground" : "text-muted-foreground",
+                  isMobile ? "h-12 px-3" : "h-10 px-4"
+                )}
+              >
+                <Icon className={cn("h-[1.2rem] w-[1.2rem]", active ? "text-primary" : "text-muted-foreground")} />
+                <span>{label}</span>
+              </Button>
+            </NavLink>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="bg-accent text-foreground border-0">
+            {label}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
-  }
+  };
 
   return (
-    <div className={`${collapsed ? 'w-16' : 'w-56'} min-h-screen border-r bg-white shadow-sm transition-all duration-300 relative flex flex-col h-screen`}>
-      <div className="p-4 border-b">
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-2'} font-semibold px-2 py-4`}>
-          {!collapsed ? (
-            <>
-              <span className="logo">NEX</span>
-              <span>HR</span>
-            </>
-          ) : (
-            <span className="logo text-center">N</span>
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-20 flex h-full flex-col border-r bg-background transition-all duration-300 lg:relative",
+        isMobile ? "w-[70px] items-center py-2" : "w-[240px] py-4 px-2"
+      )}
+    >
+      <div className={cn("flex items-center justify-center py-3", isMobile ? "px-0" : "px-4 mb-2")}>
+        <div className={cn("flex items-center", !isMobile && "gap-2")}>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+            <CircleUser className="h-5 w-5 text-primary-foreground" />
+          </div>
+          {!isMobile && (
+            <div className="text-xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">
+              NEX<span className="font-normal">HR</span>
+            </div>
           )}
         </div>
       </div>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="absolute -right-3 top-10 bg-white border rounded-full shadow-sm hover:bg-gray-100 z-10"
-        onClick={toggleSidebar}
-      >
-        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-      </Button>
-      
-      <ScrollArea className="flex-1 h-[calc(100vh-160px)]">
-        <div className="px-2 py-4">
-          {menu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium mb-1 hover:bg-gray-100 transition-colors ${
-                isActive(item.path) 
-                  ? 'bg-nexhr-primary/10 text-nexhr-primary font-semibold' 
-                  : 'text-gray-700'
-              }`}
-              title={collapsed ? item.name : ''}
-            >
-              <span className={isActive(item.path) ? 'text-nexhr-primary' : ''}>
-                {item.icon}
-              </span>
-              {!collapsed && <span>{item.name}</span>}
-            </Link>
+
+      <ScrollArea className="flex flex-1 flex-col gap-2 px-2">
+        <div className="flex flex-col gap-1">
+          {mainNavItems.map((item) => (
+            <NavItem key={item.path} icon={item.icon} label={item.label} path={item.path} />
           ))}
-          
-          {!collapsed && (
-            <Button
-              onClick={() => setShowSubscriptionModal(true)}
-              className="w-full mt-4 flex items-center justify-start space-x-3 rounded-md py-3 px-3 text-sm font-medium bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 animate-pulse-slow"
-            >
-              <CreditCard className="w-5 h-5" />
-              <span>Manage Subscription</span>
-            </Button>
-          )}
-          
-          {collapsed && (
-            <Button
-              onClick={() => setShowSubscriptionModal(true)}
-              className="w-full mt-4 flex items-center justify-center rounded-md py-3 px-3 text-sm font-medium bg-gradient-to-r from-nexhr-primary to-purple-600 text-white hover:opacity-90 animate-pulse-slow"
-              title="Manage Subscription"
-            >
-              <CreditCard className="w-5 h-5" />
-            </Button>
-          )}
+        </div>
+
+        {!isMobile && <h3 className="mt-6 mb-2 px-4 text-sm font-semibold text-muted-foreground">Management</h3>}
+        <Separator className="my-2" />
+
+        <div className="flex flex-col gap-1">
+          {managementNavItems.map((item) => (
+            <NavItem key={item.path} icon={item.icon} label={item.label} path={item.path} />
+          ))}
         </div>
       </ScrollArea>
-      
-      <div className="border-t p-4 bg-white">
-        <Link
-          to="/logout"
-          className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'} rounded-md py-3 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100`}
-          title={collapsed ? 'Logout' : ''}
-        >
-          <LogOut className="w-5 h-5" />
-          {!collapsed && <span>Logout</span>}
-        </Link>
+
+      <div className={cn("mt-auto flex flex-col gap-1", isMobile ? "px-0" : "px-2", "pb-4")}>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="lg"
+                className={cn(
+                  "w-full justify-start gap-3 hover:bg-accent text-left font-normal",
+                  "text-muted-foreground",
+                  isMobile ? "h-12 px-3" : "h-10 px-4"
+                )}
+                onClick={() => navigate("/settings")}
+              >
+                <Settings className="h-[1.2rem] w-[1.2rem] text-muted-foreground" />
+                {!isMobile && <span>Settings</span>}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-accent text-foreground border-0">
+              Settings
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="lg"
+                className={cn(
+                  "w-full justify-start gap-3 hover:bg-accent text-left font-normal hover:text-destructive",
+                  "text-muted-foreground",
+                  isMobile ? "h-12 px-3" : "h-10 px-4"
+                )}
+                onClick={handleLogout}
+              >
+                <LogOut className="h-[1.2rem] w-[1.2rem] text-muted-foreground" />
+                {!isMobile && <span>Logout</span>}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-accent text-foreground border-0">
+              Logout
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="lg"
+                className={cn(
+                  "w-full justify-start gap-3 hover:bg-accent text-left font-normal",
+                  "text-muted-foreground",
+                  isMobile ? "h-12 px-3" : "h-10 px-4"
+                )}
+                onClick={() => navigate("/help-desk")}
+              >
+                <HelpCircle className="h-[1.2rem] w-[1.2rem] text-muted-foreground" />
+                {!isMobile && <span>Help</span>}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-accent text-foreground border-0">
+              Help
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
-    </div>
+    </aside>
   );
 };
 

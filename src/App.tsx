@@ -17,6 +17,7 @@ import Logout from "@/pages/Logout";
 import Meetings from "@/pages/Meetings";
 import Messenger from "@/pages/Messenger";
 import NotFound from "@/pages/NotFound";
+import Posts from "@/pages/Posts";
 import ProjectManagement from "@/pages/ProjectManagement";
 import Salary from "@/pages/Salary";
 import TasksReminders from "@/pages/TasksReminders";
@@ -66,6 +67,7 @@ function AppRoutes() {
         <Route path="/logout" element={<Logout />} />
         <Route path="/meetings" element={<RequireAuth><Meetings /></RequireAuth>} />
         <Route path="/messenger" element={<RequireAuth><Messenger /></RequireAuth>} />
+        <Route path="/posts" element={<RequireAuth><Posts /></RequireAuth>} />
         <Route path="/project-management" element={<RequireAuth><ProjectManagement /></RequireAuth>} />
         <Route path="/salary" element={<RequireAuth><Salary /></RequireAuth>} />
         <Route path="/tasks-reminders" element={<RequireAuth><TasksReminders /></RequireAuth>} />
