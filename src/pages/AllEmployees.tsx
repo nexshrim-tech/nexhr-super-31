@@ -1,8 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { useNavigate } from "react-router-dom";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -33,81 +33,11 @@ import UserHeader from "@/components/UserHeader";
 import { Sparkles, Key, Eye, Edit } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
-
-const employees = [
-  {
-    id: "EMP001",
-    name: "Olivia Rhye",
-    email: "olivia@nexhr.com",
-    department: "Design",
-    role: "UI Designer",
-    status: "Active",
-    avatar: "OR",
-  },
-  {
-    id: "EMP002",
-    name: "Phoenix Baker",
-    email: "phoenix@nexhr.com",
-    department: "Product",
-    role: "Product Manager",
-    status: "Active",
-    avatar: "PB",
-  },
-  {
-    id: "EMP003",
-    name: "Lana Steiner",
-    email: "lana@nexhr.com",
-    department: "Engineering",
-    role: "Frontend Developer",
-    status: "On Leave",
-    avatar: "LS",
-  },
-  {
-    id: "EMP004",
-    name: "Demi Wilkinson",
-    email: "demi@nexhr.com",
-    department: "Engineering",
-    role: "Backend Developer",
-    status: "Active",
-    avatar: "DW",
-  },
-  {
-    id: "EMP005",
-    name: "Candice Wu",
-    email: "candice@nexhr.com",
-    department: "Engineering",
-    role: "Full Stack Developer",
-    status: "Active",
-    avatar: "CW",
-  },
-  {
-    id: "EMP006",
-    name: "Natali Craig",
-    email: "natali@nexhr.com",
-    department: "Design",
-    role: "UX Designer",
-    status: "Inactive",
-    avatar: "NC",
-  },
-  {
-    id: "EMP007",
-    name: "Drew Cano",
-    email: "drew@nexhr.com",
-    department: "Marketing",
-    role: "Marketing Manager",
-    status: "Active",
-    avatar: "DC",
-  },
-  {
-    id: "EMP008",
-    name: "Orlando Diggs",
-    email: "orlando@nexhr.com",
-    department: "Sales",
-    role: "Sales Manager",
-    status: "Active",
-    avatar: "OD",
-  },
-];
+import { useAuth } from "@/context/AuthContext";
+import { getCurrentCustomer } from "@/services/customerService";
+import { getEmployees, Employee } from "@/services/employeeService";
+import { getDepartments } from "@/services/departmentService";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const AllEmployees = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -117,29 +47,73 @@ const AllEmployees = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departmentMap, setDepartmentMap] = useState<{[key: number]: string}>({});
+  const [customerId, setCustomerId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        if (user) {
+          const customer = await getCurrentCustomer(user);
+          if (customer) {
+            setCustomerId(customer.customerid);
+            
+            // Fetch departments first
+            const departments = await getDepartments(customer.customerid);
+            const deptMap: {[key: number]: string} = {};
+            departments.forEach(dept => {
+              deptMap[dept.departmentid] = dept.name;
+            });
+            setDepartmentMap(deptMap);
+            
+            // Fetch employees
+            const employeeList = await getEmployees(customer.customerid);
+            setEmployees(employeeList);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching employee data:", error);
+        toast({
+          title: "Error loading employees",
+          description: "Could not load employee data. Please try again later.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [user]);
 
   const filteredEmployees = employees.filter(
     (employee) => {
+      const fullName = `${employee.firstname} ${employee.lastname}`;
       const matchesSearch = 
-        employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.id.toLowerCase().includes(searchTerm.toLowerCase());
+        (employee.department && departmentMap[employee.department]?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (employee.jobtitle?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        employee.employeeid.toString().includes(searchTerm.toLowerCase());
       
       const matchesDepartment = 
         departmentFilter === "all" || 
-        employee.department.toLowerCase() === departmentFilter.toLowerCase();
+        (employee.department && departmentMap[employee.department]?.toLowerCase() === departmentFilter.toLowerCase());
       
       return matchesSearch && matchesDepartment;
     }
   );
 
-  const handleViewEmployee = (employee: any) => {
-    navigate(`/employee/${employee.id}`);
+  const handleViewEmployee = (employee: Employee) => {
+    navigate(`/employee/${employee.employeeid}`);
   };
   
   const handleSaveEmployee = () => {
@@ -171,11 +145,137 @@ const AllEmployees = () => {
 
     toast({
       title: "Password updated",
-      description: `Password has been updated for ${selectedEmployee.name}.`
+      description: `Password has been updated for ${selectedEmployee.firstname} ${selectedEmployee.lastname}.`
     });
     setIsPasswordDialogOpen(false);
     setNewPassword("");
     setConfirmPassword("");
+  };
+
+  const renderEmployeeTable = () => {
+    if (isLoading) {
+      return [...Array(5)].map((_, index) => (
+        <TableRow key={index}>
+          {!isMobile && <TableCell><Skeleton className="h-8 w-20" /></TableCell>}
+          <TableCell>
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-9 w-9 rounded-full" />
+              <div>
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="h-4 w-24 mt-1" />
+              </div>
+            </div>
+          </TableCell>
+          {!isMobile && <TableCell><Skeleton className="h-5 w-24" /></TableCell>}
+          {!isMobile && <TableCell><Skeleton className="h-5 w-28" /></TableCell>}
+          <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+          <TableCell className="text-right">
+            <div className="flex justify-end gap-2">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-8 w-20" />
+            </div>
+          </TableCell>
+        </TableRow>
+      ));
+    }
+
+    if (filteredEmployees.length === 0) {
+      return (
+        <TableRow>
+          <TableCell colSpan={isMobile ? 4 : 6} className="text-center py-8 text-gray-500">
+            {employees.length > 0 
+              ? "No employees match your search criteria." 
+              : "No employees found. Add employees to see them here."}
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return filteredEmployees.map((employee) => (
+      <TableRow key={employee.employeeid} className="hover:bg-gray-50 transition-colors">
+        {!isMobile && <TableCell className="font-medium">EMP{employee.employeeid.toString().padStart(3, '0')}</TableCell>}
+        <TableCell>
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8 sm:h-9 sm:w-9 border-2 border-white shadow-sm">
+              {employee.profilepicturepath ? (
+                <AvatarImage src={employee.profilepicturepath} alt={`${employee.firstname} ${employee.lastname}`} />
+              ) : (
+                <AvatarFallback className="bg-gradient-to-br from-nexhr-primary to-purple-600 text-white text-xs sm:text-sm">
+                  {employee.firstname.charAt(0)}{employee.lastname.charAt(0)}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            <div>
+              <div className="font-medium text-sm sm:text-base">{employee.firstname} {employee.lastname}</div>
+              <div className="text-xs sm:text-sm text-gray-500">{employee.email}</div>
+              {isMobile && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {employee.department ? departmentMap[employee.department] : 'No Department'} 
+                  {employee.jobtitle ? ` • ${employee.jobtitle}` : ''}
+                </div>
+              )}
+            </div>
+          </div>
+        </TableCell>
+        {!isMobile && (
+          <TableCell>
+            {employee.department ? departmentMap[employee.department] : 'No Department'}
+          </TableCell>
+        )}
+        {!isMobile && <TableCell>{employee.jobtitle || 'Not assigned'}</TableCell>}
+        <TableCell>
+          <Badge
+            className={`${
+              employee.employeestatus === "Active"
+                ? "bg-green-100 text-green-800 border border-green-200"
+                : employee.employeestatus === "On Leave"
+                ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                : "bg-gray-100 text-gray-800 border border-gray-200"
+            } transition-colors text-xs`}
+          >
+            {employee.employeestatus || 'Active'}
+          </Badge>
+        </TableCell>
+        <TableCell className="text-right">
+          <div className="flex justify-end gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-1 hover:bg-gray-100 transition-colors text-xs"
+              onClick={() => {
+                setSelectedEmployee(employee);
+                setIsEditDialogOpen(true);
+              }}
+            >
+              <Edit className="h-3 w-3" />
+              Edit
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-1 hover:bg-indigo-100 hover:text-indigo-700 transition-colors text-xs"
+              onClick={() => {
+                setSelectedEmployee(employee);
+                setIsPasswordDialogOpen(true);
+              }}
+            >
+              <Key className="h-3 w-3" />
+              Password
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-1 hover:bg-nexhr-primary/10 hover:text-nexhr-primary transition-colors text-xs"
+              onClick={() => handleViewEmployee(employee)}
+            >
+              <Eye className="h-3 w-3" />
+              View
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    ));
   };
 
   return (
@@ -195,11 +295,11 @@ const AllEmployees = () => {
             </p>
           </div>
           
-          <EmployeeListHeader />
+          <EmployeeListHeader customerId={customerId} />
 
           {/* Today's Attendance Widget */}
           <div className="mb-6 transform hover:scale-[1.01] transition-all duration-300 dashboard-card shadow-md hover:shadow-lg rounded-lg overflow-hidden border border-gray-200">
-            <TodaysAttendance />
+            <TodaysAttendance customerId={customerId} isLoading={isLoading} />
           </div>
 
           <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300 animate-scale-in rounded-lg overflow-hidden">
@@ -217,6 +317,8 @@ const AllEmployees = () => {
                   setSearchTerm={setSearchTerm}
                   departmentFilter={departmentFilter}
                   setDepartmentFilter={setDepartmentFilter}
+                  departments={Object.values(departmentMap)}
+                  isLoading={isLoading}
                 />
               </div>
             </CardHeader>
@@ -234,79 +336,7 @@ const AllEmployees = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEmployees.map((employee) => (
-                      <TableRow key={employee.id} className="hover:bg-gray-50 transition-colors">
-                        {!isMobile && <TableCell className="font-medium">{employee.id}</TableCell>}
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8 sm:h-9 sm:w-9 border-2 border-white shadow-sm">
-                              <AvatarFallback className="bg-gradient-to-br from-nexhr-primary to-purple-600 text-white text-xs sm:text-sm">
-                                {employee.avatar}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium text-sm sm:text-base">{employee.name}</div>
-                              <div className="text-xs sm:text-sm text-gray-500">{employee.email}</div>
-                              {isMobile && (
-                                <div className="text-xs text-gray-500 mt-1">{employee.department} • {employee.role}</div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        {!isMobile && <TableCell>{employee.department}</TableCell>}
-                        {!isMobile && <TableCell>{employee.role}</TableCell>}
-                        <TableCell>
-                          <Badge
-                            className={`${
-                              employee.status === "Active"
-                                ? "bg-green-100 text-green-800 border border-green-200"
-                                : employee.status === "On Leave"
-                                ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                : "bg-gray-100 text-gray-800 border border-gray-200"
-                            } transition-colors text-xs`}
-                          >
-                            {employee.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="flex items-center gap-1 hover:bg-gray-100 transition-colors text-xs"
-                              onClick={() => {
-                                setSelectedEmployee(employee);
-                                setIsEditDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="h-3 w-3" />
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="flex items-center gap-1 hover:bg-indigo-100 hover:text-indigo-700 transition-colors text-xs"
-                              onClick={() => {
-                                setSelectedEmployee(employee);
-                                setIsPasswordDialogOpen(true);
-                              }}
-                            >
-                              <Key className="h-3 w-3" />
-                              Password
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="flex items-center gap-1 hover:bg-nexhr-primary/10 hover:text-nexhr-primary transition-colors text-xs"
-                              onClick={() => handleViewEmployee(employee)}
-                            >
-                              <Eye className="h-3 w-3" />
-                              View
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {renderEmployeeTable()}
                   </TableBody>
                 </Table>
               </div>
@@ -323,6 +353,10 @@ const AllEmployees = () => {
             onOpenChange={setIsEditDialogOpen}
             employee={selectedEmployee}
             onSave={handleSaveEmployee}
+            departments={Object.entries(departmentMap).map(([id, name]) => ({ 
+              id: parseInt(id), 
+              name 
+            }))}
           />
 
           {/* Password Change Dialog */}
@@ -331,7 +365,7 @@ const AllEmployees = () => {
               <DialogHeader>
                 <DialogTitle>Change Password</DialogTitle>
                 <DialogDescription>
-                  {selectedEmployee && `Set a new password for ${selectedEmployee.name}`}
+                  {selectedEmployee && `Set a new password for ${selectedEmployee.firstname} ${selectedEmployee.lastname}`}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
