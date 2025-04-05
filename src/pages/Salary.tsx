@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import UserHeader from "@/components/UserHeader";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SalaryStats from "@/components/salary/SalaryStats";
 import SalaryTrends from "@/components/salary/SalaryTrends";
 import SalaryListSection from "@/components/salary/SalaryListSection";
