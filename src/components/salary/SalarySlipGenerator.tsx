@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,22 +24,19 @@ import { Hash, Calendar, FileDown, Edit, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeSalary, SalaryAllowances, SalaryDeductions } from "@/types/salary";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SalarySlipGeneratorProps } from "@/types/components";
 
-interface SalarySlipGeneratorProps {
-  employeeData: EmployeeSalary;
-}
-
-const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({ employeeData }) => {
+const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({ employee }) => {
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [payslipId, setPayslipId] = useState<string>(employeeData.payslipId || "");
+  const [payslipId, setPayslipId] = useState<string>(employee.payslipId || "");
   const { toast } = useToast();
   
   // Create a state to hold editable allowances and deductions
-  const [allowances, setAllowances] = useState<SalaryAllowances>({...employeeData.allowances});
-  const [deductions, setDeductions] = useState<SalaryDeductions>({...employeeData.deductions});
+  const [allowances, setAllowances] = useState<SalaryAllowances>({...employee.allowances});
+  const [deductions, setDeductions] = useState<SalaryDeductions>({...employee.deductions});
 
   const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -49,13 +45,12 @@ const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({ employeeData 
 
   const years = Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - 2 + i).toString());
 
-  // Generate a payslip ID when month and year are selected
   useEffect(() => {
     if (selectedMonth && selectedYear && !payslipId) {
-      const newPayslipId = `PS-${selectedYear}-${months.indexOf(selectedMonth) + 1}-${employeeData.id}`;
+      const newPayslipId = `PS-${selectedYear}-${months.indexOf(selectedMonth) + 1}-${employee.id}`;
       setPayslipId(newPayslipId);
     }
-  }, [selectedMonth, selectedYear, employeeData.id, payslipId]);
+  }, [selectedMonth, selectedYear, employee.id, payslipId]);
 
   const generatePayslip = () => {
     setIsPreviewDialogOpen(true);
@@ -67,7 +62,6 @@ const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({ employeeData 
       description: "Your salary slip is being downloaded as PDF.",
     });
     
-    // In a real application, this would convert to PDF and trigger download
     setTimeout(() => {
       setIsPreviewDialogOpen(false);
     }, 1000);
@@ -95,7 +89,6 @@ const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({ employeeData 
     setIsEditMode(false);
   };
 
-  // Calculate totals
   const calculateTotals = () => {
     const grossPay = allowances.basicSalary + allowances.hra + allowances.conveyanceAllowance + 
                      allowances.medicalAllowance + allowances.specialAllowance + allowances.otherAllowances;
@@ -122,19 +115,19 @@ const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({ employeeData 
             <div className="flex items-center gap-3 mb-4">
               <Avatar>
                 <AvatarFallback>
-                  {employeeData.employee.avatar}
+                  {employee.employee.avatar}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <div className="font-medium">
-                  {employeeData.employee.name}
+                  {employee.employee.name}
                 </div>
                 <div className="text-sm text-gray-500">
-                  {employeeData.position} • {employeeData.department}
+                  {employee.position} • {employee.department}
                 </div>
               </div>
-              <Badge variant={employeeData.status === "Paid" ? "default" : "secondary"} className={`ml-auto ${employeeData.status === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
-                {employeeData.status}
+              <Badge variant={employee.status === "Paid" ? "default" : "secondary"} className={`ml-auto ${employee.status === "Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
+                {employee.status}
               </Badge>
             </div>
           </div>
@@ -168,7 +161,6 @@ const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({ employeeData 
             </div>
           </div>
 
-          {/* Payslip ID field */}
           <div className="p-4 border rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-medium">Payslip ID</h3>
@@ -177,7 +169,7 @@ const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({ employeeData 
                 size="sm"
                 className="flex items-center gap-2"
                 onClick={() => {
-                  const newId = `PS-${selectedYear}-${months.indexOf(selectedMonth) + 1}-${employeeData.id}-${Math.floor(Math.random() * 1000)}`;
+                  const newId = `PS-${selectedYear}-${months.indexOf(selectedMonth) + 1}-${employee.id}-${Math.floor(Math.random() * 1000)}`;
                   setPayslipId(newId);
                   toast({
                     title: "Payslip ID generated",
@@ -198,7 +190,6 @@ const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({ employeeData 
             />
           </div>
 
-          {/* Allowance and Deduction Tabs */}
           <Tabs defaultValue="allowances" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="allowances">Allowances</TabsTrigger>
@@ -384,19 +375,19 @@ const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({ employeeData 
             <div className="grid grid-cols-2 gap-4 mb-6 border-b pb-4">
               <div>
                 <p className="text-sm font-medium text-gray-500">Employee Name</p>
-                <p className="font-medium">{employeeData.employee.name}</p>
+                <p className="font-medium">{employee.employee.name}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Employee ID</p>
-                <p>{employeeData.id}</p>
+                <p>{employee.id}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Designation</p>
-                <p>{employeeData.position}</p>
+                <p>{employee.position}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Department</p>
-                <p>{employeeData.department}</p>
+                <p>{employee.department}</p>
               </div>
             </div>
             

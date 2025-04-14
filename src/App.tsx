@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { 
-  BrowserRouter as Router, 
   Routes, 
   Route, 
   Navigate 
@@ -21,62 +20,60 @@ import LeaveManagement from '@/pages/LeaveManagement';
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/logout" element={<Logout />} />
+    <AuthProvider>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/logout" element={<Logout />} />
 
-          {/* Protected Routes */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/expenses" 
-            element={
-              <ProtectedRoute>
-                <Expenses />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/salary" 
-            element={
-              <ProtectedRoute>
-                <Salary />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/employees" 
-            element={
-              <ProtectedRoute requiredRoles={['admin', 'hr']}>
-                <AllEmployees />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/leave" 
-            element={
-              <ProtectedRoute>
-                <LeaveManagement />
-              </ProtectedRoute>
-            } 
-          />
+        {/* Protected Routes */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Index />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/expenses" 
+          element={
+            <ProtectedRoute>
+              <Expenses />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/salary" 
+          element={
+            <ProtectedRoute>
+              <Salary />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/employees" 
+          element={
+            <ProtectedRoute requiredRoles={['admin', 'hr']}>
+              <AllEmployees />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/leave" 
+          element={
+            <ProtectedRoute>
+              <LeaveManagement />
+            </ProtectedRoute>
+          } 
+        />
 
-          {/* Catch-all route */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </AuthProvider>
-    </Router>
+        {/* Catch-all route */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </AuthProvider>
   );
 };
 

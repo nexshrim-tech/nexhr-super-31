@@ -43,7 +43,7 @@ export interface SalaryFormDialogProps {
 }
 
 export interface SalarySlipGeneratorProps {
-  employee: EmployeeSalary; // Change from optional to required
+  employee: EmployeeSalary;
 }
 
 export interface PayslipHistoryDialogProps {
