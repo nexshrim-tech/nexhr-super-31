@@ -8,13 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { PayslipRecord } from "@/types/salary";
 import PayslipHistory from "./PayslipHistory";
-
-interface PayslipHistoryDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  payslips: PayslipRecord[];
-  onViewPayslip: (id: string) => void;
-}
+import { PayslipHistoryDialogProps } from "@/types/components";
 
 const PayslipHistoryDialog: React.FC<PayslipHistoryDialogProps> = ({
   open,

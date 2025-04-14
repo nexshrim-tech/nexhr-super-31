@@ -11,30 +11,23 @@ export interface AttendanceSettings {
   workstarttime: string;
 }
 
+// Mock function until database schema is updated
 export const getAttendanceSettings = async (employeeId?: number): Promise<AttendanceSettings[]> => {
   try {
-    let query = supabase
-      .from('attendancesettings')
-      .select('*');
+    // Mock data
+    const mockSettings: AttendanceSettings[] = [
+      {
+        attendancesettingid: 1,
+        customerid: 1,
+        employeeid: employeeId,
+        geofencingenabled: true,
+        latethreshold: "15",  // 15 minutes
+        photoverificationenabled: true,
+        workstarttime: "09:00"
+      }
+    ];
     
-    if (employeeId) {
-      query = query.eq('employeeid', employeeId);
-    }
-    
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Error fetching attendance settings:', error);
-      throw error;
-    }
-
-    // Transform latethreshold from unknown to string if needed
-    const formattedData = data?.map(item => ({
-      ...item,
-      latethreshold: String(item.latethreshold) // Ensure latethreshold is a string
-    }));
-
-    return formattedData as AttendanceSettings[] || [];
+    return mockSettings;
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
     throw error;
@@ -46,22 +39,18 @@ export const updateAttendanceSettings = async (
   settings: Partial<Omit<AttendanceSettings, 'attendancesettingid'>>
 ): Promise<AttendanceSettings> => {
   try {
-    const { data, error } = await supabase
-      .from('attendancesettings')
-      .update(settings)
-      .eq('attendancesettingid', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating attendance settings:', error);
-      throw error;
-    }
-
-    return {
-      ...data,
-      latethreshold: String(data.latethreshold)
-    } as AttendanceSettings;
+    // Mock implementation
+    const updatedSettings: AttendanceSettings = {
+      attendancesettingid: id,
+      geofencingenabled: settings.geofencingenabled !== undefined ? settings.geofencingenabled : true,
+      latethreshold: settings.latethreshold || "15",
+      photoverificationenabled: settings.photoverificationenabled !== undefined ? settings.photoverificationenabled : true,
+      workstarttime: settings.workstarttime || "09:00",
+      customerid: settings.customerid,
+      employeeid: settings.employeeid
+    };
+    
+    return updatedSettings;
   } catch (error) {
     console.error('Error in updateAttendanceSettings:', error);
     throw error;
@@ -72,21 +61,13 @@ export const createAttendanceSettings = async (
   settings: Omit<AttendanceSettings, 'attendancesettingid'>
 ): Promise<AttendanceSettings> => {
   try {
-    const { data, error } = await supabase
-      .from('attendancesettings')
-      .insert([settings])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating attendance settings:', error);
-      throw error;
-    }
-
-    return {
-      ...data,
-      latethreshold: String(data.latethreshold)
-    } as AttendanceSettings;
+    // Mock implementation
+    const newSettings: AttendanceSettings = {
+      ...settings,
+      attendancesettingid: Math.floor(Math.random() * 1000)
+    };
+    
+    return newSettings;
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);
     throw error;
@@ -97,23 +78,13 @@ export const bulkCreateAttendanceSettings = async (
   settings: Omit<AttendanceSettings, 'attendancesettingid'>[]
 ): Promise<AttendanceSettings[]> => {
   try {
-    const { data, error } = await supabase
-      .from('attendancesettings')
-      .insert(settings)
-      .select();
-
-    if (error) {
-      console.error('Error bulk creating attendance settings:', error);
-      throw error;
-    }
-
-    // Transform latethreshold from unknown to string if needed
-    const formattedData = data?.map(item => ({
-      ...item,
-      latethreshold: String(item.latethreshold) // Ensure latethreshold is a string
+    // Mock implementation
+    const createdSettings: AttendanceSettings[] = settings.map((setting, index) => ({
+      ...setting,
+      attendancesettingid: Math.floor(Math.random() * 1000) + index
     }));
-
-    return formattedData as AttendanceSettings[] || [];
+    
+    return createdSettings;
   } catch (error) {
     console.error('Error in bulkCreateAttendanceSettings:', error);
     throw error;

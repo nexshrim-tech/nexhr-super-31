@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -164,8 +165,8 @@ const PostForm = ({ onSubmit, initialData, buttonText }: {
 
 interface PostItemProps {
   post: Post;
-  onUpdate: (postId: number, updatedPost: Post) => void;
-  onDelete: (postId: number) => void;
+  onUpdate: (postId: number | undefined, updatedPost: Post) => void;
+  onDelete: (postId: number | undefined) => void;
 }
 
 const PostItem: React.FC<PostItemProps> = ({ post, onUpdate, onDelete }) => {
@@ -174,8 +175,11 @@ const PostItem: React.FC<PostItemProps> = ({ post, onUpdate, onDelete }) => {
 
   const handleUpdate = async (data: PostFormValues) => {
     try {
-      await updatePost(post.postid!, data.title, data.content);
-      onUpdate(post.postid!, { ...post, title: data.title, content: data.content });
+      if (post.postid === undefined) {
+        throw new Error("Post ID is undefined");
+      }
+      await updatePost(post.postid, data.title, data.content);
+      onUpdate(post.postid, { ...post, title: data.title, content: data.content });
       toast({
         title: "Post updated",
         description: "The post has been updated successfully",
@@ -194,8 +198,11 @@ const PostItem: React.FC<PostItemProps> = ({ post, onUpdate, onDelete }) => {
 
   const handleDelete = async () => {
     try {
-      await deletePost(post.postid!);
-      onDelete(post.postid!);
+      if (post.postid === undefined) {
+        throw new Error("Post ID is undefined");
+      }
+      await deletePost(post.postid);
+      onDelete(post.postid);
       toast({
         title: "Post deleted",
         description: "The post has been deleted successfully",
@@ -324,11 +331,13 @@ const Posts = () => {
     }
   };
 
-  const handleUpdate = (postId: number, updatedPost: Post) => {
+  const handleUpdate = (postId: number | undefined, updatedPost: Post) => {
+    if (postId === undefined) return;
     setPosts(posts.map(post => (post.postid === postId ? updatedPost : post)));
   };
 
-  const handleDelete = (postId: number) => {
+  const handleDelete = (postId: number | undefined) => {
+    if (postId === undefined) return;
     setPosts(posts.filter(post => post.postid !== postId));
   };
 
