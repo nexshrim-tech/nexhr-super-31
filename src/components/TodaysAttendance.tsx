@@ -1,19 +1,31 @@
 
 import React from "react";
 import { TodaysAttendanceProps } from "@/types/components";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// This is a mock implementation to ensure the component accepts the correct props
-// The actual implementation is in a read-only file that we can't modify
 const TodaysAttendance: React.FC<TodaysAttendanceProps> = ({
   customerId,
   isLoading
 }) => {
-  // This component is read-only, but we're ensuring it accepts the correct props
   return (
-    <div>
-      {/* The actual implementation is in a read-only file */}
-      <p>Today's Attendance Component (Mock for TypeScript)</p>
-    </div>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Today's Attendance</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        ) : (
+          <div className="text-center py-6">
+            <p className="text-gray-500">No attendance records for today</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

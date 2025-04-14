@@ -1,66 +1,75 @@
 
-import { EmployeeSalary, PayslipRecord } from "@/types/salary";
-import { Dispatch, SetStateAction } from "react";
+import { ReactNode } from 'react';
 
-// Employee-related component props
+// Props for TaskReminders component
+export interface TaskRemindersProps {
+  customerId: number | null;
+  isLoading: boolean;
+}
+
+// Props for EmployeeList component
 export interface EmployeeListProps {
   employees: any[];
   isLoading: boolean;
   customerId: number | null;
 }
 
-export interface EmployeeFiltersProps {
-  searchTerm: string;
-  setSearchTerm: Dispatch<SetStateAction<string>>;
-  departmentFilter: string;
-  setDepartmentFilter: Dispatch<SetStateAction<string>>;
-  departments: string[];
+// Props for EmployeeLocation component
+export interface EmployeeLocationProps {
+  customerId: number | null;
   isLoading: boolean;
 }
 
+// Props for TodaysAttendance component
+export interface TodaysAttendanceProps {
+  customerId: number | null;
+  isLoading: boolean;
+}
+
+// Props for EmployeeStats component
+export interface EmployeeStatsProps {
+  customerId?: number | null;
+  employeeCount?: number;
+  isLoading?: boolean;
+}
+
+// Props for PayslipHistoryDialog component
+export interface PayslipHistoryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  payslips: any[];
+  onViewPayslip: (payslip: any) => void;
+}
+
+// Props for SalarySlipGenerator component
+export interface SalarySlipGeneratorProps {
+  employee: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+// Props for SalaryFormDialog component
+export interface SalaryFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  employeeList: any[];
+}
+
+// Props for EmployeeFilters component 
+export interface EmployeeFiltersProps {
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  departmentFilter: string;
+  setDepartmentFilter: (department: string) => void;
+  isLoading: boolean;
+  departments: string[];
+}
+
+// Props for EmployeeEditDialog component
 export interface EmployeeEditDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   employee: any;
   onSave: () => void;
   departments: { id: number; name: string; }[];
-}
-
-// Attendance-related props
-export interface TodaysAttendanceProps {
-  customerId: number | null;
-  isLoading: boolean;
-}
-
-export interface EmployeeLocationProps {
-  customerId: number | null;
-  isLoading: boolean;
-}
-
-export interface TaskRemindersProps {
-  customerId: number | null;
-  isLoading: boolean;
-}
-
-// Salary-related props
-export interface SalaryFormDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  employeeList: { id: number; name: string; department: string; position: string; }[];
-  onClose?: () => void;
-  onSave?: (formData: any) => void;
-}
-
-export interface SalarySlipGeneratorProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  employee: EmployeeSalary | null;
-}
-
-export interface PayslipHistoryDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  payslips: PayslipRecord[];
-  onViewPayslip?: (id: string) => void;
-  employee?: EmployeeSalary | null;
 }

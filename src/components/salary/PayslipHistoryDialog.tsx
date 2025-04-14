@@ -6,9 +6,8 @@ import {
   DialogHeader, 
   DialogTitle, 
 } from "@/components/ui/dialog";
-import { PayslipRecord } from "@/types/salary";
-import PayslipHistory from "./PayslipHistory";
 import { PayslipHistoryDialogProps } from "@/types/components";
+import PayslipHistory from "./PayslipHistory";
 
 const PayslipHistoryDialog: React.FC<PayslipHistoryDialogProps> = ({
   open,
