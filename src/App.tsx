@@ -12,7 +12,7 @@ import { ProtectedRoute } from '@/lib/protected-route';
 // Import pages
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
-import Index from '@/pages/Index';  // Using Index component for the dashboard
+import Index from '@/pages/Index';  // Changed from Dashboard to Index
 import Expenses from '@/pages/Expenses';
 import Salary from '@/pages/Salary';
 import Employees from '@/pages/Employees';
