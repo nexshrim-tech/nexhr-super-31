@@ -1,6 +1,14 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Post } from '@/types/post';
+
+export interface Post {
+  id?: string;
+  user_id?: string;
+  title: string;
+  content: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export const getPosts = async (): Promise<Post[]> => {
   try {
@@ -61,12 +69,17 @@ export const getPostById = async (id: string): Promise<Post | null> => {
   }
 };
 
-export const createPost = async (title: string, content: string, userId: string): Promise<Post> => {
+export const createPost = async (post: Omit<Post, 'id' | 'user_id'>): Promise<Post> => {
   try {
-    const post = { title, content, user_id: userId };
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      throw userError;
+    }
+    
     const { data, error } = await supabase
       .from('posts')
-      .insert([post])
+      .insert([{ ...post, user_id: userData.user.id }])
       .select();
 
     if (error) {
@@ -81,12 +94,12 @@ export const createPost = async (title: string, content: string, userId: string)
   }
 };
 
-export const updatePost = async (postId: number, title: string, content: string): Promise<Post> => {
+export const updatePost = async (id: string, post: Partial<Omit<Post, 'id' | 'user_id'>>): Promise<Post> => {
   try {
     const { data, error } = await supabase
       .from('posts')
-      .update({ title, content })
-      .eq('postid', postId)
+      .update(post)
+      .eq('id', id)
       .select();
 
     if (error) {
@@ -101,12 +114,12 @@ export const updatePost = async (postId: number, title: string, content: string)
   }
 };
 
-export const deletePost = async (postId: number): Promise<void> => {
+export const deletePost = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('posts')
       .delete()
-      .eq('postid', postId);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting post:', error);

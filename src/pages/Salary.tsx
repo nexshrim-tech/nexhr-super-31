@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import UserHeader from "@/components/UserHeader";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/card";
 import SalaryStats from "@/components/salary/SalaryStats";
 import SalaryTrends from "@/components/salary/SalaryTrends";
 import SalaryListSection from "@/components/salary/SalaryListSection";
@@ -41,11 +42,16 @@ const SalaryPage = () => {
           if (customer) {
             setCustomerId(customer.customerid);
             
+            // Fetch employees and their salary information
             const employeeList = await getEmployees(customer.customerid);
             const salaries = await getSalaries(customer.customerid);
             
+            // Transform employee data to match EmployeeSalary type
             const employeeSalaryData = await Promise.all(employeeList.map(async (emp: Employee) => {
+              // For each employee, try to get their salary
               const salaryInfo = salaries.find((s: SalaryType) => s.employeeid === emp.employeeid);
+              
+              // Mock data for allowances and deductions (in real implementation, we'd fetch these)
               return {
                 id: emp.employeeid,
                 employee: { 
@@ -53,7 +59,7 @@ const SalaryPage = () => {
                   avatar: emp.firstname.charAt(0) + emp.lastname.charAt(0) 
                 },
                 position: emp.jobtitle || 'Employee',
-                department: '',
+                department: '',  // We'll update this below
                 salary: salaryInfo ? salaryInfo.netsalary : (emp.salary || 0),
                 lastIncrement: salaryInfo ? salaryInfo.effectivedate : new Date().toISOString(),
                 status: salaryInfo ? 'Paid' : 'Pending',
@@ -76,10 +82,12 @@ const SalaryPage = () => {
               };
             }));
             
+            // Get department names for each employee
             const deptMap = new Map();
             for (const emp of employeeSalaryData) {
               const employee = employeeList.find(e => e.employeeid === emp.id);
               if (employee && employee.department) {
+                // If we haven't cached this department yet, fetch it
                 if (!deptMap.has(employee.department)) {
                   try {
                     const { name } = await import('@/services/departmentService')
@@ -98,6 +106,7 @@ const SalaryPage = () => {
             
             setEmployees(employeeSalaryData);
             
+            // Create salary trend data (mock data for now)
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             const trendData = months.map(month => ({
               month,
@@ -200,7 +209,7 @@ const SalaryPage = () => {
       </div>
 
       <SalaryFormDialog
-        open={isOpenSalaryForm}
+        isOpen={isOpenSalaryForm}
         onOpenChange={setIsOpenSalaryForm}
         employeeList={employees.map((emp) => ({
           id: emp.id,
@@ -208,23 +217,18 @@ const SalaryPage = () => {
           department: emp.department,
           position: emp.position
         }))}
-        onClose={() => setIsOpenSalaryForm(false)}
-        onSave={() => {
-          setIsOpenSalaryForm(false);
-        }}
       />
 
       <SalarySlipGenerator
-        open={isGeneratingSalarySlip}
+        isOpen={isGeneratingSalarySlip}
         onOpenChange={setIsGeneratingSalarySlip}
         employee={selectedEmployee}
       />
 
       <PayslipHistoryDialog
-        open={isOpenPayslipHistory}
+        isOpen={isOpenPayslipHistory}
         onOpenChange={setIsOpenPayslipHistory}
-        payslips={[]}
-        onViewPayslip={(id) => console.log('View payslip:', id)}
+        employee={selectedEmployee}
       />
     </div>
   );

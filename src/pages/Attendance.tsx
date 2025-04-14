@@ -179,10 +179,7 @@ const Attendance = () => {
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6">
-              <TodaysAttendance 
-                customerId={null} 
-                isLoading={false} 
-              />
+              <TodaysAttendance />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <AttendanceCalendar 
                   currentMonth={selectedDate.getMonth()}

@@ -79,13 +79,6 @@ const payslipsData = [
   { id: "PAY005", employee: "Chisom Chukwukwe", period: "May 2024", amount: 90000, date: "2024-05-31" },
 ];
 
-const mockDepartments = [
-  { id: 1, name: "Design" },
-  { id: 2, name: "Engineering" },
-  { id: 3, name: "Sales" },
-  { id: 4, name: "Marketing" }
-];
-
 const EmployeeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -402,7 +395,6 @@ const EmployeeDetails = () => {
                 description: "Employee profile has been updated successfully.",
               });
             }}
-            departments={mockDepartments}
           />
 
           <PayslipDialog

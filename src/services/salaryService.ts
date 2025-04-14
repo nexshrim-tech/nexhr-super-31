@@ -31,38 +31,24 @@ export interface SalaryAllowanceDeduction {
   ispermanent: boolean;
 }
 
-// Mock data function - replace with real implementation once DB is set up
 export const getSalaries = async (customerId?: number): Promise<Salary[]> => {
   try {
-    // Mock data until the database schema is updated
-    const mockSalaries: Salary[] = [
-      {
-        salaryid: 1,
-        employeeid: 1,
-        basesalary: 50000,
-        allowances: 10000,
-        deductions: 5000,
-        netsalary: 55000,
-        effectivedate: new Date().toISOString(),
-        currency: 'INR',
-        paycycle: 'monthly',
-        customerid: customerId || 1
-      },
-      {
-        salaryid: 2,
-        employeeid: 2,
-        basesalary: 60000,
-        allowances: 12000,
-        deductions: 6000,
-        netsalary: 66000,
-        effectivedate: new Date().toISOString(),
-        currency: 'INR',
-        paycycle: 'monthly',
-        customerid: customerId || 1
-      }
-    ];
+    let query = supabase
+      .from('salary')
+      .select('*');
     
-    return mockSalaries;
+    if (customerId) {
+      query = query.eq('customerid', customerId);
+    }
+    
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching salaries:', error);
+      throw error;
+    }
+
+    return data || [];
   } catch (error) {
     console.error('Error in getSalaries:', error);
     throw error;
@@ -71,20 +57,19 @@ export const getSalaries = async (customerId?: number): Promise<Salary[]> => {
 
 export const getSalaryByEmployeeId = async (employeeId: number): Promise<Salary | null> => {
   try {
-    // Mock data until the database schema is updated
-    const mockSalary: Salary = {
-      salaryid: 1,
-      employeeid: employeeId,
-      basesalary: 50000,
-      allowances: 10000,
-      deductions: 5000,
-      netsalary: 55000,
-      effectivedate: new Date().toISOString(),
-      currency: 'INR',
-      paycycle: 'monthly',
-    };
-    
-    return mockSalary;
+    const { data, error } = await supabase
+      .from('salary')
+      .select('*')
+      .eq('employeeid', employeeId)
+      .is('enddate', null) // Get current active salary
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching salary by employee ID:', error);
+      throw error;
+    }
+
+    return data;
   } catch (error) {
     console.error('Error in getSalaryByEmployeeId:', error);
     throw error;
@@ -93,13 +78,18 @@ export const getSalaryByEmployeeId = async (employeeId: number): Promise<Salary 
 
 export const addSalary = async (salary: Omit<Salary, 'salaryid'>): Promise<Salary> => {
   try {
-    // Mock implementation
-    const newSalary: Salary = {
-      ...salary,
-      salaryid: Math.floor(Math.random() * 1000),
-    };
-    
-    return newSalary;
+    const { data, error } = await supabase
+      .from('salary')
+      .insert([salary])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding salary:', error);
+      throw error;
+    }
+
+    return data;
   } catch (error) {
     console.error('Error in addSalary:', error);
     throw error;
@@ -108,16 +98,19 @@ export const addSalary = async (salary: Omit<Salary, 'salaryid'>): Promise<Salar
 
 export const updateSalary = async (id: number, salary: Omit<Partial<Salary>, 'salaryid'>): Promise<Salary> => {
   try {
-    // Mock implementation
-    const updatedSalary: Salary = {
-      salaryid: id,
-      employeeid: salary.employeeid || 1,
-      basesalary: salary.basesalary || 50000,
-      netsalary: salary.netsalary || 55000,
-      effectivedate: salary.effectivedate || new Date().toISOString(),
-    };
-    
-    return updatedSalary;
+    const { data, error } = await supabase
+      .from('salary')
+      .update(salary)
+      .eq('salaryid', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating salary:', error);
+      throw error;
+    }
+
+    return data;
   } catch (error) {
     console.error('Error in updateSalary:', error);
     throw error;
@@ -126,29 +119,17 @@ export const updateSalary = async (id: number, salary: Omit<Partial<Salary>, 'sa
 
 export const getAllowancesDeductions = async (salaryId: number): Promise<SalaryAllowanceDeduction[]> => {
   try {
-    // Mock data
-    const mockAllowancesDeductions: SalaryAllowanceDeduction[] = [
-      {
-        id: 1,
-        salaryid: salaryId,
-        type: 'allowance',
-        name: 'HRA',
-        amount: 10000,
-        ispercentage: false,
-        ispermanent: true
-      },
-      {
-        id: 2,
-        salaryid: salaryId,
-        type: 'deduction',
-        name: 'Tax',
-        amount: 5000,
-        ispercentage: false,
-        ispermanent: true
-      }
-    ];
-    
-    return mockAllowancesDeductions;
+    const { data, error } = await supabase
+      .from('salaryallowancededuction')
+      .select('*')
+      .eq('salaryid', salaryId);
+
+    if (error) {
+      console.error('Error fetching allowances/deductions:', error);
+      throw error;
+    }
+
+    return data || [];
   } catch (error) {
     console.error('Error in getAllowancesDeductions:', error);
     throw error;
@@ -157,26 +138,18 @@ export const getAllowancesDeductions = async (salaryId: number): Promise<SalaryA
 
 export const getSalaryHistory = async (employeeId: number): Promise<Salary[]> => {
   try {
-    // Mock data
-    const mockSalaryHistory: Salary[] = [
-      {
-        salaryid: 1,
-        employeeid: employeeId,
-        basesalary: 45000,
-        netsalary: 50000,
-        effectivedate: '2023-01-01T00:00:00Z',
-        enddate: '2023-06-30T00:00:00Z',
-      },
-      {
-        salaryid: 2,
-        employeeid: employeeId,
-        basesalary: 50000,
-        netsalary: 55000,
-        effectivedate: '2023-07-01T00:00:00Z',
-      },
-    ];
-    
-    return mockSalaryHistory;
+    const { data, error } = await supabase
+      .from('salary')
+      .select('*')
+      .eq('employeeid', employeeId)
+      .order('effectivedate', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching salary history:', error);
+      throw error;
+    }
+
+    return data || [];
   } catch (error) {
     console.error('Error in getSalaryHistory:', error);
     throw error;

@@ -11,23 +11,20 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import SalaryDetailsForm from "@/components/SalaryDetailsForm";
-import { SalaryFormDialogProps } from "@/types/components";
+
+interface SalaryFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onClose: () => void;
+  onSave: (formData: any) => void;
+}
 
 const SalaryFormDialog: React.FC<SalaryFormDialogProps> = ({
   open,
   onOpenChange,
   onClose,
-  onSave,
-  employeeList
+  onSave
 }) => {
-  const handleClose = () => {
-    if (onClose) onClose();
-  };
-
-  const handleSave = (formData: any) => {
-    if (onSave) onSave(formData);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
@@ -39,14 +36,14 @@ const SalaryFormDialog: React.FC<SalaryFormDialogProps> = ({
         </DialogHeader>
         <SalaryDetailsForm 
           isOpen={open}
-          onClose={handleClose}
+          onClose={onClose}
           employeeName="New Employee"
           initialSalary={50000}
-          onSave={handleSave}
+          onSave={onSave}
         />
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
           </DialogClose>
           <Button type="submit" form="salary-form">Save</Button>
         </DialogFooter>
