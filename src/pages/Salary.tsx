@@ -225,7 +225,6 @@ const SalaryPage = () => {
         onOpenChange={setIsOpenPayslipHistory}
         payslips={[]}
         onViewPayslip={(id) => console.log('View payslip:', id)}
-        employee={selectedEmployee}
       />
     </div>
   );

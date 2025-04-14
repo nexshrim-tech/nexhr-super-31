@@ -1,5 +1,6 @@
 
 import { ReactNode } from 'react';
+import { EmployeeSalary, PayslipRecord } from '@/types/salary';
 
 // Props for TaskReminders component
 export interface TaskRemindersProps {
@@ -37,15 +38,16 @@ export interface EmployeeStatsProps {
 export interface PayslipHistoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  payslips: any[];
+  payslips: PayslipRecord[];
   onViewPayslip: (payslip: any) => void;
+  employee?: EmployeeSalary;
 }
 
 // Props for SalarySlipGenerator component
 export interface SalarySlipGeneratorProps {
-  employee: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  employee: EmployeeSalary | null;
 }
 
 // Props for SalaryFormDialog component
@@ -53,6 +55,8 @@ export interface SalaryFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employeeList: any[];
+  onClose?: () => void;
+  onSave?: (formData: any) => void;
 }
 
 // Props for EmployeeFilters component 

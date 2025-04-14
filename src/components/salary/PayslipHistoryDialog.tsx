@@ -13,7 +13,8 @@ const PayslipHistoryDialog: React.FC<PayslipHistoryDialogProps> = ({
   open,
   onOpenChange,
   payslips,
-  onViewPayslip
+  onViewPayslip,
+  employee
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
