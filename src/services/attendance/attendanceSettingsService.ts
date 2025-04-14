@@ -32,9 +32,9 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
     const formattedData = data?.map(item => ({
       ...item,
       latethreshold: String(item.latethreshold) // Ensure latethreshold is a string
-    }));
+    })) || [];
 
-    return formattedData as AttendanceSettings[] || [];
+    return formattedData;
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
     throw error;
@@ -50,17 +50,20 @@ export const updateAttendanceSettings = async (
       .from('attendancesettings')
       .update(settings)
       .eq('attendancesettingid', id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error('Error updating attendance settings:', error);
       throw error;
     }
 
+    if (!data || data.length === 0) {
+      throw new Error('No data returned after update');
+    }
+
     return {
-      ...data,
-      latethreshold: String(data.latethreshold)
+      ...data[0],
+      latethreshold: String(data[0].latethreshold)
     } as AttendanceSettings;
   } catch (error) {
     console.error('Error in updateAttendanceSettings:', error);
@@ -75,17 +78,20 @@ export const createAttendanceSettings = async (
     const { data, error } = await supabase
       .from('attendancesettings')
       .insert([settings])
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error('Error creating attendance settings:', error);
       throw error;
     }
 
+    if (!data || data.length === 0) {
+      throw new Error('No data returned after creation');
+    }
+
     return {
-      ...data,
-      latethreshold: String(data.latethreshold)
+      ...data[0],
+      latethreshold: String(data[0].latethreshold)
     } as AttendanceSettings;
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);
@@ -111,9 +117,9 @@ export const bulkCreateAttendanceSettings = async (
     const formattedData = data?.map(item => ({
       ...item,
       latethreshold: String(item.latethreshold) // Ensure latethreshold is a string
-    }));
+    })) || [];
 
-    return formattedData as AttendanceSettings[] || [];
+    return formattedData;
   } catch (error) {
     console.error('Error in bulkCreateAttendanceSettings:', error);
     throw error;

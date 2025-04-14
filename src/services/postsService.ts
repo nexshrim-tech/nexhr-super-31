@@ -69,7 +69,7 @@ export const getPostById = async (id: string): Promise<Post | null> => {
   }
 };
 
-export const createPost = async (post: Omit<Post, 'id' | 'user_id'>): Promise<Post> => {
+export const createPost = async (title: string, content: string): Promise<Post> => {
   try {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     
@@ -79,7 +79,7 @@ export const createPost = async (post: Omit<Post, 'id' | 'user_id'>): Promise<Po
     
     const { data, error } = await supabase
       .from('posts')
-      .insert([{ ...post, user_id: userData.user.id }])
+      .insert([{ title, content, user_id: userData.user.id }])
       .select();
 
     if (error) {

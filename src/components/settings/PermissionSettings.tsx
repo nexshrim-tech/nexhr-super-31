@@ -13,7 +13,20 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const permissions = {
+// Define a more specific type for module permissions
+type ModulePermission = {
+  view: boolean;
+  create?: boolean;
+  edit?: boolean;
+  delete?: boolean;
+};
+
+// Define the permissions type
+type PermissionsType = {
+  [key: string]: ModulePermission;
+};
+
+const permissions: PermissionsType = {
   employees: {
     view: true,
     create: true,
@@ -56,7 +69,14 @@ const permissions = {
   },
 };
 
-const initialRoles = [
+type Role = {
+  id: number;
+  name: string;
+  description: string;
+  permissions: PermissionsType;
+};
+
+const initialRoles: Role[] = [
   { id: 1, name: "Admin", description: "Full access to all resources", permissions: { ...permissions, settings: { view: true, edit: true } } },
   { id: 2, name: "HR Manager", description: "Can manage HR related resources", permissions: { ...permissions } },
   { id: 3, name: "Employee", description: "Limited access to own resources", permissions: { ...permissions, employees: { view: true, create: false, edit: false, delete: false }, attendance: { view: true, create: true, edit: false, delete: false }, departments: { view: true, create: false, edit: false, delete: false }, salaries: { view: false, create: false, edit: false, delete: false }, documents: { view: true, create: false, edit: false, delete: false }, projects: { view: true, create: false, edit: false, delete: false }, settings: { view: false, edit: false } } },
@@ -68,7 +88,11 @@ const PermissionSettings = () => {
   const [roles, setRoles] = useState(initialRoles);
   const [selectedRole, setSelectedRole] = useState(initialRoles[0]);
   const [newRoleOpen, setNewRoleOpen] = useState(false);
-  const [newRole, setNewRole] = useState({
+  const [newRole, setNewRole] = useState<{
+    name: string;
+    description: string;
+    permissions: PermissionsType;
+  }>({
     name: "",
     description: "",
     permissions: { ...permissions }
@@ -83,7 +107,10 @@ const PermissionSettings = () => {
   
   const handlePermissionChange = (module: string, action: string, checked: boolean) => {
     const updatedRole = { ...selectedRole };
-    updatedRole.permissions[module][action] = checked;
+    updatedRole.permissions[module] = {
+      ...updatedRole.permissions[module],
+      [action]: checked
+    };
     setSelectedRole(updatedRole);
     
     const updatedRoles = roles.map(role => 
@@ -100,11 +127,15 @@ const PermissionSettings = () => {
   };
   
   const handleNewRolePermissionChange = (module: string, action: string, checked: boolean) => {
-    const updatedPermissions = { ...newRole.permissions };
-    updatedPermissions[module][action] = checked;
     setNewRole({
       ...newRole,
-      permissions: updatedPermissions,
+      permissions: {
+        ...newRole.permissions,
+        [module]: {
+          ...newRole.permissions[module],
+          [action]: checked
+        }
+      }
     });
   };
   
@@ -118,7 +149,7 @@ const PermissionSettings = () => {
       return;
     }
     
-    const newRoleObject = {
+    const newRoleObject: Role = {
       id: roles.length + 1,
       name: newRole.name,
       description: newRole.description,

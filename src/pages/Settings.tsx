@@ -36,56 +36,52 @@ const Settings = () => {
               <CardDescription>Manage your account settings</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <TabsList className="grid grid-cols-1 h-auto bg-transparent w-full">
-                <TabsTrigger
-                  value="profile"
-                  className={`justify-start px-4 py-3 ${activeTab === "profile" ? "bg-accent" : ""}`}
-                  onClick={() => setActiveTab("profile")}
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
-                </TabsTrigger>
-                <TabsTrigger
-                  value="notifications"
-                  className={`justify-start px-4 py-3 ${activeTab === "notifications" ? "bg-accent" : ""}`}
-                  onClick={() => setActiveTab("notifications")}
-                >
-                  <Bell className="h-4 w-4 mr-2" />
-                  Notifications
-                </TabsTrigger>
-                <TabsTrigger
-                  value="security"
-                  className={`justify-start px-4 py-3 ${activeTab === "security" ? "bg-accent" : ""}`}
-                  onClick={() => setActiveTab("security")}
-                >
-                  <Lock className="h-4 w-4 mr-2" />
-                  Security
-                </TabsTrigger>
-                <TabsTrigger
-                  value="system"
-                  className={`justify-start px-4 py-3 ${activeTab === "system" ? "bg-accent" : ""}`}
-                  onClick={() => setActiveTab("system")}
-                >
-                  <Database className="h-4 w-4 mr-2" />
-                  System
-                </TabsTrigger>
-                <TabsTrigger
-                  value="appearance"
-                  className={`justify-start px-4 py-3 ${activeTab === "appearance" ? "bg-accent" : ""}`}
-                  onClick={() => setActiveTab("appearance")}
-                >
-                  <Globe className="h-4 w-4 mr-2" />
-                  Appearance
-                </TabsTrigger>
-                <TabsTrigger
-                  value="permissions"
-                  className={`justify-start px-4 py-3 ${activeTab === "permissions" ? "bg-accent" : ""}`}
-                  onClick={() => setActiveTab("permissions")}
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Permissions
-                </TabsTrigger>
-              </TabsList>
+              <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical">
+                <TabsList className="grid grid-cols-1 h-auto bg-transparent w-full">
+                  <TabsTrigger
+                    value="profile"
+                    className={`justify-start px-4 py-3 ${activeTab === "profile" ? "bg-accent" : ""}`}
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="notifications"
+                    className={`justify-start px-4 py-3 ${activeTab === "notifications" ? "bg-accent" : ""}`}
+                  >
+                    <Bell className="h-4 w-4 mr-2" />
+                    Notifications
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="security"
+                    className={`justify-start px-4 py-3 ${activeTab === "security" ? "bg-accent" : ""}`}
+                  >
+                    <Lock className="h-4 w-4 mr-2" />
+                    Security
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="system"
+                    className={`justify-start px-4 py-3 ${activeTab === "system" ? "bg-accent" : ""}`}
+                  >
+                    <Database className="h-4 w-4 mr-2" />
+                    System
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="appearance"
+                    className={`justify-start px-4 py-3 ${activeTab === "appearance" ? "bg-accent" : ""}`}
+                  >
+                    <Globe className="h-4 w-4 mr-2" />
+                    Appearance
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="permissions"
+                    className={`justify-start px-4 py-3 ${activeTab === "permissions" ? "bg-accent" : ""}`}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Permissions
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </CardContent>
           </Card>
           

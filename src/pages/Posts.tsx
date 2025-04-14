@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -164,8 +165,8 @@ const PostForm = ({ onSubmit, initialData, buttonText }: {
 
 interface PostItemProps {
   post: Post;
-  onUpdate: (postId: number, updatedPost: Post) => void;
-  onDelete: (postId: number) => void;
+  onUpdate: (postId: string, updatedPost: Post) => void;
+  onDelete: (postId: string) => void;
 }
 
 const PostItem: React.FC<PostItemProps> = ({ post, onUpdate, onDelete }) => {
@@ -174,8 +175,9 @@ const PostItem: React.FC<PostItemProps> = ({ post, onUpdate, onDelete }) => {
 
   const handleUpdate = async (data: PostFormValues) => {
     try {
-      await updatePost(post.postid!, data.title, data.content);
-      onUpdate(post.postid!, { ...post, title: data.title, content: data.content });
+      if (!post.id) throw new Error("Post ID is missing");
+      await updatePost(post.id, data);
+      onUpdate(post.id, { ...post, title: data.title, content: data.content });
       toast({
         title: "Post updated",
         description: "The post has been updated successfully",
@@ -194,8 +196,9 @@ const PostItem: React.FC<PostItemProps> = ({ post, onUpdate, onDelete }) => {
 
   const handleDelete = async () => {
     try {
-      await deletePost(post.postid!);
-      onDelete(post.postid!);
+      if (!post.id) throw new Error("Post ID is missing");
+      await deletePost(post.id);
+      onDelete(post.id);
       toast({
         title: "Post deleted",
         description: "The post has been deleted successfully",
@@ -306,7 +309,7 @@ const Posts = () => {
   const handleCreate = async (data: PostFormValues) => {
     try {
       if (!user) throw new Error("User not authenticated");
-      const newPost = await createPost(data.title, data.content, user.id);
+      const newPost = await createPost(data.title, data.content);
       setPosts([newPost, ...posts]);
       toast({
         title: "Post created",
@@ -324,12 +327,12 @@ const Posts = () => {
     }
   };
 
-  const handleUpdate = (postId: number, updatedPost: Post) => {
-    setPosts(posts.map(post => (post.postid === postId ? updatedPost : post)));
+  const handleUpdate = (postId: string, updatedPost: Post) => {
+    setPosts(posts.map(post => (post.id === postId ? updatedPost : post)));
   };
 
-  const handleDelete = (postId: number) => {
-    setPosts(posts.filter(post => post.postid !== postId));
+  const handleDelete = (postId: string) => {
+    setPosts(posts.filter(post => post.id !== postId));
   };
 
   return (
@@ -360,7 +363,7 @@ const Posts = () => {
                   <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                     {posts.map(post => (
                       <PostItem
-                        key={post.postid}
+                        key={post.id}
                         post={post}
                         onUpdate={handleUpdate}
                         onDelete={handleDelete}
@@ -376,7 +379,7 @@ const Posts = () => {
                   <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                     {posts.map(post => (
                       <PostItem
-                        key={post.postid}
+                        key={post.id}
                         post={post}
                         onUpdate={handleUpdate}
                         onDelete={handleDelete}
