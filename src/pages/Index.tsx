@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import SidebarNav from "@/components/SidebarNav";
 import UserHeader from "@/components/UserHeader";
 import EmployeeStats from "@/components/EmployeeStats";
@@ -13,54 +13,10 @@ import { Button } from "@/components/ui/button";
 import { CreditCard, ArrowUp, Sparkles } from "lucide-react";
 import { useSubscription } from "@/context/SubscriptionContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/context/AuthContext";
-import { getCurrentCustomer } from "@/services/customerService";
-import { getEmployees } from "@/services/employeeService";
-import { getExpenses } from "@/services/expenseService";
-import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { setShowSubscriptionModal } = useSubscription();
   const isMobile = useIsMobile();
-  const { user } = useAuth();
-  const [customerId, setCustomerId] = useState<number | null>(null);
-  const [employeeCount, setEmployeeCount] = useState(0);
-  const [expenseData, setExpenseData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-  
-  useEffect(() => {
-    const fetchCustomerData = async () => {
-      try {
-        setIsLoading(true);
-        if (user) {
-          const customer = await getCurrentCustomer(user);
-          if (customer) {
-            setCustomerId(customer.customerid);
-            
-            // Fetch employees for this customer
-            const employees = await getEmployees(customer.customerid);
-            setEmployeeCount(employees.length);
-            
-            // Fetch expenses for this customer
-            const expenses = await getExpenses(customer.customerid);
-            setExpenseData(expenses);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        toast({
-          title: "Error loading dashboard",
-          description: "Could not load dashboard data. Please try again later.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchCustomerData();
-  }, [user]);
   
   return (
     <div className="flex min-h-screen bg-gray-50 overflow-hidden">
@@ -81,7 +37,7 @@ const Index = () => {
                 </p>
               </div>
               <div className="transform hover:scale-[1.01] transition-all duration-300 shadow-md hover:shadow-lg rounded-lg">
-                <EmployeeStats customerId={customerId} employeeCount={employeeCount} isLoading={isLoading} />
+                <EmployeeStats />
               </div>
             </div>
             
@@ -98,13 +54,13 @@ const Index = () => {
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
             <div className="lg:col-span-2 grid grid-cols-1 gap-4 sm:gap-6">
               <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg">
-                <TodaysAttendance customerId={customerId} isLoading={isLoading} />
+                <TodaysAttendance />
               </div>
               <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg">
-                <ExpenseGraph expenseData={expenseData} isLoading={isLoading} />
+                <ExpenseGraph />
               </div>
               <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card rounded-lg overflow-hidden border border-gray-200 shadow-md hover:shadow-lg">
-                <EmployeeLocation customerId={customerId} isLoading={isLoading} />
+                <EmployeeLocation />
               </div>
             </div>
             <div className="space-y-4 sm:space-y-6">
@@ -115,7 +71,7 @@ const Index = () => {
                 <QuickLinks />
               </div>
               <div className="transform hover:scale-[1.01] transition-all duration-300 dashboard-card gradient-border rounded-lg overflow-hidden shadow-md hover:shadow-lg">
-                <TaskReminders customerId={customerId} isLoading={isLoading} />
+                <TaskReminders />
               </div>
             </div>
           </div>

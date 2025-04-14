@@ -24,7 +24,7 @@ const PayslipDialog: React.FC<PayslipDialogProps> = ({
           <SheetTitle>Salary Slip</SheetTitle>
         </SheetHeader>
         {employeeData && (
-          <SalarySlipGenerator employee={employeeData} />
+          <SalarySlipGenerator employeeData={employeeData} />
         )}
         <SheetFooter className="mt-4">
           <Button>

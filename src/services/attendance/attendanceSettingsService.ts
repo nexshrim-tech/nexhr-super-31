@@ -1,83 +1,121 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Define AttendanceSettings interface
 export interface AttendanceSettings {
-  id?: number;
-  customerid: number;
-  workstarttime: string;
-  workendtime: string;
-  latethreshold: string;
+  attendancesettingid?: number;
+  customerid?: number;
+  employeeid?: number;
   geofencingenabled: boolean;
+  latethreshold: string;  // Using string type for latethreshold
   photoverificationenabled: boolean;
-  created_at?: string;
+  workstarttime: string;
 }
 
-// Mock default settings
-const defaultSettings: AttendanceSettings = {
-  customerid: 1,
-  workstarttime: '09:00:00',
-  workendtime: '17:00:00',
-  latethreshold: '15',
-  geofencingenabled: false,
-  photoverificationenabled: false
-};
-
-// Get all attendance settings for a customer
-export const getAttendanceSettings = async (customerId?: number): Promise<AttendanceSettings[]> => {
+export const getAttendanceSettings = async (employeeId?: number): Promise<AttendanceSettings[]> => {
   try {
-    console.log("Fetching attendance settings for customer:", customerId);
-    // Use mock data for development since the table might not exist yet
-    return [{ ...defaultSettings, customerid: customerId || 1 }];
+    let query = supabase
+      .from('attendancesettings')
+      .select('*');
+    
+    if (employeeId) {
+      query = query.eq('employeeid', employeeId);
+    }
+    
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching attendance settings:', error);
+      throw error;
+    }
+
+    // Transform latethreshold from unknown to string if needed
+    const formattedData = data?.map(item => ({
+      ...item,
+      latethreshold: String(item.latethreshold) // Ensure latethreshold is a string
+    }));
+
+    return formattedData as AttendanceSettings[] || [];
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
     throw error;
   }
 };
 
-// Get a specific attendance setting
-export const getAttendanceSetting = async (settingId: number): Promise<AttendanceSettings | null> => {
+export const updateAttendanceSettings = async (
+  id: number, 
+  settings: Partial<Omit<AttendanceSettings, 'attendancesettingid'>>
+): Promise<AttendanceSettings> => {
   try {
-    console.log("Fetching attendance setting:", settingId);
-    return { ...defaultSettings, id: settingId };
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .update(settings)
+      .eq('attendancesettingid', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating attendance settings:', error);
+      throw error;
+    }
+
+    return {
+      ...data,
+      latethreshold: String(data.latethreshold)
+    } as AttendanceSettings;
   } catch (error) {
-    console.error('Error in getAttendanceSetting:', error);
+    console.error('Error in updateAttendanceSettings:', error);
     throw error;
   }
 };
 
-// Get attendance settings for a customer
-export const getAttendanceSettingsByCustomerId = async (customerId: number): Promise<AttendanceSettings | null> => {
+export const createAttendanceSettings = async (
+  settings: Omit<AttendanceSettings, 'attendancesettingid'>
+): Promise<AttendanceSettings> => {
   try {
-    console.log("Fetching attendance settings for customer:", customerId);
-    return { ...defaultSettings, customerid: customerId };
-  } catch (error) {
-    console.error('Error in getAttendanceSettingsByCustomerId:', error);
-    throw error;
-  }
-};
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .insert([settings])
+      .select()
+      .single();
 
-// Create new attendance settings
-export const createAttendanceSettings = async (settings: Omit<AttendanceSettings, 'id'>): Promise<AttendanceSettings> => {
-  try {
-    console.log("Creating attendance settings:", settings);
-    return { ...settings, id: 1 };
+    if (error) {
+      console.error('Error creating attendance settings:', error);
+      throw error;
+    }
+
+    return {
+      ...data,
+      latethreshold: String(data.latethreshold)
+    } as AttendanceSettings;
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);
     throw error;
   }
 };
 
-// Update attendance settings
-export const updateAttendanceSettings = async (
-  settingId: number,
-  settings: Partial<Omit<AttendanceSettings, 'id'>>
-): Promise<AttendanceSettings> => {
+export const bulkCreateAttendanceSettings = async (
+  settings: Omit<AttendanceSettings, 'attendancesettingid'>[]
+): Promise<AttendanceSettings[]> => {
   try {
-    console.log("Updating attendance settings:", settingId, settings);
-    return { ...defaultSettings, ...settings, id: settingId };
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .insert(settings)
+      .select();
+
+    if (error) {
+      console.error('Error bulk creating attendance settings:', error);
+      throw error;
+    }
+
+    // Transform latethreshold from unknown to string if needed
+    const formattedData = data?.map(item => ({
+      ...item,
+      latethreshold: String(item.latethreshold) // Ensure latethreshold is a string
+    }));
+
+    return formattedData as AttendanceSettings[] || [];
   } catch (error) {
-    console.error('Error in updateAttendanceSettings:', error);
+    console.error('Error in bulkCreateAttendanceSettings:', error);
     throw error;
   }
 };
