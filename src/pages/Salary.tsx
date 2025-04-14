@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import UserHeader from "@/components/UserHeader";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SalaryStats from "@/components/salary/SalaryStats";
 import SalaryTrends from "@/components/salary/SalaryTrends";
 import SalaryListSection from "@/components/salary/SalaryListSection";
@@ -16,7 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getCurrentCustomer } from "@/services/customerService";
 import { getEmployees, Employee } from "@/services/employeeService";
 import { getSalaries, getSalaryByEmployeeId, Salary as SalaryType } from "@/services/salaryService";
-import { EmployeeSalary, SalaryData } from "@/types/salary";
+import { EmployeeSalary, SalaryData, PayslipRecord } from "@/types/salary";
 import { useToast } from "@/hooks/use-toast";
 
 const SalaryPage = () => {
@@ -42,16 +41,11 @@ const SalaryPage = () => {
           if (customer) {
             setCustomerId(customer.customerid);
             
-            // Fetch employees and their salary information
             const employeeList = await getEmployees(customer.customerid);
             const salaries = await getSalaries(customer.customerid);
             
-            // Transform employee data to match EmployeeSalary type
             const employeeSalaryData = await Promise.all(employeeList.map(async (emp: Employee) => {
-              // For each employee, try to get their salary
               const salaryInfo = salaries.find((s: SalaryType) => s.employeeid === emp.employeeid);
-              
-              // Mock data for allowances and deductions (in real implementation, we'd fetch these)
               return {
                 id: emp.employeeid,
                 employee: { 
@@ -59,7 +53,7 @@ const SalaryPage = () => {
                   avatar: emp.firstname.charAt(0) + emp.lastname.charAt(0) 
                 },
                 position: emp.jobtitle || 'Employee',
-                department: '',  // We'll update this below
+                department: '',
                 salary: salaryInfo ? salaryInfo.netsalary : (emp.salary || 0),
                 lastIncrement: salaryInfo ? salaryInfo.effectivedate : new Date().toISOString(),
                 status: salaryInfo ? 'Paid' : 'Pending',
@@ -82,12 +76,10 @@ const SalaryPage = () => {
               };
             }));
             
-            // Get department names for each employee
             const deptMap = new Map();
             for (const emp of employeeSalaryData) {
               const employee = employeeList.find(e => e.employeeid === emp.id);
               if (employee && employee.department) {
-                // If we haven't cached this department yet, fetch it
                 if (!deptMap.has(employee.department)) {
                   try {
                     const { name } = await import('@/services/departmentService')
@@ -106,7 +98,6 @@ const SalaryPage = () => {
             
             setEmployees(employeeSalaryData);
             
-            // Create salary trend data (mock data for now)
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             const trendData = months.map(month => ({
               month,
@@ -209,7 +200,7 @@ const SalaryPage = () => {
       </div>
 
       <SalaryFormDialog
-        isOpen={isOpenSalaryForm}
+        open={isOpenSalaryForm}
         onOpenChange={setIsOpenSalaryForm}
         employeeList={employees.map((emp) => ({
           id: emp.id,
@@ -219,17 +210,37 @@ const SalaryPage = () => {
         }))}
       />
 
-      <SalarySlipGenerator
-        isOpen={isGeneratingSalarySlip}
-        onOpenChange={setIsGeneratingSalarySlip}
-        employee={selectedEmployee}
-      />
+      {selectedEmployee && (
+        <>
+          <Sheet open={isGeneratingSalarySlip} onOpenChange={setIsGeneratingSalarySlip}>
+            <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
+              <SheetHeader className="mb-4">
+                <SheetTitle>Salary Slip</SheetTitle>
+              </SheetHeader>
+              <SalarySlipGenerator employee={selectedEmployee} />
+              <SheetFooter className="mt-4">
+                <Button>
+                  <Download className="mr-2 h-4 w-4" /> Download PDF
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
 
-      <PayslipHistoryDialog
-        isOpen={isOpenPayslipHistory}
-        onOpenChange={setIsOpenPayslipHistory}
-        employee={selectedEmployee}
-      />
+          <PayslipHistoryDialog
+            open={isOpenPayslipHistory}
+            onOpenChange={setIsOpenPayslipHistory}
+            payslips={[
+              { id: "PS-2023-08", employee: selectedEmployee.employee.name, period: "August 2023", amount: 6250, date: "2023-08-31" },
+              { id: "PS-2023-07", employee: selectedEmployee.employee.name, period: "July 2023", amount: 6250, date: "2023-07-31" },
+              { id: "PS-2023-06", employee: selectedEmployee.employee.name, period: "June 2023", amount: 6250, date: "2023-06-30" },
+              { id: "PS-2023-05", employee: selectedEmployee.employee.name, period: "May 2023", amount: 6000, date: "2023-05-31" }
+            ]}
+            onViewPayslip={(id) => {
+              console.log("View payslip:", id);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };

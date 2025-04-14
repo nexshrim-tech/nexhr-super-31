@@ -12,10 +12,10 @@ import { ProtectedRoute } from '@/lib/protected-route';
 // Import pages
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
-import Index from '@/pages/Index';  // Changed from Dashboard to Index
+import Index from '@/pages/Index';
 import Expenses from '@/pages/Expenses';
 import Salary from '@/pages/Salary';
-import Employees from '@/pages/Employees';
+import AllEmployees from '@/pages/AllEmployees';
 import Logout from '@/pages/Logout';
 import LeaveManagement from '@/pages/LeaveManagement';
 
@@ -58,7 +58,7 @@ const App: React.FC = () => {
             path="/employees" 
             element={
               <ProtectedRoute requiredRoles={['admin', 'hr']}>
-                <Employees />
+                <AllEmployees />
               </ProtectedRoute>
             } 
           />
