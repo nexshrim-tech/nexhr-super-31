@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { EmployeeSalary } from "@/types/salary";
 import SalarySlipGenerator from "./SalarySlipGenerator";
+import { SalarySlipGeneratorProps } from "@/types/components";
 
 interface PayslipDialogProps {
   open: boolean;

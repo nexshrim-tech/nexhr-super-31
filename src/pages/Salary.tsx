@@ -1,208 +1,154 @@
-import React, { useEffect, useState } from "react";
-import SidebarNav from "@/components/SidebarNav";
-import UserHeader from "@/components/UserHeader";
+import React, { useState, Dispatch, SetStateAction } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import SalaryStats from "@/components/salary/SalaryStats";
-import SalaryTrends from "@/components/salary/SalaryTrends";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import SalaryListSection from "@/components/salary/SalaryListSection";
 import SalaryFormDialog from "@/components/salary/SalaryFormDialog";
-import SalarySlipGenerator from "@/components/salary/SalarySlipGenerator";
 import PayslipHistoryDialog from "@/components/salary/PayslipHistoryDialog";
-import { Button } from "@/components/ui/button";
-import { Plus, Sparkles, FileSpreadsheet } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/context/AuthContext";
-import { getCurrentCustomer } from "@/services/customerService";
-import { getEmployees, Employee } from "@/services/employeeService";
-import { getSalaries, getSalaryByEmployeeId, Salary as SalaryType } from "@/services/salaryService";
-import { EmployeeSalary, SalaryData, PayslipRecord } from "@/types/salary";
-import { useToast } from "@/hooks/use-toast";
+import SalarySlipGenerator from "@/components/salary/SalarySlipGenerator";
+import { EmployeeSalary, PayslipRecord } from "@/types/salary";
 
-const SalaryPage = () => {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [employees, setEmployees] = useState<EmployeeSalary[]>([]);
-  const [salaryData, setSalaryData] = useState<SalaryData[]>([]);
-  const [isOpenSalaryForm, setIsOpenSalaryForm] = useState(false);
+const Salary: React.FC = () => {
+  // Sample employee data (replace with actual data fetching)
+  const [employees, setEmployees] = useState<EmployeeSalary[]>([
+    {
+      id: 1,
+      employee: { name: "Olivia Rhye", avatar: "OR" },
+      position: "Frontend Developer",
+      department: "Engineering",
+      salary: 75000,
+      lastIncrement: "2023-05-15",
+      status: "Paid",
+      allowances: {
+        basicSalary: 30000,
+        hra: 15000,
+        conveyanceAllowance: 5000,
+        medicalAllowance: 3000,
+        specialAllowance: 10000,
+        otherAllowances: 2000
+      },
+      deductions: {
+        incomeTax: 6000,
+        providentFund: 3000,
+        professionalTax: 200,
+        loanDeduction: 1000,
+        otherDeductions: 500,
+        esi: 0
+      },
+      payslipId: "PS-2023-12-1"
+    },
+    {
+      id: 2,
+      employee: { name: "Phoenix Baker", avatar: "PB" },
+      position: "Backend Developer",
+      department: "Engineering",
+      salary: 80000,
+      lastIncrement: "2023-06-20",
+      status: "Unpaid",
+      allowances: {
+        basicSalary: 35000,
+        hra: 17000,
+        conveyanceAllowance: 5000,
+        medicalAllowance: 3000,
+        specialAllowance: 10000,
+        otherAllowances: 2000
+      },
+      deductions: {
+        incomeTax: 7000,
+        providentFund: 3200,
+        professionalTax: 200,
+        loanDeduction: 1000,
+        otherDeductions: 500,
+        esi: 0
+      },
+      payslipId: "PS-2023-12-2"
+    },
+    {
+      id: 3,
+      employee: { name: "Lana Steiner", avatar: "LS" },
+      position: "UI/UX Designer",
+      department: "Design",
+      salary: 65000,
+      lastIncrement: "2023-07-01",
+      status: "Paid",
+      allowances: {
+        basicSalary: 28000,
+        hra: 14000,
+        conveyanceAllowance: 4000,
+        medicalAllowance: 2500,
+        specialAllowance: 9000,
+        otherAllowances: 1500
+      },
+      deductions: {
+        incomeTax: 5000,
+        providentFund: 2800,
+        professionalTax: 200,
+        loanDeduction: 0,
+        otherDeductions: 300,
+        esi: 0
+      },
+      payslipId: "PS-2023-12-3"
+    },
+  ]);
+  const [salaryFormDialogOpen, setSalaryFormDialogOpen] = useState(false);
+  const [payslipHistoryDialogOpen, setPayslipHistoryDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeSalary | null>(null);
-  const [isGeneratingSalarySlip, setIsGeneratingSalarySlip] = useState(false);
-  const [isOpenPayslipHistory, setIsOpenPayslipHistory] = useState(false);
-  const [customerId, setCustomerId] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const isMobile = useIsMobile();
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        if (user) {
-          const customer = await getCurrentCustomer(user);
-          if (customer) {
-            setCustomerId(customer.customerid);
-            
-            const employeeList = await getEmployees(customer.customerid);
-            const salaries = await getSalaries(customer.customerid);
-            
-            const employeeSalaryData = await Promise.all(employeeList.map(async (emp: Employee) => {
-              const salaryInfo = salaries.find((s: SalaryType) => s.employeeid === emp.employeeid);
-              return {
-                id: emp.employeeid,
-                employee: { 
-                  name: `${emp.firstname} ${emp.lastname}`, 
-                  avatar: emp.firstname.charAt(0) + emp.lastname.charAt(0) 
-                },
-                position: emp.jobtitle || 'Employee',
-                department: '',
-                salary: salaryInfo ? salaryInfo.netsalary : (emp.salary || 0),
-                lastIncrement: salaryInfo ? salaryInfo.effectivedate : new Date().toISOString(),
-                status: salaryInfo ? 'Paid' : 'Pending',
-                allowances: {
-                  basicSalary: salaryInfo ? salaryInfo.basesalary : (emp.salary || 0) * 0.6,
-                  hra: (emp.salary || 0) * 0.2,
-                  conveyanceAllowance: 1500,
-                  medicalAllowance: 1000,
-                  specialAllowance: 2000,
-                  otherAllowances: 1000
-                },
-                deductions: {
-                  incomeTax: (emp.salary || 0) * 0.1,
-                  providentFund: (emp.salary || 0) * 0.12,
-                  professionalTax: 200,
-                  loanDeduction: 0,
-                  otherDeductions: 0,
-                  esi: (emp.salary || 0) * 0.0075
-                }
-              };
-            }));
-            
-            const deptMap = new Map();
-            for (const emp of employeeSalaryData) {
-              const employee = employeeList.find(e => e.employeeid === emp.id);
-              if (employee && employee.department) {
-                if (!deptMap.has(employee.department)) {
-                  try {
-                    const { name } = await import('@/services/departmentService')
-                      .then(module => module.getDepartmentById(employee.department));
-                    deptMap.set(employee.department, name || 'Unknown');
-                  } catch (error) {
-                    console.error(`Failed to get department name for id ${employee.department}:`, error);
-                    deptMap.set(employee.department, 'Unknown');
-                  }
-                }
-                emp.department = deptMap.get(employee.department);
-              } else {
-                emp.department = 'Unassigned';
-              }
-            }
-            
-            setEmployees(employeeSalaryData);
-            
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const trendData = months.map(month => ({
-              month,
-              amount: Math.floor(Math.random() * 50000) + 50000
-            }));
-            setSalaryData(trendData);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching salary data:", error);
-        toast({
-          title: "Error loading salary data",
-          description: "Could not load salary information. Please try again later.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [user]);
 
   const handleGenerateSalarySlip = (employee: EmployeeSalary) => {
     setSelectedEmployee(employee);
-    setIsGeneratingSalarySlip(true);
   };
 
-  const handleViewPayslipHistory = (employee: EmployeeSalary) => {
-    setSelectedEmployee(employee);
-    setIsOpenPayslipHistory(true);
+  const handleViewPayslip = (payslipId: string) => {
+    // Implementation for viewing payslip
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <SidebarNav />
-      <div className="flex-1 overflow-auto">
-        <UserHeader title="Salary Management" />
-        <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
-          <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent flex items-center">
-              Salary Management
-              <Sparkles className="h-5 w-5 ml-2 text-yellow-400 animate-pulse-slow" />
-            </h1>
-            <div className="h-1 w-20 bg-gradient-to-r from-nexhr-primary to-purple-600 mt-1 mb-3 rounded-full"></div>
-            <p className="text-gray-600">Manage employee salaries and generate payslips</p>
-          </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Salary Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="employees" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="employees">Employees</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+            <TabsContent value="employees">
+              <div>
+                <Button onClick={() => setSalaryFormDialogOpen(true)}>Add Salary Details</Button>
+              </div>
+            </TabsContent>
+            <TabsContent value="reports">
+              <div>
+                {/* Reports content here */}
+                <p>Salary Reports Content</p>
+              </div>
+            </TabsContent>
+            <TabsContent value="settings">
+              <div>
+                {/* Settings content here */}
+                <p>Salary Settings Content</p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="bg-muted">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="salaries">Employee Salaries</TabsTrigger>
-                <TabsTrigger value="payroll">Payroll</TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="bg-white"
-                onClick={() => {}}
-              >
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              <Button onClick={() => setIsOpenSalaryForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Salary
-              </Button>
-            </div>
-          </div>
-
-          <TabsContent value="overview" className="mt-0 space-y-4">
-            <SalaryStats 
-              customerId={customerId} 
-              isLoading={isLoading}
-            />
-            <SalaryTrends data={salaryData} />
-          </TabsContent>
-
-          <TabsContent value="salaries" className="mt-0">
-            <SalaryListSection
-              employees={employees}
-              onGenerateSalarySlip={handleGenerateSalarySlip}
-              onViewLatestPayslip={handleViewPayslipHistory}
-            />
-          </TabsContent>
-
-          <TabsContent value="payroll" className="mt-0">
-            <div className="bg-white shadow rounded-lg p-6 text-center">
-              <h3 className="text-lg font-medium mb-2">Payroll Processing</h3>
-              <p className="text-gray-500 mb-4">
-                Manage monthly payroll, tax deductions, and salary disbursements.
-              </p>
-              <Button>Process Payroll</Button>
-            </div>
-          </TabsContent>
-        </div>
-      </div>
+      <SalaryListSection 
+        employees={employees} 
+        onGenerateSalarySlip={handleGenerateSalarySlip}
+      />
 
       <SalaryFormDialog
-        open={isOpenSalaryForm}
-        onOpenChange={setIsOpenSalaryForm}
-        employeeList={employees.map((emp) => ({
+        open={salaryFormDialogOpen}
+        onOpenChange={setSalaryFormDialogOpen}
+        onClose={() => setSalaryFormDialogOpen(false)}
+        onSave={() => {/* Save logic */}}
+        employeeList={employees.map(emp => ({
           id: emp.id,
           name: emp.employee.name,
           department: emp.department,
@@ -211,38 +157,29 @@ const SalaryPage = () => {
       />
 
       {selectedEmployee && (
-        <>
-          <Sheet open={isGeneratingSalarySlip} onOpenChange={setIsGeneratingSalarySlip}>
-            <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
-              <SheetHeader className="mb-4">
-                <SheetTitle>Salary Slip</SheetTitle>
-              </SheetHeader>
-              <SalarySlipGenerator employee={selectedEmployee} />
-              <SheetFooter className="mt-4">
-                <Button>
-                  <Download className="mr-2 h-4 w-4" /> Download PDF
-                </Button>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
-
-          <PayslipHistoryDialog
-            open={isOpenPayslipHistory}
-            onOpenChange={setIsOpenPayslipHistory}
-            payslips={[
-              { id: "PS-2023-08", employee: selectedEmployee.employee.name, period: "August 2023", amount: 6250, date: "2023-08-31" },
-              { id: "PS-2023-07", employee: selectedEmployee.employee.name, period: "July 2023", amount: 6250, date: "2023-07-31" },
-              { id: "PS-2023-06", employee: selectedEmployee.employee.name, period: "June 2023", amount: 6250, date: "2023-06-30" },
-              { id: "PS-2023-05", employee: selectedEmployee.employee.name, period: "May 2023", amount: 6000, date: "2023-05-31" }
-            ]}
-            onViewPayslip={(id) => {
-              console.log("View payslip:", id);
-            }}
-          />
-        </>
+        <Sheet open={!!selectedEmployee} onOpenChange={() => setSelectedEmployee(null)}>
+          <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
+            <SheetHeader className="mb-4">
+              <SheetTitle>Salary Slip</SheetTitle>
+            </SheetHeader>
+            <SalarySlipGenerator employee={selectedEmployee} />
+            <SheetFooter className="mt-4">
+              <Button>
+                <Download className="mr-2 h-4 w-4" /> Download PDF
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       )}
+
+      <PayslipHistoryDialog
+        open={payslipHistoryDialogOpen}
+        onOpenChange={setPayslipHistoryDialogOpen}
+        payslips={[/* mock payslip data */]}
+        onViewPayslip={handleViewPayslip}
+      />
     </div>
   );
 };
 
-export default SalaryPage;
+export default Salary;

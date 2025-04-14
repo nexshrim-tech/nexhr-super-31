@@ -75,6 +75,47 @@ export type Database = {
           },
         ]
       }
+      attendancesettings: {
+        Row: {
+          created_at: string | null
+          customerid: number | null
+          geofencingenabled: boolean | null
+          id: number
+          latethreshold: string | null
+          photoverificationenabled: boolean | null
+          workendtime: string | null
+          workstarttime: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customerid?: number | null
+          geofencingenabled?: boolean | null
+          id?: number
+          latethreshold?: string | null
+          photoverificationenabled?: boolean | null
+          workendtime?: string | null
+          workstarttime?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customerid?: number | null
+          geofencingenabled?: boolean | null
+          id?: number
+          latethreshold?: string | null
+          photoverificationenabled?: boolean | null
+          workendtime?: string | null
+          workstarttime?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendancesettings_customerid_fkey"
+            columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+        ]
+      }
       customer: {
         Row: {
           accountcreationdate: string | null
@@ -473,6 +514,119 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customer"
             referencedColumns: ["customerid"]
+          },
+        ]
+      }
+      salary: {
+        Row: {
+          allowances: number | null
+          bankaccountnumber: string | null
+          bankname: string | null
+          basesalary: number
+          currency: string | null
+          customerid: number | null
+          deductions: number | null
+          effectivedate: string
+          employeeid: number | null
+          enddate: string | null
+          ifsccode: string | null
+          lastpaymentdate: string | null
+          netsalary: number
+          paycycle: string | null
+          paymentmethod: string | null
+          paymentreference: string | null
+          salaryid: number
+        }
+        Insert: {
+          allowances?: number | null
+          bankaccountnumber?: string | null
+          bankname?: string | null
+          basesalary: number
+          currency?: string | null
+          customerid?: number | null
+          deductions?: number | null
+          effectivedate: string
+          employeeid?: number | null
+          enddate?: string | null
+          ifsccode?: string | null
+          lastpaymentdate?: string | null
+          netsalary: number
+          paycycle?: string | null
+          paymentmethod?: string | null
+          paymentreference?: string | null
+          salaryid?: number
+        }
+        Update: {
+          allowances?: number | null
+          bankaccountnumber?: string | null
+          bankname?: string | null
+          basesalary?: number
+          currency?: string | null
+          customerid?: number | null
+          deductions?: number | null
+          effectivedate?: string
+          employeeid?: number | null
+          enddate?: string | null
+          ifsccode?: string | null
+          lastpaymentdate?: string | null
+          netsalary?: number
+          paycycle?: string | null
+          paymentmethod?: string | null
+          paymentreference?: string | null
+          salaryid?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_customerid_fkey"
+            columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+          {
+            foreignKeyName: "salary_employeeid_fkey"
+            columns: ["employeeid"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["employeeid"]
+          },
+        ]
+      }
+      salaryallowancededuction: {
+        Row: {
+          amount: number
+          id: number
+          ispercentage: boolean | null
+          ispermanent: boolean | null
+          name: string
+          salaryid: number | null
+          type: string
+        }
+        Insert: {
+          amount: number
+          id?: number
+          ispercentage?: boolean | null
+          ispermanent?: boolean | null
+          name: string
+          salaryid?: number | null
+          type: string
+        }
+        Update: {
+          amount?: number
+          id?: number
+          ispercentage?: boolean | null
+          ispermanent?: boolean | null
+          name?: string
+          salaryid?: number | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salaryallowancededuction_salaryid_fkey"
+            columns: ["salaryid"]
+            isOneToOne: false
+            referencedRelation: "salary"
+            referencedColumns: ["salaryid"]
           },
         ]
       }

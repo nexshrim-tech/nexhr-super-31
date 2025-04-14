@@ -1,11 +1,12 @@
 
 import { ReactNode } from 'react';
 import { EmployeeSalary, PayslipRecord } from './salary';
+import { Dispatch, SetStateAction } from 'react';
 
 // Define prop types for components
 export interface TodaysAttendanceProps {
-  customerId: number | null;
-  isLoading: boolean;
+  customerId?: number | null;
+  isLoading?: boolean;
 }
 
 export interface EmployeeFiltersProps {
@@ -31,6 +32,8 @@ export interface EmployeeEditDialogProps {
 export interface SalaryFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onClose?: () => void;
+  onSave?: (formData: any) => void;
   employeeList: {
     id: number;
     name: string;
@@ -40,9 +43,7 @@ export interface SalaryFormDialogProps {
 }
 
 export interface SalarySlipGeneratorProps {
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  employee: EmployeeSalary;
+  employee: EmployeeSalary; // Change from optional to required
 }
 
 export interface PayslipHistoryDialogProps {
