@@ -75,6 +75,47 @@ export type Database = {
           },
         ]
       }
+      attendancesettings: {
+        Row: {
+          created_at: string | null
+          customerid: number | null
+          geofencingenabled: boolean | null
+          id: number
+          latethreshold: string | null
+          photoverificationenabled: boolean | null
+          workendtime: string | null
+          workstarttime: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customerid?: number | null
+          geofencingenabled?: boolean | null
+          id?: number
+          latethreshold?: string | null
+          photoverificationenabled?: boolean | null
+          workendtime?: string | null
+          workstarttime?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customerid?: number | null
+          geofencingenabled?: boolean | null
+          id?: number
+          latethreshold?: string | null
+          photoverificationenabled?: boolean | null
+          workendtime?: string | null
+          workstarttime?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendancesettings_customerid_fkey"
+            columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+        ]
+      }
       customer: {
         Row: {
           accountcreationdate: string | null
@@ -292,6 +333,69 @@ export type Database = {
           },
         ]
       }
+      expense: {
+        Row: {
+          amount: number
+          approvedby: string | null
+          attachmentpath: string | null
+          category: string
+          created_at: string | null
+          customerid: number | null
+          date: string
+          description: string
+          employeeid: number | null
+          expenseid: number
+          notes: string | null
+          status: string
+          submittedby: string
+        }
+        Insert: {
+          amount: number
+          approvedby?: string | null
+          attachmentpath?: string | null
+          category: string
+          created_at?: string | null
+          customerid?: number | null
+          date: string
+          description: string
+          employeeid?: number | null
+          expenseid?: number
+          notes?: string | null
+          status?: string
+          submittedby: string
+        }
+        Update: {
+          amount?: number
+          approvedby?: string | null
+          attachmentpath?: string | null
+          category?: string
+          created_at?: string | null
+          customerid?: number | null
+          date?: string
+          description?: string
+          employeeid?: number | null
+          expenseid?: number
+          notes?: string | null
+          status?: string
+          submittedby?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_customerid_fkey"
+            columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+          {
+            foreignKeyName: "expense_employeeid_fkey"
+            columns: ["employeeid"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["employeeid"]
+          },
+        ]
+      }
       payroll: {
         Row: {
           baseamount: number | null
@@ -413,6 +517,119 @@ export type Database = {
           },
         ]
       }
+      salary: {
+        Row: {
+          allowances: number | null
+          bankaccountnumber: string | null
+          bankname: string | null
+          basesalary: number
+          currency: string | null
+          customerid: number | null
+          deductions: number | null
+          effectivedate: string
+          employeeid: number | null
+          enddate: string | null
+          ifsccode: string | null
+          lastpaymentdate: string | null
+          netsalary: number
+          paycycle: string | null
+          paymentmethod: string | null
+          paymentreference: string | null
+          salaryid: number
+        }
+        Insert: {
+          allowances?: number | null
+          bankaccountnumber?: string | null
+          bankname?: string | null
+          basesalary: number
+          currency?: string | null
+          customerid?: number | null
+          deductions?: number | null
+          effectivedate: string
+          employeeid?: number | null
+          enddate?: string | null
+          ifsccode?: string | null
+          lastpaymentdate?: string | null
+          netsalary: number
+          paycycle?: string | null
+          paymentmethod?: string | null
+          paymentreference?: string | null
+          salaryid?: number
+        }
+        Update: {
+          allowances?: number | null
+          bankaccountnumber?: string | null
+          bankname?: string | null
+          basesalary?: number
+          currency?: string | null
+          customerid?: number | null
+          deductions?: number | null
+          effectivedate?: string
+          employeeid?: number | null
+          enddate?: string | null
+          ifsccode?: string | null
+          lastpaymentdate?: string | null
+          netsalary?: number
+          paycycle?: string | null
+          paymentmethod?: string | null
+          paymentreference?: string | null
+          salaryid?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_customerid_fkey"
+            columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+          {
+            foreignKeyName: "salary_employeeid_fkey"
+            columns: ["employeeid"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["employeeid"]
+          },
+        ]
+      }
+      salaryallowancededuction: {
+        Row: {
+          amount: number
+          id: number
+          ispercentage: boolean | null
+          ispermanent: boolean | null
+          name: string
+          salaryid: number | null
+          type: string
+        }
+        Insert: {
+          amount: number
+          id?: number
+          ispercentage?: boolean | null
+          ispermanent?: boolean | null
+          name: string
+          salaryid?: number | null
+          type: string
+        }
+        Update: {
+          amount?: number
+          id?: number
+          ispercentage?: boolean | null
+          ispermanent?: boolean | null
+          name?: string
+          salaryid?: number | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salaryallowancededuction_salaryid_fkey"
+            columns: ["salaryid"]
+            isOneToOne: false
+            referencedRelation: "salary"
+            referencedColumns: ["salaryid"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -429,27 +646,29 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -457,20 +676,22 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -478,20 +699,22 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -499,21 +722,23 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -522,6 +747,12 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

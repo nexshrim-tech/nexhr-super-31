@@ -20,6 +20,7 @@ import NotFound from "@/pages/NotFound";
 import Posts from "@/pages/Posts";
 import ProjectManagement from "@/pages/ProjectManagement";
 import Salary from "@/pages/Salary";
+import Settings from "@/pages/Settings";
 import TasksReminders from "@/pages/TasksReminders";
 import Track from "@/pages/Track";
 import AllEmployees from "@/pages/AllEmployees";
@@ -72,6 +73,7 @@ function AppRoutes() {
         <Route path="/salary" element={<RequireAuth><Salary /></RequireAuth>} />
         <Route path="/tasks-reminders" element={<RequireAuth><TasksReminders /></RequireAuth>} />
         <Route path="/track" element={<RequireAuth><Track /></RequireAuth>} />
+        <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
