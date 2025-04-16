@@ -30,7 +30,7 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
       throw error;
     }
 
-    return (data || []) as unknown as AttendanceSettings[];
+    return data as AttendanceSettings[];
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
     throw error;
@@ -58,7 +58,7 @@ export const updateAttendanceSettings = async (
       throw new Error('No data returned after update');
     }
 
-    return data as unknown as AttendanceSettings;
+    return data as AttendanceSettings;
   } catch (error) {
     console.error('Error in updateAttendanceSettings:', error);
     throw error;
@@ -84,7 +84,7 @@ export const createAttendanceSettings = async (
       throw new Error('No data returned after creation');
     }
 
-    return data as unknown as AttendanceSettings;
+    return data as AttendanceSettings;
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);
     throw error;

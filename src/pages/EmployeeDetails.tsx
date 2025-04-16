@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Link } from "react-router-dom";
-import SidebarNav from "@/components/SidebarNav";
+import React, { useState } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Eye, Trash, FileText, Key } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
+import SidebarNav from "@/components/SidebarNav";
 import { Employee } from "@/services/employeeService";
 import { adaptEmployeeData } from "@/components/employees/EmployeeAdapter";
 
@@ -25,6 +24,8 @@ import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import PayslipDialog from "@/components/employees/PayslipDialog";
 import OfficialDocumentsDialog from "@/components/employees/OfficialDocumentsDialog";
 import PasswordChangeDialog from "@/components/employees/PasswordChangeDialog";
+import EmployeeActions from "@/components/employees/EmployeeActions";
+import ConfirmDeleteDialog from "@/components/employees/ConfirmDeleteDialog";
 
 const employeeData = {
   id: "EMP001",
@@ -78,7 +79,6 @@ const EmployeeDetails = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [showOfficialDocsDialog, setShowOfficialDocsDialog] = useState(false);
-
   const [isEditMode, setIsEditMode] = useState(false);
   const [adaptedEmployee, setAdaptedEmployee] = useState<Employee>(adaptEmployeeData(employeeData));
   const [employeeForm, setEmployeeForm] = useState(employeeData);
@@ -319,54 +319,17 @@ const EmployeeDetails = () => {
             onViewDetails={handleViewDetails}
           />
 
-          <div className="flex flex-wrap justify-between mt-8 mb-4 gap-4">
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" className="gap-2" onClick={() => setPayslipDialogOpen(true)}>
-                <FileText className="h-4 w-4" />
-                View Payslips
-              </Button>
-              <Button 
-                variant="outline" 
-                className="gap-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                onClick={() => setIsPasswordDialogOpen(true)}
-              >
-                <Key className="h-4 w-4" />
-                Change Password
-              </Button>
-              <Button 
-                variant="outline" 
-                className="gap-2 bg-purple-50 text-purple-700 hover:bg-purple-100"
-                onClick={() => setShowOfficialDocsDialog(true)}
-              >
-                <FileText className="h-4 w-4" />
-                Official Documents
-              </Button>
-            </div>
-            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-              <DialogTrigger asChild>
-                <Button variant="destructive" className="px-8">
-                  <Trash className="h-4 w-4 mr-2" />
-                  Remove
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Remove Employee</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to remove {employee.name} from the system? This action cannot be undone.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter className="mt-4">
-                  <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button variant="destructive" onClick={handleRemoveEmployee}>
-                    Remove
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <EmployeeActions
+            onViewPayslips={() => setPayslipDialogOpen(true)}
+            onChangePassword={() => setIsPasswordDialogOpen(true)}
+            onViewOfficialDocs={() => setShowOfficialDocsDialog(true)}
+            employeeName={employee.name}
+          />
+
+          <ConfirmDeleteDialog 
+            employeeName={employee.name}
+            onConfirmDelete={handleRemoveEmployee}
+          />
 
           <DocumentUpdateDialog 
             type={documentEditDialog}
