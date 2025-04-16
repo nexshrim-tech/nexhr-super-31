@@ -1,25 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle,
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ArrowLeft, Eye, Trash, FileText, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
+import { Employee } from "@/services/employeeService";
+import { adaptEmployeeData } from "@/components/employees/EmployeeAdapter";
 
 import EmployeeProfileCard from "@/components/employees/EmployeeProfileCard";
 import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
@@ -33,6 +24,7 @@ import DocumentUpdateDialog from "@/components/employees/DocumentUpdateDialog";
 import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import PayslipDialog from "@/components/employees/PayslipDialog";
 import OfficialDocumentsDialog from "@/components/employees/OfficialDocumentsDialog";
+import PasswordChangeDialog from "@/components/employees/PasswordChangeDialog";
 
 const employeeData = {
   id: "EMP001",
@@ -85,11 +77,10 @@ const EmployeeDetails = () => {
   const { features } = useSubscription();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showOfficialDocsDialog, setShowOfficialDocsDialog] = useState(false);
 
   const [isEditMode, setIsEditMode] = useState(false);
+  const [adaptedEmployee, setAdaptedEmployee] = useState<Employee>(adaptEmployeeData(employeeData));
   const [employeeForm, setEmployeeForm] = useState(employeeData);
   const { toast } = useToast();
   
@@ -387,7 +378,7 @@ const EmployeeDetails = () => {
           <EmployeeEditDialog
             isOpen={editDialogOpen}
             onOpenChange={setEditDialogOpen}
-            employee={employeeData}
+            employee={adaptedEmployee}
             onSave={() => {
               setEditDialogOpen(false);
               toast({
@@ -403,42 +394,11 @@ const EmployeeDetails = () => {
             payslips={payslipsData}
           />
 
-          <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Change Password</DialogTitle>
-                <DialogDescription>
-                  Set a new password for {employee.name}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">New Password</Label>
-                  <Input 
-                    id="new-password" 
-                    type="password" 
-                    placeholder="Enter new password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <Input 
-                    id="confirm-password" 
-                    type="password" 
-                    placeholder="Confirm new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handlePasswordChange}>Update Password</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <PasswordChangeDialog
+            isOpen={isPasswordDialogOpen}
+            onOpenChange={setIsPasswordDialogOpen}
+            employee={adaptedEmployee}
+          />
 
           <OfficialDocumentsDialog 
             isOpen={showOfficialDocsDialog}
