@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -11,7 +10,6 @@ export interface Employee {
   joiningdate?: string;
   profilepicturepath?: string;
   customerid?: number;
-  // Additional fields
   phonenumber?: string;
   address?: string;
   salary?: number;
