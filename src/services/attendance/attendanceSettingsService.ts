@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AttendanceSettings {
@@ -11,7 +10,9 @@ export interface AttendanceSettings {
   workstarttime: string;
 }
 
-type AttendanceSettingsUpdate = Partial<Omit<AttendanceSettings, 'attendancesettingid'>>;
+type AttendanceSettingsData = Omit<AttendanceSettings, 'attendancesettingid'>;
+
+type AttendanceSettingsUpdate = Partial<AttendanceSettingsData>;
 
 export const getAttendanceSettings = async (employeeId?: number): Promise<AttendanceSettings[]> => {
   try {
@@ -39,7 +40,7 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
 
 export const updateAttendanceSettings = async (
   id: number, 
-  settings: AttendanceSettingsUpdate
+  settings: Partial<AttendanceSettingsData>
 ): Promise<AttendanceSettings> => {
   try {
     const { data, error } = await supabase
@@ -66,7 +67,7 @@ export const updateAttendanceSettings = async (
 };
 
 export const createAttendanceSettings = async (
-  settings: Omit<AttendanceSettings, 'attendancesettingid'>
+  settings: AttendanceSettingsData
 ): Promise<AttendanceSettings> => {
   try {
     const { data, error } = await supabase

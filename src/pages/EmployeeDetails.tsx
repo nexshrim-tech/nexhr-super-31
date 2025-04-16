@@ -1,31 +1,20 @@
 import React, { useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft } from "lucide-react";
+import { useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
 import SidebarNav from "@/components/SidebarNav";
 import { Employee } from "@/services/employeeService";
 import { adaptEmployeeData } from "@/components/employees/EmployeeAdapter";
-
 import EmployeeProfileCard from "@/components/employees/EmployeeProfileCard";
-import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
-import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
-import EmployeeBankTab from "@/components/employees/tabs/EmployeeBankTab";
-import EmployeeDocumentsTab from "@/components/employees/tabs/EmployeeDocumentsTab";
 import EmployeeTasksSection from "@/components/employees/EmployeeTasksSection";
 import EmployeeAssetsSection from "@/components/employees/EmployeeAssetsSection";
 import EmployeeDocumentsSection from "@/components/employees/EmployeeDocumentsSection";
-import DocumentUpdateDialog from "@/components/employees/DocumentUpdateDialog";
-import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
-import PayslipDialog from "@/components/employees/PayslipDialog";
-import OfficialDocumentsDialog from "@/components/employees/OfficialDocumentsDialog";
-import PasswordChangeDialog from "@/components/employees/PasswordChangeDialog";
 import EmployeeActions from "@/components/employees/EmployeeActions";
 import ConfirmDeleteDialog from "@/components/employees/ConfirmDeleteDialog";
+import EmployeeDetailsHeader from "@/components/employees/EmployeeDetailsHeader";
+import EmployeeMainInfo from "@/components/employees/EmployeeMainInfo";
+import EmployeeDialogs from "@/components/employees/EmployeeDialogs";
 
 const employeeData = {
   id: "EMP001",
@@ -90,25 +79,27 @@ const EmployeeDetails = () => {
   const [documentEditDialog, setDocumentEditDialog] = useState<'aadhar' | 'pan' | null>(null);
   const [payslipDialogOpen, setPayslipDialogOpen] = useState(false);
 
+  const handleEmployeeActions = {
+    handleGeofencingToggle,
+    handleDocumentUpload,
+    handleInputChange,
+    handleSelectChange,
+    handleBankDetailsChange,
+    handleDownload,
+    handleViewDetails,
+    handleRemoveEmployee,
+    handleEditProfile,
+    handleSaveProfile,
+    handleCancelEdit
+  };
+
   if (!features.employeeManagement) {
     return (
       <div className="flex h-full bg-gray-50">
         <SidebarNav />
         <div className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h1 className="text-2xl font-semibold">Employee Details</h1>
-                <p className="text-gray-500">View and manage employee information</p>
-              </div>
-              <Link to="/">
-                <Button variant="outline" className="gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back
-                </Button>
-              </Link>
-            </div>
-            
+            <EmployeeDetailsHeader />
             <FeatureLock 
               title="Employee Management Feature"
               description="Subscribe to a plan to unlock the ability to view and manage employees in your organization."
@@ -119,204 +110,42 @@ const EmployeeDetails = () => {
     );
   }
 
-  const handleGeofencingToggle = (checked: boolean) => {
-    setGeofencingEnabled(checked);
-    toast({
-      title: "Geofencing setting updated",
-      description: `Geofencing has been ${checked ? 'enabled' : 'disabled'} for ${employee.name}`,
-    });
-  };
-
-  const handleDocumentUpload = (type: 'aadhar' | 'pan') => {
-    toast({
-      title: "Document updated",
-      description: `${type === 'aadhar' ? 'Aadhar' : 'PAN'} card has been updated successfully.`,
-    });
-    setDocumentEditDialog(null);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setEmployeeForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (field: string, value: string) => {
-    setEmployeeForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleBankDetailsChange = (field: string, value: string) => {
-    setEmployeeForm((prev) => ({
-      ...prev,
-      bankDetails: {
-        ...prev.bankDetails,
-        [field]: value
-      }
-    }));
-  };
-
-  const handleDownload = (documentType: string) => {
-    toast({
-      title: "Download initiated",
-      description: `${documentType} is being downloaded.`,
-    });
-  };
-
-  const handleViewDetails = (type: string) => {
-    if (type.toLowerCase() === 'salary') {
-      setPayslipDialogOpen(true);
-    } else {
-      toast({
-        title: `${type} details`,
-        description: `Viewing ${type.toLowerCase()} details for ${employee.name}.`,
-      });
-    }
-  };
-
-  const handleRemoveEmployee = () => {
-    setShowDeleteDialog(false);
-    toast({
-      title: "Employee removed",
-      description: `${employee.name} has been removed from the system.`,
-      variant: "destructive",
-    });
-    setTimeout(() => {
-      navigate("/all-employees");
-    }, 1500);
-  };
-
-  const handleEditProfile = () => {
-    setIsEditMode(true);
-    toast({
-      title: "Edit mode",
-      description: "You can now edit the employee profile.",
-    });
-  };
-
-  const handleSaveProfile = () => {
-    setIsEditMode(false);
-    toast({
-      title: "Profile updated",
-      description: "Employee profile has been updated successfully.",
-    });
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditMode(false);
-    setEmployeeForm(employeeData);
-  };
-
-  const handlePasswordChange = () => {
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure both passwords match.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 8 characters long.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    toast({
-      title: "Password updated",
-      description: `Password has been updated for ${employee.name}.`
-    });
-    setIsPasswordDialogOpen(false);
-    setNewPassword("");
-    setConfirmPassword("");
-  };
-
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
       <div className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-semibold">All Employees</h1>
-              <p className="text-gray-500">Employee details</p>
-            </div>
-            <Link to="/all-employees">
-              <Button variant="outline" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </Button>
-            </Link>
-          </div>
+          <EmployeeDetailsHeader />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <EmployeeProfileCard 
               employee={employee}
               isEditMode={isEditMode}
-              onEditProfile={handleEditProfile}
-              onCancelEdit={handleCancelEdit}
-              onSaveProfile={handleSaveProfile}
-              onInputChange={handleInputChange}
+              onEditProfile={handleEmployeeActions.handleEditProfile}
+              onCancelEdit={handleEmployeeActions.handleCancelEdit}
+              onSaveProfile={handleEmployeeActions.handleSaveProfile}
+              onInputChange={handleEmployeeActions.handleInputChange}
             />
 
-            <Card className="lg:col-span-2">
-              <CardContent className="p-6">
-                <Tabs defaultValue="personal" className="space-y-4">
-                  <TabsList>
-                    <TabsTrigger value="personal">Personal</TabsTrigger>
-                    <TabsTrigger value="work">Work</TabsTrigger>
-                    <TabsTrigger value="bank">Bank Details</TabsTrigger>
-                    <TabsTrigger value="documents">Documents</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="personal">
-                    <EmployeePersonalTab 
-                      employee={employee}
-                      isEditMode={isEditMode}
-                      onInputChange={handleInputChange}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="work">
-                    <EmployeeWorkTab 
-                      employee={employee}
-                      geofencingEnabled={geofencingEnabled}
-                      onGeofencingToggle={handleGeofencingToggle}
-                      isEditMode={isEditMode}
-                      onInputChange={handleInputChange}
-                      onSelectChange={handleSelectChange}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="bank">
-                    <EmployeeBankTab 
-                      bankDetails={employee.bankDetails} 
-                      isEditMode={isEditMode}
-                      onBankDetailsChange={handleBankDetailsChange}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="documents">
-                    <EmployeeDocumentsTab 
-                      onDownload={handleDownload}
-                      onEditDocument={(type) => setDocumentEditDialog(type)}
-                    />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+            <EmployeeMainInfo 
+              employee={employee}
+              isEditMode={isEditMode}
+              geofencingEnabled={geofencingEnabled}
+              onGeofencingToggle={handleEmployeeActions.handleGeofencingToggle}
+              onInputChange={handleEmployeeActions.handleInputChange}
+              onSelectChange={handleEmployeeActions.handleSelectChange}
+              onBankDetailsChange={handleEmployeeActions.handleBankDetailsChange}
+              onDownload={handleEmployeeActions.handleDownload}
+              onEditDocument={(type) => setDocumentEditDialog(type)}
+            />
           </div>
 
           <EmployeeTasksSection tasks={employee.tasks} />
-
           <EmployeeAssetsSection assets={employee.assets} />
-
           <EmployeeDocumentsSection 
             leaves={employee.leaves}
-            onDownload={handleDownload}
-            onViewDetails={handleViewDetails}
+            onDownload={handleEmployeeActions.handleDownload}
+            onViewDetails={handleEmployeeActions.handleViewDetails}
           />
 
           <EmployeeActions
@@ -328,45 +157,31 @@ const EmployeeDetails = () => {
 
           <ConfirmDeleteDialog 
             employeeName={employee.name}
-            onConfirmDelete={handleRemoveEmployee}
+            onConfirmDelete={handleEmployeeActions.handleRemoveEmployee}
           />
 
-          <DocumentUpdateDialog 
-            type={documentEditDialog}
-            isOpen={documentEditDialog !== null}
-            onClose={() => setDocumentEditDialog(null)}
-            onUpload={handleDocumentUpload}
-          />
-
-          <EmployeeEditDialog
-            isOpen={editDialogOpen}
-            onOpenChange={setEditDialogOpen}
-            employee={adaptedEmployee}
-            onSave={() => {
+          <EmployeeDialogs 
+            documentEditDialog={documentEditDialog}
+            editDialogOpen={editDialogOpen}
+            payslipDialogOpen={payslipDialogOpen}
+            isPasswordDialogOpen={isPasswordDialogOpen}
+            showOfficialDocsDialog={showOfficialDocsDialog}
+            employee={employee}
+            adaptedEmployee={adaptedEmployee}
+            payslips={payslipsData}
+            onDocumentUpload={handleEmployeeActions.handleDocumentUpload}
+            onCloseDocumentDialog={() => setDocumentEditDialog(null)}
+            setEditDialogOpen={setEditDialogOpen}
+            setPayslipDialogOpen={setPayslipDialogOpen}
+            setIsPasswordDialogOpen={setIsPasswordDialogOpen}
+            setShowOfficialDocsDialog={setShowOfficialDocsDialog}
+            onEditSave={() => {
               setEditDialogOpen(false);
               toast({
                 title: "Profile updated",
                 description: "Employee profile has been updated successfully.",
               });
             }}
-          />
-
-          <PayslipDialog
-            isOpen={payslipDialogOpen}
-            onOpenChange={setPayslipDialogOpen}
-            payslips={payslipsData}
-          />
-
-          <PasswordChangeDialog
-            isOpen={isPasswordDialogOpen}
-            onOpenChange={setIsPasswordDialogOpen}
-            employee={adaptedEmployee}
-          />
-
-          <OfficialDocumentsDialog 
-            isOpen={showOfficialDocsDialog}
-            onClose={() => setShowOfficialDocsDialog(false)}
-            employeeName={employee.name}
           />
         </div>
       </div>
