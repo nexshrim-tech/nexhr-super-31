@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -8,7 +9,21 @@ import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sparkles, Key, Eye, Edit, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { 
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter 
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -31,6 +46,8 @@ const AllEmployees = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -100,7 +117,7 @@ const AllEmployees = () => {
 
     toast({
       title: "Password updated",
-      description: `Password has been updated for ${selectedEmployee.firstname} ${selectedEmployee.lastname}.`
+      description: `Password has been updated for ${selectedEmployee?.firstname} ${selectedEmployee?.lastname}.`
     });
     setIsPasswordDialogOpen(false);
     setNewPassword("");

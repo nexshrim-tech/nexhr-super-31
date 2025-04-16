@@ -30,7 +30,7 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
       throw error;
     }
 
-    return (data || []) as AttendanceSettings[];
+    return data as AttendanceSettings[] || [];
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
     throw error;
@@ -90,4 +90,3 @@ export const createAttendanceSettings = async (
     throw error;
   }
 };
-
