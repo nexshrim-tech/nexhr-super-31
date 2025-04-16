@@ -41,9 +41,17 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
   }
 };
 
+// Fixed type definition to avoid deep recursion
 export const updateAttendanceSettings = async (
   id: number, 
-  settings: Partial<AttendanceSettings>
+  settings: {
+    geofencingenabled?: boolean;
+    latethreshold?: string;
+    photoverificationenabled?: boolean;
+    workstarttime?: string;
+    customerid?: number;
+    employeeid?: number;
+  }
 ): Promise<AttendanceSettings> => {
   try {
     const { data, error } = await supabase
@@ -71,8 +79,16 @@ export const updateAttendanceSettings = async (
   }
 };
 
+// Fixed type definition to avoid deep recursion
 export const createAttendanceSettings = async (
-  settings: Omit<AttendanceSettings, 'attendancesettingid'>
+  settings: {
+    geofencingenabled: boolean;
+    latethreshold: string;
+    photoverificationenabled: boolean;
+    workstarttime: string;
+    customerid?: number;
+    employeeid?: number;
+  }
 ): Promise<AttendanceSettings> => {
   try {
     const { data, error } = await supabase
@@ -99,8 +115,16 @@ export const createAttendanceSettings = async (
   }
 };
 
+// Fixed type definition to avoid deep recursion
 export const bulkCreateAttendanceSettings = async (
-  settings: Omit<AttendanceSettings, 'attendancesettingid'>[]
+  settings: {
+    geofencingenabled: boolean;
+    latethreshold: string;
+    photoverificationenabled: boolean;
+    workstarttime: string;
+    customerid?: number;
+    employeeid?: number;
+  }[]
 ): Promise<AttendanceSettings[]> => {
   try {
     const { data, error } = await supabase
