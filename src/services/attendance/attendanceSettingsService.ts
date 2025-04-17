@@ -17,7 +17,7 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
   try {
     let query = supabase
       .from('attendancesettings')
-      .select('*');
+      .select();
     
     if (employeeId) {
       query = query.eq('employeeid', employeeId);

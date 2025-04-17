@@ -144,7 +144,6 @@ const AllEmployees = () => {
           </CardContent>
         </Card>
 
-        {/* Dialogs */}
         <EmployeeEditDialog 
           isOpen={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}

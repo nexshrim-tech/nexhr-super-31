@@ -163,7 +163,7 @@ const AddEmployee = () => {
           department: departmentValue,
           employeestatus: 'Active',
           // Important: set the customerid for RLS policies to work
-          customerid: 1, // Placeholder - this should come from your auth context
+          customerid: 1, // This is required for Supabase RLS policies
         };
         
         console.log("Submitting employee data to database:", employeeData);
@@ -180,12 +180,12 @@ const AddEmployee = () => {
         // Navigate back to employee list
         setTimeout(() => {
           navigate("/all-employees");
-        }, 1000);
+        }, 500);
       } catch (error) {
         console.error("Error saving employee:", error);
         toast({
           title: "Error adding employee",
-          description: "There was a problem adding the employee to the database. Please check the console for details.",
+          description: "There was a problem adding the employee to the database. Please try again.",
           variant: "destructive",
         });
       } finally {

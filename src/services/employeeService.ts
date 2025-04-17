@@ -34,7 +34,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
   try {
     let query = supabase
       .from('employee')
-      .select('*');
+      .select();
     
     if (customerId) {
       query = query.eq('customerid', customerId);
@@ -58,7 +58,7 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
   try {
     const { data, error } = await supabase
       .from('employee')
-      .select('*')
+      .select()
       .eq('employeeid', id)
       .single();
 
@@ -86,6 +86,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     // Ensure customerid is set
     if (!employee.customerid) {
       console.warn('Warning: customerid not provided, using default value');
+      employee.customerid = 1; // Default value for customerid
     }
     
     // Convert any string numbers to actual numbers
@@ -105,7 +106,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     const { data, error } = await supabase
       .from('employee')
       .insert([formattedEmployee])
-      .select('*')
+      .select()
       .single();
 
     if (error) {
@@ -127,7 +128,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       .from('employee')
       .update(employee)
       .eq('employeeid', id)
-      .select('*')
+      .select()
       .single();
 
     if (error) {
