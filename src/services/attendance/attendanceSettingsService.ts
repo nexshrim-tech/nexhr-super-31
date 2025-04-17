@@ -2,27 +2,30 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AttendanceSettings {
-  attendancesettingid?: number;
+  id?: number;
   customerid?: number;
   employeeid?: number;
   geofencingenabled: boolean;
   latethreshold: string;
   photoverificationenabled: boolean;
   workstarttime: string;
+  workendtime?: string;
+  created_at?: string;
 }
 
-type AttendanceSettingsData = Omit<AttendanceSettings, 'attendancesettingid'>;
+type AttendanceSettingsData = Omit<AttendanceSettings, 'id'>;
 
 export const getAttendanceSettings = async (employeeId?: number): Promise<AttendanceSettings[]> => {
   try {
     let query = supabase
-      .from('attendancesettings');
+      .from('attendancesettings')
+      .select();
     
     if (employeeId) {
       query = query.eq('employeeid', employeeId);
     }
     
-    const { data, error } = await query.select();
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching attendance settings:', error);
@@ -44,7 +47,7 @@ export const updateAttendanceSettings = async (
     const { data, error } = await supabase
       .from('attendancesettings')
       .update(settings)
-      .eq('attendancesettingid', id)
+      .eq('id', id)
       .select()
       .single();
 
