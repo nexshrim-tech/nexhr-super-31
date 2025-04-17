@@ -1,10 +1,14 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { Download, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const EmployeeListHeader: React.FC = () => {
+interface EmployeeListHeaderProps {
+  onAddEmployee: () => void;
+}
+
+const EmployeeListHeader: React.FC<EmployeeListHeaderProps> = ({ onAddEmployee }) => {
   return (
     <div className="flex justify-between items-center mb-6">
       <div>
@@ -12,12 +16,10 @@ const EmployeeListHeader: React.FC = () => {
         <p className="text-gray-500">Manage your organization's employees</p>
       </div>
       <div className="flex gap-2">
-        <Link to="/add-employee">
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Employee
-          </Button>
-        </Link>
+        <Button className="flex items-center gap-2" onClick={onAddEmployee}>
+          <Plus className="h-4 w-4" />
+          Add Employee
+        </Button>
         <Button variant="outline" className="flex items-center gap-2">
           <Download className="h-4 w-4" />
           Export

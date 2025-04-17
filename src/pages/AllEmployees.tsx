@@ -5,7 +5,7 @@ import { Layout } from "@/components/ui/layout";
 import { Sparkles, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { getEmployees, Employee, addEmployee } from "@/services/employeeService";
+import { getEmployees, Employee } from "@/services/employeeService";
 import { Button } from "@/components/ui/button";
 import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import EmployeeFilters from "@/components/employees/EmployeeFilters";
@@ -101,7 +101,7 @@ const AllEmployees = () => {
           </p>
         </div>
 
-        <EmployeeListHeader />
+        <EmployeeListHeader onAddEmployee={handleAddNewEmployee} />
         <TodaysAttendance />
 
         <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300 animate-scale-in rounded-lg overflow-hidden">

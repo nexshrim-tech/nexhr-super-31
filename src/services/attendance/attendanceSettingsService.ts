@@ -54,7 +54,7 @@ export const updateAttendanceSettings = async (
       throw error;
     }
 
-    return data as AttendanceSettings;
+    return data;
   } catch (error) {
     console.error('Error in updateAttendanceSettings:', error);
     throw error;
@@ -76,7 +76,7 @@ export const createAttendanceSettings = async (
       throw error;
     }
 
-    return data as AttendanceSettings;
+    return data;
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);
     throw error;
