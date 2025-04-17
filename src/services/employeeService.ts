@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -75,10 +76,36 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
 
 export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promise<Employee> => {
   try {
+    console.log('Adding employee with data:', employee);
+    
+    // Ensure the employee object has the required fields
+    if (!employee.firstname || !employee.lastname || !employee.email) {
+      throw new Error('Employee must have firstname, lastname, and email');
+    }
+    
+    // Ensure customerid is set
+    if (!employee.customerid) {
+      console.warn('Warning: customerid not provided, using default value');
+    }
+    
+    // Convert any string numbers to actual numbers
+    const formattedEmployee = {
+      ...employee,
+      department: employee.department ? 
+        (typeof employee.department === 'string' ? parseInt(employee.department) : employee.department) : 
+        undefined,
+      salary: employee.salary ? 
+        (typeof employee.salary === 'string' ? parseFloat(employee.salary) : employee.salary) : 
+        undefined,
+      monthlysalary: employee.monthlysalary ? 
+        (typeof employee.monthlysalary === 'string' ? parseFloat(employee.monthlysalary) : employee.monthlysalary) : 
+        undefined
+    };
+    
     const { data, error } = await supabase
       .from('employee')
-      .insert([employee])
-      .select()
+      .insert([formattedEmployee])
+      .select('*')
       .single();
 
     if (error) {
@@ -86,6 +113,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw error;
     }
 
+    console.log('Employee added successfully:', data);
     return data;
   } catch (error) {
     console.error('Error in addEmployee:', error);
@@ -99,7 +127,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       .from('employee')
       .update(employee)
       .eq('employeeid', id)
-      .select()
+      .select('*')
       .single();
 
     if (error) {

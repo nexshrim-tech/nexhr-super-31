@@ -141,6 +141,17 @@ const AddEmployee = () => {
       try {
         console.log("Preparing to add employee with data:", formData);
         
+        // Parse department value correctly
+        let departmentValue: number | undefined = undefined;
+        if (formData.department) {
+          try {
+            departmentValue = parseInt(formData.department);
+            if (isNaN(departmentValue)) departmentValue = undefined;
+          } catch (e) {
+            console.error("Error parsing department value:", e);
+          }
+        }
+        
         // Convert form data to employee object
         const employeeData = {
           firstname: formData.firstName,
@@ -149,10 +160,9 @@ const AddEmployee = () => {
           phonenumber: formData.phone,
           jobtitle: formData.jobTitle,
           joiningdate: formData.joinDate || undefined,
-          department: formData.department ? parseInt(formData.department) : undefined,
+          department: departmentValue,
           employeestatus: 'Active',
-          // Make sure we're including the customerid if available from context
-          // This is likely the key issue with saving to the database
+          // Important: set the customerid for RLS policies to work
           customerid: 1, // Placeholder - this should come from your auth context
         };
         
