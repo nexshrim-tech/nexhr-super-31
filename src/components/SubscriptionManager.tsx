@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Star, Check, ChevronRight, Zap } from "lucide-react";
+import { CreditCard, Star, Check, ChevronRight, Zap, Calendar } from "lucide-react";
 import { useSubscription } from '@/context/SubscriptionContext';
 
 const SubscriptionManager: React.FC = () => {
@@ -37,6 +37,17 @@ const SubscriptionManager: React.FC = () => {
       default:
         return ["Limited features available"];
     }
+  };
+
+  // Calculate renewal date (for display purposes)
+  const getRenewalDate = () => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
 
   return (
@@ -75,6 +86,10 @@ const SubscriptionManager: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                <Calendar className="h-4 w-4" />
+                <span>Renews on {getRenewalDate()}</span>
+              </div>
               <h4 className="font-medium text-gray-700 flex items-center gap-2">
                 <Zap className="h-4 w-4 text-nexhr-primary" /> Plan features:
               </h4>
@@ -95,7 +110,7 @@ const SubscriptionManager: React.FC = () => {
       <CardFooter className="bg-gray-50 flex justify-between border-t py-4">
         <div className="text-sm text-gray-500">
           {plan !== "None" 
-            ? "Your subscription renews on the 15th of each month" 
+            ? "Your subscription is active and automatically renews" 
             : "No payment information required for free trial"
           }
         </div>
