@@ -200,7 +200,6 @@ const AddEmployee = () => {
     }
   };
 
-  
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
@@ -219,8 +218,6 @@ const AddEmployee = () => {
             </Link>
           </div>
 
-          
-          
           <div className="grid md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
               <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300">
@@ -594,7 +591,6 @@ const AddEmployee = () => {
                       </div>
                     </TabsContent>
 
-                    
                     <TabsContent value="documents" className="space-y-4">
                       <div className="grid grid-cols-2 gap-6">
                         <Card>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/ui/layout";
@@ -28,7 +27,9 @@ const AllEmployees = () => {
   const loadEmployees = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching employees...');
       const data = await getEmployees();
+      console.log('Employees loaded:', data);
       setEmployees(data);
     } catch (error) {
       console.error('Error loading employees:', error);
@@ -45,6 +46,16 @@ const AllEmployees = () => {
   useEffect(() => {
     loadEmployees();
   }, []);
+
+  useEffect(() => {
+    const fromAddEmployee = window.location.pathname === '/all-employees' && 
+                           document.referrer.includes('/add-employee');
+    
+    if (fromAddEmployee) {
+      console.log('Detected navigation from Add Employee page, refreshing list...');
+      loadEmployees();
+    }
+  }, [window.location.pathname]);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearch = 
