@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Layout } from "@/components/ui/layout";
 import { Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +23,7 @@ const AllEmployees = () => {
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const loadEmployees = async () => {
@@ -47,15 +49,13 @@ const AllEmployees = () => {
     loadEmployees();
   }, []);
 
+  // Listen for route changes to refresh data when navigating to this page
   useEffect(() => {
-    const fromAddEmployee = window.location.pathname === '/all-employees' && 
-                           document.referrer.includes('/add-employee');
-    
-    if (fromAddEmployee) {
-      console.log('Detected navigation from Add Employee page, refreshing list...');
+    if (location.pathname === '/all-employees') {
+      console.log('Employee directory page loaded, refreshing employee list...');
       loadEmployees();
     }
-  }, [window.location.pathname]);
+  }, [location.pathname]);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearch = 

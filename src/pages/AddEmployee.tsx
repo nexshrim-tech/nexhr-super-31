@@ -162,7 +162,7 @@ const AddEmployee = () => {
           joiningdate: formData.joinDate || undefined,
           department: departmentValue,
           employeestatus: 'Active',
-          // Important: set the customerid for RLS policies to work
+          // Set the customerid for RLS policies to work
           customerid: 1, // This is required for Supabase RLS policies
         };
         
