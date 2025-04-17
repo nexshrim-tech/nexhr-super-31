@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/ui/layout";
-import { Sparkles } from "lucide-react";
+import { Sparkles, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { getEmployees, Employee } from "@/services/employeeService";
+import { getEmployees, Employee, addEmployee } from "@/services/employeeService";
+import { Button } from "@/components/ui/button";
 import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import EmployeeFilters from "@/components/employees/EmployeeFilters";
 import EmployeeListHeader from "@/components/employees/EmployeeListHeader";
@@ -19,28 +20,33 @@ const AllEmployees = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isNewEmployeeDialogOpen, setIsNewEmployeeDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const loadEmployees = async () => {
-      try {
-        const data = await getEmployees();
-        setEmployees(data);
-      } catch (error) {
-        console.error('Error loading employees:', error);
-        toast({
-          title: "Error loading employees",
-          description: "There was a problem loading the employee list.",
-          variant: "destructive",
-        });
-      }
-    };
+  const loadEmployees = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getEmployees();
+      setEmployees(data);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+      toast({
+        title: "Error loading employees",
+        description: "There was a problem loading the employee list.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadEmployees();
-  }, [toast]);
+  }, []);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearch = 
@@ -70,12 +76,15 @@ const AllEmployees = () => {
     setIsPasswordDialogOpen(true);
   };
 
-  const handleSaveEmployee = () => {
+  const handleAddNewEmployee = () => {
+    setSelectedEmployee(null);
+    setIsNewEmployeeDialogOpen(true);
+  };
+
+  const handleSaveEmployee = (updatedEmployee?: Employee) => {
+    loadEmployees(); // Reload the employee list to get the latest data from the server
     setIsEditDialogOpen(false);
-    toast({
-      title: "Employee updated",
-      description: "Employee information has been updated successfully."
-    });
+    setIsNewEmployeeDialogOpen(false);
   };
 
   return (
@@ -105,12 +114,21 @@ const AllEmployees = () => {
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
                 </span>
               </CardTitle>
-              <EmployeeFilters 
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                departmentFilter={departmentFilter}
-                setDepartmentFilter={setDepartmentFilter}
-              />
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={handleAddNewEmployee}
+                  className="bg-nexhr-primary hover:bg-purple-700"
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add Employee
+                </Button>
+                <EmployeeFilters 
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  departmentFilter={departmentFilter}
+                  setDepartmentFilter={setDepartmentFilter}
+                />
+              </div>
             </div>
           </CardHeader>
           
@@ -120,6 +138,7 @@ const AllEmployees = () => {
               onViewEmployee={handleViewEmployee}
               onEditEmployee={handleEditEmployee}
               onPasswordChange={handlePasswordChange}
+              isLoading={isLoading}
             />
             
             <div className="p-4">
@@ -137,6 +156,14 @@ const AllEmployees = () => {
           onOpenChange={setIsEditDialogOpen}
           employee={selectedEmployee}
           onSave={handleSaveEmployee}
+        />
+
+        <EmployeeEditDialog 
+          isOpen={isNewEmployeeDialogOpen}
+          onOpenChange={setIsNewEmployeeDialogOpen}
+          employee={null}
+          onSave={handleSaveEmployee}
+          isNewEmployee={true}
         />
 
         <PasswordChangeDialog
