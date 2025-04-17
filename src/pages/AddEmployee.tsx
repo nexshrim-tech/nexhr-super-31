@@ -139,6 +139,8 @@ const AddEmployee = () => {
       setIsSubmitting(true);
       
       try {
+        console.log("Preparing to add employee with data:", formData);
+        
         // Convert form data to employee object
         const employeeData = {
           firstname: formData.firstName,
@@ -147,12 +149,18 @@ const AddEmployee = () => {
           phonenumber: formData.phone,
           jobtitle: formData.jobTitle,
           joiningdate: formData.joinDate || undefined,
+          department: formData.department ? parseInt(formData.department) : undefined,
           employeestatus: 'Active',
-          // Add any other fields you need
+          // Make sure we're including the customerid if available from context
+          // This is likely the key issue with saving to the database
+          customerid: 1, // Placeholder - this should come from your auth context
         };
         
+        console.log("Submitting employee data to database:", employeeData);
+        
         // Save employee to database
-        await addEmployee(employeeData);
+        const result = await addEmployee(employeeData);
+        console.log("Employee added successfully:", result);
         
         toast({
           title: "Employee added successfully",
@@ -167,7 +175,7 @@ const AddEmployee = () => {
         console.error("Error saving employee:", error);
         toast({
           title: "Error adding employee",
-          description: "There was a problem adding the employee to the system.",
+          description: "There was a problem adding the employee to the database. Please check the console for details.",
           variant: "destructive",
         });
       } finally {

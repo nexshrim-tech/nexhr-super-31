@@ -46,7 +46,7 @@ export const updateAttendanceSettings = async (
       .from('attendancesettings')
       .update(settings)
       .eq('attendancesettingid', id)
-      .select()
+      .select('*')
       .single();
 
     if (error) {
@@ -68,7 +68,7 @@ export const createAttendanceSettings = async (
     const { data, error } = await supabase
       .from('attendancesettings')
       .insert([settings])
-      .select()
+      .select('*')
       .single();
 
     if (error) {
