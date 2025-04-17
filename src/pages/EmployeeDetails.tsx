@@ -1,10 +1,12 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
 import SidebarNav from "@/components/SidebarNav";
-import { Employee } from "@/services/employeeService";
+import { Employee, getEmployeeById, updateEmployee, deleteEmployee } from "@/services/employeeService";
+import { getAttendanceSettings, updateAttendanceSettings, createAttendanceSettings } from "@/services/attendance/attendanceSettingsService";
 import { adaptEmployeeData } from "@/components/employees/EmployeeAdapter";
 import EmployeeProfileCard from "@/components/employees/EmployeeProfileCard";
 import EmployeeTasksSection from "@/components/employees/EmployeeTasksSection";
@@ -16,6 +18,7 @@ import EmployeeDetailsHeader from "@/components/employees/EmployeeDetailsHeader"
 import EmployeeMainInfo from "@/components/employees/EmployeeMainInfo";
 import EmployeeDialogs from "@/components/employees/EmployeeDialogs";
 
+// For development/demo purposes only
 const employeeData = {
   id: "EMP001",
   name: "Chisom Chukwukwe",
@@ -62,22 +65,263 @@ const payslipsData = [
 ];
 
 const EmployeeDetails = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { features } = useSubscription();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [showOfficialDocsDialog, setShowOfficialDocsDialog] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [employeeForm, setEmployeeForm] = useState<any>(employeeData);
   const [adaptedEmployee, setAdaptedEmployee] = useState<Employee>(adaptEmployeeData(employeeData));
-  const [employeeForm, setEmployeeForm] = useState(employeeData);
+  const [geofencingEnabled, setGeofencingEnabled] = useState(employeeData.geofencingEnabled);
   const { toast } = useToast();
   
-  const employee = employeeForm;
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [geofencingEnabled, setGeofencingEnabled] = useState(employeeData.geofencingEnabled);
   const [documentEditDialog, setDocumentEditDialog] = useState<'aadhar' | 'pan' | null>(null);
   const [payslipDialogOpen, setPayslipDialogOpen] = useState(false);
+  const [attendanceSettings, setAttendanceSettings] = useState<any>(null);
+
+  // Fetch employee data from Supabase
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      if (id && !isNaN(parseInt(id))) {
+        try {
+          setLoading(true);
+          const employeeId = parseInt(id);
+          const empData = await getEmployeeById(employeeId);
+          
+          if (empData) {
+            setEmployee(empData);
+            // Also update the local form state
+            const formattedEmployee = {
+              ...employeeData,
+              name: `${empData.firstname} ${empData.lastname}`,
+              email: empData.email,
+              phone: empData.phonenumber || '',
+              role: empData.jobtitle || '',
+              department: empData.department?.toString() || '',
+              dob: empData.dateofbirth || '',
+              gender: empData.gender || '',
+              address: empData.address || '',
+              joining: empData.joiningdate || '',
+              status: empData.employeestatus || 'Active',
+            };
+            setEmployeeForm(formattedEmployee);
+            setAdaptedEmployee(empData);
+            
+            // Fetch attendance settings
+            const settings = await getAttendanceSettings(employeeId);
+            if (settings && settings.length > 0) {
+              setAttendanceSettings(settings[0]);
+              setGeofencingEnabled(settings[0].geofencingenabled);
+            }
+          } else {
+            toast({
+              title: "Employee not found",
+              description: "The employee you're looking for doesn't exist or has been removed.",
+              variant: "destructive",
+            });
+            navigate("/all-employees");
+          }
+        } catch (error) {
+          console.error("Error fetching employee:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load employee details. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Using demo data for development
+        setLoading(false);
+      }
+    };
+
+    fetchEmployee();
+  }, [id, navigate, toast]);
+
+  // Handler functions
+  const handleGeofencingToggle = async (value: boolean) => {
+    setGeofencingEnabled(value);
+    
+    if (employee) {
+      try {
+        if (attendanceSettings) {
+          // Update existing settings
+          await updateAttendanceSettings(attendanceSettings.attendancesettingid, {
+            geofencingenabled: value
+          });
+        } else {
+          // Create new settings
+          await createAttendanceSettings({
+            employeeid: employee.employeeid,
+            geofencingenabled: value,
+            photoverificationenabled: false,
+            latethreshold: "15",
+            workstarttime: "09:00:00"
+          });
+        }
+        
+        toast({
+          title: "Settings updated",
+          description: `Geofencing has been ${value ? 'enabled' : 'disabled'} for this employee.`,
+        });
+      } catch (error) {
+        console.error("Error updating geofencing settings:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update geofencing settings. Please try again.",
+          variant: "destructive",
+        });
+        // Revert UI state
+        setGeofencingEnabled(!value);
+      }
+    }
+  };
+
+  const handleDocumentUpload = (type: 'aadhar' | 'pan') => {
+    setDocumentEditDialog(null);
+    toast({
+      title: "Document uploaded",
+      description: `The ${type} document has been uploaded successfully.`,
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEmployeeForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setEmployeeForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleBankDetailsChange = (field: string, value: string) => {
+    setEmployeeForm(prev => ({
+      ...prev,
+      bankDetails: {
+        ...prev.bankDetails,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleDownload = (document: string) => {
+    toast({
+      title: "Download started",
+      description: `The ${document} is being downloaded.`,
+    });
+  };
+
+  const handleViewDetails = () => {
+    toast({
+      title: "View details",
+      description: "Document details view is not implemented in this demo.",
+    });
+  };
+
+  const handleRemoveEmployee = async () => {
+    if (employee) {
+      try {
+        await deleteEmployee(employee.employeeid);
+        
+        toast({
+          title: "Employee removed",
+          description: "The employee has been successfully removed from the system.",
+        });
+        
+        navigate("/all-employees");
+      } catch (error) {
+        console.error("Error removing employee:", error);
+        toast({
+          title: "Error",
+          description: "Failed to remove employee. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Demo mode
+      toast({
+        title: "Demo mode",
+        description: "Employee would be removed in a real application.",
+      });
+      navigate("/all-employees");
+    }
+  };
+
+  const handleEditProfile = () => {
+    setIsEditMode(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (employee) {
+      try {
+        // Map the form data back to the Employee interface
+        const updatedEmployee = {
+          ...employee,
+          firstname: employeeForm.name.split(' ')[0] || '',
+          lastname: employeeForm.name.split(' ')[1] || '',
+          email: employeeForm.email,
+          phonenumber: employeeForm.phone,
+          jobtitle: employeeForm.role,
+          department: employeeForm.department ? parseInt(employeeForm.department) : undefined,
+          dateofbirth: employeeForm.dob,
+          gender: employeeForm.gender,
+          address: employeeForm.address,
+          joiningdate: employeeForm.joining,
+          employeestatus: employeeForm.status
+        };
+        
+        // Update employee in Supabase
+        await updateEmployee(employee.employeeid, updatedEmployee);
+        
+        // Update local state
+        setEmployee(updatedEmployee);
+        setAdaptedEmployee(updatedEmployee);
+        
+        toast({
+          title: "Profile updated",
+          description: "Employee profile has been updated successfully.",
+        });
+      } catch (error) {
+        console.error("Error updating employee:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update employee profile. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    setIsEditMode(false);
+  };
+
+  const handleCancelEdit = () => {
+    // Reset form to current employee data
+    if (employee) {
+      const formattedEmployee = {
+        ...employeeForm,
+        name: `${employee.firstname} ${employee.lastname}`,
+        email: employee.email,
+        phone: employee.phonenumber || '',
+        role: employee.jobtitle || '',
+        department: employee.department?.toString() || '',
+        dob: employee.dateofbirth || '',
+        gender: employee.gender || '',
+        address: employee.address || '',
+        joining: employee.joiningdate || '',
+        status: employee.employeestatus || 'Active',
+      };
+      setEmployeeForm(formattedEmployee);
+    }
+    
+    setIsEditMode(false);
+  };
 
   const handleEmployeeActions = {
     handleGeofencingToggle,
@@ -110,16 +354,32 @@ const EmployeeDetails = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="flex h-full bg-gray-50">
+        <SidebarNav />
+        <div className="flex-1 overflow-auto">
+          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6">
+            <EmployeeDetailsHeader />
+            <div className="flex justify-center items-center h-64">
+              <p className="text-gray-500">Loading employee details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
       <div className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6">
-          <EmployeeDetailsHeader />
+          <EmployeeDetailsHeader employeeName={employeeForm.name} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <EmployeeProfileCard 
-              employee={employee}
+              employee={employeeForm}
               isEditMode={isEditMode}
               onEditProfile={handleEmployeeActions.handleEditProfile}
               onCancelEdit={handleEmployeeActions.handleCancelEdit}
@@ -128,7 +388,7 @@ const EmployeeDetails = () => {
             />
 
             <EmployeeMainInfo 
-              employee={employee}
+              employee={employeeForm}
               isEditMode={isEditMode}
               geofencingEnabled={geofencingEnabled}
               onGeofencingToggle={handleEmployeeActions.handleGeofencingToggle}
@@ -140,10 +400,10 @@ const EmployeeDetails = () => {
             />
           </div>
 
-          <EmployeeTasksSection tasks={employee.tasks} />
-          <EmployeeAssetsSection assets={employee.assets} />
+          <EmployeeTasksSection tasks={employeeForm.tasks} />
+          <EmployeeAssetsSection assets={employeeForm.assets} />
           <EmployeeDocumentsSection 
-            leaves={employee.leaves}
+            leaves={employeeForm.leaves}
             onDownload={handleEmployeeActions.handleDownload}
             onViewDetails={handleEmployeeActions.handleViewDetails}
           />
@@ -152,11 +412,11 @@ const EmployeeDetails = () => {
             onViewPayslips={() => setPayslipDialogOpen(true)}
             onChangePassword={() => setIsPasswordDialogOpen(true)}
             onViewOfficialDocs={() => setShowOfficialDocsDialog(true)}
-            employeeName={employee.name}
+            employeeName={employeeForm.name}
           />
 
           <ConfirmDeleteDialog 
-            employeeName={employee.name}
+            employeeName={employeeForm.name}
             onConfirmDelete={handleEmployeeActions.handleRemoveEmployee}
           />
 

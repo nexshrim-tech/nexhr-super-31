@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AttendanceSettings {
@@ -11,8 +12,6 @@ export interface AttendanceSettings {
 }
 
 type AttendanceSettingsData = Omit<AttendanceSettings, 'attendancesettingid'>;
-
-type AttendanceSettingsUpdate = Partial<AttendanceSettingsData>;
 
 export const getAttendanceSettings = async (employeeId?: number): Promise<AttendanceSettings[]> => {
   try {
