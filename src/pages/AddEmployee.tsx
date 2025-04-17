@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
 import { Checkbox } from "@/components/ui/checkbox";
+import { addEmployee } from "@/services/employeeService";
 
 const AddEmployee = () => {
   const navigate = useNavigate();
@@ -38,6 +38,7 @@ const AddEmployee = () => {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formProgress, setFormProgress] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [documents, setDocuments] = useState({
     aadharCard: null as File | null,
     panCard: null as File | null
@@ -126,29 +127,52 @@ const AddEmployee = () => {
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = "Email is invalid";
     }
-    if (formData.password && formData.password.length < 6) {
-      errors.password = "Password must be at least 6 characters";
-    }
-    if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = "Passwords do not match";
-    }
     
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      toast({
-        title: "Employee information saved",
-        description: "The employee has been successfully added to the system.",
-      });
+      setIsSubmitting(true);
       
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
+      try {
+        // Convert form data to employee object
+        const employeeData = {
+          firstname: formData.firstName,
+          lastname: formData.lastName,
+          email: formData.email,
+          phonenumber: formData.phone,
+          jobtitle: formData.jobTitle,
+          joiningdate: formData.joinDate || undefined,
+          employeestatus: 'Active',
+          // Add any other fields you need
+        };
+        
+        // Save employee to database
+        await addEmployee(employeeData);
+        
+        toast({
+          title: "Employee added successfully",
+          description: "The employee has been successfully added to the system.",
+        });
+        
+        // Navigate back to employee list
+        setTimeout(() => {
+          navigate("/all-employees");
+        }, 1000);
+      } catch (error) {
+        console.error("Error saving employee:", error);
+        toast({
+          title: "Error adding employee",
+          description: "There was a problem adding the employee to the system.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
       toast({
         title: "Validation Error",
@@ -158,6 +182,7 @@ const AddEmployee = () => {
     }
   };
 
+  
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
@@ -168,14 +193,16 @@ const AddEmployee = () => {
               <h1 className="text-2xl font-semibold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent">Add New Employee</h1>
               <p className="text-gray-500">Add a new employee to your organization</p>
             </div>
-            <Link to="/">
+            <Link to="/all-employees">
               <Button variant="outline" className="flex items-center gap-2 border-nexhr-primary text-nexhr-primary hover:bg-nexhr-primary/10">
                 <ArrowLeftCircle className="h-4 w-4" />
-                Back to Dashboard
+                Back to Employee List
               </Button>
             </Link>
           </div>
 
+          
+          
           <div className="grid md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
               <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300">
@@ -549,6 +576,7 @@ const AddEmployee = () => {
                       </div>
                     </TabsContent>
 
+                    
                     <TabsContent value="documents" className="space-y-4">
                       <div className="grid grid-cols-2 gap-6">
                         <Card>
@@ -622,7 +650,12 @@ const AddEmployee = () => {
 
                       <div className="flex justify-end space-x-2 pt-4">
                         <Button variant="outline" onClick={() => setActiveTab("bank")}>Previous</Button>
-                        <Button onClick={handleSubmit}>Save Employee</Button>
+                        <Button 
+                          onClick={handleSubmit} 
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? "Saving..." : "Save Employee"}
+                        </Button>
                       </div>
                     </TabsContent>
                   </Tabs>
