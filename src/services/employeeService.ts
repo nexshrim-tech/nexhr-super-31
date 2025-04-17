@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -32,7 +31,6 @@ export interface Employee {
 
 export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
   try {
-    console.log("Fetching employees with customerId:", customerId);
     let query = supabase
       .from('employee')
       .select('*');
@@ -48,7 +46,6 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       throw error;
     }
 
-    console.log("Fetched employees:", data);
     return data || [];
   } catch (error) {
     console.error('Error in getEmployees:', error);
@@ -78,8 +75,6 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
 
 export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promise<Employee> => {
   try {
-    console.log("Adding employee with data:", employee);
-    
     const { data, error } = await supabase
       .from('employee')
       .insert([employee])
@@ -91,7 +86,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw error;
     }
 
-    console.log("Created employee:", data);
     return data;
   } catch (error) {
     console.error('Error in addEmployee:', error);
@@ -101,8 +95,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
 
 export const updateEmployee = async (id: number, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
   try {
-    console.log("Updating employee ID:", id, "with data:", employee);
-    
     const { data, error } = await supabase
       .from('employee')
       .update(employee)
@@ -115,7 +107,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       throw error;
     }
 
-    console.log("Updated employee:", data);
     return data;
   } catch (error) {
     console.error('Error in updateEmployee:', error);
@@ -125,8 +116,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
 
 export const deleteEmployee = async (id: number): Promise<void> => {
   try {
-    console.log("Deleting employee ID:", id);
-    
     const { error } = await supabase
       .from('employee')
       .delete()
@@ -136,8 +125,6 @@ export const deleteEmployee = async (id: number): Promise<void> => {
       console.error('Error deleting employee:', error);
       throw error;
     }
-    
-    console.log("Employee deleted successfully");
   } catch (error) {
     console.error('Error in deleteEmployee:', error);
     throw error;

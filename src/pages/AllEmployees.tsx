@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/ui/layout";
@@ -13,6 +14,7 @@ import EmployeePagination from "@/components/employees/EmployeePagination";
 import EmployeeTable from "@/components/employees/EmployeeTable";
 import PasswordChangeDialog from "@/components/employees/PasswordChangeDialog";
 import TodaysAttendance from "@/components/TodaysAttendance";
+
 const AllEmployees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,57 +25,70 @@ const AllEmployees = () => {
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   const loadEmployees = async () => {
     setIsLoading(true);
     try {
-      console.log("Loading employees...");
       const data = await getEmployees();
-      console.log("Employees loaded:", data);
       setEmployees(data);
     } catch (error) {
       console.error('Error loading employees:', error);
       toast({
         title: "Error loading employees",
         description: "There was a problem loading the employee list.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
     loadEmployees();
   }, []);
-  const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = employee.firstname.toLowerCase().includes(searchTerm.toLowerCase()) || employee.lastname.toLowerCase().includes(searchTerm.toLowerCase()) || employee.email.toLowerCase().includes(searchTerm.toLowerCase()) || (employee.jobtitle || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment = departmentFilter === "all" || employee.department?.toString() === departmentFilter;
+
+  const filteredEmployees = employees.filter((employee) => {
+    const matchesSearch = 
+      employee.firstname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (employee.jobtitle || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesDepartment = 
+      departmentFilter === "all" || 
+      employee.department?.toString() === departmentFilter;
+    
     return matchesSearch && matchesDepartment;
   });
+
   const handleViewEmployee = (employee: Employee) => {
     navigate(`/employee/${employee.employeeid}`);
   };
+
   const handleEditEmployee = (employee: Employee) => {
     setSelectedEmployee(employee);
     setIsEditDialogOpen(true);
   };
+
   const handlePasswordChange = (employee: Employee) => {
     setSelectedEmployee(employee);
     setIsPasswordDialogOpen(true);
   };
+
   const handleAddNewEmployee = () => {
     setSelectedEmployee(null);
     setIsNewEmployeeDialogOpen(true);
   };
+
   const handleSaveEmployee = (updatedEmployee?: Employee) => {
-    console.log("Employee saved:", updatedEmployee);
     loadEmployees(); // Reload the employee list to get the latest data from the server
     setIsEditDialogOpen(false);
     setIsNewEmployeeDialogOpen(false);
   };
-  return <Layout>
+
+  return (
+    <Layout>
       <div className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6">
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-nexhr-primary to-purple-600 bg-clip-text text-transparent mb-2 animate-fade-in flex items-center">
@@ -100,28 +115,65 @@ const AllEmployees = () => {
                 </span>
               </CardTitle>
               <div className="flex items-center gap-2">
-                
-                <EmployeeFilters searchTerm={searchTerm} setSearchTerm={setSearchTerm} departmentFilter={departmentFilter} setDepartmentFilter={setDepartmentFilter} />
+                <Button 
+                  onClick={handleAddNewEmployee}
+                  className="bg-nexhr-primary hover:bg-purple-700"
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add Employee
+                </Button>
+                <EmployeeFilters 
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                  departmentFilter={departmentFilter}
+                  setDepartmentFilter={setDepartmentFilter}
+                />
               </div>
             </div>
           </CardHeader>
           
           <CardContent className="p-0">
-            <EmployeeTable employees={filteredEmployees} onViewEmployee={handleViewEmployee} onEditEmployee={handleEditEmployee} onPasswordChange={handlePasswordChange} isLoading={isLoading} />
+            <EmployeeTable 
+              employees={filteredEmployees}
+              onViewEmployee={handleViewEmployee}
+              onEditEmployee={handleEditEmployee}
+              onPasswordChange={handlePasswordChange}
+              isLoading={isLoading}
+            />
             
             <div className="p-4">
-              <EmployeePagination filteredCount={filteredEmployees.length} totalCount={employees.length} />
+              <EmployeePagination 
+                filteredCount={filteredEmployees.length} 
+                totalCount={employees.length} 
+              />
             </div>
           </CardContent>
         </Card>
 
         {/* Dialogs */}
-        <EmployeeEditDialog isOpen={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} employee={selectedEmployee} onSave={handleSaveEmployee} />
+        <EmployeeEditDialog 
+          isOpen={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          employee={selectedEmployee}
+          onSave={handleSaveEmployee}
+        />
 
-        <EmployeeEditDialog isOpen={isNewEmployeeDialogOpen} onOpenChange={setIsNewEmployeeDialogOpen} employee={null} onSave={handleSaveEmployee} isNewEmployee={true} />
+        <EmployeeEditDialog 
+          isOpen={isNewEmployeeDialogOpen}
+          onOpenChange={setIsNewEmployeeDialogOpen}
+          employee={null}
+          onSave={handleSaveEmployee}
+          isNewEmployee={true}
+        />
 
-        <PasswordChangeDialog isOpen={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen} employee={selectedEmployee} />
+        <PasswordChangeDialog
+          isOpen={isPasswordDialogOpen}
+          onOpenChange={setIsPasswordDialogOpen}
+          employee={selectedEmployee}
+        />
       </div>
-    </Layout>;
+    </Layout>
+  );
 };
+
 export default AllEmployees;

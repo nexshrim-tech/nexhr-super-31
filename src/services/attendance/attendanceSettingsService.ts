@@ -39,7 +39,7 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
 
 export const updateAttendanceSettings = async (
   id: number, 
-  settings: Partial<AttendanceSettings>
+  settings: Partial<AttendanceSettingsData>
 ): Promise<AttendanceSettings> => {
   try {
     const { data, error } = await supabase
