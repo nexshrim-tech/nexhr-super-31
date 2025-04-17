@@ -38,6 +38,7 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
         email: '',
         jobtitle: '',
         employeestatus: 'Active',
+        customerid: 1, // Default customer ID - you might want to get this from context or elsewhere
       });
     }
   }, [employee, isNewEmployee]);
@@ -61,14 +62,25 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
       let result: Employee;
       
       if (isNewEmployee) {
-        // Create a new employee
-        result = await addEmployee(employeeData as Omit<Employee, 'employeeid'>);
+        // Create a new employee with complete required data
+        console.log("Creating new employee with data:", employeeData);
+        result = await addEmployee({
+          firstname: employeeData.firstname,
+          lastname: employeeData.lastname,
+          email: employeeData.email,
+          jobtitle: employeeData.jobtitle || '',
+          phonenumber: employeeData.phonenumber || '',
+          employeestatus: employeeData.employeestatus || 'Active',
+          customerid: employeeData.customerid || 1,
+        } as Omit<Employee, 'employeeid'>);
+        
         toast({
           title: "Success",
           description: "Employee created successfully",
         });
       } else if (employee?.employeeid) {
         // Update existing employee
+        console.log("Updating employee with ID:", employee.employeeid, "and data:", employeeData);
         result = await updateEmployee(employee.employeeid, employeeData);
         toast({
           title: "Success",

@@ -30,7 +30,9 @@ const AllEmployees = () => {
   const loadEmployees = async () => {
     setIsLoading(true);
     try {
+      console.log("Loading employees...");
       const data = await getEmployees();
+      console.log("Employees loaded:", data);
       setEmployees(data);
     } catch (error) {
       console.error('Error loading employees:', error);
@@ -82,6 +84,7 @@ const AllEmployees = () => {
   };
 
   const handleSaveEmployee = (updatedEmployee?: Employee) => {
+    console.log("Employee saved:", updatedEmployee);
     loadEmployees(); // Reload the employee list to get the latest data from the server
     setIsEditDialogOpen(false);
     setIsNewEmployeeDialogOpen(false);
