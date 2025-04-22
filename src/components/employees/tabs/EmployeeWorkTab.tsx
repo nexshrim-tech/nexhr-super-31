@@ -27,6 +27,9 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
   onInputChange,
   onSelectChange
 }) => {
+  // Ensure department string is lowercase for the select component if it exists
+  const departmentValue = employee.department ? employee.department.toLowerCase() : '';
+  
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -34,7 +37,7 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
           <Label>Department</Label>
           {isEditMode ? (
             <Select 
-              value={employee.department.toLowerCase()} 
+              value={departmentValue} 
               onValueChange={(value) => onSelectChange && onSelectChange("department", value)}
             >
               <SelectTrigger className="mt-1">

@@ -257,7 +257,7 @@ const EmployeeDetails = () => {
           email: employeeForm.email,
           phonenumber: employeeForm.phone,
           jobtitle: employeeForm.role,
-          department: employeeForm.department ? parseInt(employeeForm.department) : undefined,
+          department: employeeForm.department || undefined,
           dateofbirth: employeeForm.dob,
           gender: employeeForm.gender,
           address: employeeForm.address,

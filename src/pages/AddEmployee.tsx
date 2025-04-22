@@ -179,16 +179,6 @@ const AddEmployee = () => {
       try {
         console.log("Preparing to add employee with data:", formData);
         
-        let departmentValue: number | undefined = undefined;
-        if (formData.department) {
-          try {
-            departmentValue = parseInt(formData.department);
-            if (isNaN(departmentValue)) departmentValue = undefined;
-          } catch (e) {
-            console.error("Error parsing department value:", e);
-          }
-        }
-        
         const employeeData = {
           firstname: formData.firstName,
           lastname: formData.lastName,
@@ -196,7 +186,7 @@ const AddEmployee = () => {
           phonenumber: formData.phone || undefined,
           jobtitle: formData.jobTitle || undefined,
           joiningdate: formData.joinDate || undefined,
-          department: departmentValue,
+          department: formData.department || undefined,
           employeestatus: 'Active',
           customerid: 1,
           gender: formData.gender || undefined,

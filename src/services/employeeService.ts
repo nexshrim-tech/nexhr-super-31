@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -159,6 +160,11 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
     if (sanitizedEmployee.dateofbirth === '') sanitizedEmployee.dateofbirth = null;
     if (sanitizedEmployee.terminationdate === '') sanitizedEmployee.terminationdate = null;
     if (sanitizedEmployee.probationenddate === '') sanitizedEmployee.probationenddate = null;
+    
+    // Ensure department is always a string
+    if (sanitizedEmployee.department !== undefined) {
+      sanitizedEmployee.department = String(sanitizedEmployee.department);
+    }
     
     console.log('Updating employee with sanitized data:', sanitizedEmployee);
     
