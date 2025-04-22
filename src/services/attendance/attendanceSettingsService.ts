@@ -81,16 +81,33 @@ export const createAttendanceSettings = async (
       cleanSettings.employeeid = parseInt(cleanSettings.employeeid, 10);
     }
     
-    // Make sure we're passing a properly typed object
-    const typedSettings: {
-      employeeid?: number;
-      geofencingenabled: boolean;
-      latethreshold: string;
-      photoverificationenabled: boolean;
-      workstarttime: string;
-      workendtime?: string;
-      [key: string]: any;
-    } = cleanSettings;
+    // Ensure all required properties are present in the cleanSettings
+    // This is important for TypeScript type checking
+    if (!('geofencingenabled' in cleanSettings)) {
+      cleanSettings.geofencingenabled = false;
+    }
+    
+    if (!('latethreshold' in cleanSettings)) {
+      cleanSettings.latethreshold = '15';
+    }
+    
+    if (!('photoverificationenabled' in cleanSettings)) {
+      cleanSettings.photoverificationenabled = false;
+    }
+    
+    if (!('workstarttime' in cleanSettings)) {
+      cleanSettings.workstarttime = '09:00:00';
+    }
+    
+    // Create a properly typed object to satisfy TypeScript
+    const typedSettings: AttendanceSettingsData = {
+      employeeid: cleanSettings.employeeid,
+      geofencingenabled: Boolean(cleanSettings.geofencingenabled),
+      latethreshold: String(cleanSettings.latethreshold),
+      photoverificationenabled: Boolean(cleanSettings.photoverificationenabled),
+      workstarttime: String(cleanSettings.workstarttime),
+      ...(cleanSettings.workendtime ? { workendtime: String(cleanSettings.workendtime) } : {})
+    };
     
     const { data, error } = await supabase
       .from('attendancesettings')

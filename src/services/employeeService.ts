@@ -112,17 +112,21 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     
     console.log('Submitting formatted employee data to database:', formattedEmployee);
     
-    // Make sure we're passing a properly typed object that includes the required fields
-    // Explicitly type the formattedEmployee to match what Supabase expects
-    const typedEmployee: {
-      firstname: string;
-      lastname: string;
-      email: string;
-      department?: number | null;
-      salary?: number | null;
-      monthlysalary?: number | null;
-      [key: string]: any;
-    } = formattedEmployee;
+    // Ensure the object has all required fields by creating a new properly typed object
+    const typedEmployee = {
+      firstname: formattedEmployee.firstname,
+      lastname: formattedEmployee.lastname,
+      email: formattedEmployee.email,
+      department: formattedEmployee.department,
+      salary: formattedEmployee.salary,
+      monthlysalary: formattedEmployee.monthlysalary,
+      // Include all other fields from formattedEmployee
+      ...Object.fromEntries(
+        Object.entries(formattedEmployee).filter(([key]) => 
+          !['firstname', 'lastname', 'email', 'department', 'salary', 'monthlysalary'].includes(key)
+        )
+      )
+    };
     
     const { data, error } = await supabase
       .from('employee')
