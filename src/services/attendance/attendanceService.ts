@@ -1,6 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { format } from 'date-fns';
+import { markAsAbsent } from "@/utils/attendanceDefaults";
 
 export interface Employee {
   firstname: string;
@@ -22,7 +23,14 @@ export interface AttendanceRecord {
 
 export const getAttendanceForDate = async (date: string): Promise<AttendanceRecord[]> => {
   try {
-    const { data, error } = await supabase
+    // First, get all employees
+    const { data: employees } = await supabase
+      .from('employee')
+      .select('employeeid')
+      .eq('employeestatus', 'Active');
+
+    // Get existing attendance records for the date
+    const { data: existingRecords, error } = await supabase
       .from('attendance')
       .select(`
         *,
@@ -35,7 +43,18 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
       throw error;
     }
 
-    return data || [];
+    // Create a map of existing records by employee ID
+    const existingRecordsMap = new Map(
+      existingRecords?.map(record => [record.employeeid, record]) || []
+    );
+
+    // For each employee, either return their existing record or create a default absent record
+    const allRecords = employees?.map(employee => {
+      return existingRecordsMap.get(employee.employeeid) || 
+             markAsAbsent(employee.employeeid, date);
+    }) || [];
+
+    return allRecords;
   } catch (error) {
     console.error('Error in getAttendanceForDate:', error);
     return [];
@@ -82,3 +101,20 @@ const calculateWorkHours = (checkin: string | null, checkout: string | null): nu
   return parseFloat(diffInHours.toFixed(2));
 };
 
+export const insertDefaultAbsentRecord = async (employeeId: number, date: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('attendance')
+      .insert([markAsAbsent(employeeId, date)]);
+
+    if (error) {
+      toast.error('Error marking attendance as absent');
+      throw error;
+    }
+
+    toast.success('Attendance marked as absent');
+  } catch (error) {
+    console.error('Error in insertDefaultAbsentRecord:', error);
+    toast.error('Failed to mark attendance as absent');
+  }
+};
