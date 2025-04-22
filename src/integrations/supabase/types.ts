@@ -79,6 +79,7 @@ export type Database = {
         Row: {
           created_at: string | null
           customerid: number | null
+          employeeid: number | null
           geofencingenabled: boolean | null
           id: number
           latethreshold: string | null
@@ -89,6 +90,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           customerid?: number | null
+          employeeid?: number | null
           geofencingenabled?: boolean | null
           id?: number
           latethreshold?: string | null
@@ -99,6 +101,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           customerid?: number | null
+          employeeid?: number | null
           geofencingenabled?: boolean | null
           id?: number
           latethreshold?: string | null
@@ -113,6 +116,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customer"
             referencedColumns: ["customerid"]
+          },
+          {
+            foreignKeyName: "attendancesettings_employeeid_fkey"
+            columns: ["employeeid"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["employeeid"]
           },
         ]
       }

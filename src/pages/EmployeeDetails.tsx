@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +17,6 @@ import EmployeeDetailsHeader from "@/components/employees/EmployeeDetailsHeader"
 import EmployeeMainInfo from "@/components/employees/EmployeeMainInfo";
 import EmployeeDialogs from "@/components/employees/EmployeeDialogs";
 
-// For development/demo purposes only
 const employeeData = {
   id: "EMP001",
   name: "Chisom Chukwukwe",
@@ -84,7 +82,6 @@ const EmployeeDetails = () => {
   const [payslipDialogOpen, setPayslipDialogOpen] = useState(false);
   const [attendanceSettings, setAttendanceSettings] = useState<any>(null);
 
-  // Fetch employee data from Supabase
   useEffect(() => {
     const fetchEmployee = async () => {
       if (id && !isNaN(parseInt(id))) {
@@ -95,7 +92,6 @@ const EmployeeDetails = () => {
           
           if (empData) {
             setEmployee(empData);
-            // Also update the local form state
             const formattedEmployee = {
               ...employeeData,
               name: `${empData.firstname} ${empData.lastname}`,
@@ -112,7 +108,6 @@ const EmployeeDetails = () => {
             setEmployeeForm(formattedEmployee);
             setAdaptedEmployee(empData);
             
-            // Fetch attendance settings
             const settings = await getAttendanceSettings(employeeId);
             if (settings && settings.length > 0) {
               setAttendanceSettings(settings[0]);
@@ -137,7 +132,6 @@ const EmployeeDetails = () => {
           setLoading(false);
         }
       } else {
-        // Using demo data for development
         setLoading(false);
       }
     };
@@ -145,19 +139,16 @@ const EmployeeDetails = () => {
     fetchEmployee();
   }, [id, navigate, toast]);
 
-  // Handler functions
   const handleGeofencingToggle = async (value: boolean) => {
     setGeofencingEnabled(value);
     
     if (employee) {
       try {
         if (attendanceSettings) {
-          // Update existing settings
-          await updateAttendanceSettings(attendanceSettings.attendancesettingid, {
+          await updateAttendanceSettings(attendanceSettings.id!, {
             geofencingenabled: value
           });
         } else {
-          // Create new settings
           await createAttendanceSettings({
             employeeid: employee.employeeid,
             geofencingenabled: value,
@@ -178,7 +169,6 @@ const EmployeeDetails = () => {
           description: "Failed to update geofencing settings. Please try again.",
           variant: "destructive",
         });
-        // Revert UI state
         setGeofencingEnabled(!value);
       }
     }
@@ -245,7 +235,6 @@ const EmployeeDetails = () => {
         });
       }
     } else {
-      // Demo mode
       toast({
         title: "Demo mode",
         description: "Employee would be removed in a real application.",
@@ -261,7 +250,6 @@ const EmployeeDetails = () => {
   const handleSaveProfile = async () => {
     if (employee) {
       try {
-        // Map the form data back to the Employee interface
         const updatedEmployee = {
           ...employee,
           firstname: employeeForm.name.split(' ')[0] || '',
@@ -277,10 +265,8 @@ const EmployeeDetails = () => {
           employeestatus: employeeForm.status
         };
         
-        // Update employee in Supabase
         await updateEmployee(employee.employeeid, updatedEmployee);
         
-        // Update local state
         setEmployee(updatedEmployee);
         setAdaptedEmployee(updatedEmployee);
         
@@ -302,7 +288,6 @@ const EmployeeDetails = () => {
   };
 
   const handleCancelEdit = () => {
-    // Reset form to current employee data
     if (employee) {
       const formattedEmployee = {
         ...employeeForm,

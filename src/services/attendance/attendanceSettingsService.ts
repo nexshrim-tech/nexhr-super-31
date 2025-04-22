@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface AttendanceSettings {
   id?: number;
-  customerid?: number;
+  employeeid?: number;
   geofencingenabled: boolean;
   latethreshold: string;
   photoverificationenabled: boolean;
@@ -14,19 +14,16 @@ export interface AttendanceSettings {
 
 type AttendanceSettingsData = Omit<AttendanceSettings, 'id'>;
 
-export const getAttendanceSettings = async (customerId?: number): Promise<AttendanceSettings[]> => {
+export const getAttendanceSettings = async (employeeId?: number): Promise<AttendanceSettings[]> => {
   try {
-    // Create the base query - note we're using select() first to fix the type issue
     const query = supabase
       .from('attendancesettings')
       .select('*');
     
-    // Apply the filter if customerId is provided
-    const finalQuery = customerId 
-      ? query.eq('customerid', customerId)
+    const finalQuery = employeeId 
+      ? query.eq('employeeid', employeeId)
       : query;
     
-    // Execute the query
     const { data, error } = await finalQuery;
 
     if (error) {
