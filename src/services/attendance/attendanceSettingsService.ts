@@ -101,11 +101,11 @@ export const createAttendanceSettings = async (
     
     // Create a properly typed object to satisfy TypeScript
     const typedSettings: AttendanceSettingsData = {
-      employeeid: cleanSettings.employeeid,
       geofencingenabled: Boolean(cleanSettings.geofencingenabled),
       latethreshold: String(cleanSettings.latethreshold),
       photoverificationenabled: Boolean(cleanSettings.photoverificationenabled),
       workstarttime: String(cleanSettings.workstarttime),
+      ...(cleanSettings.employeeid !== undefined ? { employeeid: Number(cleanSettings.employeeid) } : {}),
       ...(cleanSettings.workendtime ? { workendtime: String(cleanSettings.workendtime) } : {})
     };
     

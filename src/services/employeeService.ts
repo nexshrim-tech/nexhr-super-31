@@ -112,15 +112,16 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     
     console.log('Submitting formatted employee data to database:', formattedEmployee);
     
-    // Ensure the object has all required fields by creating a new properly typed object
+    // Make sure we have explicitly defined the required fields
     const typedEmployee = {
-      firstname: formattedEmployee.firstname,
-      lastname: formattedEmployee.lastname,
-      email: formattedEmployee.email,
-      department: formattedEmployee.department,
-      salary: formattedEmployee.salary,
-      monthlysalary: formattedEmployee.monthlysalary,
-      // Include all other fields from formattedEmployee
+      firstname: String(formattedEmployee.firstname),
+      lastname: String(formattedEmployee.lastname),
+      email: String(formattedEmployee.email),
+      // Add optional fields if they exist
+      ...(formattedEmployee.department !== undefined ? { department: formattedEmployee.department } : {}),
+      ...(formattedEmployee.salary !== undefined ? { salary: formattedEmployee.salary } : {}),
+      ...(formattedEmployee.monthlysalary !== undefined ? { monthlysalary: formattedEmployee.monthlysalary } : {}),
+      // Include all other fields
       ...Object.fromEntries(
         Object.entries(formattedEmployee).filter(([key]) => 
           !['firstname', 'lastname', 'email', 'department', 'salary', 'monthlysalary'].includes(key)
