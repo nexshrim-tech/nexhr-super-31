@@ -115,7 +115,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
 export const updateAttendanceRecord = async (
   id: number,
   updates: Partial<AttendanceRecord>
-): Promise<void> => {
+): Promise<AttendanceRecord | null> => {
   try {
     console.log('Updating attendance record:', id, updates);
     
@@ -177,13 +177,16 @@ export const updateAttendanceRecord = async (
       
       console.log('New attendance record created successfully:', data);
       toast.success('New attendance record created successfully');
-      return;
+      
+      // Return the newly created record so the UI can be updated immediately
+      return data?.[0] || null;
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('attendance')
       .update(updatesToSend)
-      .eq('attendanceid', id);
+      .eq('attendanceid', id)
+      .select();
 
     if (error) {
       console.error('Supabase error:', error);
@@ -192,9 +195,13 @@ export const updateAttendanceRecord = async (
     }
 
     toast.success('Attendance record updated successfully');
+    
+    // Return the updated record for UI update
+    return data?.[0] || null;
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);
     toast.error('Failed to update attendance record');
+    return null;
   }
 };
 

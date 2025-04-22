@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getAttendanceForDate, AttendanceRecord } from "@/services/attendance/attendanceService";
+import { getAttendanceForDate, AttendanceRecord, updateAttendanceRecord } from "@/services/attendance/attendanceService";
 
 interface AttendanceTableProps {
   selectedDate: Date;
@@ -47,6 +47,12 @@ const AttendanceTable = ({
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<AttendanceRecord>>({});
+  const [localRecords, setLocalRecords] = useState<AttendanceRecord[]>([]);
+
+  // Update local records whenever the query data changes
+  React.useEffect(() => {
+    setLocalRecords(records);
+  }, [records]);
 
   const renderAttendanceStatus = (status: string | null) => {
     if (!status) return null;
@@ -88,16 +94,41 @@ const AttendanceTable = ({
     });
   };
 
-  const handleSaveEdit = (record: AttendanceRecord) => {
+  const handleSaveEdit = async (record: AttendanceRecord) => {
     const updatedRecord = {
       ...record,
       ...editData
     };
-    handleEditRecord(updatedRecord);
+    
+    // Update record and get the returned data
+    const savedRecord = await updateAttendanceRecord(updatedRecord.attendanceid || 0, updatedRecord);
+    
+    // If we got data back, update the UI immediately
+    if (savedRecord) {
+      // Find the index of the record we just updated
+      const recordIndex = localRecords.findIndex(r => 
+        (r.attendanceid && r.attendanceid === record.attendanceid) || 
+        (!r.attendanceid && r.employeeid === record.employeeid)
+      );
+      
+      if (recordIndex !== -1) {
+        // Create a new array with the updated record
+        const updatedRecords = [...localRecords];
+        updatedRecords[recordIndex] = {
+          ...record,
+          ...savedRecord,
+          // Ensure employee data is preserved
+          employee: record.employee
+        };
+        setLocalRecords(updatedRecords);
+      }
+    }
+    
+    // Reset the editing state
     setEditingId(null);
     setEditData({});
     
-    // Invalidate the query to refetch the data after update
+    // Refresh data from server after a short delay
     setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ['attendance', formattedDate] });
     }, 1000);
@@ -131,6 +162,19 @@ const AttendanceTable = ({
       return '';
     }
   };
+
+  // Use localRecords instead of filteredRecords for rendering
+  const recordsToShow = localRecords.filter(record => {
+    const searchLower = searchTerm.toLowerCase();
+    const employeeName = record.employee 
+      ? `${record.employee.firstname || ''} ${record.employee.lastname || ''}`.toLowerCase()
+      : '';
+    
+    return (
+      employeeName.includes(searchLower) ||
+      (record.status?.toLowerCase() || '').includes(searchLower)
+    );
+  });
 
   if (isError) {
     return (
@@ -193,7 +237,7 @@ const AttendanceTable = ({
                     Loading records...
                   </TableCell>
                 </TableRow>
-              ) : filteredRecords.length > 0 ? filteredRecords.map((record) => (
+              ) : recordsToShow.length > 0 ? recordsToShow.map((record) => (
                 <TableRow key={`emp-${record.employeeid}-${record.attendanceid || 0}`}>
                   <TableCell>
                     <div className="flex items-center gap-3">
