@@ -89,7 +89,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     );
     
     // Handle fields that might come in as strings but need to be numbers
-    const formattedEmployee = {
+    const formattedEmployee: Record<string, any> = {
       ...cleanEmployee,
       salary: cleanEmployee.salary ? 
         (typeof cleanEmployee.salary === 'string' ? parseFloat(cleanEmployee.salary as string) : cleanEmployee.salary) : 
