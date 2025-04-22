@@ -78,7 +78,7 @@ export const createAttendanceSettings = async (
     
     const { data, error } = await supabase
       .from('attendancesettings')
-      .insert([cleanSettings])
+      .insert(cleanSettings)
       .select()
       .single();
 
