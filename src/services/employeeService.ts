@@ -108,7 +108,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     
     console.log('Submitting formatted employee data to database:', formattedEmployee);
     
-    // Make sure we have explicitly defined the required fields
+    // Make sure we have explicitly defined the required fields using the formattedEmployee object
     const typedEmployee = {
       firstname: String(formattedEmployee.firstname),
       lastname: String(formattedEmployee.lastname),
