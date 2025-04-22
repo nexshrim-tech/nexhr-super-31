@@ -83,24 +83,24 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw new Error('Employee must have firstname, lastname, and email');
     }
     
-    // Ensure customerid is set
-    if (!employee.customerid) {
-      console.warn('Warning: customerid not provided, using default value');
-      employee.customerid = 1; // Default value for customerid
-    }
+    // Clean up undefined values to prevent Supabase errors
+    // This ensures that undefined values don't cause issues when inserted
+    const cleanEmployee = Object.fromEntries(
+      Object.entries(employee).filter(([_, value]) => value !== undefined)
+    );
     
     // Handle fields that might come in as strings but need to be numbers
     const formattedEmployee = {
-      ...employee,
-      department: employee.department ? 
-        (typeof employee.department === 'string' ? parseInt(employee.department) : employee.department) : 
-        undefined,
-      salary: employee.salary ? 
-        (typeof employee.salary === 'string' ? parseFloat(employee.salary) : employee.salary) : 
-        undefined,
-      monthlysalary: employee.monthlysalary ? 
-        (typeof employee.monthlysalary === 'string' ? parseFloat(employee.monthlysalary) : employee.monthlysalary) : 
-        undefined
+      ...cleanEmployee,
+      department: cleanEmployee.department ? 
+        (typeof cleanEmployee.department === 'string' ? parseInt(cleanEmployee.department) : cleanEmployee.department) : 
+        null,
+      salary: cleanEmployee.salary ? 
+        (typeof cleanEmployee.salary === 'string' ? parseFloat(cleanEmployee.salary) : cleanEmployee.salary) : 
+        null,
+      monthlysalary: cleanEmployee.monthlysalary ? 
+        (typeof cleanEmployee.monthlysalary === 'string' ? parseFloat(cleanEmployee.monthlysalary) : cleanEmployee.monthlysalary) : 
+        null
     };
     
     // Handle date fields - convert empty strings to null to avoid database errors
@@ -133,8 +133,13 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
 
 export const updateEmployee = async (id: number, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
   try {
+    // Clean up undefined values to prevent Supabase errors
+    const cleanEmployee = Object.fromEntries(
+      Object.entries(employee).filter(([_, value]) => value !== undefined)
+    );
+    
     // Sanitize date fields to avoid database errors
-    const sanitizedEmployee = { ...employee };
+    const sanitizedEmployee = { ...cleanEmployee };
     
     // Convert empty string dates to null
     if (sanitizedEmployee.joiningdate === '') sanitizedEmployee.joiningdate = null;

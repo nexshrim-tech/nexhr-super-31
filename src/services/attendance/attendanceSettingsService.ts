@@ -43,9 +43,14 @@ export const updateAttendanceSettings = async (
   settings: Partial<AttendanceSettings>
 ): Promise<AttendanceSettings> => {
   try {
+    // Clean up undefined values
+    const cleanSettings = Object.fromEntries(
+      Object.entries(settings).filter(([_, value]) => value !== undefined)
+    );
+    
     const { data, error } = await supabase
       .from('attendancesettings')
-      .update(settings)
+      .update(cleanSettings)
       .eq('id', id)
       .select()
       .single();
@@ -66,9 +71,14 @@ export const createAttendanceSettings = async (
   settings: AttendanceSettingsData
 ): Promise<AttendanceSettings> => {
   try {
+    // Clean up undefined values
+    const cleanSettings = Object.fromEntries(
+      Object.entries(settings).filter(([_, value]) => value !== undefined)
+    );
+    
     const { data, error } = await supabase
       .from('attendancesettings')
-      .insert([settings])
+      .insert([cleanSettings])
       .select()
       .single();
 

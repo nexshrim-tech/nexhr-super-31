@@ -82,7 +82,7 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
       let result: Employee;
       
       if (isNewEmployee) {
-        // Ensure customerid is set
+        // Create a new employee
         const newEmployeeData = {
           ...employeeData,
           customerid: customerId || 1,
@@ -182,6 +182,59 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
               id="phonenumber"
               value={employeeData.phonenumber || ''}
               onChange={(e) => handleChange('phonenumber', e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="address" className="text-right">
+              Address
+            </Label>
+            <Input
+              id="address"
+              value={employeeData.address || ''}
+              onChange={(e) => handleChange('address', e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="gender" className="text-right">
+              Gender
+            </Label>
+            <Select 
+              value={employeeData.gender || ''}
+              onValueChange={(value) => handleChange('gender', value)}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Male">Male</SelectItem>
+                <SelectItem value="Female">Female</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="joiningdate" className="text-right">
+              Joining Date
+            </Label>
+            <Input
+              id="joiningdate"
+              type="date"
+              value={employeeData.joiningdate || ''}
+              onChange={(e) => handleChange('joiningdate', e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="dateofbirth" className="text-right">
+              Date of Birth
+            </Label>
+            <Input
+              id="dateofbirth"
+              type="date"
+              value={employeeData.dateofbirth || ''}
+              onChange={(e) => handleChange('dateofbirth', e.target.value)}
               className="col-span-3"
             />
           </div>

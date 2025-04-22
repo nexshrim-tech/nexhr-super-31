@@ -157,13 +157,20 @@ const AddEmployee = () => {
           firstname: formData.firstName,
           lastname: formData.lastName,
           email: formData.email,
-          phonenumber: formData.phone,
-          jobtitle: formData.jobTitle,
+          phonenumber: formData.phone || undefined,
+          jobtitle: formData.jobTitle || undefined,
           joiningdate: formData.joinDate || undefined,
           department: departmentValue,
           employeestatus: 'Active',
           // Set the customerid for RLS policies to work
           customerid: 1, // This is required for Supabase RLS policies
+          // Add more fields from the form
+          gender: formData.gender || undefined,
+          address: formData.address || undefined,
+          city: formData.city || undefined,
+          state: formData.state || undefined,
+          country: formData.country || undefined,
+          postalcode: formData.zip || undefined,
         };
         
         console.log("Submitting employee data to database:", employeeData);
