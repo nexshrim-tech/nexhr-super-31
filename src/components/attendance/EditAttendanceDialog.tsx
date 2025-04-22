@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AttendanceRecord } from "@/services/attendance/attendanceService";
 
-interface EditFormData {
+export interface EditFormData {
   date: string;
   checkintime: string;
   checkouttime: string;

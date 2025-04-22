@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +12,7 @@ import { CalendarRange, Settings } from "lucide-react";
 import AttendanceCalendar from "@/components/attendance/AttendanceCalendar";
 import AttendanceTable from "@/components/attendance/AttendanceTable";
 import AttendancePhotos from "@/components/attendance/AttendancePhotos";
-import EditAttendanceDialog from "@/components/attendance/EditAttendanceDialog";
+import EditAttendanceDialog, { EditFormData } from "@/components/attendance/EditAttendanceDialog";
 import AttendanceSettings from "@/components/attendance/AttendanceSettings";
 import TodaysAttendance from "@/components/TodaysAttendance";
 
@@ -67,10 +68,10 @@ const Attendance = () => {
   const [filterDepartment, setFilterDepartment] = useState("all");
   const [currentRecord, setCurrentRecord] = useState<AttendanceRecord | null>(null);
   const [currentTab, setCurrentTab] = useState("overview");
-  const [editFormData, setEditFormData] = useState({
+  const [editFormData, setEditFormData] = useState<EditFormData>({
     date: "",
-    checkIn: "",
-    checkOut: "",
+    checkintime: "",
+    checkouttime: "",
     status: "",
     notes: "",
   });
@@ -97,8 +98,8 @@ const Attendance = () => {
     
     setEditFormData({
       date: record.date || '',
-      checkIn: checkInTime,
-      checkOut: checkOutTime,
+      checkintime: checkInTime,
+      checkouttime: checkOutTime,
       status: record.status || '',
       notes: record.notes || '',
     });
@@ -114,7 +115,9 @@ const Attendance = () => {
         // Convert form data to database format
         status: editFormData.status,
         notes: editFormData.notes,
-        // Other fields would be handled here
+        checkintime: editFormData.checkintime, 
+        checkouttime: editFormData.checkouttime,
+        date: currentRecord.date
       });
       
       toast({
