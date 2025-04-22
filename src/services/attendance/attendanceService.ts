@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from 'date-fns';
@@ -9,7 +10,7 @@ export interface Employee {
 }
 
 export interface AttendanceRecord {
-  attendanceid: number;
+  attendanceid?: number;
   employeeid: number;
   date: string;
   checkintime: string | null;
@@ -23,11 +24,24 @@ export interface AttendanceRecord {
 
 export const getAttendanceForDate = async (date: string): Promise<AttendanceRecord[]> => {
   try {
+    console.log(`Fetching attendance for date: ${date}`);
+    
     // First, get all employees
-    const { data: employees } = await supabase
+    const { data: employees, error: empError } = await supabase
       .from('employee')
-      .select('employeeid')
+      .select('employeeid, firstname, lastname')
       .eq('employeestatus', 'Active');
+      
+    if (empError) {
+      console.error("Error fetching employees:", empError);
+      toast.error('Error fetching employees');
+      return [];
+    }
+    
+    if (!employees || employees.length === 0) {
+      console.log("No active employees found");
+      return [];
+    }
 
     // Get existing attendance records for the date
     const { data: existingRecords, error } = await supabase
@@ -39,85 +53,58 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
       .eq('date', date);
 
     if (error) {
+      console.error("Error fetching attendance records:", error);
       toast.error('Error fetching attendance records');
-      throw error;
+      return [];
     }
+
+    console.log(`Found ${existingRecords?.length || 0} existing records for date: ${date}`);
 
     // Create a map of existing records by employee ID
     const existingRecordsMap = new Map(
       existingRecords?.map(record => [record.employeeid, record]) || []
     );
 
-    // For employees without records, create and insert default records
-    const employeesWithoutRecords = employees?.filter(employee => 
-      !existingRecordsMap.has(employee.employeeid)
-    ) || [];
-    
-    if (employeesWithoutRecords.length > 0) {
-      console.log(`Creating ${employeesWithoutRecords.length} default records for date: ${date}`);
-      
-      // Generate default records based on current time
-      const defaultRecords = employeesWithoutRecords.map(employee => 
-        generateDefaultAttendance(employee.employeeid, new Date(date))
-      );
-      
-      // Insert the default records into the database
-      const { data: insertedRecords, error: insertError } = await supabase
-        .from('attendance')
-        .insert(defaultRecords)
-        .select(`*, employee:employee(firstname, lastname)`);
-        
-      if (insertError) {
-        console.error('Error inserting default records:', insertError);
-        toast.error('Error creating default records');
-      } else if (insertedRecords) {
-        // Add the newly inserted records to our map
-        insertedRecords.forEach(record => {
-          existingRecordsMap.set(record.employeeid, record);
-        });
-      }
-    }
-
-    // Auto-mark employees as absent after 12 PM if their status is still "Not Marked"
     const now = new Date();
-    const cutoffTime = new Date(date);
+    const currentDate = new Date(date);
+    const cutoffTime = new Date(currentDate);
     cutoffTime.setHours(12, 0, 0, 0);
-
-    if (now > cutoffTime) {
-      const notMarkedRecords = Array.from(existingRecordsMap.values())
-        .filter(record => record.status === 'Not Marked');
-
-      if (notMarkedRecords.length > 0) {
-        console.log(`Auto-marking ${notMarkedRecords.length} records as absent after 12 PM`);
-        
-        const updatePromises = notMarkedRecords.map(record => 
-          supabase
-            .from('attendance')
-            .update({ 
-              status: 'Absent',
-              notes: 'Automatically marked as absent after 12 PM'
-            })
-            .eq('attendanceid', record.attendanceid)
-        );
-
-        await Promise.all(updatePromises);
-
-        // Update the records in our map
-        notMarkedRecords.forEach(record => {
-          if (existingRecordsMap.has(record.employeeid)) {
-            const updatedRecord = {
-              ...record,
-              status: 'Absent',
-              notes: 'Automatically marked as absent after 12 PM'
-            };
-            existingRecordsMap.set(record.employeeid, updatedRecord);
+    
+    // Create default records for display (we won't insert them to the database yet)
+    const allRecords: AttendanceRecord[] = [];
+    
+    for (const employee of employees) {
+      const existingRecord = existingRecordsMap.get(employee.employeeid);
+      
+      if (existingRecord) {
+        // We already have a record for this employee
+        allRecords.push({
+          ...existingRecord,
+          employee: {
+            firstname: employee.firstname,
+            lastname: employee.lastname
+          }
+        });
+      } else {
+        // Create a default record for display
+        const defaultRecord = now < cutoffTime ? 
+          markAsNotMarked(employee.employeeid, date) :
+          markAsAbsent(employee.employeeid, date);
+          
+        // Add employee info to the record
+        allRecords.push({
+          ...defaultRecord,
+          attendanceid: 0, // Use 0 to indicate this is a default record not yet in the database
+          employee: {
+            firstname: employee.firstname,
+            lastname: employee.lastname
           }
         });
       }
     }
 
-    // Return all records
-    return Array.from(existingRecordsMap.values());
+    console.log(`Returning ${allRecords.length} attendance records (including defaults)`);
+    return allRecords;
   } catch (error) {
     console.error('Error in getAttendanceForDate:', error);
     return [];
@@ -156,22 +143,22 @@ export const updateAttendanceRecord = async (
     
     // Calculate work hours if both times are present
     updatesToSend.workhours = calculateWorkHours(
-      updates.checkintime || null, 
-      updates.checkouttime || null
+      updatesToSend.checkintime || null, 
+      updatesToSend.checkouttime || null
     );
     
     console.log('Sending to Supabase:', updatesToSend);
 
-    // Skip the update if the ID is 0, which means it's a default record not yet in the database
+    // If the ID is 0, it means this is a default record not yet in the database
     if (id === 0) {
-      console.warn('Attempted to update record with ID 0. Creating a new record instead.');
-      // Instead, we'll insert a new record
-      const { error: insertError } = await supabase
+      console.log('Creating new attendance record:', updatesToSend);
+      const { data, error: insertError } = await supabase
         .from('attendance')
         .insert({
           ...updatesToSend,
           employeeid: updates.employeeid
-        });
+        })
+        .select();
         
       if (insertError) {
         console.error('Error inserting new attendance record:', insertError);
@@ -179,6 +166,7 @@ export const updateAttendanceRecord = async (
         throw insertError;
       }
       
+      console.log('New attendance record created successfully:', data);
       toast.success('New attendance record created successfully');
       return;
     }
@@ -205,15 +193,19 @@ const calculateWorkHours = (checkin: string | null, checkout: string | null): nu
   if (!checkin || !checkout) return null;
   
   try {
-    // Extract just the time portion if an ISO string
-    const checkInTimeStr = checkin.includes('T') ? checkin.split('T')[1].substring(0, 5) : checkin;
-    const checkOutTimeStr = checkout.includes('T') ? checkout.split('T')[1].substring(0, 5) : checkout;
+    const checkInDate = new Date(checkin);
+    const checkOutDate = new Date(checkout);
     
-    const checkInTime = new Date(`1970-01-01T${checkInTimeStr}`);
-    const checkOutTime = new Date(`1970-01-01T${checkOutTimeStr}`);
+    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+      console.error('Invalid date format for calculating work hours');
+      return null;
+    }
     
-    const diffInHours = (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
-    return parseFloat(diffInHours.toFixed(2));
+    // Calculate difference in hours
+    const diffInMs = checkOutDate.getTime() - checkInDate.getTime();
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+    
+    return Number(diffInHours.toFixed(2));
   } catch (error) {
     console.error('Error calculating work hours:', error);
     return null;

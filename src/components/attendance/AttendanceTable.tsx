@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAttendanceForDate, AttendanceRecord } from "@/services/attendance/attendanceService";
 
 interface AttendanceTableProps {
@@ -26,8 +26,9 @@ const AttendanceTable = ({
   handleEditRecord,
 }: AttendanceTableProps) => {
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+  const queryClient = useQueryClient();
 
-  const { data: records = [], isLoading } = useQuery({
+  const { data: records = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['attendance', formattedDate],
     queryFn: () => getAttendanceForDate(formattedDate)
   });
@@ -65,6 +66,9 @@ const AttendanceTable = ({
       case "half day":
         badgeClass = "bg-purple-100 text-purple-800";
         break;
+      case "not marked":
+        badgeClass = "bg-gray-100 text-gray-800";
+        break;
       default:
         badgeClass = "bg-gray-100 text-gray-800";
     }
@@ -73,12 +77,14 @@ const AttendanceTable = ({
   };
 
   const handleEditClick = (record: AttendanceRecord) => {
-    setEditingId(record.attendanceid);
+    setEditingId(record.attendanceid || 0);
     setEditData({
-      checkintime: record.checkintime,
-      checkouttime: record.checkouttime,
-      status: record.status,
-      notes: record.notes
+      employeeid: record.employeeid,
+      date: record.date,
+      checkintime: record.checkintime ? formatTimeForInput(record.checkintime) : '',
+      checkouttime: record.checkouttime ? formatTimeForInput(record.checkouttime) : '',
+      status: record.status || '',
+      notes: record.notes || ''
     });
   };
 
@@ -90,6 +96,11 @@ const AttendanceTable = ({
     handleEditRecord(updatedRecord);
     setEditingId(null);
     setEditData({});
+    
+    // Invalidate the query to refetch the data after update
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['attendance', formattedDate] });
+    }, 1000);
   };
 
   const handleCancelEdit = () => {
@@ -101,11 +112,47 @@ const AttendanceTable = ({
     if (!dateStr) return "-";
     try {
       const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "-";
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch (error) {
       return "-";
     }
   };
+  
+  const formatTimeForInput = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '';
+      
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
+    } catch (error) {
+      return '';
+    }
+  };
+
+  if (isError) {
+    return (
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>Error Loading Attendance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-red-500">
+            Failed to load attendance data. Please try again.
+            <Button 
+              variant="outline" 
+              className="ml-2"
+              onClick={() => refetch()}
+            >
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="lg:col-span-2">
@@ -147,7 +194,7 @@ const AttendanceTable = ({
                   </TableCell>
                 </TableRow>
               ) : filteredRecords.length > 0 ? filteredRecords.map((record) => (
-                <TableRow key={record.attendanceid}>
+                <TableRow key={`emp-${record.employeeid}-${record.attendanceid || 0}`}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -165,7 +212,7 @@ const AttendanceTable = ({
                     </div>
                   </TableCell>
                   <TableCell>
-                    {editingId === record.attendanceid ? (
+                    {editingId === (record.attendanceid || 0) ? (
                       <Input
                         type="time"
                         value={editData.checkintime || ''}
@@ -177,7 +224,7 @@ const AttendanceTable = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    {editingId === record.attendanceid ? (
+                    {editingId === (record.attendanceid || 0) ? (
                       <Input
                         type="time"
                         value={editData.checkouttime || ''}
@@ -189,7 +236,7 @@ const AttendanceTable = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    {editingId === record.attendanceid ? (
+                    {editingId === (record.attendanceid || 0) ? (
                       <Select
                         value={editData.status || ''}
                         onValueChange={(value) => setEditData({...editData, status: value})}
@@ -202,6 +249,7 @@ const AttendanceTable = ({
                           <SelectItem value="Absent">Absent</SelectItem>
                           <SelectItem value="Late">Late</SelectItem>
                           <SelectItem value="Half Day">Half Day</SelectItem>
+                          <SelectItem value="Not Marked">Not Marked</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (
@@ -210,7 +258,7 @@ const AttendanceTable = ({
                   </TableCell>
                   <TableCell>{record.workhours ? `${record.workhours}h` : '-'}</TableCell>
                   <TableCell className="text-right">
-                    {editingId === record.attendanceid ? (
+                    {editingId === (record.attendanceid || 0) ? (
                       <div className="flex justify-end gap-2">
                         <Button 
                           variant="ghost" 
