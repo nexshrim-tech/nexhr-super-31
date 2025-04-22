@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from 'date-fns';
@@ -51,7 +52,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     // For each employee, either return their existing record or create a default absent record
     const allRecords = employees?.map(employee => {
       return existingRecordsMap.get(employee.employeeid) || 
-             markAsAbsent(employee.employeeid, date);
+             markAsAbsent(employee.employeeid, date) as AttendanceRecord;
     }) || [];
 
     return allRecords;

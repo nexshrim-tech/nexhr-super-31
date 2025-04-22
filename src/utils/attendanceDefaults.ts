@@ -9,7 +9,9 @@ export const markAsAbsent = (employeeId: number, date: string) => {
     checkintime: null,
     checkouttime: null,
     workhours: null,
-    notes: 'Automatically marked as absent'
+    notes: 'Automatically marked as absent',
+    location: null,
+    attendanceid: 0  // This will be assigned by the database when inserted
   };
 };
 
