@@ -16,7 +16,7 @@ interface AttendanceTableProps {
   selectedDate: Date;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  handleEditRecord: (record: any) => void;
+  handleEditRecord: (record: AttendanceRecord) => void;
 }
 
 const AttendanceTable = ({
@@ -151,14 +151,14 @@ const AttendanceTable = ({
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="" alt={record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : "Employee"} />
+                        <AvatarImage src="" alt={record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : `Employee ${record.employeeid}`} />
                         <AvatarFallback>
                           {record.employee ? `${record.employee.firstname?.[0] || ''}${record.employee.lastname?.[0] || ''}` : 'EM'}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">
-                          {record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : "N/A"}
+                          {record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : `Employee ID: ${record.employeeid}`}
                         </div>
                         <div className="text-xs text-gray-500">{record.employeeid}</div>
                       </div>

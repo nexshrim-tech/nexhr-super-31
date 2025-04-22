@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AttendanceRecord } from "@/services/attendance/attendanceService";
 
 interface EditAttendanceFormData {
   date: string;
@@ -15,20 +16,10 @@ interface EditAttendanceFormData {
   notes: string;
 }
 
-interface CurrentRecord {
-  id: number;
-  employee: {
-    name: string;
-    avatar: string;
-  };
-  date: string;
-  [key: string]: any;
-}
-
 interface EditAttendanceDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  currentRecord: CurrentRecord | null;
+  currentRecord: AttendanceRecord | null;
   editFormData: EditAttendanceFormData;
   setEditFormData: React.Dispatch<React.SetStateAction<EditAttendanceFormData>>;
   handleSaveEdit: () => void;
@@ -44,13 +35,18 @@ const EditAttendanceDialog = ({
 }: EditAttendanceDialogProps) => {
   if (!currentRecord) return null;
   
+  // Get employee name from the record
+  const employeeName = currentRecord.employee 
+    ? `${currentRecord.employee.firstname} ${currentRecord.employee.lastname}`
+    : `Employee ID: ${currentRecord.employeeid}`;
+  
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Attendance Record</DialogTitle>
           <DialogDescription>
-            {currentRecord?.employee?.name} • {currentRecord?.date}
+            {employeeName} • {currentRecord?.date}
           </DialogDescription>
         </DialogHeader>
         

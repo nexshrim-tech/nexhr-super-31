@@ -2,6 +2,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export interface Employee {
+  firstname: string;
+  lastname: string;
+}
+
 export interface AttendanceRecord {
   attendanceid: number;
   employeeid: number;
@@ -12,6 +17,7 @@ export interface AttendanceRecord {
   location: string | null;
   notes: string | null;
   status: string | null;
+  employee?: Employee | null; // Add this property to match what's returned from Supabase join
 }
 
 export const getAttendanceForDate = async (date: string): Promise<AttendanceRecord[]> => {
