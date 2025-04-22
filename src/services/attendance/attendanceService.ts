@@ -17,7 +17,7 @@ export interface AttendanceRecord {
   location: string | null;
   notes: string | null;
   status: string | null;
-  employee?: Employee | null; // Add this property to match what's returned from Supabase join
+  employee?: Employee | null;
 }
 
 export const getAttendanceForDate = async (date: string): Promise<AttendanceRecord[]> => {
@@ -25,15 +25,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     const { data, error } = await supabase
       .from('attendance')
       .select(`
-        attendanceid,
-        employeeid,
-        date,
-        checkintime,
-        checkouttime,
-        workhours,
-        location,
-        notes,
-        status,
+        *,
         employee:employee(firstname, lastname)
       `)
       .eq('date', date);
@@ -55,9 +47,17 @@ export const updateAttendanceRecord = async (
   updates: Partial<AttendanceRecord>
 ): Promise<void> => {
   try {
+    // Convert time strings to ISO format if they exist
+    const formattedUpdates = {
+      ...updates,
+      checkintime: updates.checkintime ? new Date(updates.date + 'T' + updates.checkintime).toISOString() : null,
+      checkouttime: updates.checkouttime ? new Date(updates.date + 'T' + updates.checkouttime).toISOString() : null,
+      workhours: calculateWorkHours(updates.checkintime, updates.checkouttime)
+    };
+
     const { error } = await supabase
       .from('attendance')
-      .update(updates)
+      .update(formattedUpdates)
       .eq('attendanceid', id);
 
     if (error) {
@@ -68,60 +68,17 @@ export const updateAttendanceRecord = async (
     toast.success('Attendance record updated successfully');
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);
+    toast.error('Failed to update attendance record');
   }
 };
 
-export const markAttendance = async (
-  employeeId: number,
-  type: 'checkin' | 'checkout',
-  location?: string
-): Promise<void> => {
-  try {
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    const currentTime = now.toISOString();
-
-    // Check if an attendance record already exists for today
-    const { data: existingRecord } = await supabase
-      .from('attendance')
-      .select()
-      .eq('employeeid', employeeId)
-      .eq('date', today)
-      .single();
-
-    if (type === 'checkin' && !existingRecord) {
-      // Create new attendance record for check-in
-      const { error } = await supabase
-        .from('attendance')
-        .insert({
-          employeeid: employeeId,
-          date: today,
-          checkintime: currentTime,
-          location,
-          status: 'Present'
-        });
-
-      if (error) throw error;
-      toast.success('Check-in recorded successfully');
-    } else if (type === 'checkout' && existingRecord) {
-      // Update existing record with checkout time
-      const checkInTime = new Date(existingRecord.checkintime);
-      const workHours = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60); // Convert to hours
-
-      const { error } = await supabase
-        .from('attendance')
-        .update({
-          checkouttime: currentTime,
-          workhours: parseFloat(workHours.toFixed(2)),
-          location
-        })
-        .eq('attendanceid', existingRecord.attendanceid);
-
-      if (error) throw error;
-      toast.success('Check-out recorded successfully');
-    }
-  } catch (error) {
-    console.error('Error marking attendance:', error);
-    toast.error('Failed to record attendance');
-  }
+const calculateWorkHours = (checkin: string | null, checkout: string | null): number | null => {
+  if (!checkin || !checkout) return null;
+  
+  const checkInTime = new Date(`1970-01-01T${checkin}`);
+  const checkOutTime = new Date(`1970-01-01T${checkout}`);
+  
+  const diffInHours = (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
+  return parseFloat(diffInHours.toFixed(2));
 };
+
