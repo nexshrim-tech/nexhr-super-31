@@ -152,12 +152,20 @@ export const updateAttendanceRecord = async (
     // If the ID is 0, it means this is a default record not yet in the database
     if (id === 0) {
       console.log('Creating new attendance record:', updatesToSend);
+      
+      // Ensure employeeid is always included for new records
+      if (!updatesToSend.employeeid && updates.employeeid) {
+        updatesToSend.employeeid = updates.employeeid;
+      }
+      
+      // Make sure the date field is included
+      if (!updatesToSend.date && updates.date) {
+        updatesToSend.date = updates.date;
+      }
+      
       const { data, error: insertError } = await supabase
         .from('attendance')
-        .insert({
-          ...updatesToSend,
-          employeeid: updates.employeeid
-        })
+        .insert(updatesToSend)
         .select();
         
       if (insertError) {
