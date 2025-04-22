@@ -81,9 +81,20 @@ export const createAttendanceSettings = async (
       cleanSettings.employeeid = parseInt(cleanSettings.employeeid, 10);
     }
     
+    // Make sure we're passing a properly typed object
+    const typedSettings: {
+      employeeid?: number;
+      geofencingenabled: boolean;
+      latethreshold: string;
+      photoverificationenabled: boolean;
+      workstarttime: string;
+      workendtime?: string;
+      [key: string]: any;
+    } = cleanSettings;
+    
     const { data, error } = await supabase
       .from('attendancesettings')
-      .insert(cleanSettings)
+      .insert(typedSettings)
       .select()
       .single();
 
