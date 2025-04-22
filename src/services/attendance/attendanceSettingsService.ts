@@ -17,13 +17,16 @@ type AttendanceSettingsData = Omit<AttendanceSettings, 'id'>;
 
 export const getAttendanceSettings = async (employeeId?: number): Promise<AttendanceSettings[]> => {
   try {
-    let query = supabase.from('attendancesettings');
+    // Create the base query
+    const query = supabase.from('attendancesettings').select('*');
     
-    if (employeeId) {
-      query = query.eq('employeeid', employeeId);
-    }
+    // Apply the filter if employeeId is provided
+    const filteredQuery = employeeId 
+      ? query.eq('employeeid', employeeId)
+      : query;
     
-    const { data, error } = await query.select();
+    // Execute the query
+    const { data, error } = await filteredQuery;
 
     if (error) {
       console.error('Error fetching attendance settings:', error);
