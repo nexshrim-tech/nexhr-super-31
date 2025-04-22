@@ -11,7 +11,8 @@ export const markAsAbsent = (employeeId: number, date: string) => {
     workhours: null,
     notes: 'Automatically marked as absent',
     location: null,
-    attendanceid: 0  // This will be assigned by the database when inserted
+    // We'll remove the attendanceid so that Supabase can assign it properly when inserting
+    // This ensures we don't have records with attendanceid: 0
   };
 };
 

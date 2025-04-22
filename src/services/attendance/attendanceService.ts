@@ -49,13 +49,39 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
       existingRecords?.map(record => [record.employeeid, record]) || []
     );
 
-    // For each employee, either return their existing record or create a default absent record
-    const allRecords = employees?.map(employee => {
-      return existingRecordsMap.get(employee.employeeid) || 
-             markAsAbsent(employee.employeeid, date) as AttendanceRecord;
-    }) || [];
+    // For employees without records, create and insert default absent records
+    const absentEmployees = employees?.filter(employee => 
+      !existingRecordsMap.has(employee.employeeid)
+    ) || [];
+    
+    // If there are employees without attendance records, create them in the database
+    if (absentEmployees.length > 0) {
+      console.log(`Creating ${absentEmployees.length} default absent records for date: ${date}`);
+      
+      // Create the absent records
+      const absentRecords = absentEmployees.map(employee => 
+        markAsAbsent(employee.employeeid, date)
+      );
+      
+      // Insert the absent records into the database
+      const { data: insertedRecords, error: insertError } = await supabase
+        .from('attendance')
+        .insert(absentRecords)
+        .select(`*, employee:employee(firstname, lastname)`);
+        
+      if (insertError) {
+        console.error('Error inserting absent records:', insertError);
+        toast.error('Error creating absent records');
+      } else if (insertedRecords) {
+        // Add the newly inserted records to our map
+        insertedRecords.forEach(record => {
+          existingRecordsMap.set(record.employeeid, record);
+        });
+      }
+    }
 
-    return allRecords;
+    // Return all records
+    return Array.from(existingRecordsMap.values());
   } catch (error) {
     console.error('Error in getAttendanceForDate:', error);
     return [];
@@ -99,6 +125,27 @@ export const updateAttendanceRecord = async (
     );
     
     console.log('Sending to Supabase:', updatesToSend);
+
+    // Skip the update if the ID is 0, which means it's a default record not yet in the database
+    if (id === 0) {
+      console.warn('Attempted to update record with ID 0. Creating a new record instead.');
+      // Instead, we'll insert a new record
+      const { error: insertError } = await supabase
+        .from('attendance')
+        .insert({
+          ...updatesToSend,
+          employeeid: updates.employeeid
+        });
+        
+      if (insertError) {
+        console.error('Error inserting new attendance record:', insertError);
+        toast.error('Error creating new attendance record');
+        throw insertError;
+      }
+      
+      toast.success('New attendance record created successfully');
+      return;
+    }
 
     const { error } = await supabase
       .from('attendance')
