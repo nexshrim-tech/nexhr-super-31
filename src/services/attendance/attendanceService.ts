@@ -1,126 +1,121 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-export interface Attendance {
-  attendanceid?: number;
+export interface AttendanceRecord {
+  attendanceid: number;
   employeeid: number;
-  attendancedate?: string;
-  status: string;
-  notes?: string;
-  latitude?: string;
-  longitude?: string;
-  checkintimestamp?: string;
-  checkouttimestamp?: string;
-  customerid?: number;
-  selfieimagepath?: string;
+  date: string;
+  checkintime: string | null;
+  checkouttime: string | null;
+  workhours: number | null;
+  location: string | null;
+  notes: string | null;
+  status: string | null;
 }
 
-export const getAttendance = async (employeeId?: number, startDate?: string, endDate?: string): Promise<Attendance[]> => {
-  try {
-    let query = supabase
-      .from('attendance')
-      .select('*');
-    
-    if (employeeId) {
-      query = query.eq('employeeid', employeeId);
-    }
-    
-    if (startDate) {
-      query = query.gte('checkintimestamp', startDate);
-    }
-    
-    if (endDate) {
-      query = query.lte('checkintimestamp', endDate);
-    }
-    
-    const { data, error } = await query.order('checkintimestamp', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching attendance:', error);
-      throw error;
-    }
-
-    return data as Attendance[] || [];
-  } catch (error) {
-    console.error('Error in getAttendance:', error);
-    throw error;
-  }
-};
-
-export const getAttendanceById = async (id: number): Promise<Attendance | null> => {
+export const getAttendanceForDate = async (date: string): Promise<AttendanceRecord[]> => {
   try {
     const { data, error } = await supabase
       .from('attendance')
-      .select('*')
-      .eq('attendanceid', id)
-      .single();
+      .select(`
+        attendanceid,
+        employeeid,
+        date,
+        checkintime,
+        checkouttime,
+        workhours,
+        location,
+        notes,
+        status,
+        employee:employee(firstname, lastname)
+      `)
+      .eq('date', date);
 
     if (error) {
-      console.error('Error fetching attendance by ID:', error);
+      toast.error('Error fetching attendance records');
       throw error;
     }
 
-    return data as Attendance;
+    return data || [];
   } catch (error) {
-    console.error('Error in getAttendanceById:', error);
-    throw error;
+    console.error('Error in getAttendanceForDate:', error);
+    return [];
   }
 };
 
-export const addAttendance = async (attendance: Omit<Attendance, 'attendanceid'>): Promise<Attendance> => {
-  try {
-    const { data, error } = await supabase
-      .from('attendance')
-      .insert([attendance])
-      .select();
-
-    if (error) {
-      console.error('Error adding attendance:', error);
-      throw error;
-    }
-
-    // Fix: Changed from single() to ensuring we get the first entry from the array
-    return (data && data[0]) as Attendance;
-  } catch (error) {
-    console.error('Error in addAttendance:', error);
-    throw error;
-  }
-};
-
-export const updateAttendance = async (id: number, attendance: Partial<Omit<Attendance, 'attendanceid'>>): Promise<Attendance> => {
-  try {
-    const { data, error } = await supabase
-      .from('attendance')
-      .update(attendance)
-      .eq('attendanceid', id)
-      .select();
-
-    if (error) {
-      console.error('Error updating attendance:', error);
-      throw error;
-    }
-
-    // Fix: Changed from single() to ensuring we get the first entry from the array
-    return (data && data[0]) as Attendance;
-  } catch (error) {
-    console.error('Error in updateAttendance:', error);
-    throw error;
-  }
-};
-
-export const deleteAttendance = async (id: number): Promise<void> => {
+export const updateAttendanceRecord = async (
+  id: number,
+  updates: Partial<AttendanceRecord>
+): Promise<void> => {
   try {
     const { error } = await supabase
       .from('attendance')
-      .delete()
+      .update(updates)
       .eq('attendanceid', id);
 
     if (error) {
-      console.error('Error deleting attendance:', error);
+      toast.error('Error updating attendance record');
       throw error;
     }
+
+    toast.success('Attendance record updated successfully');
   } catch (error) {
-    console.error('Error in deleteAttendance:', error);
-    throw error;
+    console.error('Error in updateAttendanceRecord:', error);
+  }
+};
+
+export const markAttendance = async (
+  employeeId: number,
+  type: 'checkin' | 'checkout',
+  location?: string
+): Promise<void> => {
+  try {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const currentTime = now.toISOString();
+
+    // Check if an attendance record already exists for today
+    const { data: existingRecord } = await supabase
+      .from('attendance')
+      .select()
+      .eq('employeeid', employeeId)
+      .eq('date', today)
+      .single();
+
+    if (type === 'checkin' && !existingRecord) {
+      // Create new attendance record for check-in
+      const { error } = await supabase
+        .from('attendance')
+        .insert({
+          employeeid: employeeId,
+          date: today,
+          checkintime: currentTime,
+          location,
+          status: 'Present'
+        });
+
+      if (error) throw error;
+      toast.success('Check-in recorded successfully');
+    } else if (type === 'checkout' && existingRecord) {
+      // Update existing record with checkout time
+      const checkInTime = new Date(existingRecord.checkintime);
+      const workHours = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60); // Convert to hours
+
+      const { error } = await supabase
+        .from('attendance')
+        .update({
+          checkouttime: currentTime,
+          workhours: parseFloat(workHours.toFixed(2)),
+          location
+        })
+        .eq('attendanceid', existingRecord.attendanceid);
+
+      if (error) throw error;
+      toast.success('Check-out recorded successfully');
+    }
+  } catch (error) {
+    console.error('Error marking attendance:', error);
+    toast.error('Failed to record attendance');
   }
 };

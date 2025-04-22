@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "react-query";
+import { getAttendanceForDate } from "@/services/attendance";
 
 interface AttendanceRecord {
   id: number;
@@ -25,18 +26,32 @@ interface AttendanceRecord {
 interface AttendanceTableProps {
   selectedDate: Date;
   searchTerm: string;
-  filteredRecords: AttendanceRecord[];
   setSearchTerm: (term: string) => void;
-  handleEditRecord: (record: AttendanceRecord) => void;
+  handleEditRecord: (record: any) => void;
 }
 
 const AttendanceTable = ({
   selectedDate,
   searchTerm,
-  filteredRecords,
   setSearchTerm,
   handleEditRecord,
 }: AttendanceTableProps) => {
+  const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+
+  const { data: records = [], isLoading } = useQuery({
+    queryKey: ['attendance', formattedDate],
+    queryFn: () => getAttendanceForDate(formattedDate)
+  });
+
+  const filteredRecords = records.filter(record => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      record.employee?.firstname?.toLowerCase().includes(searchLower) ||
+      record.employee?.lastname?.toLowerCase().includes(searchLower) ||
+      record.status?.toLowerCase().includes(searchLower)
+    );
+  });
+
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<AttendanceRecord>>({});
 
