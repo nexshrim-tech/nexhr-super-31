@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -62,7 +63,7 @@ const AttendanceTable = ({
     
     switch (status.toLowerCase()) {
       case "present":
-        badgeClass = "bg-green-100 text-green-800";
+        badgeClass = "bg-green-500 text-white"; // Changed to make Present stand out with green-500
         break;
       case "absent":
         badgeClass = "bg-red-100 text-red-800";
