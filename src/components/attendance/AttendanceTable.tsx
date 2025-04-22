@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -8,20 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useQuery } from "react-query";
-import { getAttendanceForDate } from "@/services/attendance";
-
-interface AttendanceRecord {
-  id: number;
-  employeeId: string;
-  employee: { name: string; avatar: string };
-  date: string;
-  checkIn: string;
-  checkOut: string;
-  status: string;
-  workHours: string;
-  notes: string;
-}
+import { useQuery } from "@tanstack/react-query";
+import { getAttendanceForDate, AttendanceRecord } from "@/services/attendance/attendanceService";
 
 interface AttendanceTableProps {
   selectedDate: Date;
@@ -45,17 +34,22 @@ const AttendanceTable = ({
 
   const filteredRecords = records.filter(record => {
     const searchLower = searchTerm.toLowerCase();
+    const employeeName = record.employee 
+      ? `${record.employee.firstname || ''} ${record.employee.lastname || ''}`.toLowerCase()
+      : '';
+    
     return (
-      record.employee?.firstname?.toLowerCase().includes(searchLower) ||
-      record.employee?.lastname?.toLowerCase().includes(searchLower) ||
-      record.status?.toLowerCase().includes(searchLower)
+      employeeName.includes(searchLower) ||
+      (record.status?.toLowerCase() || '').includes(searchLower)
     );
   });
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<AttendanceRecord>>({});
 
-  const renderAttendanceStatus = (status: string) => {
+  const renderAttendanceStatus = (status: string | null) => {
+    if (!status) return null;
+    
     let badgeClass = "";
     
     switch (status.toLowerCase()) {
@@ -79,10 +73,10 @@ const AttendanceTable = ({
   };
 
   const handleEditClick = (record: AttendanceRecord) => {
-    setEditingId(record.id);
+    setEditingId(record.attendanceid);
     setEditData({
-      checkIn: record.checkIn,
-      checkOut: record.checkOut,
+      checkintime: record.checkintime,
+      checkouttime: record.checkouttime,
       status: record.status,
       notes: record.notes
     });
@@ -101,6 +95,16 @@ const AttendanceTable = ({
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditData({});
+  };
+
+  const formatTimeFromDate = (dateStr: string | null) => {
+    if (!dateStr) return "-";
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (error) {
+      return "-";
+    }
   };
 
   return (
@@ -136,46 +140,56 @@ const AttendanceTable = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRecords.length > 0 ? filteredRecords.map((record) => (
-                <TableRow key={record.id}>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                    Loading records...
+                  </TableCell>
+                </TableRow>
+              ) : filteredRecords.length > 0 ? filteredRecords.map((record) => (
+                <TableRow key={record.attendanceid}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="" alt={record.employee.name} />
-                        <AvatarFallback>{record.employee.avatar}</AvatarFallback>
+                        <AvatarImage src="" alt={record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : "Employee"} />
+                        <AvatarFallback>
+                          {record.employee ? `${record.employee.firstname?.[0] || ''}${record.employee.lastname?.[0] || ''}` : 'EM'}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{record.employee.name}</div>
-                        <div className="text-xs text-gray-500">{record.employeeId}</div>
+                        <div className="font-medium">
+                          {record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : "N/A"}
+                        </div>
+                        <div className="text-xs text-gray-500">{record.employeeid}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {editingId === record.id ? (
+                    {editingId === record.attendanceid ? (
                       <Input
                         type="time"
-                        value={editData.checkIn || ''}
-                        onChange={(e) => setEditData({...editData, checkIn: e.target.value})}
+                        value={editData.checkintime || ''}
+                        onChange={(e) => setEditData({...editData, checkintime: e.target.value})}
                         className="w-full"
                       />
                     ) : (
-                      record.checkIn || "-"
+                      formatTimeFromDate(record.checkintime)
                     )}
                   </TableCell>
                   <TableCell>
-                    {editingId === record.id ? (
+                    {editingId === record.attendanceid ? (
                       <Input
                         type="time"
-                        value={editData.checkOut || ''}
-                        onChange={(e) => setEditData({...editData, checkOut: e.target.value})}
+                        value={editData.checkouttime || ''}
+                        onChange={(e) => setEditData({...editData, checkouttime: e.target.value})}
                         className="w-full"
                       />
                     ) : (
-                      record.checkOut || "-"
+                      formatTimeFromDate(record.checkouttime)
                     )}
                   </TableCell>
                   <TableCell>
-                    {editingId === record.id ? (
+                    {editingId === record.attendanceid ? (
                       <Select
                         value={editData.status || ''}
                         onValueChange={(value) => setEditData({...editData, status: value})}
@@ -194,9 +208,9 @@ const AttendanceTable = ({
                       renderAttendanceStatus(record.status)
                     )}
                   </TableCell>
-                  <TableCell>{record.workHours}</TableCell>
+                  <TableCell>{record.workhours ? `${record.workhours}h` : '-'}</TableCell>
                   <TableCell className="text-right">
-                    {editingId === record.id ? (
+                    {editingId === record.attendanceid ? (
                       <div className="flex justify-end gap-2">
                         <Button 
                           variant="ghost" 

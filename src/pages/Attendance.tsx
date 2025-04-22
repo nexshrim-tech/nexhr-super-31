@@ -15,8 +15,8 @@ import EditAttendanceDialog from "@/components/attendance/EditAttendanceDialog";
 import AttendanceSettings from "@/components/attendance/AttendanceSettings";
 import TodaysAttendance from "@/components/TodaysAttendance";
 
-// Import data
-import { attendanceData, AttendanceRecord } from "@/data/attendanceData";
+// Import types from our service
+import { AttendanceRecord, updateAttendanceRecord } from "@/services/attendance/attendanceService";
 
 // Sample attendance photos
 const sampleAttendancePhotos = [
@@ -90,42 +90,47 @@ const Attendance = () => {
     format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
   );
 
-  const filteredRecords = attendanceData.filter(record => {
-    const matchesSearch = 
-      record.employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.status.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesDate = record.date === format(selectedDate, 'yyyy-MM-dd');
-    
-    const matchesEmployee = selectedEmployee 
-      ? record.employeeId === selectedEmployee 
-      : true;
-    
-    const matchesDepartment = filterDepartment !== "all" 
-      ? true // In a real app, you would check the department
-      : true;
-    
-    return matchesSearch && matchesDate && matchesEmployee && matchesDepartment;
-  });
-
   const handleEditRecord = (record: AttendanceRecord) => {
     setCurrentRecord(record);
+    const checkInTime = record.checkintime ? new Date(record.checkintime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const checkOutTime = record.checkouttime ? new Date(record.checkouttime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    
     setEditFormData({
-      date: record.date,
-      checkIn: record.checkIn,
-      checkOut: record.checkOut,
-      status: record.status,
-      notes: record.notes,
+      date: record.date || '',
+      checkIn: checkInTime,
+      checkOut: checkOutTime,
+      status: record.status || '',
+      notes: record.notes || '',
     });
     setIsEditDialogOpen(true);
   };
 
-  const handleSaveEdit = () => {
-    toast({
-      title: "Record updated",
-      description: `Attendance record for ${currentRecord?.employee.name} has been updated.`
-    });
+  const handleSaveEdit = async () => {
+    if (!currentRecord) return;
+    
+    try {
+      // Here we would update the record in the database
+      await updateAttendanceRecord(currentRecord.attendanceid, {
+        // Convert form data to database format
+        status: editFormData.status,
+        notes: editFormData.notes,
+        // Other fields would be handled here
+      });
+      
+      toast({
+        title: "Record updated",
+        description: `Attendance record has been updated.`
+      });
+      
+    } catch (error) {
+      console.error("Error updating record:", error);
+      toast({
+        title: "Update failed",
+        description: "Could not update attendance record. Please try again.",
+        variant: "destructive"
+      });
+    }
+    
     setIsEditDialogOpen(false);
   };
 
@@ -197,7 +202,6 @@ const Attendance = () => {
                 <AttendanceTable 
                   selectedDate={selectedDate}
                   searchTerm={searchTerm}
-                  filteredRecords={filteredRecords}
                   setSearchTerm={setSearchTerm}
                   handleEditRecord={handleEditRecord}
                 />
@@ -218,7 +222,6 @@ const Attendance = () => {
                 <AttendanceTable 
                   selectedDate={selectedDate}
                   searchTerm={searchTerm}
-                  filteredRecords={filteredRecords}
                   setSearchTerm={setSearchTerm}
                   handleEditRecord={handleEditRecord}
                 />
