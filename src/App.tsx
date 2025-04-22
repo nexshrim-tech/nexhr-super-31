@@ -1,6 +1,7 @@
 
 import { Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Index from "@/pages/Index";
 import Assets from "@/pages/Assets";
 import Attendance from "@/pages/Attendance";
@@ -29,6 +30,9 @@ import { AuthProvider } from "./context/AuthContext";
 import SubscriptionModal from "./components/SubscriptionModal";
 import { useSubscription } from "./context/SubscriptionContext";
 import RequireAuth from "./components/RequireAuth";
+
+// Create a client
+const queryClient = new QueryClient();
 
 function SubscriptionModalWrapper() {
   const { showSubscriptionModal, setShowSubscriptionModal, setPlan, plan } = useSubscription();
@@ -83,12 +87,14 @@ function AppRoutes() {
 function App() {
   return (
     <>
-      <AuthProvider>
-        <SubscriptionProvider>
-          <AppRoutes />
-          <Toaster />
-        </SubscriptionProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <AppRoutes />
+            <Toaster />
+          </SubscriptionProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </>
   );
 }
