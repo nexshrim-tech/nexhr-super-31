@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Employee, updateEmployee, addEmployee } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/context/SubscriptionContext";
 
 interface EmployeeEditDialogProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
   const [employeeData, setEmployeeData] = useState<Partial<Employee>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { customerId } = useSubscription();
 
   useEffect(() => {
     if (employee) {
@@ -38,9 +40,10 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
         email: '',
         jobtitle: '',
         employeestatus: 'Active',
+        customerid: customerId || 1, // Use the customer ID from subscription context
       });
     }
-  }, [employee, isNewEmployee]);
+  }, [employee, isNewEmployee, customerId]);
 
   const handleChange = (field: keyof Employee, value: string | number) => {
     setEmployeeData(prev => ({ ...prev, [field]: value }));
@@ -58,11 +61,19 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
 
     setIsSubmitting(true);
     try {
+      console.log("Submitting employee data:", employeeData);
+      
       let result: Employee;
       
       if (isNewEmployee) {
+        // Ensure customerid is set
+        const newEmployeeData = {
+          ...employeeData,
+          customerid: customerId || 1,
+        };
+        
         // Create a new employee
-        result = await addEmployee(employeeData as Omit<Employee, 'employeeid'>);
+        result = await addEmployee(newEmployeeData as Omit<Employee, 'employeeid'>);
         toast({
           title: "Success",
           description: "Employee created successfully",

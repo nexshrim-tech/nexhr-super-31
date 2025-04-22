@@ -89,7 +89,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       employee.customerid = 1; // Default value for customerid
     }
     
-    // Convert any string numbers to actual numbers
+    // Handle fields that might come in as strings but need to be numbers
     const formattedEmployee = {
       ...employee,
       department: employee.department ? 
@@ -102,6 +102,17 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
         (typeof employee.monthlysalary === 'string' ? parseFloat(employee.monthlysalary) : employee.monthlysalary) : 
         undefined
     };
+    
+    // Process date fields if they exist
+    if (employee.joiningdate && employee.joiningdate.trim() !== '') {
+      formattedEmployee.joiningdate = employee.joiningdate;
+    }
+    
+    if (employee.dateofbirth && employee.dateofbirth.trim() !== '') {
+      formattedEmployee.dateofbirth = employee.dateofbirth;
+    }
+    
+    console.log('Submitting formatted employee data to database:', formattedEmployee);
     
     const { data, error } = await supabase
       .from('employee')
