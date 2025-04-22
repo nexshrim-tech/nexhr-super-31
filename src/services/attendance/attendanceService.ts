@@ -59,6 +59,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     }
 
     console.log(`Found ${existingRecords?.length || 0} existing records for date: ${date}`);
+    console.log("Existing records:", existingRecords);
 
     // Create a map of existing records by employee ID
     const existingRecordsMap = new Map(
