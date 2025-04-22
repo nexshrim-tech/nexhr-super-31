@@ -1,8 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from 'date-fns';
-import { markAsAbsent } from "@/utils/attendanceDefaults";
+import { markAsAbsent, markAsNotMarked, generateDefaultAttendance } from "@/utils/attendanceDefaults";
 
 export interface Employee {
   firstname: string;
@@ -49,33 +48,70 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
       existingRecords?.map(record => [record.employeeid, record]) || []
     );
 
-    // For employees without records, create and insert default absent records
-    const absentEmployees = employees?.filter(employee => 
+    // For employees without records, create and insert default records
+    const employeesWithoutRecords = employees?.filter(employee => 
       !existingRecordsMap.has(employee.employeeid)
     ) || [];
     
-    // If there are employees without attendance records, create them in the database
-    if (absentEmployees.length > 0) {
-      console.log(`Creating ${absentEmployees.length} default absent records for date: ${date}`);
+    if (employeesWithoutRecords.length > 0) {
+      console.log(`Creating ${employeesWithoutRecords.length} default records for date: ${date}`);
       
-      // Create the absent records
-      const absentRecords = absentEmployees.map(employee => 
-        markAsAbsent(employee.employeeid, date)
+      // Generate default records based on current time
+      const defaultRecords = employeesWithoutRecords.map(employee => 
+        generateDefaultAttendance(employee.employeeid, new Date(date))
       );
       
-      // Insert the absent records into the database
+      // Insert the default records into the database
       const { data: insertedRecords, error: insertError } = await supabase
         .from('attendance')
-        .insert(absentRecords)
+        .insert(defaultRecords)
         .select(`*, employee:employee(firstname, lastname)`);
         
       if (insertError) {
-        console.error('Error inserting absent records:', insertError);
-        toast.error('Error creating absent records');
+        console.error('Error inserting default records:', insertError);
+        toast.error('Error creating default records');
       } else if (insertedRecords) {
         // Add the newly inserted records to our map
         insertedRecords.forEach(record => {
           existingRecordsMap.set(record.employeeid, record);
+        });
+      }
+    }
+
+    // Auto-mark employees as absent after 12 PM if their status is still "Not Marked"
+    const now = new Date();
+    const cutoffTime = new Date(date);
+    cutoffTime.setHours(12, 0, 0, 0);
+
+    if (now > cutoffTime) {
+      const notMarkedRecords = Array.from(existingRecordsMap.values())
+        .filter(record => record.status === 'Not Marked');
+
+      if (notMarkedRecords.length > 0) {
+        console.log(`Auto-marking ${notMarkedRecords.length} records as absent after 12 PM`);
+        
+        const updatePromises = notMarkedRecords.map(record => 
+          supabase
+            .from('attendance')
+            .update({ 
+              status: 'Absent',
+              notes: 'Automatically marked as absent after 12 PM'
+            })
+            .eq('attendanceid', record.attendanceid)
+        );
+
+        await Promise.all(updatePromises);
+
+        // Update the records in our map
+        notMarkedRecords.forEach(record => {
+          if (existingRecordsMap.has(record.employeeid)) {
+            const updatedRecord = {
+              ...record,
+              status: 'Absent',
+              notes: 'Automatically marked as absent after 12 PM'
+            };
+            existingRecordsMap.set(record.employeeid, updatedRecord);
+          }
         });
       }
     }
