@@ -93,13 +93,13 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     const formattedEmployee = {
       ...cleanEmployee,
       department: cleanEmployee.department ? 
-        (typeof cleanEmployee.department === 'string' ? parseInt(cleanEmployee.department) : cleanEmployee.department) : 
+        (typeof cleanEmployee.department === 'string' ? parseInt(cleanEmployee.department as string) : cleanEmployee.department) : 
         null,
       salary: cleanEmployee.salary ? 
-        (typeof cleanEmployee.salary === 'string' ? parseFloat(cleanEmployee.salary) : cleanEmployee.salary) : 
+        (typeof cleanEmployee.salary === 'string' ? parseFloat(cleanEmployee.salary as string) : cleanEmployee.salary) : 
         null,
       monthlysalary: cleanEmployee.monthlysalary ? 
-        (typeof cleanEmployee.monthlysalary === 'string' ? parseFloat(cleanEmployee.monthlysalary) : cleanEmployee.monthlysalary) : 
+        (typeof cleanEmployee.monthlysalary === 'string' ? parseFloat(cleanEmployee.monthlysalary as string) : cleanEmployee.monthlysalary) : 
         null
     };
     
@@ -112,9 +112,10 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     
     console.log('Submitting formatted employee data to database:', formattedEmployee);
     
+    // Ensure we're passing a single object, not an array
     const { data, error } = await supabase
       .from('employee')
-      .insert([formattedEmployee])
+      .insert(formattedEmployee)
       .select()
       .single();
 

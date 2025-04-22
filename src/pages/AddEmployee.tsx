@@ -15,13 +15,40 @@ import FeatureLock from "@/components/FeatureLock";
 import { Checkbox } from "@/components/ui/checkbox";
 import { addEmployee } from "@/services/employeeService";
 
+interface EmployeeFormData {
+  firstName: string;
+  lastName: string;
+  fatherName: string;
+  email: string;
+  phone: string;
+  department: string;
+  jobTitle: string;
+  employeeId: string;
+  joinDate: string;
+  password: string;
+  confirmPassword: string;
+  bloodGroup: string;
+  hasDisability: boolean;
+  gender: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  zip: string;
+  dateOfBirth?: string;
+  nationality?: string;
+  maritalStatus?: string;
+  employmentType?: string;
+  workLocation?: string;
+}
+
 const AddEmployee = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
   const { toast } = useToast();
   const { features } = useSubscription();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<EmployeeFormData>({
     firstName: "",
     lastName: "",
     fatherName: "",
@@ -34,7 +61,18 @@ const AddEmployee = () => {
     password: "",
     confirmPassword: "",
     bloodGroup: "",
-    hasDisability: false
+    hasDisability: false,
+    gender: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    zip: "",
+    dateOfBirth: "",
+    nationality: "",
+    maritalStatus: "",
+    employmentType: "",
+    workLocation: ""
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formProgress, setFormProgress] = useState(0);
@@ -141,7 +179,6 @@ const AddEmployee = () => {
       try {
         console.log("Preparing to add employee with data:", formData);
         
-        // Parse department value correctly
         let departmentValue: number | undefined = undefined;
         if (formData.department) {
           try {
@@ -152,7 +189,6 @@ const AddEmployee = () => {
           }
         }
         
-        // Convert form data to employee object
         const employeeData = {
           firstname: formData.firstName,
           lastname: formData.lastName,
@@ -162,20 +198,18 @@ const AddEmployee = () => {
           joiningdate: formData.joinDate || undefined,
           department: departmentValue,
           employeestatus: 'Active',
-          // Set the customerid for RLS policies to work
-          customerid: 1, // This is required for Supabase RLS policies
-          // Add more fields from the form
+          customerid: 1,
           gender: formData.gender || undefined,
           address: formData.address || undefined,
           city: formData.city || undefined,
           state: formData.state || undefined,
           country: formData.country || undefined,
           postalcode: formData.zip || undefined,
+          dateofbirth: formData.dateOfBirth || undefined,
         };
         
         console.log("Submitting employee data to database:", employeeData);
         
-        // Save employee to database
         const result = await addEmployee(employeeData);
         console.log("Employee added successfully:", result);
         
@@ -184,7 +218,6 @@ const AddEmployee = () => {
           description: "The employee has been successfully added to the system.",
         });
         
-        // Navigate back to employee list
         setTimeout(() => {
           navigate("/all-employees");
         }, 500);
