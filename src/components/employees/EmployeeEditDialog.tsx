@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Employee, updateEmployee, addEmployee } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
+import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
 
 interface EmployeeEditDialogProps {
   isOpen: boolean;
@@ -31,7 +33,14 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
 
   useEffect(() => {
     if (employee) {
-      setEmployeeData({ ...employee });
+      // Filter out empty string dates to prevent database errors
+      const sanitizedEmployee = { ...employee };
+      if (sanitizedEmployee.joiningdate === '') sanitizedEmployee.joiningdate = null;
+      if (sanitizedEmployee.dateofbirth === '') sanitizedEmployee.dateofbirth = null;
+      if (sanitizedEmployee.terminationdate === '') sanitizedEmployee.terminationdate = null;
+      if (sanitizedEmployee.probationenddate === '') sanitizedEmployee.probationenddate = null;
+      
+      setEmployeeData(sanitizedEmployee);
     } else if (isNewEmployee) {
       // Initialize with default values for a new employee
       setEmployeeData({
@@ -46,7 +55,16 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
   }, [employee, isNewEmployee, customerId]);
 
   const handleChange = (field: keyof Employee, value: string | number) => {
-    setEmployeeData(prev => ({ ...prev, [field]: value }));
+    // For date fields, convert empty strings to null
+    if (
+      (field === 'joiningdate' || field === 'dateofbirth' || 
+       field === 'terminationdate' || field === 'probationenddate') && 
+      value === ''
+    ) {
+      setEmployeeData(prev => ({ ...prev, [field]: null }));
+    } else {
+      setEmployeeData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleSubmit = async () => {

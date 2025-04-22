@@ -21,12 +21,12 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
     const query = supabase.from('attendancesettings').select('*');
     
     // Apply the filter if employeeId is provided
-    const filteredQuery = employeeId 
+    const finalQuery = employeeId 
       ? query.eq('employeeid', employeeId)
       : query;
     
     // Execute the query
-    const { data, error } = await filteredQuery;
+    const { data, error } = await finalQuery;
 
     if (error) {
       console.error('Error fetching attendance settings:', error);

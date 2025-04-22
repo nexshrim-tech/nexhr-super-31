@@ -8,14 +8,14 @@ export interface Employee {
   email: string;
   jobtitle?: string;
   department?: number;
-  joiningdate?: string;
+  joiningdate?: string | null;
   profilepicturepath?: string;
   customerid?: number;
   phonenumber?: string;
   address?: string;
   salary?: number;
   gender?: string;
-  dateofbirth?: string;
+  dateofbirth?: string | null;
   education?: string;
   employeetype?: string;
   employeestatus?: string;
@@ -26,8 +26,8 @@ export interface Employee {
   state?: string;
   country?: string;
   postalcode?: string;
-  terminationdate?: string;
-  probationenddate?: string;
+  terminationdate?: string | null;
+  probationenddate?: string | null;
 }
 
 export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
@@ -103,14 +103,12 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
         undefined
     };
     
-    // Process date fields if they exist
-    if (employee.joiningdate && employee.joiningdate.trim() !== '') {
-      formattedEmployee.joiningdate = employee.joiningdate;
-    }
-    
-    if (employee.dateofbirth && employee.dateofbirth.trim() !== '') {
-      formattedEmployee.dateofbirth = employee.dateofbirth;
-    }
+    // Handle date fields - convert empty strings to null to avoid database errors
+    ['joiningdate', 'dateofbirth', 'terminationdate', 'probationenddate'].forEach(field => {
+      if (formattedEmployee[field] === '') {
+        formattedEmployee[field] = null;
+      }
+    });
     
     console.log('Submitting formatted employee data to database:', formattedEmployee);
     
@@ -135,9 +133,20 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
 
 export const updateEmployee = async (id: number, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
   try {
+    // Sanitize date fields to avoid database errors
+    const sanitizedEmployee = { ...employee };
+    
+    // Convert empty string dates to null
+    if (sanitizedEmployee.joiningdate === '') sanitizedEmployee.joiningdate = null;
+    if (sanitizedEmployee.dateofbirth === '') sanitizedEmployee.dateofbirth = null;
+    if (sanitizedEmployee.terminationdate === '') sanitizedEmployee.terminationdate = null;
+    if (sanitizedEmployee.probationenddate === '') sanitizedEmployee.probationenddate = null;
+    
+    console.log('Updating employee with sanitized data:', sanitizedEmployee);
+    
     const { data, error } = await supabase
       .from('employee')
-      .update(employee)
+      .update(sanitizedEmployee)
       .eq('employeeid', id)
       .select()
       .single();
