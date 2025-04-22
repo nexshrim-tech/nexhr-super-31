@@ -15,6 +15,7 @@ interface EmployeeMainInfoProps {
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSelectChange: (field: string, value: string) => void;
   onBankDetailsChange: (field: string, value: string) => void;
+  onCheckboxChange?: (field: string, checked: boolean) => void;
   onDownload: (type: string) => void;
   onEditDocument: (type: 'aadhar' | 'pan') => void;
 }
@@ -27,6 +28,7 @@ const EmployeeMainInfo: React.FC<EmployeeMainInfoProps> = ({
   onInputChange,
   onSelectChange,
   onBankDetailsChange,
+  onCheckboxChange,
   onDownload,
   onEditDocument
 }) => {
@@ -46,12 +48,21 @@ const EmployeeMainInfo: React.FC<EmployeeMainInfoProps> = ({
               employee={employee}
               isEditMode={isEditMode}
               onInputChange={onInputChange}
+              onSelectChange={onSelectChange}
+              onCheckboxChange={onCheckboxChange}
             />
           </TabsContent>
 
           <TabsContent value="work">
             <EmployeeWorkTab 
-              employee={employee}
+              employee={{
+                ...employee,
+                education: employee.education,
+                employeeType: employee.employeeType,
+                workAuthorization: employee.workAuthorization,
+                probationEndDate: employee.probationEndDate,
+                employmentHistory: employee.employmentHistory
+              }}
               geofencingEnabled={geofencingEnabled}
               onGeofencingToggle={onGeofencingToggle}
               isEditMode={isEditMode}

@@ -11,6 +11,11 @@ interface EmployeeWorkTabProps {
     role: string;
     employeeId: string;
     joining: string;
+    education?: string;
+    employeeType?: string;
+    workAuthorization?: string;
+    probationEndDate?: string;
+    employmentHistory?: string;
   };
   geofencingEnabled: boolean;
   onGeofencingToggle: (checked: boolean) => void;
@@ -49,6 +54,9 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
                 <SelectItem value="product">Product</SelectItem>
                 <SelectItem value="marketing">Marketing</SelectItem>
                 <SelectItem value="sales">Sales</SelectItem>
+                <SelectItem value="hr">HR</SelectItem>
+                <SelectItem value="finance">Finance</SelectItem>
+                <SelectItem value="operations">Operations</SelectItem>
               </SelectContent>
             </Select>
           ) : (
@@ -85,6 +93,7 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
           <Label>Joining Date</Label>
           {isEditMode ? (
             <Input 
+              type="date"
               name="joining" 
               value={employee.joining} 
               onChange={onInputChange} 
@@ -92,6 +101,81 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
             />
           ) : (
             <p className="text-sm font-medium">{employee.joining}</p>
+          )}
+        </div>
+        <div>
+          <Label>Education</Label>
+          {isEditMode ? (
+            <Input 
+              name="education" 
+              value={employee.education || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.education || "Not specified"}</p>
+          )}
+        </div>
+        <div>
+          <Label>Employee Type</Label>
+          {isEditMode ? (
+            <Select 
+              value={employee.employeeType || ""} 
+              onValueChange={(value) => onSelectChange && onSelectChange("employeeType", value)}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select employee type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Full-time">Full-time</SelectItem>
+                <SelectItem value="Part-time">Part-time</SelectItem>
+                <SelectItem value="Contract">Contract</SelectItem>
+                <SelectItem value="Intern">Intern</SelectItem>
+                <SelectItem value="Probation">Probation</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-sm font-medium">{employee.employeeType || "Not specified"}</p>
+          )}
+        </div>
+        <div>
+          <Label>Work Authorization</Label>
+          {isEditMode ? (
+            <Input 
+              name="workAuthorization" 
+              value={employee.workAuthorization || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.workAuthorization || "Not specified"}</p>
+          )}
+        </div>
+        <div>
+          <Label>Probation End Date</Label>
+          {isEditMode ? (
+            <Input 
+              type="date"
+              name="probationEndDate" 
+              value={employee.probationEndDate || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.probationEndDate || "Not applicable"}</p>
+          )}
+        </div>
+        <div className="col-span-2">
+          <Label>Employment History</Label>
+          {isEditMode ? (
+            <Input 
+              name="employmentHistory" 
+              value={employee.employmentHistory || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.employmentHistory || "Not specified"}</p>
           )}
         </div>
         <div className="col-span-2">

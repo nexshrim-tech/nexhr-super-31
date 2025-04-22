@@ -14,6 +14,10 @@ interface EmployeePersonalTabProps {
     phone: string;
     address: string;
     fatherName: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    postalcode?: string;
     bloodGroup?: string;
     hasDisability?: boolean;
   };
@@ -63,6 +67,7 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
           <Label>Date of Birth</Label>
           {isEditMode ? (
             <Input 
+              type="date"
               name="dob" 
               value={employee.dob} 
               onChange={onInputChange} 
@@ -88,12 +93,19 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
         <div>
           <Label>Gender</Label>
           {isEditMode ? (
-            <Input 
-              name="gender" 
-              value={employee.gender} 
-              onChange={onInputChange} 
-              className="mt-1"
-            />
+            <Select 
+              value={employee.gender || ""} 
+              onValueChange={(value) => onSelectChange && onSelectChange("gender", value)}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Male">Male</SelectItem>
+                <SelectItem value="Female">Female</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           ) : (
             <p className="text-sm font-medium">{employee.gender}</p>
           )}
@@ -148,6 +160,58 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
             />
           ) : (
             <p className="text-sm font-medium">{employee.address}</p>
+          )}
+        </div>
+        <div>
+          <Label>City</Label>
+          {isEditMode ? (
+            <Input 
+              name="city" 
+              value={employee.city || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.city || "Not specified"}</p>
+          )}
+        </div>
+        <div>
+          <Label>State/Province</Label>
+          {isEditMode ? (
+            <Input 
+              name="state" 
+              value={employee.state || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.state || "Not specified"}</p>
+          )}
+        </div>
+        <div>
+          <Label>Country</Label>
+          {isEditMode ? (
+            <Input 
+              name="country" 
+              value={employee.country || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.country || "Not specified"}</p>
+          )}
+        </div>
+        <div>
+          <Label>Postal Code</Label>
+          {isEditMode ? (
+            <Input 
+              name="postalcode" 
+              value={employee.postalcode || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.postalcode || "Not specified"}</p>
           )}
         </div>
         <div className="col-span-2">

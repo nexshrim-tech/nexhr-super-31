@@ -108,22 +108,33 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     
     console.log('Submitting formatted employee data to database:', formattedEmployee);
     
-    // Make sure we have explicitly defined the required fields using the formattedEmployee object
+    // Make sure we have explicitly defined the required fields
     const typedEmployee = {
       firstname: String(formattedEmployee.firstname),
       lastname: String(formattedEmployee.lastname),
       email: String(formattedEmployee.email),
-      // Include department as string
+      // Include all other fields with proper types
       ...(formattedEmployee.department !== undefined ? { department: String(formattedEmployee.department) } : {}),
-      // Add other optional fields if they exist
+      ...(formattedEmployee.jobtitle !== undefined ? { jobtitle: String(formattedEmployee.jobtitle) } : {}),
+      ...(formattedEmployee.phonenumber !== undefined ? { phonenumber: String(formattedEmployee.phonenumber) } : {}),
+      ...(formattedEmployee.address !== undefined ? { address: String(formattedEmployee.address) } : {}),
+      ...(formattedEmployee.gender !== undefined ? { gender: String(formattedEmployee.gender) } : {}),
+      ...(formattedEmployee.city !== undefined ? { city: String(formattedEmployee.city) } : {}),
+      ...(formattedEmployee.state !== undefined ? { state: String(formattedEmployee.state) } : {}),
+      ...(formattedEmployee.country !== undefined ? { country: String(formattedEmployee.country) } : {}),
+      ...(formattedEmployee.postalcode !== undefined ? { postalcode: String(formattedEmployee.postalcode) } : {}),
       ...(formattedEmployee.salary !== undefined ? { salary: formattedEmployee.salary } : {}),
       ...(formattedEmployee.monthlysalary !== undefined ? { monthlysalary: formattedEmployee.monthlysalary } : {}),
-      // Include all other fields
-      ...Object.fromEntries(
-        Object.entries(formattedEmployee).filter(([key]) => 
-          !['firstname', 'lastname', 'email', 'department', 'salary', 'monthlysalary'].includes(key)
-        )
-      )
+      ...(formattedEmployee.joiningdate !== undefined ? { joiningdate: formattedEmployee.joiningdate } : {}),
+      ...(formattedEmployee.dateofbirth !== undefined ? { dateofbirth: formattedEmployee.dateofbirth } : {}),
+      ...(formattedEmployee.terminationdate !== undefined ? { terminationdate: formattedEmployee.terminationdate } : {}),
+      ...(formattedEmployee.probationenddate !== undefined ? { probationenddate: formattedEmployee.probationenddate } : {}),
+      ...(formattedEmployee.education !== undefined ? { education: String(formattedEmployee.education) } : {}),
+      ...(formattedEmployee.employeetype !== undefined ? { employeetype: String(formattedEmployee.employeetype) } : {}),
+      ...(formattedEmployee.employeestatus !== undefined ? { employeestatus: String(formattedEmployee.employeestatus) } : {}),
+      ...(formattedEmployee.workauthorization !== undefined ? { workauthorization: String(formattedEmployee.workauthorization) } : {}),
+      ...(formattedEmployee.employmenthistory !== undefined ? { employmenthistory: String(formattedEmployee.employmenthistory) } : {}),
+      ...(formattedEmployee.customerid !== undefined ? { customerid: formattedEmployee.customerid } : {})
     };
     
     const { data, error } = await supabase
