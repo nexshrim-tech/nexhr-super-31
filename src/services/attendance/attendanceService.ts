@@ -57,8 +57,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
       return [];
     }
 
-    console.log(`Found ${existingRecords?.length || 0} existing records for date: ${date}`);
-    console.log("Existing records:", existingRecords);
+    console.log(`Found ${existingRecords?.length || 0} existing records`);
 
     // Create a map of existing records by employee ID
     const existingRecordsMap = new Map(
@@ -70,14 +69,13 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     const cutoffTime = new Date(currentDate);
     cutoffTime.setHours(12, 0, 0, 0);
     
-    // Create default records for display (we won't insert them to the database yet)
+    // Create default records for display
     const allRecords: AttendanceRecord[] = [];
     
     for (const employee of employees) {
       const existingRecord = existingRecordsMap.get(employee.employeeid);
       
       if (existingRecord) {
-        // We already have a record for this employee
         allRecords.push({
           ...existingRecord,
           employee: {
@@ -86,15 +84,13 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
           }
         });
       } else {
-        // Create a default record for display
         const defaultRecord = now < cutoffTime ? 
           markAsNotMarked(employee.employeeid, date) :
           markAsAbsent(employee.employeeid, date);
           
-        // Add employee info to the record
         allRecords.push({
           ...defaultRecord,
-          attendanceid: 0, // Use 0 to indicate this is a default record not yet in the database
+          attendanceid: 0,
           employee: {
             firstname: employee.firstname,
             lastname: employee.lastname
@@ -103,7 +99,6 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
       }
     }
 
-    console.log(`Returning ${allRecords.length} attendance records (including defaults)`);
     return allRecords;
   } catch (error) {
     console.error('Error in getAttendanceForDate:', error);

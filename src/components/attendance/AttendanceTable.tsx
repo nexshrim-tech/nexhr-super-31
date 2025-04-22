@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -63,7 +62,7 @@ const AttendanceTable = ({
     
     switch (status.toLowerCase()) {
       case "present":
-        badgeClass = "bg-green-500 text-white"; // Changed to make Present stand out with green-500
+        badgeClass = "bg-green-500 text-white";
         break;
       case "absent":
         badgeClass = "bg-red-100 text-red-800";
@@ -148,7 +147,7 @@ const AttendanceTable = ({
     try {
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return "-";
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return format(date, 'hh:mm a');
     } catch (error) {
       return "-";
     }
