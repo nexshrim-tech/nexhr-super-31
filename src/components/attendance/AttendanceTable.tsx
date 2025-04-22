@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -49,10 +48,11 @@ const AttendanceTable = ({
   const [editData, setEditData] = useState<Partial<AttendanceRecord>>({});
   const [localRecords, setLocalRecords] = useState<AttendanceRecord[]>([]);
 
-  // Update local records whenever the query data changes
   useEffect(() => {
-    setLocalRecords(records);
-    console.log("Local records updated from query:", records);
+    if (records) {
+      setLocalRecords(records);
+      console.log("Local records updated from query:", records);
+    }
   }, [records]);
 
   const renderAttendanceStatus = (status: string | null) => {
@@ -104,29 +104,23 @@ const AttendanceTable = ({
       
       console.log("Saving record with data:", updatedRecord);
       
-      // Update record and get the returned data
       const savedRecord = await updateAttendanceRecord(updatedRecord.attendanceid || 0, updatedRecord);
       
-      // If we got data back, update the UI immediately
       if (savedRecord) {
         console.log("Received saved record:", savedRecord);
         
-        // Find the index of the record we just updated
         const recordIndex = localRecords.findIndex(r => 
           (r.attendanceid && r.attendanceid === record.attendanceid) || 
           (!r.attendanceid && r.employeeid === record.employeeid)
         );
         
         if (recordIndex !== -1) {
-          // Create a new array with the updated record
           const updatedRecords = [...localRecords];
           updatedRecords[recordIndex] = {
             ...record,
             ...savedRecord,
-            // Ensure employee data is preserved if not in the returned record
             employee: savedRecord.employee || record.employee,
-            // Make sure status is properly set
-            status: savedRecord.status || editData.status || record.status
+            status: savedRecord.status || editData.status
           };
           
           console.log("Updating local records with:", updatedRecords[recordIndex]);
@@ -134,14 +128,10 @@ const AttendanceTable = ({
         }
       }
       
-      // Reset the editing state
       setEditingId(null);
       setEditData({});
       
-      // Refresh data from server after a short delay
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['attendance', formattedDate] });
-      }, 1000);
+      queryClient.invalidateQueries({ queryKey: ['attendance', formattedDate] });
     } catch (error) {
       console.error("Error saving edit:", error);
     }
@@ -176,7 +166,6 @@ const AttendanceTable = ({
     }
   };
 
-  // Use localRecords instead of filteredRecords for rendering
   const recordsToShow = localRecords.filter(record => {
     const searchLower = searchTerm.toLowerCase();
     const employeeName = record.employee 

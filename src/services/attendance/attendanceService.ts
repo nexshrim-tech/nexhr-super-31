@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from 'date-fns';
@@ -163,11 +162,16 @@ export const updateAttendanceRecord = async (
       if (!updatesToSend.date && updates.date) {
         updatesToSend.date = updates.date;
       }
+
+      if (!updatesToSend.status && updates.status) {
+        updatesToSend.status = updates.status;
+      }
       
       const { data, error: insertError } = await supabase
         .from('attendance')
         .insert(updatesToSend)
-        .select('*, employee:employee(firstname, lastname)');
+        .select('*, employee:employee(firstname, lastname)')
+        .single();
         
       if (insertError) {
         console.error('Error inserting new attendance record:', insertError);
@@ -178,15 +182,15 @@ export const updateAttendanceRecord = async (
       console.log('New attendance record created successfully:', data);
       toast.success('New attendance record created successfully');
       
-      // Return the newly created record so the UI can be updated immediately
-      return data?.[0] || null;
+      return data || null;
     }
 
     const { data, error } = await supabase
       .from('attendance')
       .update(updatesToSend)
       .eq('attendanceid', id)
-      .select('*, employee:employee(firstname, lastname)');
+      .select('*, employee:employee(firstname, lastname)')
+      .single();
 
     if (error) {
       console.error('Supabase error:', error);
@@ -195,9 +199,7 @@ export const updateAttendanceRecord = async (
     }
 
     toast.success('Attendance record updated successfully');
-    
-    // Return the updated record for UI update
-    return data?.[0] || null;
+    return data || null;
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);
     toast.error('Failed to update attendance record');
