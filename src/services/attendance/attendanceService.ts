@@ -67,20 +67,46 @@ export const updateAttendanceRecord = async (
   updates: Partial<AttendanceRecord>
 ): Promise<void> => {
   try {
-    // Convert time strings to ISO format if they exist
-    const formattedUpdates = {
-      ...updates,
-      checkintime: updates.checkintime ? new Date(updates.date + 'T' + updates.checkintime).toISOString() : null,
-      checkouttime: updates.checkouttime ? new Date(updates.date + 'T' + updates.checkouttime).toISOString() : null,
-      workhours: calculateWorkHours(updates.checkintime, updates.checkouttime)
-    };
+    console.log('Updating attendance record:', id, updates);
+    
+    // Create a copy of the updates to avoid modifying the original
+    const updatesToSend: any = { ...updates };
+    
+    // Check if there's a valid checkintime and format it correctly
+    if (updates.checkintime && updates.date) {
+      // Handle case where time might already be in ISO format
+      if (!updates.checkintime.includes('T')) {
+        updatesToSend.checkintime = new Date(`${updates.date}T${updates.checkintime}`).toISOString();
+      }
+    } else if (updates.checkintime === '') {
+      updatesToSend.checkintime = null;
+    }
+    
+    // Check if there's a valid checkouttime and format it correctly
+    if (updates.checkouttime && updates.date) {
+      // Handle case where time might already be in ISO format
+      if (!updates.checkouttime.includes('T')) {
+        updatesToSend.checkouttime = new Date(`${updates.date}T${updates.checkouttime}`).toISOString();
+      }
+    } else if (updates.checkouttime === '') {
+      updatesToSend.checkouttime = null;
+    }
+    
+    // Calculate work hours if both times are present
+    updatesToSend.workhours = calculateWorkHours(
+      updates.checkintime || null, 
+      updates.checkouttime || null
+    );
+    
+    console.log('Sending to Supabase:', updatesToSend);
 
     const { error } = await supabase
       .from('attendance')
-      .update(formattedUpdates)
+      .update(updatesToSend)
       .eq('attendanceid', id);
 
     if (error) {
+      console.error('Supabase error:', error);
       toast.error('Error updating attendance record');
       throw error;
     }
@@ -95,11 +121,20 @@ export const updateAttendanceRecord = async (
 const calculateWorkHours = (checkin: string | null, checkout: string | null): number | null => {
   if (!checkin || !checkout) return null;
   
-  const checkInTime = new Date(`1970-01-01T${checkin}`);
-  const checkOutTime = new Date(`1970-01-01T${checkout}`);
-  
-  const diffInHours = (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
-  return parseFloat(diffInHours.toFixed(2));
+  try {
+    // Extract just the time portion if an ISO string
+    const checkInTimeStr = checkin.includes('T') ? checkin.split('T')[1].substring(0, 5) : checkin;
+    const checkOutTimeStr = checkout.includes('T') ? checkout.split('T')[1].substring(0, 5) : checkout;
+    
+    const checkInTime = new Date(`1970-01-01T${checkInTimeStr}`);
+    const checkOutTime = new Date(`1970-01-01T${checkOutTimeStr}`);
+    
+    const diffInHours = (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
+    return parseFloat(diffInHours.toFixed(2));
+  } catch (error) {
+    console.error('Error calculating work hours:', error);
+    return null;
+  }
 };
 
 export const insertDefaultAbsentRecord = async (employeeId: number, date: string): Promise<void> => {
