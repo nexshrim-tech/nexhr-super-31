@@ -93,7 +93,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     const formattedEmployee = {
       ...cleanEmployee,
       department: cleanEmployee.department ? 
-        (typeof cleanEmployee.department === 'string' ? parseInt(cleanEmployee.department as string) : cleanEmployee.department) : 
+        (typeof cleanEmployee.department === 'string' ? parseInt(cleanEmployee.department as string, 10) : cleanEmployee.department) : 
         null,
       salary: cleanEmployee.salary ? 
         (typeof cleanEmployee.salary === 'string' ? parseFloat(cleanEmployee.salary as string) : cleanEmployee.salary) : 
@@ -112,7 +112,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     
     console.log('Submitting formatted employee data to database:', formattedEmployee);
     
-    // Make sure we pass a properly typed object that includes the required fields
+    // Make sure we're passing a properly typed object that includes the required fields
     const { data, error } = await supabase
       .from('employee')
       .insert(formattedEmployee)

@@ -76,6 +76,11 @@ export const createAttendanceSettings = async (
       Object.entries(settings).filter(([_, value]) => value !== undefined)
     );
     
+    // Ensure employeeid is properly handled
+    if (cleanSettings.employeeid && typeof cleanSettings.employeeid === 'string') {
+      cleanSettings.employeeid = parseInt(cleanSettings.employeeid, 10);
+    }
+    
     const { data, error } = await supabase
       .from('attendancesettings')
       .insert(cleanSettings)
