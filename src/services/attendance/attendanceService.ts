@@ -167,7 +167,7 @@ export const updateAttendanceRecord = async (
       const { data, error: insertError } = await supabase
         .from('attendance')
         .insert(updatesToSend)
-        .select();
+        .select('*, employee:employee(firstname, lastname)');
         
       if (insertError) {
         console.error('Error inserting new attendance record:', insertError);
@@ -186,7 +186,7 @@ export const updateAttendanceRecord = async (
       .from('attendance')
       .update(updatesToSend)
       .eq('attendanceid', id)
-      .select();
+      .select('*, employee:employee(firstname, lastname)');
 
     if (error) {
       console.error('Supabase error:', error);

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,8 +50,9 @@ const AttendanceTable = ({
   const [localRecords, setLocalRecords] = useState<AttendanceRecord[]>([]);
 
   // Update local records whenever the query data changes
-  React.useEffect(() => {
+  useEffect(() => {
     setLocalRecords(records);
+    console.log("Local records updated from query:", records);
   }, [records]);
 
   const renderAttendanceStatus = (status: string | null) => {
@@ -95,43 +96,55 @@ const AttendanceTable = ({
   };
 
   const handleSaveEdit = async (record: AttendanceRecord) => {
-    const updatedRecord = {
-      ...record,
-      ...editData
-    };
-    
-    // Update record and get the returned data
-    const savedRecord = await updateAttendanceRecord(updatedRecord.attendanceid || 0, updatedRecord);
-    
-    // If we got data back, update the UI immediately
-    if (savedRecord) {
-      // Find the index of the record we just updated
-      const recordIndex = localRecords.findIndex(r => 
-        (r.attendanceid && r.attendanceid === record.attendanceid) || 
-        (!r.attendanceid && r.employeeid === record.employeeid)
-      );
+    try {
+      const updatedRecord = {
+        ...record,
+        ...editData
+      };
       
-      if (recordIndex !== -1) {
-        // Create a new array with the updated record
-        const updatedRecords = [...localRecords];
-        updatedRecords[recordIndex] = {
-          ...record,
-          ...savedRecord,
-          // Ensure employee data is preserved
-          employee: record.employee
-        };
-        setLocalRecords(updatedRecords);
+      console.log("Saving record with data:", updatedRecord);
+      
+      // Update record and get the returned data
+      const savedRecord = await updateAttendanceRecord(updatedRecord.attendanceid || 0, updatedRecord);
+      
+      // If we got data back, update the UI immediately
+      if (savedRecord) {
+        console.log("Received saved record:", savedRecord);
+        
+        // Find the index of the record we just updated
+        const recordIndex = localRecords.findIndex(r => 
+          (r.attendanceid && r.attendanceid === record.attendanceid) || 
+          (!r.attendanceid && r.employeeid === record.employeeid)
+        );
+        
+        if (recordIndex !== -1) {
+          // Create a new array with the updated record
+          const updatedRecords = [...localRecords];
+          updatedRecords[recordIndex] = {
+            ...record,
+            ...savedRecord,
+            // Ensure employee data is preserved if not in the returned record
+            employee: savedRecord.employee || record.employee,
+            // Make sure status is properly set
+            status: savedRecord.status || editData.status || record.status
+          };
+          
+          console.log("Updating local records with:", updatedRecords[recordIndex]);
+          setLocalRecords(updatedRecords);
+        }
       }
+      
+      // Reset the editing state
+      setEditingId(null);
+      setEditData({});
+      
+      // Refresh data from server after a short delay
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['attendance', formattedDate] });
+      }, 1000);
+    } catch (error) {
+      console.error("Error saving edit:", error);
     }
-    
-    // Reset the editing state
-    setEditingId(null);
-    setEditData({});
-    
-    // Refresh data from server after a short delay
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['attendance', formattedDate] });
-    }, 1000);
   };
 
   const handleCancelEdit = () => {
