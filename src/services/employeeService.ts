@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -7,7 +6,7 @@ export interface Employee {
   lastname: string;
   email: string;
   jobtitle?: string;
-  department?: number;
+  department?: string;
   joiningdate?: string | null;
   profilepicturepath?: string;
   customerid?: number;
@@ -84,7 +83,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     }
     
     // Clean up undefined values to prevent Supabase errors
-    // This ensures that undefined values don't cause issues when inserted
     const cleanEmployee = Object.fromEntries(
       Object.entries(employee).filter(([_, value]) => value !== undefined)
     );
@@ -92,9 +90,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     // Handle fields that might come in as strings but need to be numbers
     const formattedEmployee = {
       ...cleanEmployee,
-      department: cleanEmployee.department ? 
-        (typeof cleanEmployee.department === 'string' ? parseInt(cleanEmployee.department as string, 10) : cleanEmployee.department) : 
-        null,
       salary: cleanEmployee.salary ? 
         (typeof cleanEmployee.salary === 'string' ? parseFloat(cleanEmployee.salary as string) : cleanEmployee.salary) : 
         null,
@@ -117,8 +112,9 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       firstname: String(formattedEmployee.firstname),
       lastname: String(formattedEmployee.lastname),
       email: String(formattedEmployee.email),
-      // Add optional fields if they exist
-      ...(formattedEmployee.department !== undefined ? { department: formattedEmployee.department } : {}),
+      // Include department as string
+      ...(formattedEmployee.department !== undefined ? { department: String(formattedEmployee.department) } : {}),
+      // Add other optional fields if they exist
       ...(formattedEmployee.salary !== undefined ? { salary: formattedEmployee.salary } : {}),
       ...(formattedEmployee.monthlysalary !== undefined ? { monthlysalary: formattedEmployee.monthlysalary } : {}),
       // Include all other fields

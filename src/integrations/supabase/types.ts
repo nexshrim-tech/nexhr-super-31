@@ -248,7 +248,7 @@ export type Database = {
           country: string | null
           customerid: number | null
           dateofbirth: string | null
-          department: number | null
+          department: string | null
           education: string | null
           email: string
           employeeid: number
@@ -276,7 +276,7 @@ export type Database = {
           country?: string | null
           customerid?: number | null
           dateofbirth?: string | null
-          department?: number | null
+          department?: string | null
           education?: string | null
           email: string
           employeeid?: number
@@ -304,7 +304,7 @@ export type Database = {
           country?: string | null
           customerid?: number | null
           dateofbirth?: string | null
-          department?: number | null
+          department?: string | null
           education?: string | null
           email?: string
           employeeid?: number
@@ -333,13 +333,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customer"
             referencedColumns: ["customerid"]
-          },
-          {
-            foreignKeyName: "employee_department_fkey"
-            columns: ["department"]
-            isOneToOne: false
-            referencedRelation: "department"
-            referencedColumns: ["departmentid"]
           },
         ]
       }
