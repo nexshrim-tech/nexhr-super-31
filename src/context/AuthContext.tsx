@@ -105,32 +105,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('Sign up successful:', data);
       
-      // Create a new customer record if company name is provided (this is an organization)
-      if (metadata.company_name) {
-        try {
-          const customerData = {
-            name: metadata.company_name,
-            contactemail: email,
-            contactperson: metadata.full_name,
-            subscriptionplan: "None",
-            subscriptionstatus: "Inactive"
-          };
-          
-          const customer = await createCustomer(customerData);
-          
-          if (customer && data.user) {
-            // Update the user's profile with the customer ID
-            await updateCustomerProfile(data.user.id, customer.customerid);
-            
-            localStorage.setItem("new-user", "true");
-          }
-        } catch (customerError) {
-          console.error('Error creating customer:', customerError);
-          // Continue with signup process even if customer creation fails
-          // This will at least create the user account
-        }
-      }
-      
       toast({
         title: "Sign up successful",
         description: "Please check your email to verify your account.",
