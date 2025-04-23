@@ -245,6 +245,7 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
+          company_employee_id: string | null
           country: string | null
           customerid: number | null
           dateofbirth: string | null
@@ -273,6 +274,7 @@ export type Database = {
         Insert: {
           address?: string | null
           city?: string | null
+          company_employee_id?: string | null
           country?: string | null
           customerid?: number | null
           dateofbirth?: string | null
@@ -301,6 +303,7 @@ export type Database = {
         Update: {
           address?: string | null
           city?: string | null
+          company_employee_id?: string | null
           country?: string | null
           customerid?: number | null
           dateofbirth?: string | null
@@ -638,6 +641,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_company_employee_id: {
+        Args: { company_id: number }
+        Returns: string
+      }
       get_user_customer_id: {
         Args: Record<PropertyKey, never>
         Returns: number

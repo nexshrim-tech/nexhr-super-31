@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Employee } from "@/services/employeeService";
 import {
@@ -41,6 +42,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Employee ID</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Job Title</TableHead>
@@ -51,6 +53,11 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
         <TableBody>
           {employees.map((employee) => (
             <TableRow key={employee.employeeid}>
+              <TableCell>
+                <span className="font-mono text-sm">
+                  {employee.company_employee_id || `-`}
+                </span>
+              </TableCell>
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">

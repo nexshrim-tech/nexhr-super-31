@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -28,9 +27,9 @@ export interface Employee {
   postalcode?: string;
   terminationdate?: string | null;
   probationenddate?: string | null;
+  company_employee_id?: string;
 }
 
-// Get only employees from the user's organization
 export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
   try {
     let query = supabase
@@ -55,7 +54,6 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
   }
 };
 
-// Get employee by ID (will only return employees from the user's organization due to RLS)
 export const getEmployeeById = async (id: number): Promise<Employee | null> => {
   try {
     const { data, error } = await supabase
