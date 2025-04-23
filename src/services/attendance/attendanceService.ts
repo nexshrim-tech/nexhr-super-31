@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from 'date-fns';
-import { markAsAbsent, markAsNotMarked, generateDefaultAttendance } from "@/utils/attendanceDefaults";
+import { markAsAbsent, markAsNotMarked } from "@/utils/attendanceDefaults";
 
 export interface Employee {
   firstname: string;
@@ -25,7 +25,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
   try {
     console.log(`Fetching attendance for date: ${date}`);
     
-    // First, get all employees
+    // First, get all active employees
     const { data: employees, error: empError } = await supabase
       .from('employee')
       .select('employeeid, firstname, lastname')
@@ -46,7 +46,15 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     const { data: existingRecords, error } = await supabase
       .from('attendance')
       .select(`
-        *,
+        attendanceid,
+        employeeid,
+        date,
+        checkintime,
+        checkouttime,
+        workhours,
+        location,
+        notes,
+        status,
         employee:employee(firstname, lastname)
       `)
       .eq('date', date);
@@ -69,35 +77,34 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     const cutoffTime = new Date(currentDate);
     cutoffTime.setHours(12, 0, 0, 0);
     
-    // Create default records for display
-    const allRecords: AttendanceRecord[] = [];
-    
-    for (const employee of employees) {
+    // Create records array including both existing and default records
+    const allRecords = employees.map(employee => {
       const existingRecord = existingRecordsMap.get(employee.employeeid);
       
       if (existingRecord) {
-        allRecords.push({
+        return {
           ...existingRecord,
           employee: {
             firstname: employee.firstname,
             lastname: employee.lastname
           }
-        });
-      } else {
-        const defaultRecord = now < cutoffTime ? 
-          markAsNotMarked(employee.employeeid, date) :
-          markAsAbsent(employee.employeeid, date);
-          
-        allRecords.push({
-          ...defaultRecord,
-          attendanceid: 0,
-          employee: {
-            firstname: employee.firstname,
-            lastname: employee.lastname
-          }
-        });
+        };
       }
-    }
+
+      // Create default record for employees without attendance
+      const defaultRecord = now < cutoffTime ? 
+        markAsNotMarked(employee.employeeid, date) :
+        markAsAbsent(employee.employeeid, date);
+
+      return {
+        ...defaultRecord,
+        attendanceid: 0,
+        employee: {
+          firstname: employee.firstname,
+          lastname: employee.lastname
+        }
+      };
+    });
 
     return allRecords;
   } catch (error) {
