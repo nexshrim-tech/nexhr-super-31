@@ -10,6 +10,7 @@ export interface Employee {
 }
 
 export interface AttendanceRecord {
+  // Make attendanceid optional to match the database structure
   attendanceid?: number;
   employeeid: number;
   date: string;
@@ -21,6 +22,19 @@ export interface AttendanceRecord {
   status: string | null;
   employee?: Employee | null;
   customerid?: number | null;
+}
+
+// Database response interface to handle mapping correctly
+interface AttendanceDBRecord {
+  attendanceid?: number;
+  employeeid: number;
+  checkintimestamp?: string | null;
+  checkouttimestamp?: string | null;
+  status?: string | null;
+  selfieimagepath?: string | null;
+  customerid?: number | null;
+  employee?: Employee | null;
+  notes?: string | null;
 }
 
 export const getAttendanceForDate = async (date: string): Promise<AttendanceRecord[]> => {
@@ -74,12 +88,12 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     
     // Create records array including both existing and default records
     const allRecords = employees.map(employee => {
-      const existingRecord = existingRecordsMap.get(employee.employeeid);
+      const existingRecord = existingRecordsMap.get(employee.employeeid) as AttendanceDBRecord | undefined;
       
       if (existingRecord) {
         // Map database record to interface format
         return {
-          attendanceid: existingRecord?.attendanceid || 0,
+          attendanceid: existingRecord.attendanceid || 0,
           employeeid: existingRecord.employeeid,
           date: date,
           checkintime: existingRecord.checkintimestamp ? 
@@ -88,7 +102,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
             format(new Date(existingRecord.checkouttimestamp), 'HH:mm:ss') : null,
           workhours: calculateWorkhours(existingRecord.checkintimestamp, existingRecord.checkouttimestamp),
           location: null,
-          notes: null,
+          notes: existingRecord.notes || null,
           status: existingRecord.status || 'Not Marked',
           employee: {
             firstname: employee.firstname,
@@ -121,7 +135,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
 };
 
 // Helper function to calculate work hours
-const calculateWorkhours = (checkIn: string | null, checkOut: string | null): number | null => {
+const calculateWorkhours = (checkIn: string | null | undefined, checkOut: string | null | undefined): number | null => {
   if (!checkIn || !checkOut) return null;
   
   try {
@@ -169,6 +183,10 @@ export const updateAttendanceRecord = async (
     } else if (updates.checkouttime === '') {
       dbRecord.checkouttimestamp = null;
     }
+
+    if (updates.notes) {
+      dbRecord.notes = updates.notes;
+    }
     
     if (updates.customerid) {
       dbRecord.customerid = updates.customerid;
@@ -214,21 +232,23 @@ export const updateAttendanceRecord = async (
       console.log('New attendance record created successfully:', data);
       toast.success('New attendance record created successfully');
       
+      const recordData = data as AttendanceDBRecord;
+      
       // Map database response to interface format
       return {
-        attendanceid: data.attendanceid || 0,
-        employeeid: data.employeeid,
+        attendanceid: recordData.attendanceid || 0,
+        employeeid: recordData.employeeid,
         date: updates.date || '',
-        checkintime: data.checkintimestamp ? 
-          format(new Date(data.checkintimestamp), 'HH:mm:ss') : null,
-        checkouttime: data.checkouttimestamp ? 
-          format(new Date(data.checkouttimestamp), 'HH:mm:ss') : null,
-        workhours: calculateWorkhours(data.checkintimestamp, data.checkouttimestamp),
+        checkintime: recordData.checkintimestamp ? 
+          format(new Date(recordData.checkintimestamp), 'HH:mm:ss') : null,
+        checkouttime: recordData.checkouttimestamp ? 
+          format(new Date(recordData.checkouttimestamp), 'HH:mm:ss') : null,
+        workhours: calculateWorkhours(recordData.checkintimestamp, recordData.checkouttimestamp),
         location: null,
         notes: updates.notes || null,
-        status: data.status || null,
-        employee: data.employee,
-        customerid: data.customerid
+        status: recordData.status || null,
+        employee: recordData.employee,
+        customerid: recordData.customerid
       };
     }
 
@@ -247,21 +267,23 @@ export const updateAttendanceRecord = async (
 
     toast.success('Attendance record updated successfully');
     
+    const recordData = data as AttendanceDBRecord;
+    
     // Map database response to interface format
     return {
-      attendanceid: data.attendanceid || 0,
-      employeeid: data.employeeid,
+      attendanceid: recordData.attendanceid || 0,
+      employeeid: recordData.employeeid,
       date: updates.date || '',
-      checkintime: data.checkintimestamp ? 
-        format(new Date(data.checkintimestamp), 'HH:mm:ss') : null,
-      checkouttime: data.checkouttimestamp ? 
-        format(new Date(data.checkouttimestamp), 'HH:mm:ss') : null,
-      workhours: calculateWorkhours(data.checkintimestamp, data.checkouttimestamp),
+      checkintime: recordData.checkintimestamp ? 
+        format(new Date(recordData.checkintimestamp), 'HH:mm:ss') : null,
+      checkouttime: recordData.checkouttimestamp ? 
+        format(new Date(recordData.checkouttimestamp), 'HH:mm:ss') : null,
+      workhours: calculateWorkhours(recordData.checkintimestamp, recordData.checkouttimestamp),
       location: null,
-      notes: updates.notes || null,
-      status: data.status || null,
-      employee: data.employee,
-      customerid: data.customerid
+      notes: recordData.notes || null,
+      status: recordData.status || null,
+      employee: recordData.employee,
+      customerid: recordData.customerid
     };
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);

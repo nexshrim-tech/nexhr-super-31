@@ -8,8 +8,21 @@ export interface AttendanceSettings {
   latethreshold: string;
   photoverificationenabled: boolean;
   workstarttime: string;
-  workendtime?: string;
-  created_at?: string;
+  workendtime?: string | null;
+  created_at?: string | null;
+}
+
+// Defining the DB type to handle the mapping correctly
+interface AttendanceSettingsDB {
+  attendancesettingid: number;
+  employeeid: number;
+  customerid?: number;
+  geofencingenabled: boolean;
+  latethreshold: unknown;
+  photoverificationenabled: boolean;
+  workstarttime: string;
+  workendtime?: string | null;
+  created_at?: string | null;
 }
 
 type AttendanceSettingsData = Omit<AttendanceSettings, 'id'>;
@@ -32,7 +45,7 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
     }
 
     // Map database fields to interface fields
-    return (data || []).map(item => ({
+    return (data || []).map((item: AttendanceSettingsDB) => ({
       id: item.attendancesettingid,
       employeeid: item.employeeid,
       geofencingenabled: item.geofencingenabled || false,
@@ -66,7 +79,7 @@ export const updateAttendanceSettings = async (
     if ('workstarttime' in cleanSettings) dbSettings.workstarttime = cleanSettings.workstarttime;
     if ('workendtime' in cleanSettings) dbSettings.workendtime = cleanSettings.workendtime;
     
-    const { data, error } = await supabase
+    const { data: updatedData, error } = await supabase
       .from('attendancesettings')
       .update(dbSettings)
       .eq('attendancesettingid', id)
@@ -77,6 +90,8 @@ export const updateAttendanceSettings = async (
       console.error('Error updating attendance settings:', error);
       throw error;
     }
+
+    const data = updatedData as AttendanceSettingsDB;
 
     // Map database response to interface
     return {
@@ -121,7 +136,7 @@ export const createAttendanceSettings = async (
       dbSettings.workendtime = String(cleanSettings.workendtime);
     }
     
-    const { data, error } = await supabase
+    const { data: insertedData, error } = await supabase
       .from('attendancesettings')
       .insert(dbSettings)
       .select()
@@ -131,6 +146,8 @@ export const createAttendanceSettings = async (
       console.error('Error creating attendance settings:', error);
       throw error;
     }
+
+    const data = insertedData as AttendanceSettingsDB;
 
     // Map database response to interface
     return {

@@ -9,7 +9,7 @@ export interface Customer {
   contactemail?: string;
   contactperson?: string;
   accountcreationdate?: string;
-  subscriptionplan?: string;
+  subscriptionplan?: string | null;
   subscriptionstatus?: string;
   subscriptionenddate?: string;
 }
@@ -88,15 +88,20 @@ export const updateCustomerProfile = async (userId: string, customerId: number):
 
 export const getSubscriptionPlan = async (customerId: number): Promise<string | null> => {
   try {
-    // Check if subscriptionplan field exists in the table
+    // Check if plan field exists in the table
     const { data } = await supabase
       .from('customer')
-      .select()
+      .select('planid')
       .eq('customerid', customerId)
       .single();
     
-    if (data && 'subscriptionplan' in data) {
-      return data.subscriptionplan || null;
+    if (data && 'planid' in data) {
+      // Map plan ID to plan name
+      const planId = data.planid;
+      if (planId === 1) return "None";
+      if (planId === 2) return "Basic";
+      if (planId === 3) return "Premium";
+      return String(planId);
     }
     
     return null;
@@ -108,12 +113,11 @@ export const getSubscriptionPlan = async (customerId: number): Promise<string | 
 
 export const updateSubscriptionPlan = async (customerId: number, plan: string): Promise<void> => {
   try {
-    // First check if the subscriptionplan field exists in the table
+    // Map plan name to plan ID
     const { error } = await supabase
       .from('customer')
       .update({ 
         // Only include fields that exist in the customer table
-        // We might need to add these columns first via migration
         planid: plan === "None" ? 1 : plan === "Basic" ? 2 : 3
       })
       .eq('customerid', customerId);

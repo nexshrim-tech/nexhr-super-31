@@ -16,11 +16,11 @@ export interface Employee {
   salary?: number;
   gender?: string;
   dateofbirth?: string | null;
-  education?: string;
-  employeetype?: string;
-  employeestatus?: string;
-  workauthorization?: string;
-  employmenthistory?: string;
+  education?: string | undefined;
+  employeetype?: string | undefined;
+  employeestatus?: string | undefined;
+  workauthorization?: string | undefined;
+  employmenthistory?: string | undefined;
   monthlysalary?: number;
   city?: string;
   state?: string;
@@ -29,6 +29,35 @@ export interface Employee {
   terminationdate?: string | null;
   probationenddate?: string | null;
   company_employee_id?: string;
+}
+
+// Interface for the database employee record
+interface EmployeeDB {
+  employeeid: number;
+  firstname: string;
+  lastname: string;
+  email: string;
+  jobtitle?: string;
+  department?: number;
+  joiningdate?: string | null;
+  profilepicturepath?: string;
+  customerid?: number;
+  address?: string;
+  gender?: string;
+  dateofbirth?: string | null;
+  city?: string;
+  state?: string;
+  country?: string;
+  zipcode?: string;
+  // Additional fields from DB that might be missing in the current interface
+  bloodgroup?: string;
+  disabilitystatus?: string;
+  documentpath?: string;
+  education?: string | undefined;
+  employeestatus?: string | undefined;
+  employmenttype?: string | undefined;
+  workauthorization?: string | undefined;
+  employmenthistory?: string | undefined;
 }
 
 export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
@@ -48,7 +77,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       throw error;
     }
 
-    return (data || []).map(emp => ({
+    return (data || []).map((emp: EmployeeDB) => ({
       employeeid: emp.employeeid,
       firstname: emp.firstname || '',
       lastname: emp.lastname || '',
@@ -65,11 +94,11 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       state: emp.state,
       country: emp.country,
       postalcode: emp.zipcode,
-      education: emp.education || undefined,
-      employeestatus: emp.employeestatus || undefined,
-      employeetype: emp.employmenttype || undefined,
-      workauthorization: emp.workauthorization || undefined,
-      employmenthistory: emp.employmenthistory || undefined
+      education: emp.education,
+      employeestatus: emp.employeestatus,
+      employeetype: emp.employmenttype,
+      workauthorization: emp.workauthorization,
+      employmenthistory: emp.employmenthistory
     }));
   } catch (error) {
     console.error('Error in getEmployees:', error);
@@ -92,28 +121,30 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
 
     if (!data) return null;
     
+    const emp = data as EmployeeDB;
+    
     return {
-      employeeid: data.employeeid,
-      firstname: data.firstname || '',
-      lastname: data.lastname || '',
-      email: data.email || '',
-      jobtitle: data.jobtitle,
-      department: data.department ? String(data.department) : undefined,
-      joiningdate: data.joiningdate,
-      profilepicturepath: data.profilepicturepath,
-      customerid: data.customerid,
-      address: data.address,
-      gender: data.gender,
-      dateofbirth: data.dateofbirth,
-      city: data.city,
-      state: data.state,
-      country: data.country,
-      postalcode: data.zipcode,
-      education: data.education || undefined,
-      employeestatus: data.employeestatus || undefined,
-      employeetype: data.employmenttype || undefined,
-      workauthorization: data.workauthorization || undefined,
-      employmenthistory: data.employmenthistory || undefined
+      employeeid: emp.employeeid,
+      firstname: emp.firstname || '',
+      lastname: emp.lastname || '',
+      email: emp.email || '',
+      jobtitle: emp.jobtitle,
+      department: emp.department ? String(emp.department) : undefined,
+      joiningdate: emp.joiningdate,
+      profilepicturepath: emp.profilepicturepath,
+      customerid: emp.customerid,
+      address: emp.address,
+      gender: emp.gender,
+      dateofbirth: emp.dateofbirth,
+      city: emp.city,
+      state: emp.state,
+      country: emp.country,
+      postalcode: emp.zipcode,
+      education: emp.education,
+      employeestatus: emp.employeestatus,
+      employeetype: emp.employmenttype,
+      workauthorization: emp.workauthorization,
+      employmenthistory: emp.employmenthistory
     };
   } catch (error) {
     console.error('Error in getEmployeeById:', error);
@@ -207,29 +238,31 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
 
     console.log('Employee added successfully:', data);
     
+    const emp = data as EmployeeDB;
+    
     // Map database response back to our interface
     return {
-      employeeid: data.employeeid,
-      firstname: data.firstname || '',
-      lastname: data.lastname || '',
-      email: data.email || '',
-      jobtitle: data.jobtitle,
-      department: data.department ? String(data.department) : undefined,
-      joiningdate: data.joiningdate,
-      profilepicturepath: data.profilepicturepath,
-      customerid: data.customerid,
-      address: data.address,
-      gender: data.gender,
-      dateofbirth: data.dateofbirth,
-      city: data.city,
-      state: data.state,
-      country: data.country,
-      postalcode: data.zipcode,
-      education: data.education,
-      employeestatus: data.employeestatus,
-      employeetype: data.employmenttype,
-      workauthorization: data.workauthorization,
-      employmenthistory: data.employmenthistory
+      employeeid: emp.employeeid,
+      firstname: emp.firstname || '',
+      lastname: emp.lastname || '',
+      email: emp.email || '',
+      jobtitle: emp.jobtitle,
+      department: emp.department ? String(emp.department) : undefined,
+      joiningdate: emp.joiningdate,
+      profilepicturepath: emp.profilepicturepath,
+      customerid: emp.customerid,
+      address: emp.address,
+      gender: emp.gender,
+      dateofbirth: emp.dateofbirth,
+      city: emp.city,
+      state: emp.state,
+      country: emp.country,
+      postalcode: emp.zipcode,
+      education: emp.education,
+      employeestatus: emp.employeestatus,
+      employeetype: emp.employmenttype,
+      workauthorization: emp.workauthorization,
+      employmenthistory: emp.employmenthistory
     };
   } catch (error) {
     console.error('Error in addEmployee:', error);
@@ -288,29 +321,31 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       throw error;
     }
 
+    const emp = data as EmployeeDB;
+
     // Map database response back to our interface
     return {
-      employeeid: data.employeeid,
-      firstname: data.firstname || '',
-      lastname: data.lastname || '',
-      email: data.email || '',
-      jobtitle: data.jobtitle,
-      department: data.department ? String(data.department) : undefined,
-      joiningdate: data.joiningdate,
-      profilepicturepath: data.profilepicturepath,
-      customerid: data.customerid,
-      address: data.address,
-      gender: data.gender,
-      dateofbirth: data.dateofbirth,
-      city: data.city,
-      state: data.state,
-      country: data.country,
-      postalcode: data.zipcode,
-      education: data.education,
-      employeestatus: data.employeestatus,
-      employeetype: data.employmenttype,
-      workauthorization: data.workauthorization,
-      employmenthistory: data.employmenthistory
+      employeeid: emp.employeeid,
+      firstname: emp.firstname || '',
+      lastname: emp.lastname || '',
+      email: emp.email || '',
+      jobtitle: emp.jobtitle,
+      department: emp.department ? String(emp.department) : undefined,
+      joiningdate: emp.joiningdate,
+      profilepicturepath: emp.profilepicturepath,
+      customerid: emp.customerid,
+      address: emp.address,
+      gender: emp.gender,
+      dateofbirth: emp.dateofbirth,
+      city: emp.city,
+      state: emp.state,
+      country: emp.country,
+      postalcode: emp.zipcode,
+      education: emp.education,
+      employeestatus: emp.employeestatus,
+      employeetype: emp.employmenttype,
+      workauthorization: emp.workauthorization,
+      employmenthistory: emp.employmenthistory
     };
   } catch (error) {
     console.error('Error in updateEmployee:', error);
