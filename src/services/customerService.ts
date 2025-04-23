@@ -21,11 +21,11 @@ export const getCurrentCustomer = async (user: User | null): Promise<Customer | 
     // Get user profile to find customer ID
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('customerid')
+      .select('customer_id')
       .eq('id', user.id)
       .single();
     
-    if (profileError || !profile?.customerid) {
+    if (profileError || !profile?.customer_id) {
       console.error('Error fetching profile or no customer ID found:', profileError);
       return null;
     }
@@ -34,7 +34,7 @@ export const getCurrentCustomer = async (user: User | null): Promise<Customer | 
     const { data: customer, error: customerError } = await supabase
       .from('customer')
       .select('*')
-      .eq('customerid', profile.customerid)
+      .eq('customerid', profile.customer_id)
       .single();
     
     if (customerError) {
@@ -73,7 +73,7 @@ export const updateCustomerProfile = async (userId: string, customerId: number):
   try {
     const { error } = await supabase
       .from('profiles')
-      .update({ customerid: customerId })
+      .update({ customer_id: customerId })
       .eq('id', userId);
     
     if (error) {

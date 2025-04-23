@@ -18,14 +18,20 @@ export const getDepartments = async (customerId?: number): Promise<Department[]>
       query = query.eq('customerid', customerId);
     }
     
-    const { data, error } = await query.order('name');
+    const { data, error } = await query.order('departmentname');
 
     if (error) {
       console.error('Error fetching departments:', error);
       throw error;
     }
 
-    return data || [];
+    // Map database fields to interface fields
+    return (data || []).map(item => ({
+      departmentid: item.departmentid,
+      name: item.departmentname || '',
+      description: item.departmentstatus, // Using status as description
+      customerid: item.customerid
+    }));
   } catch (error) {
     console.error('Error in getDepartments:', error);
     throw error;
@@ -45,7 +51,15 @@ export const getDepartmentById = async (id: number): Promise<Department | null> 
       throw error;
     }
 
-    return data;
+    if (!data) return null;
+    
+    // Map database fields to interface fields
+    return {
+      departmentid: data.departmentid,
+      name: data.departmentname || '',
+      description: data.departmentstatus,
+      customerid: data.customerid
+    };
   } catch (error) {
     console.error('Error in getDepartmentById:', error);
     throw error;
@@ -54,9 +68,16 @@ export const getDepartmentById = async (id: number): Promise<Department | null> 
 
 export const addDepartment = async (department: Omit<Department, 'departmentid'>): Promise<Department> => {
   try {
+    // Map interface fields to database fields
+    const dbDepartment = {
+      departmentname: department.name,
+      departmentstatus: department.description,
+      customerid: department.customerid
+    };
+    
     const { data, error } = await supabase
       .from('department')
-      .insert([department])
+      .insert([dbDepartment])
       .select()
       .single();
 
@@ -65,7 +86,13 @@ export const addDepartment = async (department: Omit<Department, 'departmentid'>
       throw error;
     }
 
-    return data;
+    // Map database response to interface
+    return {
+      departmentid: data.departmentid,
+      name: data.departmentname || '',
+      description: data.departmentstatus,
+      customerid: data.customerid
+    };
   } catch (error) {
     console.error('Error in addDepartment:', error);
     throw error;
@@ -74,9 +101,14 @@ export const addDepartment = async (department: Omit<Department, 'departmentid'>
 
 export const updateDepartment = async (id: number, department: Omit<Partial<Department>, 'departmentid'>): Promise<Department> => {
   try {
+    // Map interface fields to database fields
+    const dbDepartment: Record<string, any> = {};
+    if ('name' in department) dbDepartment.departmentname = department.name;
+    if ('description' in department) dbDepartment.departmentstatus = department.description;
+    
     const { data, error } = await supabase
       .from('department')
-      .update(department)
+      .update(dbDepartment)
       .eq('departmentid', id)
       .select()
       .single();
@@ -86,7 +118,13 @@ export const updateDepartment = async (id: number, department: Omit<Partial<Depa
       throw error;
     }
 
-    return data;
+    // Map database response to interface
+    return {
+      departmentid: data.departmentid,
+      name: data.departmentname || '',
+      description: data.departmentstatus,
+      customerid: data.customerid
+    };
   } catch (error) {
     console.error('Error in updateDepartment:', error);
     throw error;

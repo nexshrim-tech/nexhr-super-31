@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -47,7 +48,24 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(emp => ({
+      employeeid: emp.employeeid,
+      firstname: emp.firstname || '',
+      lastname: emp.lastname || '',
+      email: emp.email || '',
+      jobtitle: emp.jobtitle,
+      department: emp.department ? String(emp.department) : undefined,
+      joiningdate: emp.joiningdate,
+      profilepicturepath: emp.profilepicturepath,
+      customerid: emp.customerid,
+      address: emp.address,
+      gender: emp.gender,
+      dateofbirth: emp.dateofbirth,
+      city: emp.city,
+      state: emp.state,
+      country: emp.country,
+      postalcode: emp.zipcode
+    }));
   } catch (error) {
     console.error('Error in getEmployees:', error);
     throw error;
@@ -67,7 +85,26 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       throw error;
     }
 
-    return data || null;
+    if (!data) return null;
+    
+    return {
+      employeeid: data.employeeid,
+      firstname: data.firstname || '',
+      lastname: data.lastname || '',
+      email: data.email || '',
+      jobtitle: data.jobtitle,
+      department: data.department ? String(data.department) : undefined,
+      joiningdate: data.joiningdate,
+      profilepicturepath: data.profilepicturepath,
+      customerid: data.customerid,
+      address: data.address,
+      gender: data.gender,
+      dateofbirth: data.dateofbirth,
+      city: data.city,
+      state: data.state,
+      country: data.country,
+      postalcode: data.zipcode
+    };
   } catch (error) {
     console.error('Error in getEmployeeById:', error);
     throw error;
@@ -88,74 +125,56 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       Object.entries(employee).filter(([_, value]) => value !== undefined)
     );
     
-    // Handle fields that might come in as strings but need to be numbers
-    const formattedEmployee: Record<string, any> = {
+    // Get current user's customer_id if not provided
+    if (!cleanEmployee.customerid) {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('customer_id')
+          .eq('id', userData.user.id)
+          .single();
+
+        if (profileData?.customer_id) {
+          cleanEmployee.customerid = profileData.customer_id;
+        }
+      }
+    }
+    
+    console.log('Submitting formatted employee data to database:', cleanEmployee);
+    
+    // Convert department field to number if provided as string
+    const dbEmployee: Record<string, any> = {
       ...cleanEmployee,
       salary: cleanEmployee.salary ? 
         (typeof cleanEmployee.salary === 'string' ? parseFloat(cleanEmployee.salary as string) : cleanEmployee.salary) : 
         null,
       monthlysalary: cleanEmployee.monthlysalary ? 
         (typeof cleanEmployee.monthlysalary === 'string' ? parseFloat(cleanEmployee.monthlysalary as string) : cleanEmployee.monthlysalary) : 
-        null
+        null,
     };
     
-    // Handle date fields - convert empty strings to null to avoid database errors
-    ['joiningdate', 'dateofbirth', 'terminationdate', 'probationenddate'].forEach(field => {
-      if (formattedEmployee[field] === '') {
-        formattedEmployee[field] = null;
-      }
-    });
-
-    // Get current user's customerid if not provided
-    if (!formattedEmployee.customerid) {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('customerid')
-          .eq('id', userData.user.id)
-          .single();
-
-        if (profileData?.customerid) {
-          formattedEmployee.customerid = profileData.customerid;
-        }
+    // Handle department as number for database
+    if (dbEmployee.department && typeof dbEmployee.department === 'string') {
+      const departmentId = parseInt(dbEmployee.department);
+      if (!isNaN(departmentId)) {
+        dbEmployee.department = departmentId;
+      } else {
+        // If it's not a valid number, remove it
+        delete dbEmployee.department;
       }
     }
     
-    console.log('Submitting formatted employee data to database:', formattedEmployee);
-    
-    // Make sure we have explicitly defined the required fields
-    const typedEmployee = {
-      firstname: String(formattedEmployee.firstname),
-      lastname: String(formattedEmployee.lastname),
-      email: String(formattedEmployee.email),
-      // Include all other fields with proper types
-      ...(formattedEmployee.department !== undefined ? { department: String(formattedEmployee.department) } : {}),
-      ...(formattedEmployee.jobtitle !== undefined ? { jobtitle: String(formattedEmployee.jobtitle) } : {}),
-      ...(formattedEmployee.phonenumber !== undefined ? { phonenumber: String(formattedEmployee.phonenumber) } : {}),
-      ...(formattedEmployee.address !== undefined ? { address: String(formattedEmployee.address) } : {}),
-      ...(formattedEmployee.gender !== undefined ? { gender: String(formattedEmployee.gender) } : {}),
-      ...(formattedEmployee.city !== undefined ? { city: String(formattedEmployee.city) } : {}),
-      ...(formattedEmployee.state !== undefined ? { state: String(formattedEmployee.state) } : {}),
-      ...(formattedEmployee.country !== undefined ? { country: String(formattedEmployee.country) } : {}),
-      ...(formattedEmployee.postalcode !== undefined ? { postalcode: String(formattedEmployee.postalcode) } : {}),
-      ...(formattedEmployee.salary !== undefined ? { salary: formattedEmployee.salary } : {}),
-      ...(formattedEmployee.monthlysalary !== undefined ? { monthlysalary: formattedEmployee.monthlysalary } : {}),
-      ...(formattedEmployee.joiningdate !== undefined ? { joiningdate: formattedEmployee.joiningdate } : {}),
-      ...(formattedEmployee.dateofbirth !== undefined ? { dateofbirth: formattedEmployee.dateofbirth } : {}),
-      ...(formattedEmployee.terminationdate !== undefined ? { terminationdate: formattedEmployee.terminationdate } : {}),
-      ...(formattedEmployee.probationenddate !== undefined ? { probationenddate: formattedEmployee.probationenddate } : {}),
-      ...(formattedEmployee.education !== undefined ? { education: String(formattedEmployee.education) } : {}),
-      ...(formattedEmployee.employeetype !== undefined ? { employeetype: String(formattedEmployee.employeetype) } : {}),
-      ...(formattedEmployee.employeestatus !== undefined ? { employeestatus: String(formattedEmployee.employeestatus) } : {}),
-      ...(formattedEmployee.workauthorization !== undefined ? { workauthorization: String(formattedEmployee.workauthorization) } : {}),
-      ...(formattedEmployee.employmenthistory !== undefined ? { employmenthistory: String(formattedEmployee.employmenthistory) } : {}),
-      ...(formattedEmployee.customerid !== undefined ? { customerid: formattedEmployee.customerid } : {})
-    };
+    // Handle date fields - convert empty strings to null
+    ['joiningdate', 'dateofbirth', 'terminationdate', 'probationenddate'].forEach(field => {
+      if (dbEmployee[field] === '') {
+        dbEmployee[field] = null;
+      }
+    });
     
     const { data, error } = await supabase
       .from('employee')
-      .insert(typedEmployee)
+      .insert(dbEmployee)
       .select()
       .single();
 
@@ -165,7 +184,31 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     }
 
     console.log('Employee added successfully:', data);
-    return data;
+    
+    // Map database response back to our interface
+    return {
+      employeeid: data.employeeid,
+      firstname: data.firstname || '',
+      lastname: data.lastname || '',
+      email: data.email || '',
+      jobtitle: data.jobtitle,
+      department: data.department ? String(data.department) : undefined,
+      joiningdate: data.joiningdate,
+      profilepicturepath: data.profilepicturepath,
+      customerid: data.customerid,
+      address: data.address,
+      gender: data.gender,
+      dateofbirth: data.dateofbirth,
+      city: data.city,
+      state: data.state,
+      country: data.country,
+      postalcode: data.zipcode,
+      education: data.education,
+      employeestatus: data.employeestatus,
+      employeetype: data.employmenttype,
+      workauthorization: data.workauthorization,
+      employmenthistory: data.employmenthistory
+    };
   } catch (error) {
     console.error('Error in addEmployee:', error);
     throw error;
@@ -179,25 +222,29 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       Object.entries(employee).filter(([_, value]) => value !== undefined)
     );
     
-    // Sanitize date fields to avoid database errors
-    const sanitizedEmployee = { ...cleanEmployee };
+    // Handle department as number for database
+    const dbEmployee: Record<string, any> = { ...cleanEmployee };
     
-    // Convert empty string dates to null
-    if (sanitizedEmployee.joiningdate === '') sanitizedEmployee.joiningdate = null;
-    if (sanitizedEmployee.dateofbirth === '') sanitizedEmployee.dateofbirth = null;
-    if (sanitizedEmployee.terminationdate === '') sanitizedEmployee.terminationdate = null;
-    if (sanitizedEmployee.probationenddate === '') sanitizedEmployee.probationenddate = null;
-    
-    // Ensure department is always a string
-    if (sanitizedEmployee.department !== undefined) {
-      sanitizedEmployee.department = String(sanitizedEmployee.department);
+    if (dbEmployee.department && typeof dbEmployee.department === 'string') {
+      const departmentId = parseInt(dbEmployee.department);
+      if (!isNaN(departmentId)) {
+        dbEmployee.department = departmentId;
+      } else {
+        delete dbEmployee.department;
+      }
     }
     
-    console.log('Updating employee with sanitized data:', sanitizedEmployee);
+    // Convert empty string dates to null
+    if (dbEmployee.joiningdate === '') dbEmployee.joiningdate = null;
+    if (dbEmployee.dateofbirth === '') dbEmployee.dateofbirth = null;
+    if (dbEmployee.terminationdate === '') dbEmployee.terminationdate = null;
+    if (dbEmployee.probationenddate === '') dbEmployee.probationenddate = null;
+    
+    console.log('Updating employee with sanitized data:', dbEmployee);
     
     const { data, error } = await supabase
       .from('employee')
-      .update(sanitizedEmployee)
+      .update(dbEmployee)
       .eq('employeeid', id)
       .select()
       .single();
@@ -207,7 +254,30 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       throw error;
     }
 
-    return data;
+    // Map database response back to our interface
+    return {
+      employeeid: data.employeeid,
+      firstname: data.firstname || '',
+      lastname: data.lastname || '',
+      email: data.email || '',
+      jobtitle: data.jobtitle,
+      department: data.department ? String(data.department) : undefined,
+      joiningdate: data.joiningdate,
+      profilepicturepath: data.profilepicturepath,
+      customerid: data.customerid,
+      address: data.address,
+      gender: data.gender,
+      dateofbirth: data.dateofbirth,
+      city: data.city,
+      state: data.state,
+      country: data.country,
+      postalcode: data.zipcode,
+      education: data.education,
+      employeestatus: data.employeestatus,
+      employeetype: data.employmenttype,
+      workauthorization: data.workauthorization,
+      employmenthistory: data.employmenthistory
+    };
   } catch (error) {
     console.error('Error in updateEmployee:', error);
     throw error;

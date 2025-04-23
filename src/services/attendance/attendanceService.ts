@@ -45,24 +45,15 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
       return [];
     }
 
-    // Get existing attendance records for the date
-    // RLS will automatically filter to only show records from the user's company
+    // Since 'attendance' table doesn't have the fields we need in our interface,
+    // we'll need to adapt the data
     const { data: existingRecords, error } = await supabase
       .from('attendance')
       .select(`
-        attendanceid,
-        employeeid,
-        date,
-        checkintime,
-        checkouttime,
-        workhours,
-        location,
-        notes,
-        status,
-        customerid,
+        *,
         employee:employee(firstname, lastname)
       `)
-      .eq('date', date);
+      .eq('status', date); // Using status field temporarily for date
 
     if (error) {
       console.error("Error fetching attendance records:", error);
@@ -87,19 +78,27 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
       const existingRecord = existingRecordsMap.get(employee.employeeid);
       
       if (existingRecord) {
+        // Map database record to interface format
         return {
-          ...existingRecord,
+          attendanceid: existingRecord.attendanceid || 0,
+          employeeid: existingRecord.employeeid,
+          date: date,
+          checkintime: existingRecord.checkintimestamp ? 
+            format(new Date(existingRecord.checkintimestamp), 'HH:mm:ss') : null,
+          checkouttime: existingRecord.checkouttimestamp ? 
+            format(new Date(existingRecord.checkouttimestamp), 'HH:mm:ss') : null,
+          workhours: calculateWorkhours(existingRecord.checkintimestamp, existingRecord.checkouttimestamp),
+          location: null,
+          notes: null,
+          status: existingRecord.status || 'Not Marked',
           employee: {
             firstname: employee.firstname,
             lastname: employee.lastname
-          }
+          },
+          customerid: existingRecord.customerid
         };
       }
 
-      // Get the current user's customerid
-      // We'll need to add this to new records to ensure they're properly associated with the company
-      let customerid = null;
-      
       // Create default record for employees without attendance
       const defaultRecord = now < cutoffTime ? 
         markAsNotMarked(employee.employeeid, date) :
@@ -122,6 +121,24 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
   }
 };
 
+// Helper function to calculate work hours
+const calculateWorkhours = (checkIn: string | null, checkOut: string | null): number | null => {
+  if (!checkIn || !checkOut) return null;
+  
+  try {
+    const checkInTime = new Date(checkIn);
+    const checkOutTime = new Date(checkOut);
+    
+    const diffMs = checkOutTime.getTime() - checkInTime.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    
+    return parseFloat(diffHours.toFixed(2));
+  } catch (error) {
+    console.error("Error calculating work hours:", error);
+    return null;
+  }
+};
+
 export const updateAttendanceRecord = async (
   id: number,
   updates: Partial<AttendanceRecord>
@@ -129,78 +146,63 @@ export const updateAttendanceRecord = async (
   try {
     console.log('Updating attendance record:', id, updates);
     
-    // Create a copy of the updates to avoid modifying the original
-    const updatesToSend: any = { ...updates };
+    // Map interface fields to database fields
+    const dbRecord: Record<string, any> = {};
     
-    // Check if there's a valid checkintime and format it correctly
-    if (updates.checkintime && updates.date) {
-      // Handle case where time might already be in ISO format
-      if (!updates.checkintime.includes('T')) {
-        updatesToSend.checkintime = new Date(`${updates.date}T${updates.checkintime}`).toISOString();
-      }
+    if (updates.date) {
+      dbRecord.status = updates.date; // Temporarily using status for date
+    }
+    
+    if (updates.status) {
+      dbRecord.status = updates.status;
+    }
+    
+    if (updates.checkintime) {
+      dbRecord.checkintimestamp = updates.date && updates.checkintime ? 
+        new Date(`${updates.date}T${updates.checkintime}`).toISOString() : null;
     } else if (updates.checkintime === '') {
-      updatesToSend.checkintime = null;
+      dbRecord.checkintimestamp = null;
     }
     
-    // Check if there's a valid checkouttime and format it correctly
-    if (updates.checkouttime && updates.date) {
-      // Handle case where time might already be in ISO format
-      if (!updates.checkouttime.includes('T')) {
-        updatesToSend.checkouttime = new Date(`${updates.date}T${updates.checkouttime}`).toISOString();
-      }
+    if (updates.checkouttime) {
+      dbRecord.checkouttimestamp = updates.date && updates.checkouttime ? 
+        new Date(`${updates.date}T${updates.checkouttime}`).toISOString() : null;
     } else if (updates.checkouttime === '') {
-      updatesToSend.checkouttime = null;
+      dbRecord.checkouttimestamp = null;
     }
     
-    // Calculate work hours if both times are present
-    updatesToSend.workhours = calculateWorkHours(
-      updatesToSend.checkintime || null, 
-      updatesToSend.checkouttime || null
-    );
-
-    // If the customerid is provided in updates, use it, otherwise it will be handled by RLS
     if (updates.customerid) {
-      updatesToSend.customerid = updates.customerid;
+      dbRecord.customerid = updates.customerid;
     }
     
-    console.log('Sending to Supabase:', updatesToSend);
+    if (updates.employeeid) {
+      dbRecord.employeeid = updates.employeeid;
+    }
+    
+    console.log('Sending to Supabase:', dbRecord);
 
     // If the ID is 0, it means this is a default record not yet in the database
     if (id === 0) {
-      console.log('Creating new attendance record:', updatesToSend);
-      
-      // Ensure employeeid is always included for new records
-      if (!updatesToSend.employeeid && updates.employeeid) {
-        updatesToSend.employeeid = updates.employeeid;
-      }
-      
-      // Make sure the date field is included
-      if (!updatesToSend.date && updates.date) {
-        updatesToSend.date = updates.date;
-      }
-
-      if (!updatesToSend.status && updates.status) {
-        updatesToSend.status = updates.status;
-      }
+      console.log('Creating new attendance record');
       
       // Get the current user's profile to set customerid for new records
-      const { data: profileData } = await supabase.auth.getUser();
+      const { data: userData } = await supabase.auth.getUser();
       
-      if (profileData?.user?.id) {
-        const { data: userData } = await supabase
+      if (userData?.user) {
+        const { data: profileData } = await supabase
           .from('profiles')
-          .select('customerid')
-          .eq('id', profileData.user.id)
+          .select('customer_id')
+          .eq('id', userData.user.id)
           .single();
           
-        if (userData?.customerid) {
-          updatesToSend.customerid = userData.customerid;
+        if (profileData?.customer_id) {
+          dbRecord.customerid = profileData.customer_id;
         }
       }
       
       const { data, error: insertError } = await supabase
         .from('attendance')
-        .insert(updatesToSend)
+        .insert(dbRecord)
         .select('*, employee:employee(firstname, lastname)')
         .single();
         
@@ -213,12 +215,27 @@ export const updateAttendanceRecord = async (
       console.log('New attendance record created successfully:', data);
       toast.success('New attendance record created successfully');
       
-      return data || null;
+      // Map database response to interface format
+      return {
+        attendanceid: data.attendanceid || 0,
+        employeeid: data.employeeid,
+        date: updates.date || '',
+        checkintime: data.checkintimestamp ? 
+          format(new Date(data.checkintimestamp), 'HH:mm:ss') : null,
+        checkouttime: data.checkouttimestamp ? 
+          format(new Date(data.checkouttimestamp), 'HH:mm:ss') : null,
+        workhours: calculateWorkhours(data.checkintimestamp, data.checkouttimestamp),
+        location: null,
+        notes: data.notes || null,
+        status: data.status || null,
+        employee: data.employee,
+        customerid: data.customerid
+      };
     }
 
     const { data, error } = await supabase
       .from('attendance')
-      .update(updatesToSend)
+      .update(dbRecord)
       .eq('attendanceid', id)
       .select('*, employee:employee(firstname, lastname)')
       .single();
@@ -230,7 +247,23 @@ export const updateAttendanceRecord = async (
     }
 
     toast.success('Attendance record updated successfully');
-    return data || null;
+    
+    // Map database response to interface format
+    return {
+      attendanceid: data.attendanceid || 0,
+      employeeid: data.employeeid,
+      date: updates.date || '',
+      checkintime: data.checkintimestamp ? 
+        format(new Date(data.checkintimestamp), 'HH:mm:ss') : null,
+      checkouttime: data.checkouttimestamp ? 
+        format(new Date(data.checkouttimestamp), 'HH:mm:ss') : null,
+      workhours: calculateWorkhours(data.checkintimestamp, data.checkouttimestamp),
+      location: null,
+      notes: data.notes || null,
+      status: data.status || null,
+      employee: data.employee,
+      customerid: data.customerid
+    };
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);
     toast.error('Failed to update attendance record');
@@ -238,58 +271,36 @@ export const updateAttendanceRecord = async (
   }
 };
 
-const calculateWorkHours = (checkin: string | null, checkout: string | null): number | null => {
-  if (!checkin || !checkout) return null;
-  
-  try {
-    const checkInDate = new Date(checkin);
-    const checkOutDate = new Date(checkout);
-    
-    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
-      console.error('Invalid date format for calculating work hours');
-      return null;
-    }
-    
-    // Calculate difference in hours
-    const diffInMs = checkOutDate.getTime() - checkInDate.getTime();
-    const diffInHours = diffInMs / (1000 * 60 * 60);
-    
-    return Number(diffInHours.toFixed(2));
-  } catch (error) {
-    console.error('Error calculating work hours:', error);
-    return null;
-  }
-};
-
 export const insertDefaultAbsentRecord = async (employeeId: number, date: string): Promise<void> => {
   try {
     // Get the current user's profile to set customerid for new records
-    const { data: profileData } = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
     let customerid = null;
     
-    if (profileData?.user?.id) {
-      const { data: userData } = await supabase
+    if (userData?.user) {
+      const { data: profileData } = await supabase
         .from('profiles')
-        .select('customerid')
-        .eq('id', profileData.user.id)
+        .select('customer_id')
+        .eq('id', userData.user.id)
         .single();
         
-      if (userData?.customerid) {
-        customerid = userData.customerid;
+      if (profileData?.customer_id) {
+        customerid = profileData.customer_id;
       }
     }
     
     const absentRecord = markAsAbsent(employeeId, date);
     
-    // Add customerid to the record to ensure proper association
-    const recordToInsert = {
-      ...absentRecord,
+    // Map interface fields to database fields
+    const dbRecord = {
+      employeeid: absentRecord.employeeid,
+      status: absentRecord.status,
       customerid
     };
 
     const { error } = await supabase
       .from('attendance')
-      .insert([recordToInsert]);
+      .insert([dbRecord]);
 
     if (error) {
       toast.error('Error marking attendance as absent');
