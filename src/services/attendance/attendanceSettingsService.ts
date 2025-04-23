@@ -39,8 +39,8 @@ export const getAttendanceSettings = async (employeeId?: number): Promise<Attend
       latethreshold: String(item.latethreshold || '15'),
       photoverificationenabled: item.photoverificationenabled || false,
       workstarttime: item.workstarttime || '09:00',
-      workendtime: item.workendtime,
-      created_at: item.created_at
+      workendtime: item.workendtime || null,
+      created_at: item.created_at || null
     }));
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
@@ -69,7 +69,7 @@ export const updateAttendanceSettings = async (
     const { data, error } = await supabase
       .from('attendancesettings')
       .update(dbSettings)
-      .eq('id', id)
+      .eq('attendancesettingid', id)
       .select()
       .single();
 
@@ -86,7 +86,7 @@ export const updateAttendanceSettings = async (
       latethreshold: String(data.latethreshold || '15'),
       photoverificationenabled: data.photoverificationenabled || false,
       workstarttime: data.workstarttime || '09:00',
-      workendtime: data.workendtime
+      workendtime: data.workendtime || null
     };
   } catch (error) {
     console.error('Error in updateAttendanceSettings:', error);
@@ -140,7 +140,7 @@ export const createAttendanceSettings = async (
       latethreshold: String(data.latethreshold || '15'),
       photoverificationenabled: data.photoverificationenabled || false,
       workstarttime: data.workstarttime || '09:00',
-      workendtime: data.workendtime
+      workendtime: data.workendtime || null
     };
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);

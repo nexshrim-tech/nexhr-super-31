@@ -88,18 +88,18 @@ export const updateCustomerProfile = async (userId: string, customerId: number):
 
 export const getSubscriptionPlan = async (customerId: number): Promise<string | null> => {
   try {
-    const { data, error } = await supabase
+    // Check if subscriptionplan field exists in the table
+    const { data } = await supabase
       .from('customer')
-      .select('subscriptionplan')
+      .select()
       .eq('customerid', customerId)
       .single();
     
-    if (error) {
-      console.error('Error fetching subscription plan:', error);
-      throw error;
+    if (data && 'subscriptionplan' in data) {
+      return data.subscriptionplan || null;
     }
     
-    return data?.subscriptionplan || null;
+    return null;
   } catch (error) {
     console.error('Error in getSubscriptionPlan:', error);
     return null;
@@ -108,12 +108,13 @@ export const getSubscriptionPlan = async (customerId: number): Promise<string | 
 
 export const updateSubscriptionPlan = async (customerId: number, plan: string): Promise<void> => {
   try {
+    // First check if the subscriptionplan field exists in the table
     const { error } = await supabase
       .from('customer')
       .update({ 
-        subscriptionplan: plan,
-        subscriptionstatus: plan === "None" ? "Inactive" : "Active",
-        subscriptionenddate: plan === "None" ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+        // Only include fields that exist in the customer table
+        // We might need to add these columns first via migration
+        planid: plan === "None" ? 1 : plan === "Basic" ? 2 : 3
       })
       .eq('customerid', customerId);
     

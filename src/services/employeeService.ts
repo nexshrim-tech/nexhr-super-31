@@ -64,7 +64,12 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       city: emp.city,
       state: emp.state,
       country: emp.country,
-      postalcode: emp.zipcode
+      postalcode: emp.zipcode,
+      education: emp.education || undefined,
+      employeestatus: emp.employeestatus || undefined,
+      employeetype: emp.employmenttype || undefined,
+      workauthorization: emp.workauthorization || undefined,
+      employmenthistory: emp.employmenthistory || undefined
     }));
   } catch (error) {
     console.error('Error in getEmployees:', error);
@@ -103,7 +108,12 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       city: data.city,
       state: data.state,
       country: data.country,
-      postalcode: data.zipcode
+      postalcode: data.zipcode,
+      education: data.education || undefined,
+      employeestatus: data.employeestatus || undefined,
+      employeetype: data.employmenttype || undefined,
+      workauthorization: data.workauthorization || undefined,
+      employmenthistory: data.employmenthistory || undefined
     };
   } catch (error) {
     console.error('Error in getEmployeeById:', error);
@@ -172,6 +182,18 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       }
     });
     
+    // Map employeetype to employmenttype
+    if (dbEmployee.employeetype) {
+      dbEmployee.employmenttype = dbEmployee.employeetype;
+      delete dbEmployee.employeetype;
+    }
+    
+    // Map postalcode to zipcode
+    if (dbEmployee.postalcode) {
+      dbEmployee.zipcode = dbEmployee.postalcode;
+      delete dbEmployee.postalcode;
+    }
+    
     const { data, error } = await supabase
       .from('employee')
       .insert(dbEmployee)
@@ -239,6 +261,18 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
     if (dbEmployee.dateofbirth === '') dbEmployee.dateofbirth = null;
     if (dbEmployee.terminationdate === '') dbEmployee.terminationdate = null;
     if (dbEmployee.probationenddate === '') dbEmployee.probationenddate = null;
+    
+    // Map employeetype to employmenttype
+    if (dbEmployee.employeetype) {
+      dbEmployee.employmenttype = dbEmployee.employeetype;
+      delete dbEmployee.employeetype;
+    }
+    
+    // Map postalcode to zipcode
+    if (dbEmployee.postalcode) {
+      dbEmployee.zipcode = dbEmployee.postalcode;
+      delete dbEmployee.postalcode;
+    }
     
     console.log('Updating employee with sanitized data:', dbEmployee);
     

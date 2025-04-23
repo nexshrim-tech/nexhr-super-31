@@ -20,7 +20,7 @@ export interface AttendanceRecord {
   notes: string | null;
   status: string | null;
   employee?: Employee | null;
-  customerid?: number | null; // Added to support multi-tenancy
+  customerid?: number | null;
 }
 
 export const getAttendanceForDate = async (date: string): Promise<AttendanceRecord[]> => {
@@ -28,7 +28,6 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     console.log(`Fetching attendance for date: ${date}`);
     
     // First, get all active employees from the current user's company
-    // RLS will automatically filter to only show employees from the user's company
     const { data: employees, error: empError } = await supabase
       .from('employee')
       .select('employeeid, firstname, lastname')
@@ -80,7 +79,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
       if (existingRecord) {
         // Map database record to interface format
         return {
-          attendanceid: existingRecord.attendanceid || 0,
+          attendanceid: existingRecord?.attendanceid || 0,
           employeeid: existingRecord.employeeid,
           date: date,
           checkintime: existingRecord.checkintimestamp ? 
@@ -226,7 +225,7 @@ export const updateAttendanceRecord = async (
           format(new Date(data.checkouttimestamp), 'HH:mm:ss') : null,
         workhours: calculateWorkhours(data.checkintimestamp, data.checkouttimestamp),
         location: null,
-        notes: data.notes || null,
+        notes: updates.notes || null,
         status: data.status || null,
         employee: data.employee,
         customerid: data.customerid
@@ -259,7 +258,7 @@ export const updateAttendanceRecord = async (
         format(new Date(data.checkouttimestamp), 'HH:mm:ss') : null,
       workhours: calculateWorkhours(data.checkintimestamp, data.checkouttimestamp),
       location: null,
-      notes: data.notes || null,
+      notes: updates.notes || null,
       status: data.status || null,
       employee: data.employee,
       customerid: data.customerid
