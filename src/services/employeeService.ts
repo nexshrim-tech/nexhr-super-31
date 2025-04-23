@@ -30,6 +30,7 @@ export interface Employee {
   probationenddate?: string | null;
 }
 
+// Get only employees from the user's organization
 export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
   try {
     let query = supabase
@@ -54,6 +55,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
   }
 };
 
+// Get employee by ID (will only return employees from the user's organization due to RLS)
 export const getEmployeeById = async (id: number): Promise<Employee | null> => {
   try {
     const { data, error } = await supabase
@@ -105,6 +107,22 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
         formattedEmployee[field] = null;
       }
     });
+
+    // Get current user's customerid if not provided
+    if (!formattedEmployee.customerid) {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('customerid')
+          .eq('id', userData.user.id)
+          .single();
+
+        if (profileData?.customerid) {
+          formattedEmployee.customerid = profileData.customerid;
+        }
+      }
+    }
     
     console.log('Submitting formatted employee data to database:', formattedEmployee);
     
