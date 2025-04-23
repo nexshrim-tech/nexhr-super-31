@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from 'date-fns';
@@ -19,13 +20,15 @@ export interface AttendanceRecord {
   notes: string | null;
   status: string | null;
   employee?: Employee | null;
+  customerid?: number | null; // Added to support multi-tenancy
 }
 
 export const getAttendanceForDate = async (date: string): Promise<AttendanceRecord[]> => {
   try {
     console.log(`Fetching attendance for date: ${date}`);
     
-    // First, get all active employees
+    // First, get all active employees from the current user's company
+    // RLS will automatically filter to only show employees from the user's company
     const { data: employees, error: empError } = await supabase
       .from('employee')
       .select('employeeid, firstname, lastname')
@@ -43,6 +46,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     }
 
     // Get existing attendance records for the date
+    // RLS will automatically filter to only show records from the user's company
     const { data: existingRecords, error } = await supabase
       .from('attendance')
       .select(`
@@ -55,6 +59,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
         location,
         notes,
         status,
+        customerid,
         employee:employee(firstname, lastname)
       `)
       .eq('date', date);
@@ -91,6 +96,10 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
         };
       }
 
+      // Get the current user's customerid
+      // We'll need to add this to new records to ensure they're properly associated with the company
+      let customerid = null;
+      
       // Create default record for employees without attendance
       const defaultRecord = now < cutoffTime ? 
         markAsNotMarked(employee.employeeid, date) :
@@ -148,6 +157,11 @@ export const updateAttendanceRecord = async (
       updatesToSend.checkintime || null, 
       updatesToSend.checkouttime || null
     );
+
+    // If the customerid is provided in updates, use it, otherwise it will be handled by RLS
+    if (updates.customerid) {
+      updatesToSend.customerid = updates.customerid;
+    }
     
     console.log('Sending to Supabase:', updatesToSend);
 
@@ -167,6 +181,21 @@ export const updateAttendanceRecord = async (
 
       if (!updatesToSend.status && updates.status) {
         updatesToSend.status = updates.status;
+      }
+      
+      // Get the current user's profile to set customerid for new records
+      const { data: profileData } = await supabase.auth.getUser();
+      
+      if (profileData?.user?.id) {
+        const { data: userData } = await supabase
+          .from('profiles')
+          .select('customerid')
+          .eq('id', profileData.user.id)
+          .single();
+          
+        if (userData?.customerid) {
+          updatesToSend.customerid = userData.customerid;
+        }
       }
       
       const { data, error: insertError } = await supabase
@@ -234,9 +263,33 @@ const calculateWorkHours = (checkin: string | null, checkout: string | null): nu
 
 export const insertDefaultAbsentRecord = async (employeeId: number, date: string): Promise<void> => {
   try {
+    // Get the current user's profile to set customerid for new records
+    const { data: profileData } = await supabase.auth.getUser();
+    let customerid = null;
+    
+    if (profileData?.user?.id) {
+      const { data: userData } = await supabase
+        .from('profiles')
+        .select('customerid')
+        .eq('id', profileData.user.id)
+        .single();
+        
+      if (userData?.customerid) {
+        customerid = userData.customerid;
+      }
+    }
+    
+    const absentRecord = markAsAbsent(employeeId, date);
+    
+    // Add customerid to the record to ensure proper association
+    const recordToInsert = {
+      ...absentRecord,
+      customerid
+    };
+
     const { error } = await supabase
       .from('attendance')
-      .insert([markAsAbsent(employeeId, date)]);
+      .insert([recordToInsert]);
 
     if (error) {
       toast.error('Error marking attendance as absent');
