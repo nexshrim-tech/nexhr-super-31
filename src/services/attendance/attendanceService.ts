@@ -153,6 +153,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
     if (data && Array.isArray(data)) {
       for (const record of data) {
         const attendanceRecord: AttendanceRecord = {
+          attendanceid: record.attendanceid,
           checkintimestamp: safeString(record.checkintimestamp),
           checkouttimestamp: safeString(record.checkouttimestamp),
           customerid: safeNumber(record.customerid),
@@ -234,18 +235,28 @@ export const updateAttendanceRecord = async (
       console.error('Error fetching salary data:', salaryError);
     }
     
-    return {
-      ...data,
+    // Explicitly define the return value to avoid deep instantiation
+    const result: AttendanceRecord = {
+      attendanceid: data.attendanceid,
+      checkintimestamp: safeString(data.checkintimestamp),
+      checkouttimestamp: safeString(data.checkouttimestamp),
       customerid: safeNumber(data.customerid),
       employeeid: safeNumber(data.employeeid),
-      employee: data.employee ? {
+      selfieimagepath: safeString(data.selfieimagepath),
+      status: safeString(data.status),
+    };
+    
+    if (data.employee) {
+      result.employee = {
         firstname: safeString(data.employee.firstname),
         lastname: safeString(data.employee.lastname),
         salary: {
           basicsalary: salaryData?.basicsalary || 0
         }
-      } : undefined
-    };
+      };
+    }
+    
+    return result;
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);
     return null;
