@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -54,7 +53,8 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
         *,
         employee:employeeid (
           firstname,
-          lastname
+          lastname,
+          monthly_salary
         )
       `);
 
@@ -62,25 +62,6 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
       console.error('Error fetching attendance records:', error);
       return [];
     }
-
-    // Get all unique employee IDs
-    const employeeIds = data?.map(record => record.employeeid).filter(id => id != null) || [];
-    
-    // Fetch salary data separately
-    const { data: salaryData, error: salaryError } = await supabase
-      .from('salary')
-      .select('employeeid, basicsalary')
-      .in('employeeid', employeeIds);
-      
-    if (salaryError) {
-      console.error('Error fetching salary data:', salaryError);
-    }
-    
-    // Create a map of employeeid -> salary for quick lookup
-    const salaryMap = new Map();
-    salaryData?.forEach(salary => {
-      salaryMap.set(salary.employeeid, salary.basicsalary || 0);
-    });
 
     const processedData: AttendanceRecord[] = data?.map(record => {
       const attendanceRecord: AttendanceRecord = {
@@ -93,12 +74,11 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
       };
       
       if (record.employee) {
-        const basicsalary = salaryMap.get(record.employeeid) || 0;
         attendanceRecord.employee = {
           firstname: safeString(record.employee.firstname),
           lastname: safeString(record.employee.lastname),
           salary: {
-            basicsalary: basicsalary
+            basicsalary: record.employee.monthly_salary || 0
           }
         };
       }
@@ -130,7 +110,8 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
         *,
         employee:employeeid (
           firstname,
-          lastname
+          lastname,
+          monthly_salary
         )
       `)
       .gte('checkintimestamp', startOfDay)
@@ -140,25 +121,6 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       console.error('Error fetching attendance for date:', error);
       return [];
     }
-
-    // Get all unique employee IDs
-    const employeeIds = data?.map(record => record.employeeid).filter(id => id != null) || [];
-    
-    // Fetch salary data separately
-    const { data: salaryData, error: salaryError } = await supabase
-      .from('salary')
-      .select('employeeid, basicsalary')
-      .in('employeeid', employeeIds);
-      
-    if (salaryError) {
-      console.error('Error fetching salary data:', salaryError);
-    }
-    
-    // Create a map of employeeid -> salary for quick lookup
-    const salaryMap = new Map();
-    salaryData?.forEach(salary => {
-      salaryMap.set(salary.employeeid, salary.basicsalary || 0);
-    });
 
     const recordsWithDate: AttendanceRecord[] = [];
     
@@ -178,12 +140,11 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
         };
         
         if (record.employee) {
-          const basicsalary = salaryMap.get(record.employeeid) || 0;
           attendanceRecord.employee = {
             firstname: safeString(record.employee.firstname),
             lastname: safeString(record.employee.lastname),
             salary: {
-              basicsalary: basicsalary
+              basicsalary: record.employee.monthly_salary || 0
             }
           };
         }
@@ -226,7 +187,8 @@ export const updateAttendanceRecord = async (
         *,
         employee:employeeid (
           firstname,
-          lastname
+          lastname,
+          monthly_salary
         )
       `)
       .single();
@@ -236,19 +198,6 @@ export const updateAttendanceRecord = async (
       return null;
     }
     
-    // Fetch salary data separately
-    const { data: salaryData, error: salaryError } = await supabase
-      .from('salary')
-      .select('basicsalary')
-      .eq('employeeid', data.employeeid)
-      .single();
-      
-    if (salaryError && !salaryError.message.includes('No rows found')) {
-      console.error('Error fetching salary data:', salaryError);
-    }
-    
-    const basicsalary = salaryData?.basicsalary || 0;
-    
     return {
       ...data,
       customerid: safeNumber(data.customerid),
@@ -257,7 +206,7 @@ export const updateAttendanceRecord = async (
         firstname: safeString(data.employee.firstname),
         lastname: safeString(data.employee.lastname),
         salary: {
-          basicsalary: basicsalary
+          basicsalary: data.employee.monthly_salary || 0
         }
       } : undefined
     };

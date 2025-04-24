@@ -229,6 +229,7 @@ export type Database = {
           lastname: string | null
           leavebalance: number | null
           maritalstatus: string | null
+          monthly_salary: number | null
           nationality: string | null
           profilepicturepath: string | null
           state: string | null
@@ -258,6 +259,7 @@ export type Database = {
           lastname?: string | null
           leavebalance?: number | null
           maritalstatus?: string | null
+          monthly_salary?: number | null
           nationality?: string | null
           profilepicturepath?: string | null
           state?: string | null
@@ -287,6 +289,7 @@ export type Database = {
           lastname?: string | null
           leavebalance?: number | null
           maritalstatus?: string | null
+          monthly_salary?: number | null
           nationality?: string | null
           profilepicturepath?: string | null
           state?: string | null
