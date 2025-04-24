@@ -26,6 +26,7 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
   const [activeTab, setActiveTab] = useState<"personal" | "company">("personal");
   const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   
   const { toast } = useToast();
   const { signUp } = useAuth();
@@ -49,10 +50,12 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
     setCompanySize("");
     setCompanyAddress("");
     setPasswordError("");
+    setError("");
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     
     if (!validatePassword()) {
       toast({
@@ -66,7 +69,7 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
     setIsLoading(true);
     
     try {
-      if (email && password) {
+      if (email && password && name) {
         const userData: Record<string, any> = {
           full_name: name,
           role: activeTab === 'company' ? 'admin' : 'employee'
@@ -79,12 +82,8 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
           userData.company_address = companyAddress;
         }
         
+        console.log("About to sign up with user data:", userData);
         await signUp(email, password, userData);
-        
-        toast({
-          title: "Sign up initiated",
-          description: "Please check your email for verification",
-        });
         
         resetForm();
         onToggleForm();
@@ -97,6 +96,7 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
       }
     } catch (error: any) {
       console.error("Signup error:", error);
+      setError(error.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -104,6 +104,15 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
 
   return (
     <form onSubmit={handleSignUp} className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3">
+          <div className="flex items-center text-sm text-red-600">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            {error}
+          </div>
+        </div>
+      )}
+      
       <Tabs 
         value={activeTab} 
         onValueChange={(v) => setActiveTab(v as "personal" | "company")}
@@ -166,7 +175,7 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
               placeholder="Acme Inc."
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              required
+              required={activeTab === 'company'}
               className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
             />
           </div>

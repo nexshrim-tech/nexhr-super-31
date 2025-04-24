@@ -1,16 +1,16 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createCustomer, updateCustomerProfile } from '../services/customerService';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, metadata: any) => Promise<void>;
+  signUp: (email: string, password: string, metadata: Record<string, any>) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -79,22 +79,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, metadata: any): Promise<void> => {
+  const signUp = async (email: string, password: string, metadata: Record<string, any>): Promise<void> => {
     try {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
-      if (!metadata.role && metadata.company_name) {
-        metadata.role = 'admin';
-      } else if (!metadata.role) {
-        metadata.role = 'employee';
-      }
+      // Ensure role is set properly
+      const userData = {
+        ...metadata,
+        role: metadata.role || (metadata.company_name ? 'admin' : 'employee')
+      };
+      
+      // Remove company-related fields if the user is not an admin
+      const metadataToSend = userData.role === 'admin' 
+        ? userData 
+        : { full_name: userData.full_name, role: userData.role };
       
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
-          data: metadata,
+          data: metadataToSend,
           emailRedirectTo: `${window.location.origin}/login`
         }
       });
@@ -116,6 +121,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (error: any) {
       console.error('Error signing up:', error.message);
+      toast({
+        title: "Sign up failed",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
       throw error;
     } finally {
       setIsLoading(false);
