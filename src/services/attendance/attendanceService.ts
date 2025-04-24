@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -34,12 +33,10 @@ export interface AttendanceUpdateData {
   date?: string;
 }
 
-// Helper function to check if an object is a Supabase error
 const isSupabaseError = (obj: any): boolean => {
   return obj && typeof obj === 'object' && 'error' in obj;
 };
 
-// Helper function to safely cast types
 const safeNumber = (value: unknown, defaultValue: number = 0): number => {
   return (typeof value === 'number') ? value : defaultValue;
 };
@@ -68,7 +65,6 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
       return [];
     }
 
-    // Process the data to ensure it matches AttendanceRecord type
     const processedData: AttendanceRecord[] = data?.map(record => {
       const attendanceRecord: AttendanceRecord = {
         checkintimestamp: safeString(record.checkintimestamp),
@@ -79,35 +75,23 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
         status: safeString(record.status),
       };
       
-      // Only add attendanceid if it exists
-      if ('attendanceid' in record && record.attendanceid !== null) {
-        attendanceRecord.attendanceid = safeNumber(record.attendanceid);
-      }
-      
-      // Only add notes if they exist
-      if ('notes' in record && record.notes !== null) {
-        attendanceRecord.notes = safeString(record.notes);
-      }
-      
-      // Safely add employee information if it exists
       if (record.employee) {
         attendanceRecord.employee = {
           firstname: safeString(record.employee.firstname),
           lastname: safeString(record.employee.lastname),
         };
         
-        // Safely add salary information, making sure it's not null and not an error object
-        // Fix: Add extra null check before accessing record.employee.salary
         if (record.employee.salary && 
-            record.employee.salary !== null &&
             !isSupabaseError(record.employee.salary) && 
-            typeof record.employee.salary === 'object') {
-          // Explicitly check if basicsalary exists in the object
+            typeof record.employee.salary === 'object' &&
+            record.employee.salary !== null) {
           if ('basicsalary' in record.employee.salary) {
             const salaryValue = record.employee.salary.basicsalary;
-            attendanceRecord.employee.salary = {
-              basicsalary: safeNumber(salaryValue)
-            };
+            if (typeof salaryValue === 'number') {
+              attendanceRecord.employee.salary = {
+                basicsalary: salaryValue
+              };
+            }
           }
         }
       }
@@ -157,52 +141,34 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
     
     if (data && Array.isArray(data)) {
       for (const record of data) {
-        // Create a properly typed attendance record with safe access to properties
         const attendanceRecord: AttendanceRecord = {
-          // Required properties with fallbacks
           checkintimestamp: safeString(record.checkintimestamp),
           checkouttimestamp: safeString(record.checkouttimestamp),
           customerid: safeNumber(record.customerid),
           employeeid: safeNumber(record.employeeid),
           selfieimagepath: safeString(record.selfieimagepath),
           status: safeString(record.status),
-          
-          // Optional properties
           date: formattedDate,
           checkintime: record.checkintimestamp ? format(parseISO(safeString(record.checkintimestamp)), 'HH:mm') : '',
           checkouttime: record.checkouttimestamp ? format(parseISO(safeString(record.checkouttimestamp)), 'HH:mm') : '',
           workhours: '',
         };
         
-        // Safely add optional properties only if they exist in the record
-        if ('attendanceid' in record && typeof record.attendanceid === 'number') {
-          attendanceRecord.attendanceid = record.attendanceid;
-        }
-        
-        if ('notes' in record && typeof record.notes === 'string') {
-          attendanceRecord.notes = record.notes;
-        }
-        
-        // Safely add employee information if it exists
         if (record.employee) {
           attendanceRecord.employee = {
             firstname: safeString(record.employee.firstname),
             lastname: safeString(record.employee.lastname),
           };
           
-          // Safely handle the salary object with explicit null checks
-          // Fix: Add strict null check here
-          if (record.employee.salary !== undefined && record.employee.salary !== null) {
-            const employeeSalary = record.employee.salary;
-            
-            // Fix: Add extra null check here
-            if (employeeSalary !== null && 
-                !isSupabaseError(employeeSalary) && 
-                typeof employeeSalary === 'object') {
-              // Additional check for the basicsalary property
-              if (employeeSalary !== null && 'basicsalary' in employeeSalary) {
+          if (record.employee.salary && 
+              !isSupabaseError(record.employee.salary) && 
+              typeof record.employee.salary === 'object' &&
+              record.employee.salary !== null) {
+            if ('basicsalary' in record.employee.salary) {
+              const salaryValue = record.employee.salary.basicsalary;
+              if (typeof salaryValue === 'number') {
                 attendanceRecord.employee.salary = {
-                  basicsalary: safeNumber(employeeSalary.basicsalary)
+                  basicsalary: salaryValue
                 };
               }
             }
@@ -220,7 +186,6 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
   }
 };
 
-// Fixed the recursive type instantiation by using a more specific return type
 export const updateAttendanceRecord = async (
   attendanceId: number, 
   updateData: AttendanceUpdateData
@@ -253,7 +218,6 @@ export const updateAttendanceRecord = async (
       return null;
     }
     
-    // Explicitly cast to AttendanceRecord or null to avoid infinite type instantiation
     const result = data?.[0] as AttendanceRecord | null;
     return result;
   } catch (error) {
