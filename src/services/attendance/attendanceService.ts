@@ -1,10 +1,9 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
 export interface EmployeeBasic {
-  firstname: string;
-  lastname: string;
+  firstname: string | null;
+  lastname: string | null;
   salary?: {
     basicsalary: number;
   } | null;
@@ -12,12 +11,12 @@ export interface EmployeeBasic {
 
 export interface AttendanceRecord {
   attendanceid?: number;
-  checkintimestamp: string;
-  checkouttimestamp: string;
-  customerid: number;
-  employeeid: number;
-  selfieimagepath: string;
-  status: string;
+  checkintimestamp: string | null;
+  checkouttimestamp: string | null;
+  customerid: number | null;
+  employeeid: number | null;
+  selfieimagepath: string | null;
+  status: string | null;
   employee?: EmployeeBasic;
   date?: string;
   checkintime?: string;
@@ -80,20 +79,20 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
         attendanceRecord.employee = {
           firstname: safeString(record.employee.firstname),
           lastname: safeString(record.employee.lastname),
+          salary: null // Initialize as null by default
         };
         
-        // Fixed null check for salary
-        if (record.employee.salary && 
-            !isSupabaseError(record.employee.salary) && 
-            typeof record.employee.salary === 'object' &&
-            record.employee.salary !== null && 
-            'basicsalary' in record.employee.salary) {
-          const salaryValue = record.employee.salary.basicsalary;
-          if (typeof salaryValue === 'number') {
-            attendanceRecord.employee.salary = {
-              basicsalary: salaryValue
-            };
-          }
+        // Carefully check the salary object and its properties
+        const salary = record.employee.salary;
+        if (salary && 
+            !isSupabaseError(salary) && 
+            typeof salary === 'object' &&
+            salary !== null && 
+            'basicsalary' in salary &&
+            typeof salary.basicsalary === 'number') {
+          attendanceRecord.employee.salary = {
+            basicsalary: salary.basicsalary
+          };
         }
       }
       
@@ -159,20 +158,20 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
           attendanceRecord.employee = {
             firstname: safeString(record.employee.firstname),
             lastname: safeString(record.employee.lastname),
+            salary: null // Initialize as null by default
           };
           
-          // Fixed null check for salary
-          if (record.employee.salary && 
-              !isSupabaseError(record.employee.salary) && 
-              typeof record.employee.salary === 'object' &&
-              record.employee.salary !== null && 
-              'basicsalary' in record.employee.salary) {
-            const salaryValue = record.employee.salary.basicsalary;
-            if (typeof salaryValue === 'number') {
-              attendanceRecord.employee.salary = {
-                basicsalary: salaryValue
-              };
-            }
+          // Carefully check the salary object and its properties
+          const salary = record.employee.salary;
+          if (salary && 
+              !isSupabaseError(salary) && 
+              typeof salary === 'object' &&
+              salary !== null && 
+              'basicsalary' in salary &&
+              typeof salary.basicsalary === 'number') {
+            attendanceRecord.employee.salary = {
+              basicsalary: salary.basicsalary
+            };
           }
         }
         
@@ -219,8 +218,12 @@ export const updateAttendanceRecord = async (
       return null;
     }
     
-    // Using type assertion to resolve the "excessively deep" type instantiation issue
-    return (data?.[0] as AttendanceRecord | undefined) || null;
+    const result = data && data[0] ? {
+      ...data[0],
+      employee: data[0].employee || undefined
+    } as AttendanceRecord : null;
+    
+    return result;
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);
     return null;
