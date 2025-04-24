@@ -1,13 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
 export interface EmployeeBasic {
   firstname: string | null;
   lastname: string | null;
-  salary?: {
-    basicsalary: number;
-  } | null;
+  monthly_salary?: number;
 }
 
 export interface AttendanceRecord {
@@ -90,9 +87,7 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
         attendanceRecord.employee = {
           firstname: safeString(record.employee.firstname),
           lastname: safeString(record.employee.lastname),
-          salary: {
-            basicsalary: salaryMap.get(record.employeeid) || 0
-          }
+          monthly_salary: salaryMap.get(record.employeeid) || 0
         };
       }
       
@@ -134,7 +129,6 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       return [];
     }
 
-    // Fetch salary data
     const { data: salaryData, error: salaryError } = await supabase
       .from('salary')
       .select('employeeid, basicsalary');
@@ -169,9 +163,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
           attendanceRecord.employee = {
             firstname: safeString(record.employee.firstname),
             lastname: safeString(record.employee.lastname),
-            salary: {
-              basicsalary: salaryMap.get(record.employeeid) || 0
-            }
+            monthly_salary: salaryMap.get(record.employeeid) || 0
           };
         }
         
@@ -223,7 +215,6 @@ export const updateAttendanceRecord = async (
       return null;
     }
     
-    // Fetch salary data for this employee
     const { data: salaryData, error: salaryError } = await supabase
       .from('salary')
       .select('basicsalary')
@@ -241,9 +232,7 @@ export const updateAttendanceRecord = async (
       employee: data.employee ? {
         firstname: safeString(data.employee.firstname),
         lastname: safeString(data.employee.lastname),
-        salary: {
-          basicsalary: salaryData?.basicsalary || 0
-        }
+        monthly_salary: salaryData?.basicsalary || 0
       } : undefined
     };
   } catch (error) {
