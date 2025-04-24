@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -85,23 +86,30 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       return [];
     }
 
-    const recordsWithDate: AttendanceRecord[] = (data || []).map((record: any) => ({
-      attendanceid: record.attendanceid,
-      checkintimestamp: record.checkintimestamp,
-      checkouttimestamp: record.checkouttimestamp,
-      customerid: record.customerid,
-      employeeid: record.employeeid,
-      selfieimagepath: record.selfieimagepath || '',
-      status: record.status || '',
-      employee: record.employee ? {
-        firstname: record.employee.firstname,
-        lastname: record.employee.lastname
-      } : undefined,
-      date: formattedDate,
-      checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
-      checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
-      workhours: record.workhours || ''
-    }));
+    // Fix the deep type instantiation by creating explicit typed objects
+    const recordsWithDate: AttendanceRecord[] = [];
+    
+    if (data && Array.isArray(data)) {
+      for (const record of data) {
+        recordsWithDate.push({
+          attendanceid: record.attendanceid,
+          checkintimestamp: record.checkintimestamp,
+          checkouttimestamp: record.checkouttimestamp,
+          customerid: record.customerid,
+          employeeid: record.employeeid,
+          selfieimagepath: record.selfieimagepath || '',
+          status: record.status || '',
+          employee: record.employee ? {
+            firstname: record.employee.firstname,
+            lastname: record.employee.lastname
+          } : undefined,
+          date: formattedDate,
+          checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
+          checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
+          workhours: record.workhours || ''
+        });
+      }
+    }
 
     return recordsWithDate;
   } catch (error) {

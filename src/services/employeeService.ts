@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -96,7 +95,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       postalcode: emp.zipcode,
       education: emp.education,
       employmentstatus: emp.employmentstatus,
-      employeetype: emp.employeetype,
+      employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
     }));
@@ -226,10 +225,9 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       delete dbEmployee.postalcode;
     }
     
-    // Map employmentstatus to employmentstatus since the schema doesn't have employeestatus
-    if (dbEmployee.employeestatus) {
-      dbEmployee.employmentstatus = dbEmployee.employeestatus;
-      delete dbEmployee.employeestatus;
+    // Map employmentstatus to employmentstatus 
+    if (dbEmployee.employmentstatus) {
+      // Keep it as is - the field name matches the database column
     }
     
     const { data, error } = await supabase
