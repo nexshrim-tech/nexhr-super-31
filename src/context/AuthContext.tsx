@@ -21,6 +21,7 @@ interface UserMetadata {
   company_name?: string;
   company_size?: string;
   phone_number?: string;
+  company_address?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -103,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (metadata.company_name) userData.company_name = metadata.company_name;
       if (metadata.company_size) userData.company_size = metadata.company_size;
       if (metadata.phone_number) userData.phone_number = metadata.phone_number;
+      if (metadata.company_address) userData.company_address = metadata.company_address;
       
       const { data, error } = await supabase.auth.signUp({ 
         email, 
@@ -117,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Supabase signup error:', error);
         toast({
           title: "Sign up failed",
-          description: error.message,
+          description: error.message || "Database error when saving user. Please try again later.",
           variant: "destructive",
         });
         throw error;
