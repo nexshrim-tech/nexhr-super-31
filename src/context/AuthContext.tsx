@@ -14,6 +14,15 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
+// Define proper types for user metadata
+interface UserMetadata {
+  role: string;
+  full_name?: string;
+  company_name?: string;
+  company_size?: string;
+  phone_number?: string;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -90,14 +99,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: metadata.role || (metadata.company_name ? 'admin' : 'employee')
       };
       
-      // Create a proper metadataToSend object with all fields
-      const metadataToSend = {
-        role: userData.role,
-        ...(userData.full_name && { full_name: userData.full_name }),
-        ...(userData.company_name && { company_name: userData.company_name }),
-        ...(userData.company_size && { company_size: userData.company_size }),
-        ...(userData.phone_number && { phone_number: userData.phone_number })
+      // Create a proper metadataToSend object
+      const metadataToSend: UserMetadata = {
+        role: userData.role
       };
+      
+      // Only add optional fields if they exist
+      if (userData.full_name) metadataToSend.full_name = userData.full_name;
+      if (userData.company_name) metadataToSend.company_name = userData.company_name;
+      if (userData.company_size) metadataToSend.company_size = userData.company_size;
+      if (userData.phone_number) metadataToSend.phone_number = userData.phone_number;
       
       const { data, error } = await supabase.auth.signUp({ 
         email, 

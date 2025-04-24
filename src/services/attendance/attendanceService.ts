@@ -17,6 +17,7 @@ export interface AttendanceRecord {
   selfieimagepath: string;
   status: string;
   employee?: EmployeeBasic;
+  // Additional fields for UI display
   date?: string;
   checkintime?: string;
   checkouttime?: string;
@@ -24,7 +25,7 @@ export interface AttendanceRecord {
   notes?: string;
 }
 
-// Interface for update attendance record data
+// Interface for update attendance record data - separate from the main record type
 export interface AttendanceUpdateData {
   status?: string;
   notes?: string;
@@ -111,7 +112,7 @@ export const updateAttendanceRecord = async (
 ): Promise<AttendanceRecord | null> => {
   try {
     // Convert time strings to proper timestamps if provided
-    let updatedData: any = { ...updateData };
+    const updatedData: Record<string, any> = { ...updateData };
     
     if (updateData.date && updateData.checkintime) {
       updatedData.checkintimestamp = `${updateData.date}T${updateData.checkintime}:00`;
