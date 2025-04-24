@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -86,24 +85,23 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       return [];
     }
 
-    // Fix the type instantiation issue by explicitly creating properly typed objects
-    // rather than spreading which can cause recursive type issues
-    const recordsWithDate: AttendanceRecord[] = (data || []).map((record: any) => {
-      return {
-        attendanceid: record.attendanceid,
-        checkintimestamp: record.checkintimestamp,
-        checkouttimestamp: record.checkouttimestamp,
-        customerid: record.customerid,
-        employeeid: record.employeeid,
-        selfieimagepath: record.selfieimagepath || '',
-        status: record.status || '',
-        employee: record.employee,
-        date: formattedDate,
-        checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
-        checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
-        workhours: record.workhours
-      };
-    });
+    const recordsWithDate: AttendanceRecord[] = (data || []).map((record: any) => ({
+      attendanceid: record.attendanceid,
+      checkintimestamp: record.checkintimestamp,
+      checkouttimestamp: record.checkouttimestamp,
+      customerid: record.customerid,
+      employeeid: record.employeeid,
+      selfieimagepath: record.selfieimagepath || '',
+      status: record.status || '',
+      employee: record.employee ? {
+        firstname: record.employee.firstname,
+        lastname: record.employee.lastname
+      } : undefined,
+      date: formattedDate,
+      checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
+      checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
+      workhours: record.workhours || ''
+    }));
 
     return recordsWithDate;
   } catch (error) {

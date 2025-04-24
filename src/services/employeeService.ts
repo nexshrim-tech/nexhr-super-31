@@ -141,8 +141,8 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       country: emp.country,
       postalcode: emp.zipcode,
       education: emp.education,
-      employmentstatus: emp.employmentstatus, // Changed from employeestatus to employmentstatus
-      employeetype: emp.employmenttype, // Changed to map from employmenttype
+      employmentstatus: emp.employmentstatus,
+      employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
     };

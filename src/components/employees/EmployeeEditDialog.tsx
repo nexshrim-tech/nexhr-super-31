@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,6 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
 
   useEffect(() => {
     if (employee) {
-      // Filter out empty string dates to prevent database errors
       const sanitizedEmployee = { ...employee };
       if (sanitizedEmployee.joiningdate === '') sanitizedEmployee.joiningdate = null;
       if (sanitizedEmployee.dateofbirth === '') sanitizedEmployee.dateofbirth = null;
@@ -40,20 +38,18 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
       
       setEmployeeData(sanitizedEmployee);
     } else if (isNewEmployee) {
-      // Initialize with default values for a new employee
       setEmployeeData({
         firstname: '',
         lastname: '',
         email: '',
         jobtitle: '',
-        employmentstatus: 'Active', // Changed from employeestatus to employmentstatus
-        customerid: customerId, // Use the customer ID from subscription context
+        employmentstatus: 'Active',
+        customerid: customerId,
       });
     }
   }, [employee, isNewEmployee, customerId]);
 
   const handleChange = (field: keyof Employee, value: string | number) => {
-    // For date fields, convert empty strings to null
     if (
       (field === 'joiningdate' || field === 'dateofbirth' || 
        field === 'terminationdate' || field === 'probationenddate') && 
@@ -82,20 +78,17 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
       let result: Employee;
       
       if (isNewEmployee) {
-        // Create a new employee
         const newEmployeeData = {
           ...employeeData,
           customerid: customerId || 1,
         };
         
-        // Create a new employee
         result = await addEmployee(newEmployeeData as Omit<Employee, 'employeeid'>);
         toast({
           title: "Success",
           description: "Employee created successfully",
         });
       } else if (employee?.employeeid) {
-        // Update existing employee
         result = await updateEmployee(employee.employeeid, employeeData);
         toast({
           title: "Success",
@@ -237,24 +230,6 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
               onChange={(e) => handleChange('dateofbirth', e.target.value)}
               className="col-span-3"
             />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="status" className="text-right">
-              Status
-            </Label>
-            <Select 
-              value={employeeData.employmentstatus || 'Active'} 
-              onValueChange={(value) => handleChange('employmentstatus', value)}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
-                <SelectItem value="On Leave">On Leave</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
         <DialogFooter>
