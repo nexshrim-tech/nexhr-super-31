@@ -11,11 +11,10 @@ export interface EmployeeBasic {
 }
 
 export interface AttendanceRecord {
-  attendanceid?: number;
+  employeeid: number;
   checkintimestamp: string | null;
   checkouttimestamp: string | null;
   customerid: number;
-  employeeid: number;
   selfieimagepath: string | null;
   status: string | null;
   employee?: EmployeeBasic;
@@ -189,7 +188,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
 };
 
 export const updateAttendanceRecord = async (
-  attendanceId: number, 
+  employeeId: number, 
   updateData: AttendanceUpdateData
 ): Promise<AttendanceRecord | null> => {
   try {
@@ -210,7 +209,7 @@ export const updateAttendanceRecord = async (
     const { data, error } = await supabase
       .from('attendance')
       .update(updatedData)
-      .eq('attendanceid', attendanceId)
+      .eq('employeeid', employeeId)
       .select(`
         *,
         employee:employeeid (
@@ -245,11 +244,6 @@ export const updateAttendanceRecord = async (
       selfieimagepath: safeString(data.selfieimagepath),
       status: safeString(data.status),
     };
-
-    // Add the attendanceid explicitly
-    if (typeof data.attendanceid === 'number') {
-      result.attendanceid = data.attendanceid;
-    }
     
     if (data.employee) {
       result.employee = {

@@ -111,8 +111,8 @@ const Attendance = () => {
     if (!currentRecord) return;
     
     try {
-      // Use the attendanceid for the update
-      await updateAttendanceRecord(currentRecord.attendanceid || 0, {
+      // Use the employeeid for the update
+      await updateAttendanceRecord(currentRecord.employeeid, {
         // Convert form data to database format
         status: editFormData.status,
         notes: editFormData.notes,

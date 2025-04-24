@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -73,7 +72,7 @@ const AttendanceTable = ({
   };
 
   const handleEditClick = (record: AttendanceRecord) => {
-    setEditingId(record.attendanceid || 0);
+    setEditingId(record.employeeid);
     setEditData({
       employeeid: record.employeeid,
       date: record.date,
@@ -86,11 +85,6 @@ const AttendanceTable = ({
 
   const handleSaveEdit = async (record: AttendanceRecord) => {
     try {
-      if (!record.attendanceid) {
-        console.error("Cannot save record without attendanceid");
-        return;
-      }
-      
       const updatedRecord = {
         ...record,
         ...editData
@@ -99,7 +93,7 @@ const AttendanceTable = ({
       console.log("Saving record with data:", updatedRecord);
       
       const savedRecord = await updateAttendanceRecord(
-        updatedRecord.attendanceid, 
+        updatedRecord.employeeid, 
         {
           checkintime: updatedRecord.checkintime,
           checkouttime: updatedRecord.checkouttime,
@@ -112,10 +106,7 @@ const AttendanceTable = ({
       if (savedRecord) {
         console.log("Received saved record:", savedRecord);
         
-        const recordIndex = localRecords.findIndex(r => 
-          (r.attendanceid && r.attendanceid === record.attendanceid) || 
-          (!r.attendanceid && r.employeeid === record.employeeid)
-        );
+        const recordIndex = localRecords.findIndex(r => r.employeeid === record.employeeid);
         
         if (recordIndex !== -1) {
           const updatedRecords = [...localRecords];
@@ -244,7 +235,7 @@ const AttendanceTable = ({
                   </TableCell>
                 </TableRow>
               ) : filteredRecords.length > 0 ? filteredRecords.map((record) => (
-                <TableRow key={`emp-${record.employeeid}-${record.attendanceid || 0}`}>
+                <TableRow key={`emp-${record.employeeid}`}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -262,7 +253,7 @@ const AttendanceTable = ({
                     </div>
                   </TableCell>
                   <TableCell>
-                    {editingId === (record.attendanceid || 0) ? (
+                    {editingId === record.employeeid ? (
                       <Input
                         type="time"
                         value={editData.checkintime || ''}
@@ -274,7 +265,7 @@ const AttendanceTable = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    {editingId === (record.attendanceid || 0) ? (
+                    {editingId === record.employeeid ? (
                       <Input
                         type="time"
                         value={editData.checkouttime || ''}
@@ -286,7 +277,7 @@ const AttendanceTable = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    {editingId === (record.attendanceid || 0) ? (
+                    {editingId === record.employeeid ? (
                       <Select
                         value={editData.status || ''}
                         onValueChange={(value) => setEditData({...editData, status: value})}
@@ -308,7 +299,7 @@ const AttendanceTable = ({
                   </TableCell>
                   <TableCell>{record.workhours ? `${record.workhours}h` : '-'}</TableCell>
                   <TableCell className="text-right">
-                    {editingId === (record.attendanceid || 0) ? (
+                    {editingId === record.employeeid ? (
                       <div className="flex justify-end gap-2">
                         <Button 
                           variant="ghost" 
