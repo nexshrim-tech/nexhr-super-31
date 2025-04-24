@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -86,7 +87,10 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
     
     if (data && Array.isArray(data)) {
       for (const record of data) {
+        // Explicitly create AttendanceRecord object with defined properties to avoid deep type instantiation
         const attendanceRecord: AttendanceRecord = {
+          // Include attendanceid if it exists in the record
+          ...(record.attendanceid && { attendanceid: record.attendanceid }),
           checkintimestamp: record.checkintimestamp,
           checkouttimestamp: record.checkouttimestamp,
           customerid: record.customerid,
@@ -100,7 +104,9 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
           date: formattedDate,
           checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
           checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
-          workhours: ''
+          workhours: '',
+          // Include notes if it exists
+          ...(record.notes && { notes: record.notes })
         };
         recordsWithDate.push(attendanceRecord);
       }

@@ -187,7 +187,7 @@ const AddEmployee = () => {
           jobtitle: formData.jobTitle || undefined,
           joiningdate: formData.joinDate || undefined,
           department: formData.department || undefined,
-          employmentstatus: 'Active',
+          employmentstatus: 'Active' as 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation',
           customerid: 1,
           gender: formData.gender || undefined,
           address: formData.address || undefined,
