@@ -39,6 +39,15 @@ const isSupabaseError = (obj: any): boolean => {
   return obj && typeof obj === 'object' && 'error' in obj;
 };
 
+// Helper function to safely cast types
+const safeNumber = (value: unknown, defaultValue: number = 0): number => {
+  return (typeof value === 'number') ? value : defaultValue;
+};
+
+const safeString = (value: unknown, defaultValue: string = ''): string => {
+  return (typeof value === 'string') ? value : defaultValue;
+};
+
 export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => {
   try {
     const { data, error } = await supabase
@@ -62,39 +71,42 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
     // Process the data to ensure it matches AttendanceRecord type
     const processedData: AttendanceRecord[] = data?.map(record => {
       const attendanceRecord: AttendanceRecord = {
-        checkintimestamp: record.checkintimestamp || '',
-        checkouttimestamp: record.checkouttimestamp || '',
-        customerid: record.customerid || 0,
-        employeeid: record.employeeid || 0,
-        selfieimagepath: record.selfieimagepath || '',
-        status: record.status || '',
+        checkintimestamp: safeString(record.checkintimestamp),
+        checkouttimestamp: safeString(record.checkouttimestamp),
+        customerid: safeNumber(record.customerid),
+        employeeid: safeNumber(record.employeeid),
+        selfieimagepath: safeString(record.selfieimagepath),
+        status: safeString(record.status),
       };
       
       // Only add attendanceid if it exists
       if ('attendanceid' in record && record.attendanceid !== null) {
-        attendanceRecord.attendanceid = record.attendanceid;
+        attendanceRecord.attendanceid = safeNumber(record.attendanceid);
       }
       
       // Only add notes if they exist
       if ('notes' in record && record.notes !== null) {
-        attendanceRecord.notes = record.notes;
+        attendanceRecord.notes = safeString(record.notes);
       }
       
       // Safely add employee information if it exists
       if (record.employee) {
         attendanceRecord.employee = {
-          firstname: record.employee.firstname || '',
-          lastname: record.employee.lastname || '',
+          firstname: safeString(record.employee.firstname),
+          lastname: safeString(record.employee.lastname),
         };
         
         // Safely add salary information, making sure it's not an error object
         if (record.employee.salary && 
             !isSupabaseError(record.employee.salary) && 
-            typeof record.employee.salary === 'object' && 
-            'basicsalary' in record.employee.salary) {
-          attendanceRecord.employee.salary = {
-            basicsalary: record.employee.salary.basicsalary || 0
-          };
+            typeof record.employee.salary === 'object') {
+          // Explicitly check if basicsalary exists in the object
+          if ('basicsalary' in record.employee.salary) {
+            const salaryValue = record.employee.salary.basicsalary;
+            attendanceRecord.employee.salary = {
+              basicsalary: safeNumber(salaryValue)
+            };
+          }
         }
       }
       
@@ -146,17 +158,17 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
         // Create a properly typed attendance record with safe access to properties
         const attendanceRecord: AttendanceRecord = {
           // Required properties with fallbacks
-          checkintimestamp: record.checkintimestamp || '',
-          checkouttimestamp: record.checkouttimestamp || '',
-          customerid: record.customerid || 0,
-          employeeid: record.employeeid || 0,
-          selfieimagepath: record.selfieimagepath || '',
-          status: record.status || '',
+          checkintimestamp: safeString(record.checkintimestamp),
+          checkouttimestamp: safeString(record.checkouttimestamp),
+          customerid: safeNumber(record.customerid),
+          employeeid: safeNumber(record.employeeid),
+          selfieimagepath: safeString(record.selfieimagepath),
+          status: safeString(record.status),
           
           // Optional properties
           date: formattedDate,
-          checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
-          checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
+          checkintime: record.checkintimestamp ? format(parseISO(safeString(record.checkintimestamp)), 'HH:mm') : '',
+          checkouttime: record.checkouttimestamp ? format(parseISO(safeString(record.checkouttimestamp)), 'HH:mm') : '',
           workhours: '',
         };
         
@@ -172,19 +184,23 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
         // Safely add employee information if it exists
         if (record.employee) {
           attendanceRecord.employee = {
-            firstname: record.employee.firstname || '',
-            lastname: record.employee.lastname || '',
+            firstname: safeString(record.employee.firstname),
+            lastname: safeString(record.employee.lastname),
           };
           
-          // Safely handle the salary object
-          const employeeSalary = record.employee.salary;
-          if (employeeSalary && 
-              !isSupabaseError(employeeSalary) && 
-              typeof employeeSalary === 'object' && 
-              'basicsalary' in employeeSalary) {
-            attendanceRecord.employee.salary = {
-              basicsalary: employeeSalary.basicsalary || 0
-            };
+          // Safely handle the salary object with explicit null checks
+          if (record.employee.salary) {
+            const employeeSalary = record.employee.salary;
+            
+            if (!isSupabaseError(employeeSalary) && 
+                typeof employeeSalary === 'object') {
+              // Additional check for the basicsalary property
+              if ('basicsalary' in employeeSalary) {
+                attendanceRecord.employee.salary = {
+                  basicsalary: safeNumber(employeeSalary.basicsalary)
+                };
+              }
+            }
           }
         }
         
