@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -84,6 +85,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
+      
+      // Make sure role is properly set in metadata
+      if (!metadata.role && metadata.company_name) {
+        metadata.role = 'admin';
+      } else if (!metadata.role) {
+        metadata.role = 'employee';
+      }
       
       const { data, error } = await supabase.auth.signUp({ 
         email, 

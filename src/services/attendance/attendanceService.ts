@@ -1,3 +1,4 @@
+
 // This file provides service functions for managing attendance data
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -51,7 +52,7 @@ interface AttendanceDB {
   notes?: string | null;
 }
 
-// Set up a return type for this query to avoid infinite recursion
+// Use a simpler type to avoid excessive type instantiation
 type AttendanceWithEmployee = {
   attendanceid?: string;
   employeeid: number;
@@ -118,7 +119,14 @@ export const getAttendanceForDate = async (dateString: string): Promise<Attendan
     const { data, error } = await supabase
       .from('attendance')
       .select(`
-        *,
+        attendanceid,
+        employeeid,
+        customerid,
+        checkintimestamp,
+        checkouttimestamp,
+        status,
+        selfieimagepath,
+        notes,
         employee:employeeid (
           firstname,
           lastname
@@ -181,7 +189,14 @@ export const markAttendance = async (data: Attendance): Promise<Attendance> => {
       .from('attendance')
       .insert([attendanceData])
       .select(`
-        *,
+        attendanceid,
+        employeeid,
+        customerid,
+        checkintimestamp,
+        checkouttimestamp,
+        status,
+        selfieimagepath,
+        notes,
         employee:employeeid (
           firstname,
           lastname
@@ -194,7 +209,8 @@ export const markAttendance = async (data: Attendance): Promise<Attendance> => {
       throw error;
     }
     
-    const result = attendance as unknown as AttendanceWithEmployee;
+    // Use a simpler approach to type the result
+    const result = attendance as any;
     
     return {
       id: result.attendanceid,
@@ -225,7 +241,14 @@ export const updateAttendance = async (id: string, data: Partial<Attendance>): P
       .update(cleanData)
       .eq('attendanceid', id)
       .select(`
-        *,
+        attendanceid,
+        employeeid,
+        customerid,
+        checkintimestamp,
+        checkouttimestamp,
+        status,
+        selfieimagepath,
+        notes,
         employee:employeeid (
           firstname,
           lastname
@@ -238,7 +261,8 @@ export const updateAttendance = async (id: string, data: Partial<Attendance>): P
       throw error;
     }
     
-    const result = attendance as unknown as AttendanceWithEmployee;
+    // Use a simpler approach to type the result
+    const result = attendance as any;
     
     return {
       id: result.attendanceid,
@@ -282,7 +306,14 @@ export const updateAttendanceRecord = async (id: number, data: Partial<Attendanc
       .update(dbData)
       .eq('attendanceid', id)
       .select(`
-        *,
+        attendanceid,
+        employeeid,
+        customerid,
+        checkintimestamp,
+        checkouttimestamp,
+        status,
+        selfieimagepath,
+        notes,
         employee:employeeid (
           firstname,
           lastname
