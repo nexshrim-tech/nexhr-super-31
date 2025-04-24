@@ -47,23 +47,35 @@ const safeString = (value: unknown, defaultValue: string = ''): string => {
 
 export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => {
   try {
-    const { data, error } = await supabase
+    const { data: attendanceData, error: attendanceError } = await supabase
       .from('attendance')
       .select(`
         *,
         employee:employeeid (
           firstname,
-          lastname,
-          monthly_salary
+          lastname
         )
       `);
 
-    if (error) {
-      console.error('Error fetching attendance records:', error);
+    if (attendanceError) {
+      console.error('Error fetching attendance records:', attendanceError);
       return [];
     }
 
-    const processedData: AttendanceRecord[] = data?.map(record => {
+    const { data: salaryData, error: salaryError } = await supabase
+      .from('salary')
+      .select('employeeid, basicsalary');
+
+    if (salaryError) {
+      console.error('Error fetching salary data:', salaryError);
+      return [];
+    }
+
+    const salaryMap = new Map(
+      salaryData.map(salary => [salary.employeeid, salary.basicsalary])
+    );
+
+    const processedData: AttendanceRecord[] = (attendanceData || []).map(record => {
       const attendanceRecord: AttendanceRecord = {
         checkintimestamp: safeString(record.checkintimestamp),
         checkouttimestamp: safeString(record.checkouttimestamp),
@@ -78,13 +90,13 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
           firstname: safeString(record.employee.firstname),
           lastname: safeString(record.employee.lastname),
           salary: {
-            basicsalary: record.employee.monthly_salary || 0
+            basicsalary: salaryMap.get(record.employeeid) || 0
           }
         };
       }
       
       return attendanceRecord;
-    }) || [];
+    });
 
     return processedData;
   } catch (error) {
@@ -110,8 +122,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
         *,
         employee:employeeid (
           firstname,
-          lastname,
-          monthly_salary
+          lastname
         )
       `)
       .gte('checkintimestamp', startOfDay)
