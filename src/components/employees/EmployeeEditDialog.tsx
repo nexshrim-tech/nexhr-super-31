@@ -47,7 +47,7 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
         email: '',
         jobtitle: '',
         employeestatus: 'Active',
-        customerid: customerId || 1, // Use the customer ID from subscription context
+        customerid: customerId, // Use the customer ID from subscription context (now a string)
       });
     }
   }, [employee, isNewEmployee, customerId]);

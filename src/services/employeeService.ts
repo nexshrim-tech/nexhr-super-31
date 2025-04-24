@@ -10,7 +10,7 @@ export interface Employee {
   department?: string;
   joiningdate?: string | null;
   profilepicturepath?: string;
-  customerid?: number;
+  customerid?: string | number; // Updated to support both string (UUID) and number
   phonenumber?: string;
   address?: string;
   salary?: number;
@@ -41,7 +41,7 @@ interface EmployeeDB {
   department?: number;
   joiningdate?: string | null;
   profilepicturepath?: string;
-  customerid?: number;
+  customerid?: string | number; // Updated to support both string (UUID) and number
   address?: string;
   gender?: string;
   dateofbirth?: string | null;
@@ -166,18 +166,19 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       Object.entries(employee).filter(([_, value]) => value !== undefined)
     );
     
-    // Get current user's customer_id if not provided
+    // Get current user's customerid if not provided
     if (!cleanEmployee.customerid) {
       const { data: userData } = await supabase.auth.getUser();
       if (userData?.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('customer_id')
-          .eq('id', userData.user.id)
+        // Get the customer directly from the customer table using the auth user's ID
+        const { data: customerData } = await supabase
+          .from('customer')
+          .select('customerid')
+          .eq('customerid', userData.user.id)
           .single();
 
-        if (profileData?.customer_id) {
-          cleanEmployee.customerid = profileData.customer_id;
+        if (customerData?.customerid) {
+          cleanEmployee.customerid = customerData.customerid;
         }
       }
     }
