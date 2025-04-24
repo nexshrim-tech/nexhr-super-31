@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,28 +92,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
-      // Ensure role is set properly
-      const userData = {
-        ...metadata,
+      // Create a type-safe userData object
+      const userData: UserMetadata = {
         role: metadata.role || (metadata.company_name ? 'admin' : 'employee')
       };
       
-      // Create a proper metadataToSend object
-      const metadataToSend: UserMetadata = {
-        role: userData.role
-      };
-      
-      // Only add optional fields if they exist
-      if (userData.full_name) metadataToSend.full_name = userData.full_name;
-      if (userData.company_name) metadataToSend.company_name = userData.company_name;
-      if (userData.company_size) metadataToSend.company_size = userData.company_size;
-      if (userData.phone_number) metadataToSend.phone_number = userData.phone_number;
+      // Add optional fields if they exist in metadata
+      if (metadata.full_name) userData.full_name = metadata.full_name;
+      if (metadata.company_name) userData.company_name = metadata.company_name;
+      if (metadata.company_size) userData.company_size = metadata.company_size;
+      if (metadata.phone_number) userData.phone_number = metadata.phone_number;
       
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
-          data: metadataToSend,
+          data: userData,
           emailRedirectTo: `${window.location.origin}/login`
         }
       });

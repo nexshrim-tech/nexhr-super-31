@@ -139,7 +139,7 @@ export const updateAttendanceRecord = async (
       return null;
     }
     
-    return data ? data[0] as AttendanceRecord : null;
+    return data?.[0] as AttendanceRecord || null;
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);
     return null;
