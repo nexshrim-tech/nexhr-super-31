@@ -91,7 +91,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
     
     if (data && Array.isArray(data)) {
       for (const record of data) {
-        recordsWithDate.push({
+        const attendanceRecord: AttendanceRecord = {
           attendanceid: record.attendanceid,
           checkintimestamp: record.checkintimestamp,
           checkouttimestamp: record.checkouttimestamp,
@@ -106,8 +106,9 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
           date: formattedDate,
           checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
           checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
-          workhours: record.workhours || ''
-        });
+          workhours: ''
+        };
+        recordsWithDate.push(attendanceRecord);
       }
     }
 
