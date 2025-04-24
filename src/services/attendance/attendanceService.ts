@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -54,7 +55,7 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
         employee:employeeid (
           firstname,
           lastname,
-          salary:salary (
+          salary:employeeid (
             basicsalary
           )
         )
@@ -113,7 +114,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
         employee:employeeid (
           firstname,
           lastname,
-          salary:salary (
+          salary:employeeid (
             basicsalary
           )
         )
@@ -192,29 +193,26 @@ export const updateAttendanceRecord = async (
         employee:employeeid (
           firstname,
           lastname,
-          salary:salary (
+          salary:employeeid (
             basicsalary
           )
         )
-      `);
+      `).single();
     
     if (error) {
       console.error('Error updating attendance record:', error);
       return null;
     }
     
-    if (!data?.[0]) return null;
-    
-    const record = data[0];
     return {
-      ...record,
-      customerid: safeNumber(record.customerid),
-      employeeid: safeNumber(record.employeeid),
-      employee: record.employee ? {
-        firstname: safeString(record.employee.firstname),
-        lastname: safeString(record.employee.lastname),
+      ...data,
+      customerid: safeNumber(data.customerid),
+      employeeid: safeNumber(data.employeeid),
+      employee: data.employee ? {
+        firstname: safeString(data.employee.firstname),
+        lastname: safeString(data.employee.lastname),
         salary: {
-          basicsalary: record.employee.salary?.basicsalary || 0
+          basicsalary: data.employee.salary?.basicsalary || 0
         }
       } : undefined
     };
