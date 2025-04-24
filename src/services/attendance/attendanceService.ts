@@ -87,28 +87,37 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
     
     if (data && Array.isArray(data)) {
       for (const record of data) {
-        // Create a properly typed attendance record
+        // Create a properly typed attendance record with safe access to properties
         const attendanceRecord: AttendanceRecord = {
-          // Use only properties we know exist in the record
+          // Required properties with fallbacks
           checkintimestamp: record.checkintimestamp || '',
           checkouttimestamp: record.checkouttimestamp || '',
           customerid: record.customerid || 0,
           employeeid: record.employeeid || 0,
           selfieimagepath: record.selfieimagepath || '',
           status: record.status || '',
-          // Add optional properties
-          employee: record.employee ? {
-            firstname: record.employee.firstname || '',
-            lastname: record.employee.lastname || ''
-          } : undefined,
+          
+          // Optional properties
           date: formattedDate,
           checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
           checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
           workhours: '',
-          // Only add these if they exist in the record
-          ...(typeof record.attendanceid === 'number' && { attendanceid: record.attendanceid }),
-          ...(typeof record.notes === 'string' && { notes: record.notes })
+          
+          // Employee info if available
+          employee: record.employee ? {
+            firstname: record.employee.firstname || '',
+            lastname: record.employee.lastname || ''
+          } : undefined
         };
+        
+        // Safely add optional properties only if they exist in the record
+        if ('attendanceid' in record && typeof record.attendanceid === 'number') {
+          attendanceRecord.attendanceid = record.attendanceid;
+        }
+        
+        if ('notes' in record && typeof record.notes === 'string') {
+          attendanceRecord.notes = record.notes;
+        }
         
         recordsWithDate.push(attendanceRecord);
       }
