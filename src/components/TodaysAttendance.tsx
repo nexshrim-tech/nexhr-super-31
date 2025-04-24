@@ -13,7 +13,7 @@ const TodaysAttendance = () => {
   
   const { data: attendanceData = [], isLoading, error } = useQuery({
     queryKey: ['attendance', formattedDate],
-    queryFn: () => getAttendanceForDate(formattedDate),
+    queryFn: () => getAttendanceForDate(formattedDate), // Pass string directly, now supported
     retry: 1,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

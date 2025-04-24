@@ -38,13 +38,16 @@ const EditAttendanceDialog = ({
     ? `${currentRecord.employee.firstname} ${currentRecord.employee.lastname}`
     : `Employee ID: ${currentRecord.employeeid}`;
   
+  // Use the appropriate date field
+  const recordDate = currentRecord.date || new Date().toISOString().split('T')[0];
+  
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Attendance Record</DialogTitle>
           <DialogDescription>
-            {employeeName} • {currentRecord.date}
+            {employeeName} • {recordDate}
           </DialogDescription>
         </DialogHeader>
         

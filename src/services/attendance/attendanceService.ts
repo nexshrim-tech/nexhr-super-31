@@ -1,6 +1,7 @@
+
 // Fix the recursive type definition by defining proper interfaces
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 export interface EmployeeBasic {
   firstname: string;
@@ -8,13 +9,28 @@ export interface EmployeeBasic {
 }
 
 export interface AttendanceRecord {
+  attendanceid?: number;
   checkintimestamp: string;
   checkouttimestamp: string;
   customerid: number;
   employeeid: number;
   selfieimagepath: string;
   status: string;
-  employee?: EmployeeBasic; // Make employee optional to avoid type errors
+  employee?: EmployeeBasic;
+  date?: string;
+  checkintime?: string;
+  checkouttime?: string;
+  workhours?: string;
+  notes?: string;
+}
+
+// Interface for update attendance record data
+export interface AttendanceUpdateData {
+  status?: string;
+  notes?: string;
+  checkintime?: string;
+  checkouttime?: string;
+  date?: string;
 }
 
 // Get all attendance records with optional employee details
@@ -42,10 +58,13 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
   }
 };
 
-// Fixed getAttendanceForDate function
-export const getAttendanceForDate = async (date: Date): Promise<AttendanceRecord[]> => {
+// Updated getAttendanceForDate function to accept Date or string
+export const getAttendanceForDate = async (date: Date | string): Promise<AttendanceRecord[]> => {
   try {
-    const formattedDate = format(date, 'yyyy-MM-dd');
+    // Ensure date is in the proper format regardless of input type
+    const formattedDate = typeof date === 'string' 
+      ? format(parseISO(date), 'yyyy-MM-dd')
+      : format(date, 'yyyy-MM-dd');
     
     // Get start and end of the day in ISO format
     const startOfDay = `${formattedDate}T00:00:00`;
@@ -70,12 +89,58 @@ export const getAttendanceForDate = async (date: Date): Promise<AttendanceRecord
       return [];
     }
 
-    return data || [];
+    // Add date field to each record for easier access
+    const recordsWithDate = (data || []).map(record => ({
+      ...record,
+      date: formattedDate,
+      checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
+      checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
+    }));
+
+    return recordsWithDate;
   } catch (error) {
     console.error('Error in getAttendanceForDate:', error);
     return [];
   }
 };
 
-// Rest of the attendance service functions
-// ... keep existing code
+// Add updateAttendanceRecord function
+export const updateAttendanceRecord = async (
+  attendanceId: number, 
+  updateData: AttendanceUpdateData
+): Promise<AttendanceRecord | null> => {
+  try {
+    // Convert time strings to proper timestamps if provided
+    let updatedData: any = { ...updateData };
+    
+    if (updateData.date && updateData.checkintime) {
+      updatedData.checkintimestamp = `${updateData.date}T${updateData.checkintime}:00`;
+      delete updatedData.checkintime;
+    }
+    
+    if (updateData.date && updateData.checkouttime) {
+      updatedData.checkouttimestamp = `${updateData.date}T${updateData.checkouttime}:00`;
+      delete updatedData.checkouttime;
+    }
+    
+    delete updatedData.date;
+    
+    console.log('Updating attendance with data:', updatedData);
+    
+    const { data, error } = await supabase
+      .from('attendance')
+      .update(updatedData)
+      .eq('attendanceid', attendanceId)
+      .select();
+    
+    if (error) {
+      console.error('Error updating attendance record:', error);
+      return null;
+    }
+    
+    return data ? data[0] as AttendanceRecord : null;
+  } catch (error) {
+    console.error('Error in updateAttendanceRecord:', error);
+    return null;
+  }
+};

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, Edit, Check, X } from "lucide-react";
@@ -76,8 +77,8 @@ const AttendanceTable = ({
     setEditData({
       employeeid: record.employeeid,
       date: record.date,
-      checkintime: record.checkintime ? formatTimeForInput(record.checkintime) : '',
-      checkouttime: record.checkouttime ? formatTimeForInput(record.checkouttime) : '',
+      checkintime: record.checkintime || formatTimeForInput(record.checkintimestamp),
+      checkouttime: record.checkouttime || formatTimeForInput(record.checkouttimestamp),
       status: record.status || '',
       notes: record.notes || ''
     });
@@ -85,6 +86,11 @@ const AttendanceTable = ({
 
   const handleSaveEdit = async (record: AttendanceRecord) => {
     try {
+      if (!record.attendanceid) {
+        console.error("Cannot save record without attendanceid");
+        return;
+      }
+      
       const updatedRecord = {
         ...record,
         ...editData
@@ -93,7 +99,7 @@ const AttendanceTable = ({
       console.log("Saving record with data:", updatedRecord);
       
       const savedRecord = await updateAttendanceRecord(
-        updatedRecord.attendanceid || 0, 
+        updatedRecord.attendanceid, 
         {
           checkintime: updatedRecord.checkintime,
           checkouttime: updatedRecord.checkouttime,
@@ -152,7 +158,8 @@ const AttendanceTable = ({
   
   const formatTimeForInput = (dateStr: string) => {
     try {
-      const date = new Date(dateStr);
+      if (!dateStr) return '';
+      const date = parseISO(dateStr);
       if (isNaN(date.getTime())) return '';
       
       const hours = date.getHours().toString().padStart(2, '0');
@@ -263,7 +270,7 @@ const AttendanceTable = ({
                         className="w-full"
                       />
                     ) : (
-                      formatTimeFromDate(record.checkintime)
+                      record.checkintime || formatTimeFromDate(record.checkintimestamp)
                     )}
                   </TableCell>
                   <TableCell>
@@ -275,7 +282,7 @@ const AttendanceTable = ({
                         className="w-full"
                       />
                     ) : (
-                      formatTimeFromDate(record.checkouttime)
+                      record.checkouttime || formatTimeFromDate(record.checkouttimestamp)
                     )}
                   </TableCell>
                   <TableCell>

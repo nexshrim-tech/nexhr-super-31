@@ -90,10 +90,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: metadata.role || (metadata.company_name ? 'admin' : 'employee')
       };
       
-      // Remove company-related fields if the user is not an admin
-      const metadataToSend = userData.role === 'admin' 
-        ? userData 
-        : { full_name: userData.full_name, role: userData.role };
+      // Create a proper metadataToSend object with all fields
+      const metadataToSend = {
+        role: userData.role,
+        ...(userData.full_name && { full_name: userData.full_name }),
+        ...(userData.company_name && { company_name: userData.company_name }),
+        ...(userData.company_size && { company_size: userData.company_size }),
+        ...(userData.phone_number && { phone_number: userData.phone_number })
+      };
       
       const { data, error } = await supabase.auth.signUp({ 
         email, 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +15,7 @@ import EditAttendanceDialog, { EditFormData } from "@/components/attendance/Edit
 import AttendanceSettings from "@/components/attendance/AttendanceSettings";
 import TodaysAttendance from "@/components/TodaysAttendance";
 
-// Import types from our service
+// Import types and functions from our service
 import { AttendanceRecord, updateAttendanceRecord } from "@/services/attendance/attendanceService";
 
 // Sample attendance photos
@@ -93,11 +92,13 @@ const Attendance = () => {
 
   const handleEditRecord = (record: AttendanceRecord) => {
     setCurrentRecord(record);
-    const checkInTime = record.checkintime ? new Date(record.checkintime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-    const checkOutTime = record.checkouttime ? new Date(record.checkouttime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    
+    // Use the new properties from our extended AttendanceRecord interface
+    const checkInTime = record.checkintime || (record.checkintimestamp ? new Date(record.checkintimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
+    const checkOutTime = record.checkouttime || (record.checkouttimestamp ? new Date(record.checkouttimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
     
     setEditFormData({
-      date: record.date || '',
+      date: record.date || format(new Date(), 'yyyy-MM-dd'),
       checkintime: checkInTime,
       checkouttime: checkOutTime,
       status: record.status || '',
@@ -110,14 +111,14 @@ const Attendance = () => {
     if (!currentRecord) return;
     
     try {
-      // Here we would update the record in the database
+      // Use the attendanceid for the update
       await updateAttendanceRecord(currentRecord.attendanceid || 0, {
         // Convert form data to database format
         status: editFormData.status,
         notes: editFormData.notes,
         checkintime: editFormData.checkintime, 
         checkouttime: editFormData.checkouttime,
-        date: currentRecord.date
+        date: editFormData.date
       });
       
       toast({
