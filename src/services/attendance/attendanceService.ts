@@ -92,10 +92,10 @@ export const createAttendanceRecord = async (record: Partial<AttendanceRecord>) 
   }
 };
 
-export const updateAttendanceRecord = async (id: number, updates: Partial<AttendanceRecord>) => {
+export const updateAttendanceRecord = async (id: number, updates: Partial<Omit<AttendanceRecord, 'employee'>>) => {
   try {
     // Extract relevant fields to avoid sending extraneous data
-    const { attendanceid, employee, ...cleanUpdates } = updates;
+    const { attendanceid, ...cleanUpdates } = updates;
     
     const { data, error } = await supabase
       .from("attendance")
@@ -171,15 +171,15 @@ export const getAttendanceForDate = async (dateString: string) => {
     
     const { data, error } = await supabase
       .from("attendance")
-      .select("*, employee(firstname, lastname)")
-      .eq("date", dateString);
+      .select("*, employee(firstname, lastname)");
 
-    if (error) {
-      throw error;
-    }
+    // Filter data by date after retrieving it
+    const filteredData = data?.filter(record => 
+      record.date === dateString
+    ) || [];
     
-    console.log("Attendance data received:", data);
-    return data || [];
+    console.log("Attendance data received:", filteredData);
+    return filteredData;
   } catch (error: any) {
     console.error("Error fetching attendance for date:", dateString, error.message);
     toast({

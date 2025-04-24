@@ -50,7 +50,7 @@ const AttendanceTable = ({
 
   useEffect(() => {
     if (records) {
-      setLocalRecords(records);
+      setLocalRecords(records as AttendanceRecord[]);
       console.log("Local records updated from query:", records);
     }
   }, [records]);
