@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +10,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, metadata: Record<string, any>) => Promise<void>;
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -92,20 +93,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, metadata: Record<string, any>): Promise<void> => {
+  const signUp = async (email: string, password: string, metadata: Record<string, any> = {}): Promise<void> => {
     try {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
-      const userData: UserMetadata = {
-        role: metadata.role || (metadata.company_name ? 'admin' : 'employee')
+      // Simplify data structure - only use data needed by the trigger function
+      const userData = {
+        role: metadata.role || (metadata.company_name ? 'admin' : 'employee'),
+        full_name: metadata.full_name || '',
       };
       
-      Object.keys(metadata).forEach(key => {
-        if (['full_name', 'company_name', 'company_size', 'phone_number', 'company_address'].includes(key)) {
-          userData[key] = metadata[key];
-        }
-      });
+      if (metadata.company_name) {
+        userData.company_name = metadata.company_name;
+      }
+      
+      if (metadata.company_size) {
+        userData.company_size = metadata.company_size;
+      }
       
       console.log('Processed user data:', userData);
       
