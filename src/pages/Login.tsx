@@ -79,7 +79,7 @@ const Login = () => {
     
     try {
       if (email && password) {
-        const userData: any = {
+        const userData: Record<string, any> = {
           full_name: name,
           role: activeTab === 'company' ? 'admin' : 'employee'
         };
