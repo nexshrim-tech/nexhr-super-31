@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,12 +93,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
-      // Create a type-safe userData object
+      // Create a properly typed userData object from the metadata
       const userData: UserMetadata = {
         role: metadata.role || (metadata.company_name ? 'admin' : 'employee')
       };
       
-      // Add optional fields if they exist in metadata
+      // Add optional fields if they exist
       if (metadata.full_name) userData.full_name = metadata.full_name;
       if (metadata.company_name) userData.company_name = metadata.company_name;
       if (metadata.company_size) userData.company_size = metadata.company_size;
