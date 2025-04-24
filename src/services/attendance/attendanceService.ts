@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -15,7 +14,6 @@ export interface AttendanceRecord {
   employeeid: number;
   selfieimagepath: string;
   status: string;
-  // Define employee as a non-recursive simple object
   employee?: EmployeeBasic;
   date?: string;
   checkintime?: string;

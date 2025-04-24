@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +13,6 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-// Properly define the UserMetadata interface to match all possible fields
 interface UserMetadata {
   role: string;
   full_name: string;
@@ -99,27 +97,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
-      // Create a properly typed user data object with all possible fields
       const userData: UserMetadata = {
         role: metadata.role || (metadata.company_name ? 'admin' : 'employee'),
         full_name: metadata.full_name || '',
+        ...(metadata.company_name && { company_name: metadata.company_name }),
+        ...(metadata.company_size && { company_size: metadata.company_size }),
+        ...(metadata.phone_number && { phone_number: metadata.phone_number }),
+        ...(metadata.company_address && { company_address: metadata.company_address })
       };
-      
-      if (metadata.company_name) {
-        userData.company_name = metadata.company_name;
-      }
-      
-      if (metadata.company_size) {
-        userData.company_size = metadata.company_size;
-      }
-
-      if (metadata.phone_number) {
-        userData.phone_number = metadata.phone_number;
-      }
-
-      if (metadata.company_address) {
-        userData.company_address = metadata.company_address;
-      }
       
       console.log('Processed user data:', userData);
       
@@ -136,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Supabase signup error:', error);
         toast({
           title: "Sign up failed",
-          description: error.message || "Database error when saving user. Please try again.",
+          description: error.message,
           variant: "destructive",
         });
         throw error;

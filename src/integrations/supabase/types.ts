@@ -152,6 +152,7 @@ export type Database = {
       }
       customer: {
         Row: {
+          cid: string | null
           companysize: string | null
           customerid: number
           email: string | null
@@ -161,6 +162,7 @@ export type Database = {
           planid: number | null
         }
         Insert: {
+          cid?: string | null
           companysize?: string | null
           customerid?: never
           email?: string | null
@@ -170,6 +172,7 @@ export type Database = {
           planid?: number | null
         }
         Update: {
+          cid?: string | null
           companysize?: string | null
           customerid?: never
           email?: string | null
