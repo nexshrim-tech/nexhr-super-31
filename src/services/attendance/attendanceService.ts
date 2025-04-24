@@ -7,7 +7,7 @@ export interface EmployeeBasic {
   lastname: string;
   salary?: {
     basicsalary: number;
-  };
+  } | null;
 }
 
 export interface AttendanceRecord {
@@ -96,8 +96,10 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
           lastname: safeString(record.employee.lastname),
         };
         
-        // Safely add salary information, making sure it's not an error object
+        // Safely add salary information, making sure it's not null and not an error object
+        // Fix: Add extra null check before accessing record.employee.salary
         if (record.employee.salary && 
+            record.employee.salary !== null &&
             !isSupabaseError(record.employee.salary) && 
             typeof record.employee.salary === 'object') {
           // Explicitly check if basicsalary exists in the object
@@ -189,13 +191,16 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
           };
           
           // Safely handle the salary object with explicit null checks
-          if (record.employee.salary) {
+          // Fix: Add strict null check here
+          if (record.employee.salary !== undefined && record.employee.salary !== null) {
             const employeeSalary = record.employee.salary;
             
-            if (!isSupabaseError(employeeSalary) && 
+            // Fix: Add extra null check here
+            if (employeeSalary !== null && 
+                !isSupabaseError(employeeSalary) && 
                 typeof employeeSalary === 'object') {
               // Additional check for the basicsalary property
-              if ('basicsalary' in employeeSalary) {
+              if (employeeSalary !== null && 'basicsalary' in employeeSalary) {
                 attendanceRecord.employee.salary = {
                   basicsalary: safeNumber(employeeSalary.basicsalary)
                 };
@@ -215,6 +220,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
   }
 };
 
+// Fixed the recursive type instantiation by using a more specific return type
 export const updateAttendanceRecord = async (
   attendanceId: number, 
   updateData: AttendanceUpdateData
@@ -247,7 +253,9 @@ export const updateAttendanceRecord = async (
       return null;
     }
     
-    return data?.[0] as AttendanceRecord || null;
+    // Explicitly cast to AttendanceRecord or null to avoid infinite type instantiation
+    const result = data?.[0] as AttendanceRecord | null;
+    return result;
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);
     return null;
