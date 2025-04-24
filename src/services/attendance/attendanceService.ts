@@ -15,8 +15,11 @@ export interface AttendanceRecord {
   employeeid: number;
   selfieimagepath: string;
   status: string;
-  // Simplify the employee field to avoid recursion
-  employee?: Pick<EmployeeBasic, 'firstname' | 'lastname'>;
+  // Use a specific type instead of recursively referencing employee
+  employee?: {
+    firstname: string;
+    lastname: string;
+  };
   date?: string;
   checkintime?: string;
   checkouttime?: string;

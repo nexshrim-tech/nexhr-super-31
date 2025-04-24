@@ -98,8 +98,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
-      // Simplify data structure - only use data needed by the trigger function
-      const userData = {
+      // Create a properly typed user data object
+      const userData: UserMetadata = {
         role: metadata.role || (metadata.company_name ? 'admin' : 'employee'),
         full_name: metadata.full_name || '',
       };
@@ -110,6 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (metadata.company_size) {
         userData.company_size = metadata.company_size;
+      }
+
+      if (metadata.phone_number) {
+        userData.phone_number = metadata.phone_number;
+      }
+
+      if (metadata.company_address) {
+        userData.company_address = metadata.company_address;
       }
       
       console.log('Processed user data:', userData);
