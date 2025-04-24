@@ -76,10 +76,10 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
       salaryData.map(salary => [salary.employeeid, salary.basicsalary])
     );
 
-    const processedData: AttendanceRecord[] = (attendanceData || []).map(record => {
+    const processedData: AttendanceRecord[] = (attendanceData || []).map((record: any) => {
       // Explicitly create a new object with all required fields
       const attendanceRecord: AttendanceRecord = {
-        attendanceid: record.attendanceid,
+        attendanceid: safeNumber(record.attendanceid),
         checkintimestamp: safeString(record.checkintimestamp),
         checkouttimestamp: safeString(record.checkouttimestamp),
         customerid: safeNumber(record.customerid),
@@ -156,7 +156,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       for (const record of data) {
         // Create a new object with all required fields
         const attendanceRecord: AttendanceRecord = {
-          attendanceid: record.attendanceid,
+          attendanceid: safeNumber(record.attendanceid),
           checkintimestamp: safeString(record.checkintimestamp),
           checkouttimestamp: safeString(record.checkouttimestamp),
           customerid: safeNumber(record.customerid),
@@ -240,7 +240,7 @@ export const updateAttendanceRecord = async (
     
     // Create a new object instead of trying to manipulate the data directly
     const result: AttendanceRecord = {
-      attendanceid: data.attendanceid,
+      attendanceid: safeNumber(data.attendanceid),
       checkintimestamp: safeString(data.checkintimestamp),
       checkouttimestamp: safeString(data.checkouttimestamp),
       customerid: safeNumber(data.customerid),
