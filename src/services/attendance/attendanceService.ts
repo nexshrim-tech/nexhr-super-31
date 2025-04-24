@@ -13,8 +13,8 @@ export interface AttendanceRecord {
   attendanceid?: number;
   checkintimestamp: string | null;
   checkouttimestamp: string | null;
-  customerid: number | null;
-  employeeid: number | null;
+  customerid: number;
+  employeeid: number;
   selfieimagepath: string | null;
   status: string | null;
   employee?: EmployeeBasic;
@@ -79,21 +79,10 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
         attendanceRecord.employee = {
           firstname: safeString(record.employee.firstname),
           lastname: safeString(record.employee.lastname),
-          salary: null // Initialize as null by default
+          salary: {
+            basicsalary: record.employee.salary?.basicsalary || 0
+          }
         };
-        
-        // Carefully check the salary object and its properties
-        const salary = record.employee.salary;
-        if (salary && 
-            !isSupabaseError(salary) && 
-            typeof salary === 'object' &&
-            salary !== null && 
-            'basicsalary' in salary &&
-            typeof salary.basicsalary === 'number') {
-          attendanceRecord.employee.salary = {
-            basicsalary: salary.basicsalary
-          };
-        }
       }
       
       return attendanceRecord;
@@ -158,21 +147,10 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
           attendanceRecord.employee = {
             firstname: safeString(record.employee.firstname),
             lastname: safeString(record.employee.lastname),
-            salary: null // Initialize as null by default
+            salary: {
+              basicsalary: record.employee.salary?.basicsalary || 0
+            }
           };
-          
-          // Carefully check the salary object and its properties
-          const salary = record.employee.salary;
-          if (salary && 
-              !isSupabaseError(salary) && 
-              typeof salary === 'object' &&
-              salary !== null && 
-              'basicsalary' in salary &&
-              typeof salary.basicsalary === 'number') {
-            attendanceRecord.employee.salary = {
-              basicsalary: salary.basicsalary
-            };
-          }
         }
         
         recordsWithDate.push(attendanceRecord);
@@ -205,25 +183,41 @@ export const updateAttendanceRecord = async (
     
     delete updatedData.date;
     
-    console.log('Updating attendance with data:', updatedData);
-    
     const { data, error } = await supabase
       .from('attendance')
       .update(updatedData)
       .eq('attendanceid', attendanceId)
-      .select();
+      .select(`
+        *,
+        employee:employeeid (
+          firstname,
+          lastname,
+          salary:salary (
+            basicsalary
+          )
+        )
+      `);
     
     if (error) {
       console.error('Error updating attendance record:', error);
       return null;
     }
     
-    const result = data && data[0] ? {
-      ...data[0],
-      employee: data[0].employee || undefined
-    } as AttendanceRecord : null;
+    if (!data?.[0]) return null;
     
-    return result;
+    const record = data[0];
+    return {
+      ...record,
+      customerid: safeNumber(record.customerid),
+      employeeid: safeNumber(record.employeeid),
+      employee: record.employee ? {
+        firstname: safeString(record.employee.firstname),
+        lastname: safeString(record.employee.lastname),
+        salary: {
+          basicsalary: record.employee.salary?.basicsalary || 0
+        }
+      } : undefined
+    };
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);
     return null;
