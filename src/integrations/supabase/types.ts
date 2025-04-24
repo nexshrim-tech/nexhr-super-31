@@ -660,33 +660,6 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
-        Row: {
-          created_at: string
-          customer_id: number | null
-          employee_id: number | null
-          id: string
-          role: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          customer_id?: number | null
-          employee_id?: number | null
-          id: string
-          role?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          customer_id?: number | null
-          employee_id?: number | null
-          id?: string
-          role?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       project_assignments: {
         Row: {
           assignment_id: number
@@ -1062,14 +1035,6 @@ export type Database = {
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
-      }
-      link_employee_to_user: {
-        Args: { user_id: string; employee_id_param: number }
-        Returns: undefined
-      }
-      update_profile_customer: {
-        Args: { user_id: string; customer_id_param: number }
-        Returns: undefined
       }
     }
     Enums: {

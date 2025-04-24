@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -98,22 +97,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
-      const userData: UserMetadata = {
-        role: metadata.role || (metadata.company_name ? 'admin' : 'employee'),
-        full_name: metadata.full_name || '',
-        ...(metadata.company_name && { company_name: metadata.company_name }),
-        ...(metadata.company_size && { company_size: metadata.company_size }),
-        ...(metadata.phone_number && { phone_number: metadata.phone_number }),
-        ...(metadata.company_address && { company_address: metadata.company_address })
-      };
-      
-      console.log('Processed user data:', userData);
-      
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
-          data: userData,
+          data: {
+            role: metadata.role || (metadata.company_name ? 'admin' : 'employee'),
+            full_name: metadata.full_name || '',
+            company_name: metadata.company_name,
+            company_size: metadata.company_size,
+            phone_number: metadata.phone_number,
+            company_address: metadata.company_address
+          },
           emailRedirectTo: `${window.location.origin}/login`
         }
       });

@@ -59,12 +59,10 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
 // Updated getAttendanceForDate function to accept Date or string
 export const getAttendanceForDate = async (date: Date | string): Promise<AttendanceRecord[]> => {
   try {
-    // Ensure date is in the proper format regardless of input type
     const formattedDate = typeof date === 'string' 
       ? format(parseISO(date), 'yyyy-MM-dd')
       : format(date, 'yyyy-MM-dd');
     
-    // Get start and end of the day in ISO format
     const startOfDay = `${formattedDate}T00:00:00`;
     const endOfDay = `${formattedDate}T23:59:59`;
     
@@ -87,7 +85,6 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       return [];
     }
 
-    // Add date field to each record for easier access
     const recordsWithDate = (data || []).map(record => ({
       ...record,
       date: formattedDate,
@@ -108,7 +105,6 @@ export const updateAttendanceRecord = async (
   updateData: AttendanceUpdateData
 ): Promise<AttendanceRecord | null> => {
   try {
-    // Convert time strings to proper timestamps if provided
     const updatedData: Record<string, any> = { ...updateData };
     
     if (updateData.date && updateData.checkintime) {
