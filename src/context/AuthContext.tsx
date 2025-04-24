@@ -1,5 +1,4 @@
 
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         metadata.role = 'employee';
       }
       
+      // Use raw_user_meta_data instead of options.data to align with Supabase's database function
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,

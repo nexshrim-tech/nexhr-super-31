@@ -24,10 +24,8 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"personal" | "company">("personal");
   
-  // Personal info
   const [name, setName] = useState("");
   
-  // Company info
   const [companyName, setCompanyName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [companySize, setCompanySize] = useState("");
@@ -90,6 +88,7 @@ const Login = () => {
           userData.company_name = companyName;
           userData.company_size = companySize;
           userData.phone_number = phoneNumber;
+          userData.company_address = companyAddress;
         }
         
         console.log("Signup data:", userData);
