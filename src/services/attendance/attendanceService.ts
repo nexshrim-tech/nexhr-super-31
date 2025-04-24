@@ -77,7 +77,9 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
     );
 
     const processedData: AttendanceRecord[] = (attendanceData || []).map(record => {
+      // Explicitly create a new object with all required fields
       const attendanceRecord: AttendanceRecord = {
+        attendanceid: record.attendanceid,
         checkintimestamp: safeString(record.checkintimestamp),
         checkouttimestamp: safeString(record.checkouttimestamp),
         customerid: safeNumber(record.customerid),
@@ -152,6 +154,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
     
     if (data && Array.isArray(data)) {
       for (const record of data) {
+        // Create a new object with all required fields
         const attendanceRecord: AttendanceRecord = {
           attendanceid: record.attendanceid,
           checkintimestamp: safeString(record.checkintimestamp),
