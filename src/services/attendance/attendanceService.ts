@@ -1,10 +1,12 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
 export interface EmployeeBasic {
   firstname: string;
   lastname: string;
+  salary?: {
+    basicsalary: number;
+  };
 }
 
 export interface AttendanceRecord {
@@ -39,7 +41,10 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
         *,
         employee:employeeid (
           firstname,
-          lastname
+          lastname,
+          salary:salary (
+            basicsalary
+          )
         )
       `);
 
@@ -72,7 +77,10 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
         *,
         employee:employeeid (
           firstname,
-          lastname
+          lastname,
+          salary:salary (
+            basicsalary
+          )
         )
       `)
       .gte('checkintimestamp', startOfDay)
@@ -106,7 +114,12 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
           // Employee info if available
           employee: record.employee ? {
             firstname: record.employee.firstname || '',
-            lastname: record.employee.lastname || ''
+            lastname: record.employee.lastname || '',
+            ...(record.employee.salary && {
+              salary: {
+                basicsalary: record.employee.salary.basicsalary || 0
+              }
+            })
           } : undefined
         };
         
