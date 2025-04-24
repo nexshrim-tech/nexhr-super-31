@@ -15,11 +15,8 @@ export interface AttendanceRecord {
   employeeid: number;
   selfieimagepath: string;
   status: string;
-  // Define employee as a simple object with just the needed properties
-  employee?: {
-    firstname: string;
-    lastname: string;
-  };
+  // Define employee as a non-recursive simple object
+  employee?: EmployeeBasic;
   date?: string;
   checkintime?: string;
   checkouttime?: string;

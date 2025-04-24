@@ -14,9 +14,10 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
+// Properly define the UserMetadata interface to match all possible fields
 interface UserMetadata {
   role: string;
-  full_name?: string;
+  full_name: string;
   company_name?: string;
   company_size?: string;
   phone_number?: string;
@@ -98,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
-      // Create a properly typed user data object
+      // Create a properly typed user data object with all possible fields
       const userData: UserMetadata = {
         role: metadata.role || (metadata.company_name ? 'admin' : 'employee'),
         full_name: metadata.full_name || '',
