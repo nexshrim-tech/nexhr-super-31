@@ -235,7 +235,7 @@ export const updateAttendanceRecord = async (
       console.error('Error fetching salary data:', salaryError);
     }
     
-    // Explicitly define the return value to avoid deep instantiation
+    // Create a new object instead of trying to manipulate the data directly
     const result: AttendanceRecord = {
       attendanceid: data.attendanceid,
       checkintimestamp: safeString(data.checkintimestamp),
