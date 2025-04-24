@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +13,6 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-// Define proper types for user metadata
 interface UserMetadata {
   role: string;
   full_name?: string;
@@ -41,11 +39,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN') {
+          console.log("User signed in:", session?.user?.email);
           toast({
             title: "Signed in successfully",
             description: "Welcome back!",
           });
         } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out");
           toast({
             title: "Signed out successfully",
             description: "You have been signed out.",
@@ -58,6 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("Initial session check:", session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
+      setIsLoading(false);
+    }).catch(error => {
+      console.error("Error fetching initial session:", error);
       setIsLoading(false);
     });
 
@@ -94,17 +97,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
-      // Create a properly typed userData object from the metadata
       const userData: UserMetadata = {
         role: metadata.role || (metadata.company_name ? 'admin' : 'employee')
       };
       
-      // Add optional fields if they exist
-      if (metadata.full_name) userData.full_name = metadata.full_name;
-      if (metadata.company_name) userData.company_name = metadata.company_name;
-      if (metadata.company_size) userData.company_size = metadata.company_size;
-      if (metadata.phone_number) userData.phone_number = metadata.phone_number;
-      if (metadata.company_address) userData.company_address = metadata.company_address;
+      Object.keys(metadata).forEach(key => {
+        if (['full_name', 'company_name', 'company_size', 'phone_number', 'company_address'].includes(key)) {
+          userData[key] = metadata[key];
+        }
+      });
+      
+      console.log('Processed user data:', userData);
       
       const { data, error } = await supabase.auth.signUp({ 
         email, 
@@ -119,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Supabase signup error:', error);
         toast({
           title: "Sign up failed",
-          description: error.message || "Database error when saving user. Please try again later.",
+          description: error.message || "Database error when saving user. Please try again.",
           variant: "destructive",
         });
         throw error;
@@ -130,8 +133,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         title: "Sign up successful",
         description: "Please check your email to verify your account.",
       });
+      
+      navigate('/login');
     } catch (error: any) {
-      console.error('Error signing up:', error.message);
+      console.error('Error signing up:', error);
       toast({
         title: "Sign up failed",
         description: error.message || "An unexpected error occurred",

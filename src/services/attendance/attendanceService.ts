@@ -1,5 +1,3 @@
-
-// Fix the recursive type definition by defining proper interfaces
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -16,8 +14,8 @@ export interface AttendanceRecord {
   employeeid: number;
   selfieimagepath: string;
   status: string;
-  employee?: EmployeeBasic;
-  // Additional fields for UI display
+  // Simplify the employee field to avoid recursion
+  employee?: Pick<EmployeeBasic, 'firstname' | 'lastname'>;
   date?: string;
   checkintime?: string;
   checkouttime?: string;
