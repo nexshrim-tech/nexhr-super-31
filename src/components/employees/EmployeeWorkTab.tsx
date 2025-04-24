@@ -6,10 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface EmployeeWorkTabProps {
   employee: {
-    department: string;  // Changed from string to text
+    department: string;
     role: string;
     employeeId: string;
     joining: string;
+    employmentstatus: string;
   };
   geofencingEnabled: boolean;
   onGeofencingToggle: (checked: boolean) => void;
@@ -88,6 +89,28 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
             />
           ) : (
             <p className="text-sm font-medium">{employee.joining}</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label>Employment Status</Label>
+          {isEditMode ? (
+            <Select 
+              value={employee.employmentstatus || "Active"} 
+              onValueChange={(value) => onSelectChange && onSelectChange("employmentstatus", value)}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+                <SelectItem value="On Leave">On Leave</SelectItem>
+                <SelectItem value="Terminated">Terminated</SelectItem>
+                <SelectItem value="Probation">Probation</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-sm font-medium">{employee.employmentstatus || "Active"}</p>
           )}
         </div>
         <div className="col-span-2">

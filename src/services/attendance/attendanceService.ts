@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -23,7 +22,6 @@ export interface AttendanceRecord {
   notes?: string;
 }
 
-// Interface for update attendance record data
 export interface AttendanceUpdateData {
   status?: string;
   notes?: string;
@@ -32,7 +30,6 @@ export interface AttendanceUpdateData {
   date?: string;
 }
 
-// Get all attendance records with optional employee details
 export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => {
   try {
     const { data, error } = await supabase
@@ -57,7 +54,6 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
   }
 };
 
-// Updated getAttendanceForDate function to accept Date or string
 export const getAttendanceForDate = async (date: Date | string): Promise<AttendanceRecord[]> => {
   try {
     const formattedDate = typeof date === 'string' 
@@ -86,13 +82,11 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       return [];
     }
 
-    // Fix the deep type instantiation by creating explicit typed objects
     const recordsWithDate: AttendanceRecord[] = [];
     
     if (data && Array.isArray(data)) {
       for (const record of data) {
         const attendanceRecord: AttendanceRecord = {
-          attendanceid: record.attendanceid,
           checkintimestamp: record.checkintimestamp,
           checkouttimestamp: record.checkouttimestamp,
           customerid: record.customerid,
@@ -119,7 +113,6 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
   }
 };
 
-// Add updateAttendanceRecord function
 export const updateAttendanceRecord = async (
   attendanceId: number, 
   updateData: AttendanceUpdateData

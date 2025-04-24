@@ -219,6 +219,7 @@ export type Database = {
           email: string | null
           employeeid: number
           employeepassword: string | null
+          employmentstatus: string | null
           employmenttype: string | null
           fathersname: string | null
           firstname: string | null
@@ -247,6 +248,7 @@ export type Database = {
           email?: string | null
           employeeid?: never
           employeepassword?: string | null
+          employmentstatus?: string | null
           employmenttype?: string | null
           fathersname?: string | null
           firstname?: string | null
@@ -275,6 +277,7 @@ export type Database = {
           email?: string | null
           employeeid?: never
           employeepassword?: string | null
+          employmentstatus?: string | null
           employmenttype?: string | null
           fathersname?: string | null
           firstname?: string | null
@@ -1038,6 +1041,12 @@ export type Database = {
       }
     }
     Enums: {
+      employment_status:
+        | "Active"
+        | "Inactive"
+        | "On Leave"
+        | "Terminated"
+        | "Probation"
       user_role: "admin" | "employee"
     }
     CompositeTypes: {
@@ -1154,6 +1163,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      employment_status: [
+        "Active",
+        "Inactive",
+        "On Leave",
+        "Terminated",
+        "Probation",
+      ],
       user_role: ["admin", "employee"],
     },
   },

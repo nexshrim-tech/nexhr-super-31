@@ -17,7 +17,7 @@ export interface Employee {
   dateofbirth?: string | null;
   education?: string | undefined;
   employeetype?: string | undefined;
-  employmentstatus?: string | undefined; // Changed from employeestatus to match DB column
+  employmentstatus?: 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation';
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
   monthlysalary?: number;
@@ -53,7 +53,7 @@ interface EmployeeDB {
   disabilitystatus?: string;
   documentpath?: string;
   education?: string | undefined;
-  employmentstatus?: string | undefined; // Changed from employeestatus to match DB column
+  employmentstatus?: string;
   employmenttype?: string | undefined;
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
@@ -94,7 +94,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       country: emp.country,
       postalcode: emp.zipcode,
       education: emp.education,
-      employmentstatus: emp.employmentstatus,
+      employmentstatus: emp.employmentstatus as any,
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
@@ -140,7 +140,7 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       country: emp.country,
       postalcode: emp.zipcode,
       education: emp.education,
-      employmentstatus: emp.employmentstatus,
+      employmentstatus: emp.employmentstatus as any,
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
@@ -187,6 +187,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     // Convert department field to number if provided as string
     const dbEmployee: Record<string, any> = {
       ...cleanEmployee,
+      employmentstatus: cleanEmployee.employmentstatus || 'Active',
       salary: cleanEmployee.salary ? 
         (typeof cleanEmployee.salary === 'string' ? parseFloat(cleanEmployee.salary as string) : cleanEmployee.salary) : 
         null,
@@ -264,7 +265,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       country: emp.country,
       postalcode: emp.zipcode,
       education: emp.education,
-      employmentstatus: emp.employmentstatus, // Changed from employeestatus to match DB column
+      employmentstatus: emp.employmentstatus as any,
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
@@ -337,7 +338,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       country: emp.country,
       postalcode: emp.zipcode,
       education: emp.education,
-      employmentstatus: emp.employmentstatus,
+      employmentstatus: emp.employmentstatus as any,
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
