@@ -100,16 +100,7 @@ const Login = () => {
           description: "Please check your email for verification",
         });
         
-        setEmail("");
-        setPassword("");
-        setConfirmPassword("");
-        setName("");
-        setCompanyName("");
-        setPhoneNumber("");
-        setCompanySize("");
-        setCompanyAddress("");
-        
-        setIsSignUp(false);
+        resetForm();
       } else {
         toast({
           title: "Sign up failed",
@@ -129,18 +120,22 @@ const Login = () => {
     }
   };
 
-  const toggleForm = () => {
-    setIsSignUp(!isSignUp);
-    setName("");
+  const resetForm = () => {
     setEmail("");
     setPassword("");
     setConfirmPassword("");
-    setPasswordError("");
-    setRememberMe(false);
+    setName("");
     setCompanyName("");
     setPhoneNumber("");
     setCompanySize("");
     setCompanyAddress("");
+  };
+
+  const toggleForm = () => {
+    setIsSignUp(!isSignUp);
+    resetForm();
+    setPasswordError("");
+    setRememberMe(false);
     setActiveTab("personal");
   };
 
