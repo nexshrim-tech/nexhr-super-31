@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -6,7 +5,7 @@ export interface EmployeeBasic {
   firstname: string | null;
   lastname: string | null;
   salary?: {
-    basicsalary: number;
+    monthlysalary: number;
   } | null;
 }
 
@@ -63,8 +62,8 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
     }
 
     const { data: salaryData, error: salaryError } = await supabase
-      .from('salary')
-      .select('employeeid, basicsalary');
+      .from('employee')
+      .select('employeeid, monthlysalary');
 
     if (salaryError) {
       console.error('Error fetching salary data:', salaryError);
@@ -72,11 +71,10 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
     }
 
     const salaryMap = new Map(
-      salaryData.map(salary => [salary.employeeid, salary.basicsalary])
+      salaryData.map(salary => [salary.employeeid, salary.monthlysalary])
     );
 
     const processedData: AttendanceRecord[] = (attendanceData || []).map((record: any) => {
-      // Explicitly create a new object with all required fields
       const attendanceRecord: AttendanceRecord = {
         checkintimestamp: safeString(record.checkintimestamp),
         checkouttimestamp: safeString(record.checkouttimestamp),
@@ -91,7 +89,7 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
           firstname: safeString(record.employee.firstname),
           lastname: safeString(record.employee.lastname),
           salary: {
-            basicsalary: salaryMap.get(record.employeeid) || 0
+            monthlysalary: salaryMap.get(record.employeeid) || 0
           }
         };
       }
@@ -134,10 +132,9 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       return [];
     }
 
-    // Fetch salary data
     const { data: salaryData, error: salaryError } = await supabase
-      .from('salary')
-      .select('employeeid, basicsalary');
+      .from('employee')
+      .select('employeeid, monthlysalary');
 
     if (salaryError) {
       console.error('Error fetching salary data:', salaryError);
@@ -145,14 +142,13 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
     }
 
     const salaryMap = new Map(
-      salaryData.map(salary => [salary.employeeid, salary.basicsalary])
+      salaryData.map(salary => [salary.employeeid, salary.monthlysalary])
     );
 
     const recordsWithDate: AttendanceRecord[] = [];
     
     if (data && Array.isArray(data)) {
       for (const record of data) {
-        // Create a new object with all required fields
         const attendanceRecord: AttendanceRecord = {
           checkintimestamp: safeString(record.checkintimestamp),
           checkouttimestamp: safeString(record.checkouttimestamp),
@@ -171,7 +167,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
             firstname: safeString(record.employee.firstname),
             lastname: safeString(record.employee.lastname),
             salary: {
-              basicsalary: salaryMap.get(record.employeeid) || 0
+              monthlysalary: salaryMap.get(record.employeeid) || 0
             }
           };
         }
@@ -224,10 +220,9 @@ export const updateAttendanceRecord = async (
       return null;
     }
     
-    // Fetch salary data for this employee
-    const { data: salaryData, error: salaryError } = await supabase
-      .from('salary')
-      .select('basicsalary')
+    const { data: employeeData, error: salaryError } = await supabase
+      .from('employee')
+      .select('monthlysalary')
       .eq('employeeid', data.employeeid)
       .maybeSingle();
     
@@ -235,7 +230,6 @@ export const updateAttendanceRecord = async (
       console.error('Error fetching salary data:', salaryError);
     }
     
-    // Create a new object instead of trying to manipulate the data directly
     const result: AttendanceRecord = {
       checkintimestamp: safeString(data.checkintimestamp),
       checkouttimestamp: safeString(data.checkouttimestamp),
@@ -250,7 +244,7 @@ export const updateAttendanceRecord = async (
         firstname: safeString(data.employee.firstname),
         lastname: safeString(data.employee.lastname),
         salary: {
-          basicsalary: salaryData?.basicsalary || 0
+          monthlysalary: employeeData?.monthlysalary || 0
         }
       };
     }
