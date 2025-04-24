@@ -101,7 +101,8 @@ export const updateAttendanceSettings = async (
       latethreshold: String(data.latethreshold || '15'),
       photoverificationenabled: data.photoverificationenabled || false,
       workstarttime: data.workstarttime || '09:00',
-      workendtime: data.workendtime || null
+      workendtime: data.workendtime || null,
+      created_at: data.created_at || null
     };
   } catch (error) {
     console.error('Error in updateAttendanceSettings:', error);
@@ -157,7 +158,8 @@ export const createAttendanceSettings = async (
       latethreshold: String(data.latethreshold || '15'),
       photoverificationenabled: data.photoverificationenabled || false,
       workstarttime: data.workstarttime || '09:00',
-      workendtime: data.workendtime || null
+      workendtime: data.workendtime || null,
+      created_at: data.created_at || null
     };
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);

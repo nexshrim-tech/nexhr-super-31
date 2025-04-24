@@ -1,336 +1,180 @@
+// This file provides service functions for managing attendance data
+import { supabase } from '@/integrations/supabase/client';
 
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { format } from 'date-fns';
-import { markAsAbsent, markAsNotMarked } from "@/utils/attendanceDefaults";
-
-export interface Employee {
+interface Employee {
   firstname: string;
   lastname: string;
 }
 
-export interface AttendanceRecord {
-  // Make attendanceid optional to match the database structure
-  attendanceid?: number;
-  employeeid: number;
-  date: string;
-  checkintime: string | null;
-  checkouttime: string | null;
-  workhours: number | null;
-  location: string | null;
-  notes: string | null;
-  status: string | null;
-  employee?: Employee | null;
-  customerid?: number | null;
+export interface Attendance {
+  id?: string;
+  employeeid?: number;
+  customerid?: number;
+  checkintimestamp?: string;
+  checkouttimestamp?: string;
+  status?: string;
+  selfieimagepath?: string;
+  employee?: Employee;
+  notes?: string;
 }
 
-// Database response interface to handle mapping correctly
-interface AttendanceDBRecord {
-  attendanceid?: number;
+// Define how data is structured in the database vs. our interface
+interface AttendanceDB {
+  attendanceid?: string; // Adding this field for mapping
   employeeid: number;
-  checkintimestamp?: string | null;
-  checkouttimestamp?: string | null;
-  status?: string | null;
-  selfieimagepath?: string | null;
-  customerid?: number | null;
-  employee?: Employee | null;
+  customerid: number;
+  checkintimestamp: string | null;
+  checkouttimestamp: string | null;
+  status: string | null;
+  selfieimagepath: string | null;
   notes?: string | null;
 }
 
-export const getAttendanceForDate = async (date: string): Promise<AttendanceRecord[]> => {
-  try {
-    console.log(`Fetching attendance for date: ${date}`);
-    
-    // First, get all active employees from the current user's company
-    const { data: employees, error: empError } = await supabase
-      .from('employee')
-      .select('employeeid, firstname, lastname')
-      .eq('employeestatus', 'Active');
-      
-    if (empError) {
-      console.error("Error fetching employees:", empError);
-      toast.error('Error fetching employees');
-      return [];
-    }
-    
-    if (!employees || employees.length === 0) {
-      console.log("No active employees found");
-      return [];
-    }
+// Set up a different return type for this query that doesn't use deepmerge to avoid infinite recursion
+type AttendanceWithEmployee = {
+  checkintimestamp: string;
+  checkouttimestamp: string;
+  customerid: number;
+  employeeid: number;
+  selfieimagepath: string;
+  status: string;
+  attendanceid?: string;
+  notes?: string;
+  employee: {
+    firstname: string;
+    lastname: string;
+  };
+};
 
-    // Since 'attendance' table doesn't have the fields we need in our interface,
-    // we'll need to adapt the data
-    const { data: existingRecords, error } = await supabase
+export const getAttendanceRecords = async (customerId?: number): Promise<Attendance[]> => {
+  try {
+    let query = supabase
       .from('attendance')
       .select(`
         *,
-        employee:employee(firstname, lastname)
+        employee:employeeid (
+          firstname,
+          lastname
+        )
+      `);
+    
+    if (customerId) {
+      query = query.eq('customerid', customerId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching attendance records:', error);
+      throw error;
+    }
+    
+    // Map database response to our interface
+    return (data || []).map((item: AttendanceWithEmployee) => ({
+      id: item.attendanceid,
+      employeeid: item.employeeid,
+      customerid: item.customerid,
+      checkintimestamp: item.checkintimestamp,
+      checkouttimestamp: item.checkouttimestamp,
+      status: item.status,
+      selfieimagepath: item.selfieimagepath,
+      employee: item.employee,
+      notes: item.notes
+    }));
+  } catch (error) {
+    console.error('Error in getAttendanceRecords:', error);
+    throw error;
+  }
+};
+
+// Other functions for attendance management
+export const markAttendance = async (data: Attendance): Promise<Attendance> => {
+  try {
+    const attendanceData = {
+      employeeid: data.employeeid,
+      customerid: data.customerid,
+      checkintimestamp: data.checkintimestamp || new Date().toISOString(),
+      status: data.status || 'Present',
+      selfieimagepath: data.selfieimagepath,
+      notes: data.notes
+    };
+    
+    const { data: attendance, error } = await supabase
+      .from('attendance')
+      .insert([attendanceData])
+      .select(`
+        *,
+        employee:employeeid (
+          firstname,
+          lastname
+        )
       `)
-      .eq('status', date); // Using status field temporarily for date
-
-    if (error) {
-      console.error("Error fetching attendance records:", error);
-      toast.error('Error fetching attendance records');
-      return [];
-    }
-
-    console.log(`Found ${existingRecords?.length || 0} existing records`);
-
-    // Create a map of existing records by employee ID
-    const existingRecordsMap = new Map(
-      existingRecords?.map(record => [record.employeeid, record]) || []
-    );
-
-    const now = new Date();
-    const currentDate = new Date(date);
-    const cutoffTime = new Date(currentDate);
-    cutoffTime.setHours(12, 0, 0, 0);
-    
-    // Create records array including both existing and default records
-    const allRecords = employees.map(employee => {
-      const existingRecord = existingRecordsMap.get(employee.employeeid) as AttendanceDBRecord | undefined;
-      
-      if (existingRecord) {
-        // Map database record to interface format
-        return {
-          attendanceid: existingRecord.attendanceid || 0,
-          employeeid: existingRecord.employeeid,
-          date: date,
-          checkintime: existingRecord.checkintimestamp ? 
-            format(new Date(existingRecord.checkintimestamp), 'HH:mm:ss') : null,
-          checkouttime: existingRecord.checkouttimestamp ? 
-            format(new Date(existingRecord.checkouttimestamp), 'HH:mm:ss') : null,
-          workhours: calculateWorkhours(existingRecord.checkintimestamp, existingRecord.checkouttimestamp),
-          location: null,
-          notes: existingRecord.notes || null,
-          status: existingRecord.status || 'Not Marked',
-          employee: {
-            firstname: employee.firstname,
-            lastname: employee.lastname
-          },
-          customerid: existingRecord.customerid
-        };
-      }
-
-      // Create default record for employees without attendance
-      const defaultRecord = now < cutoffTime ? 
-        markAsNotMarked(employee.employeeid, date) :
-        markAsAbsent(employee.employeeid, date);
-
-      return {
-        ...defaultRecord,
-        attendanceid: 0,
-        employee: {
-          firstname: employee.firstname,
-          lastname: employee.lastname
-        }
-      };
-    });
-
-    return allRecords;
-  } catch (error) {
-    console.error('Error in getAttendanceForDate:', error);
-    return [];
-  }
-};
-
-// Helper function to calculate work hours
-const calculateWorkhours = (checkIn: string | null | undefined, checkOut: string | null | undefined): number | null => {
-  if (!checkIn || !checkOut) return null;
-  
-  try {
-    const checkInTime = new Date(checkIn);
-    const checkOutTime = new Date(checkOut);
-    
-    const diffMs = checkOutTime.getTime() - checkInTime.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-    
-    return parseFloat(diffHours.toFixed(2));
-  } catch (error) {
-    console.error("Error calculating work hours:", error);
-    return null;
-  }
-};
-
-export const updateAttendanceRecord = async (
-  id: number,
-  updates: Partial<AttendanceRecord>
-): Promise<AttendanceRecord | null> => {
-  try {
-    console.log('Updating attendance record:', id, updates);
-    
-    // Map interface fields to database fields
-    const dbRecord: Record<string, any> = {};
-    
-    if (updates.date) {
-      dbRecord.status = updates.date; // Temporarily using status for date
-    }
-    
-    if (updates.status) {
-      dbRecord.status = updates.status;
-    }
-    
-    if (updates.checkintime) {
-      dbRecord.checkintimestamp = updates.date && updates.checkintime ? 
-        new Date(`${updates.date}T${updates.checkintime}`).toISOString() : null;
-    } else if (updates.checkintime === '') {
-      dbRecord.checkintimestamp = null;
-    }
-    
-    if (updates.checkouttime) {
-      dbRecord.checkouttimestamp = updates.date && updates.checkouttime ? 
-        new Date(`${updates.date}T${updates.checkouttime}`).toISOString() : null;
-    } else if (updates.checkouttime === '') {
-      dbRecord.checkouttimestamp = null;
-    }
-
-    if (updates.notes) {
-      dbRecord.notes = updates.notes;
-    }
-    
-    if (updates.customerid) {
-      dbRecord.customerid = updates.customerid;
-    }
-    
-    if (updates.employeeid) {
-      dbRecord.employeeid = updates.employeeid;
-    }
-    
-    console.log('Sending to Supabase:', dbRecord);
-
-    // If the ID is 0, it means this is a default record not yet in the database
-    if (id === 0) {
-      console.log('Creating new attendance record');
-      
-      // Get the current user's profile to set customerid for new records
-      const { data: userData } = await supabase.auth.getUser();
-      
-      if (userData?.user) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('customer_id')
-          .eq('id', userData.user.id)
-          .single();
-          
-        if (profileData?.customer_id) {
-          dbRecord.customerid = profileData.customer_id;
-        }
-      }
-      
-      const { data, error: insertError } = await supabase
-        .from('attendance')
-        .insert(dbRecord)
-        .select('*, employee:employee(firstname, lastname)')
-        .single();
-        
-      if (insertError) {
-        console.error('Error inserting new attendance record:', insertError);
-        toast.error('Error creating new attendance record');
-        throw insertError;
-      }
-      
-      console.log('New attendance record created successfully:', data);
-      toast.success('New attendance record created successfully');
-      
-      const recordData = data as AttendanceDBRecord;
-      
-      // Map database response to interface format
-      return {
-        attendanceid: recordData.attendanceid || 0,
-        employeeid: recordData.employeeid,
-        date: updates.date || '',
-        checkintime: recordData.checkintimestamp ? 
-          format(new Date(recordData.checkintimestamp), 'HH:mm:ss') : null,
-        checkouttime: recordData.checkouttimestamp ? 
-          format(new Date(recordData.checkouttimestamp), 'HH:mm:ss') : null,
-        workhours: calculateWorkhours(recordData.checkintimestamp, recordData.checkouttimestamp),
-        location: null,
-        notes: updates.notes || null,
-        status: recordData.status || null,
-        employee: recordData.employee,
-        customerid: recordData.customerid
-      };
-    }
-
-    const { data, error } = await supabase
-      .from('attendance')
-      .update(dbRecord)
-      .eq('attendanceid', id)
-      .select('*, employee:employee(firstname, lastname)')
       .single();
-
+    
     if (error) {
-      console.error('Supabase error:', error);
-      toast.error('Error updating attendance record');
+      console.error('Error marking attendance:', error);
       throw error;
     }
-
-    toast.success('Attendance record updated successfully');
     
-    const recordData = data as AttendanceDBRecord;
+    const result = attendance as unknown as AttendanceWithEmployee;
     
-    // Map database response to interface format
     return {
-      attendanceid: recordData.attendanceid || 0,
-      employeeid: recordData.employeeid,
-      date: updates.date || '',
-      checkintime: recordData.checkintimestamp ? 
-        format(new Date(recordData.checkintimestamp), 'HH:mm:ss') : null,
-      checkouttime: recordData.checkouttimestamp ? 
-        format(new Date(recordData.checkouttimestamp), 'HH:mm:ss') : null,
-      workhours: calculateWorkhours(recordData.checkintimestamp, recordData.checkouttimestamp),
-      location: null,
-      notes: recordData.notes || null,
-      status: recordData.status || null,
-      employee: recordData.employee,
-      customerid: recordData.customerid
+      id: result.attendanceid,
+      employeeid: result.employeeid,
+      customerid: result.customerid,
+      checkintimestamp: result.checkintimestamp,
+      checkouttimestamp: result.checkouttimestamp,
+      status: result.status,
+      selfieimagepath: result.selfieimagepath,
+      employee: result.employee,
+      notes: result.notes
     };
   } catch (error) {
-    console.error('Error in updateAttendanceRecord:', error);
-    toast.error('Failed to update attendance record');
-    return null;
+    console.error('Error in markAttendance:', error);
+    throw error;
   }
 };
 
-export const insertDefaultAbsentRecord = async (employeeId: number, date: string): Promise<void> => {
+export const updateAttendance = async (id: string, data: Partial<Attendance>): Promise<Attendance> => {
   try {
-    // Get the current user's profile to set customerid for new records
-    const { data: userData } = await supabase.auth.getUser();
-    let customerid = null;
+    // Remove undefined values
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined)
+    );
     
-    if (userData?.user) {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('customer_id')
-        .eq('id', userData.user.id)
-        .single();
-        
-      if (profileData?.customer_id) {
-        customerid = profileData.customer_id;
-      }
-    }
-    
-    const absentRecord = markAsAbsent(employeeId, date);
-    
-    // Map interface fields to database fields
-    const dbRecord = {
-      employeeid: absentRecord.employeeid,
-      status: absentRecord.status,
-      customerid
-    };
-
-    const { error } = await supabase
+    const { data: attendance, error } = await supabase
       .from('attendance')
-      .insert([dbRecord]);
-
+      .update(cleanData)
+      .eq('attendanceid', id)
+      .select(`
+        *,
+        employee:employeeid (
+          firstname,
+          lastname
+        )
+      `)
+      .single();
+    
     if (error) {
-      toast.error('Error marking attendance as absent');
+      console.error('Error updating attendance:', error);
       throw error;
     }
-
-    toast.success('Attendance marked as absent');
+    
+    const result = attendance as unknown as AttendanceWithEmployee;
+    
+    return {
+      id: result.attendanceid,
+      employeeid: result.employeeid,
+      customerid: result.customerid,
+      checkintimestamp: result.checkintimestamp,
+      checkouttimestamp: result.checkouttimestamp,
+      status: result.status,
+      selfieimagepath: result.selfieimagepath,
+      employee: result.employee,
+      notes: result.notes
+    };
   } catch (error) {
-    console.error('Error in insertDefaultAbsentRecord:', error);
-    toast.error('Failed to mark attendance as absent');
+    console.error('Error in updateAttendance:', error);
+    throw error;
   }
 };
