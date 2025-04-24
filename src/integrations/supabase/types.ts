@@ -213,7 +213,7 @@ export type Database = {
           country: string | null
           customerid: number | null
           dateofbirth: string | null
-          department: number | null
+          department: string | null
           disabilitystatus: string | null
           documentpath: string | null
           email: string | null
@@ -241,7 +241,7 @@ export type Database = {
           country?: string | null
           customerid?: number | null
           dateofbirth?: string | null
-          department?: number | null
+          department?: string | null
           disabilitystatus?: string | null
           documentpath?: string | null
           email?: string | null
@@ -269,7 +269,7 @@ export type Database = {
           country?: string | null
           customerid?: number | null
           dateofbirth?: string | null
-          department?: number | null
+          department?: string | null
           disabilitystatus?: string | null
           documentpath?: string | null
           email?: string | null

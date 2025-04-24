@@ -12,9 +12,7 @@ export const adaptEmployeeData = (demoData: any): Employee => {
     email: demoData.email || '',
     phonenumber: demoData.phone || demoData.phonenumber || '',
     jobtitle: demoData.role || demoData.jobtitle || '',
-    department: typeof demoData.department === 'string' 
-      ? parseInt(demoData.department) || 0 
-      : demoData.department || 0,
+    department: demoData.department || '',
     joiningdate: demoData.joining || demoData.joiningdate || '',
     employmentstatus: demoData.status || demoData.employmentstatus || 'Active',
     gender: demoData.gender || '',
@@ -33,7 +31,7 @@ export const adaptToUIFormat = (employee: Employee): any => {
     phone: employee.phonenumber || '',
     employeeId: employee.employeeid.toString(),
     role: employee.jobtitle || '',
-    department: employee.department?.toString() || '',
+    department: employee.department || '',
     dob: employee.dateofbirth || '',
     gender: employee.gender || '',
     address: employee.address || '',

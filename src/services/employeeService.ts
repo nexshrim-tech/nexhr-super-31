@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -38,7 +37,7 @@ interface EmployeeDB {
   lastname: string;
   email: string;
   jobtitle?: string;
-  department?: number;
+  department?: string;
   joiningdate?: string | null;
   profilepicturepath?: string;
   customerid?: string | number; // Updated to support both string (UUID) and number
@@ -83,7 +82,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       lastname: emp.lastname || '',
       email: emp.email || '',
       jobtitle: emp.jobtitle,
-      department: emp.department ? String(emp.department) : undefined,
+      department: emp.department || '',
       joiningdate: emp.joiningdate,
       profilepicturepath: emp.profilepicturepath,
       customerid: emp.customerid,
@@ -96,7 +95,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       postalcode: emp.zipcode,
       education: emp.education,
       employmentstatus: emp.employmentstatus,
-      employeetype: emp.employmenttype,
+      employeetype: emp.employeetype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
     }));
@@ -129,7 +128,7 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       lastname: emp.lastname || '',
       email: emp.email || '',
       jobtitle: emp.jobtitle,
-      department: emp.department ? String(emp.department) : undefined,
+      department: emp.department || '',
       joiningdate: emp.joiningdate,
       profilepicturepath: emp.profilepicturepath,
       customerid: emp.customerid,
@@ -254,7 +253,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       lastname: emp.lastname || '',
       email: emp.email || '',
       jobtitle: emp.jobtitle,
-      department: emp.department ? String(emp.department) : undefined,
+      department: emp.department || '',
       joiningdate: emp.joiningdate,
       profilepicturepath: emp.profilepicturepath,
       customerid: emp.customerid,
@@ -284,17 +283,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       Object.entries(employee).filter(([_, value]) => value !== undefined)
     );
     
-    // Handle department as number for database
     const dbEmployee: Record<string, any> = { ...cleanEmployee };
-    
-    if (dbEmployee.department && typeof dbEmployee.department === 'string') {
-      const departmentId = parseInt(dbEmployee.department);
-      if (!isNaN(departmentId)) {
-        dbEmployee.department = departmentId;
-      } else {
-        delete dbEmployee.department;
-      }
-    }
     
     // Convert empty string dates to null
     if (dbEmployee.joiningdate === '') dbEmployee.joiningdate = null;
@@ -312,12 +301,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
     if (dbEmployee.postalcode) {
       dbEmployee.zipcode = dbEmployee.postalcode;
       delete dbEmployee.postalcode;
-    }
-    
-    // Map employeestatus to employmentstatus since the schema doesn't have employeestatus
-    if (dbEmployee.employeestatus) {
-      dbEmployee.employmentstatus = dbEmployee.employeestatus;
-      delete dbEmployee.employeestatus;
     }
     
     console.log('Updating employee with sanitized data:', dbEmployee);
@@ -343,7 +326,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       lastname: emp.lastname || '',
       email: emp.email || '',
       jobtitle: emp.jobtitle,
-      department: emp.department ? String(emp.department) : undefined,
+      department: emp.department || '',
       joiningdate: emp.joiningdate,
       profilepicturepath: emp.profilepicturepath,
       customerid: emp.customerid,
@@ -355,7 +338,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       country: emp.country,
       postalcode: emp.zipcode,
       education: emp.education,
-      employmentstatus: emp.employmentstatus, // Changed from employeestatus to match DB column
+      employmentstatus: emp.employmentstatus,
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
