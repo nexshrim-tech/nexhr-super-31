@@ -101,6 +101,7 @@ const Login = () => {
         });
         
         resetForm();
+        setIsSignUp(false);
       } else {
         toast({
           title: "Sign up failed",

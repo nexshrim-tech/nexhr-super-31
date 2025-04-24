@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +24,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
@@ -46,7 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session check:", session?.user?.id);
       setSession(session);
@@ -82,19 +79,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, metadata: any) => {
+  const signUp = async (email: string, password: string, metadata: any): Promise<void> => {
     try {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
-      // Make sure role is properly set in metadata
       if (!metadata.role && metadata.company_name) {
         metadata.role = 'admin';
       } else if (!metadata.role) {
         metadata.role = 'employee';
       }
       
-      // Important: The data option is converted to raw_user_meta_data in Supabase
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -115,13 +110,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       console.log('Sign up successful:', data);
-      
       toast({
         title: "Sign up successful",
         description: "Please check your email to verify your account.",
       });
-      
-      // Don't navigate automatically, wait for email verification
     } catch (error: any) {
       console.error('Error signing up:', error.message);
       throw error;
