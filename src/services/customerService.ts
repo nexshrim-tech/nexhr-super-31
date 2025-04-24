@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 export interface Customer {
   customerid: string;  // Changed from number to string since it's now a UUID

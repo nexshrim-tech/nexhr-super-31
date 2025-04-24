@@ -11,7 +11,7 @@ interface SubscriptionContextType {
   isSubscribed: boolean;
   showSubscriptionModal: boolean;
   setShowSubscriptionModal: (show: boolean) => void;
-  customerId: number | null;
+  customerId: string | null;
   features: {
     employeeManagement: boolean;
     attendanceTracking: boolean;
@@ -32,7 +32,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const { user } = useAuth();
   const [plan, setPlan] = useState<SubscriptionPlan>("None");
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [customerId, setCustomerId] = useState<number | null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const isSubscribed = plan !== "None";
   
   // Define which features are available for each plan
