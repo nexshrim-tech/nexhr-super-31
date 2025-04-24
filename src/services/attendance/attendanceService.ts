@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -133,6 +134,20 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       return [];
     }
 
+    // Fetch salary data
+    const { data: salaryData, error: salaryError } = await supabase
+      .from('salary')
+      .select('employeeid, basicsalary');
+
+    if (salaryError) {
+      console.error('Error fetching salary data:', salaryError);
+      return [];
+    }
+
+    const salaryMap = new Map(
+      salaryData.map(salary => [salary.employeeid, salary.basicsalary])
+    );
+
     const recordsWithDate: AttendanceRecord[] = [];
     
     if (data && Array.isArray(data)) {
@@ -155,7 +170,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
             firstname: safeString(record.employee.firstname),
             lastname: safeString(record.employee.lastname),
             salary: {
-              basicsalary: record.employee.monthly_salary || 0
+              basicsalary: salaryMap.get(record.employeeid) || 0
             }
           };
         }
@@ -198,8 +213,7 @@ export const updateAttendanceRecord = async (
         *,
         employee:employeeid (
           firstname,
-          lastname,
-          monthly_salary
+          lastname
         )
       `)
       .single();
@@ -207,6 +221,17 @@ export const updateAttendanceRecord = async (
     if (error) {
       console.error('Error updating attendance record:', error);
       return null;
+    }
+    
+    // Fetch salary data for this employee
+    const { data: salaryData, error: salaryError } = await supabase
+      .from('salary')
+      .select('basicsalary')
+      .eq('employeeid', data.employeeid)
+      .maybeSingle();
+    
+    if (salaryError) {
+      console.error('Error fetching salary data:', salaryError);
     }
     
     return {
@@ -217,7 +242,7 @@ export const updateAttendanceRecord = async (
         firstname: safeString(data.employee.firstname),
         lastname: safeString(data.employee.lastname),
         salary: {
-          basicsalary: data.employee.monthly_salary || 0
+          basicsalary: salaryData?.basicsalary || 0
         }
       } : undefined
     };
