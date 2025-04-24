@@ -46,8 +46,8 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
         lastname: '',
         email: '',
         jobtitle: '',
-        employeestatus: 'Active',
-        customerid: customerId, // Use the customer ID from subscription context (now a string)
+        employmentstatus: 'Active', // Changed from employeestatus to employmentstatus
+        customerid: customerId, // Use the customer ID from subscription context
       });
     }
   }, [employee, isNewEmployee, customerId]);
@@ -243,8 +243,8 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
               Status
             </Label>
             <Select 
-              value={employeeData.employeestatus || 'Active'}
-              onValueChange={(value) => handleChange('employeestatus', value)}
+              value={employeeData.employmentstatus || 'Active'} 
+              onValueChange={(value) => handleChange('employmentstatus', value)}
             >
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select status" />

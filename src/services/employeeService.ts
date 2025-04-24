@@ -18,7 +18,7 @@ export interface Employee {
   dateofbirth?: string | null;
   education?: string | undefined;
   employeetype?: string | undefined;
-  employeestatus?: string | undefined;
+  employmentstatus?: string | undefined; // Changed from employeestatus to match DB column
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
   monthlysalary?: number;
@@ -54,7 +54,7 @@ interface EmployeeDB {
   disabilitystatus?: string;
   documentpath?: string;
   education?: string | undefined;
-  employeestatus?: string | undefined;
+  employmentstatus?: string | undefined; // Changed from employeestatus to match DB column
   employmenttype?: string | undefined;
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
@@ -226,6 +226,12 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       delete dbEmployee.postalcode;
     }
     
+    // Map employeestatus to employmentstatus since the schema doesn't have employeestatus
+    if (dbEmployee.employeestatus) {
+      dbEmployee.employmentstatus = dbEmployee.employeestatus;
+      delete dbEmployee.employeestatus;
+    }
+    
     const { data, error } = await supabase
       .from('employee')
       .insert(dbEmployee)
@@ -260,7 +266,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       country: emp.country,
       postalcode: emp.zipcode,
       education: emp.education,
-      employeestatus: emp.employeestatus,
+      employmentstatus: emp.employmentstatus, // Changed from employeestatus to match DB column
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
@@ -308,6 +314,12 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       delete dbEmployee.postalcode;
     }
     
+    // Map employeestatus to employmentstatus since the schema doesn't have employeestatus
+    if (dbEmployee.employeestatus) {
+      dbEmployee.employmentstatus = dbEmployee.employeestatus;
+      delete dbEmployee.employeestatus;
+    }
+    
     console.log('Updating employee with sanitized data:', dbEmployee);
     
     const { data, error } = await supabase
@@ -343,7 +355,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       country: emp.country,
       postalcode: emp.zipcode,
       education: emp.education,
-      employeestatus: emp.employeestatus,
+      employmentstatus: emp.employmentstatus, // Changed from employeestatus to match DB column
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
