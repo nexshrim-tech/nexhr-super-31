@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -81,17 +82,17 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
           lastname: safeString(record.employee.lastname),
         };
         
+        // Fixed null check for salary
         if (record.employee.salary && 
             !isSupabaseError(record.employee.salary) && 
             typeof record.employee.salary === 'object' &&
-            record.employee.salary !== null) {
-          if ('basicsalary' in record.employee.salary) {
-            const salaryValue = record.employee.salary.basicsalary;
-            if (typeof salaryValue === 'number') {
-              attendanceRecord.employee.salary = {
-                basicsalary: salaryValue
-              };
-            }
+            record.employee.salary !== null && 
+            'basicsalary' in record.employee.salary) {
+          const salaryValue = record.employee.salary.basicsalary;
+          if (typeof salaryValue === 'number') {
+            attendanceRecord.employee.salary = {
+              basicsalary: salaryValue
+            };
           }
         }
       }
@@ -160,17 +161,17 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
             lastname: safeString(record.employee.lastname),
           };
           
+          // Fixed null check for salary
           if (record.employee.salary && 
               !isSupabaseError(record.employee.salary) && 
               typeof record.employee.salary === 'object' &&
-              record.employee.salary !== null) {
-            if ('basicsalary' in record.employee.salary) {
-              const salaryValue = record.employee.salary.basicsalary;
-              if (typeof salaryValue === 'number') {
-                attendanceRecord.employee.salary = {
-                  basicsalary: salaryValue
-                };
-              }
+              record.employee.salary !== null && 
+              'basicsalary' in record.employee.salary) {
+            const salaryValue = record.employee.salary.basicsalary;
+            if (typeof salaryValue === 'number') {
+              attendanceRecord.employee.salary = {
+                basicsalary: salaryValue
+              };
             }
           }
         }
@@ -218,8 +219,8 @@ export const updateAttendanceRecord = async (
       return null;
     }
     
-    const result = data?.[0] as AttendanceRecord | null;
-    return result;
+    // Using type assertion to resolve the "excessively deep" type instantiation issue
+    return (data?.[0] as AttendanceRecord | undefined) || null;
   } catch (error) {
     console.error('Error in updateAttendanceRecord:', error);
     return null;
