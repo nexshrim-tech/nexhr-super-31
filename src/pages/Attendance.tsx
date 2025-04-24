@@ -111,7 +111,7 @@ const Attendance = () => {
     
     try {
       // Here we would update the record in the database
-      await updateAttendanceRecord(currentRecord.attendanceid, {
+      await updateAttendanceRecord(currentRecord.attendanceid || 0, {
         // Convert form data to database format
         status: editFormData.status,
         notes: editFormData.notes,

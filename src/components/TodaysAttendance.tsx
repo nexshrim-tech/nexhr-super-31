@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Download } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { getAttendanceForDate } from "@/services/attendance/attendanceService";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +14,6 @@ const TodaysAttendance = () => {
   const { data: attendanceData = [], isLoading, error } = useQuery({
     queryKey: ['attendance', formattedDate],
     queryFn: () => getAttendanceForDate(formattedDate),
-    // Add error handling and fallback
     retry: 1,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

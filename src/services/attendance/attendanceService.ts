@@ -1,14 +1,26 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
-// Fix for TS2589 error - removing excessive type recursion
-type AttendanceRecord = {
+// Define a more complete AttendanceRecord type that includes all fields used in the components
+export type AttendanceRecord = {
+  attendanceid?: number;
   employeeid: number | null;
   customerid: number | null;
-  checkintimestamp: string | null;
-  checkouttimestamp: string | null;
+  date?: string;
+  checkintime?: string | null;
+  checkouttime?: string | null;
+  checkintimestamp?: string | null;
+  checkouttimestamp?: string | null;
   status: string | null;
-  selfieimagepath: string | null;
+  selfieimagepath?: string | null;
+  notes?: string | null;
+  workhours?: number | null;
+  employee?: {
+    firstname?: string | null;
+    lastname?: string | null;
+  };
 };
 
 export const getAttendanceByCustomerId = async (customerId: number) => {
@@ -57,7 +69,7 @@ export const getAttendanceByEmployeeId = async (employeeId: number) => {
   }
 };
 
-export const createAttendanceRecord = async (record: AttendanceRecord) => {
+export const createAttendanceRecord = async (record: Partial<AttendanceRecord>) => {
   try {
     const { data, error } = await supabase
       .from("attendance")
@@ -82,10 +94,13 @@ export const createAttendanceRecord = async (record: AttendanceRecord) => {
 
 export const updateAttendanceRecord = async (id: number, updates: Partial<AttendanceRecord>) => {
   try {
+    // Extract relevant fields to avoid sending extraneous data
+    const { attendanceid, employee, ...cleanUpdates } = updates;
+    
     const { data, error } = await supabase
       .from("attendance")
-      .update(updates)
-      .eq("id", id)
+      .update(cleanUpdates)
+      .eq("attendanceid", id)
       .select();
 
     if (error) {
@@ -109,7 +124,7 @@ export const deleteAttendanceRecord = async (id: number) => {
     const { error } = await supabase
       .from("attendance")
       .delete()
-      .eq("id", id);
+      .eq("attendanceid", id);
 
     if (error) {
       throw error;
@@ -127,12 +142,11 @@ export const deleteAttendanceRecord = async (id: number) => {
   }
 };
 
-// Fix the type issue in getAllAttendance
 export const getAllAttendance = async () => {
   try {
     const { data, error } = await supabase
       .from("attendance")
-      .select("*");
+      .select("*, employee(firstname, lastname)");
 
     if (error) {
       throw error;
@@ -141,6 +155,33 @@ export const getAllAttendance = async () => {
     return data || [];
   } catch (error: any) {
     console.error("Error fetching all attendance:", error.message);
+    toast({
+      title: "Failed to fetch attendance",
+      description: error.message,
+      variant: "destructive",
+    });
+    return [];
+  }
+};
+
+// Add the missing getAttendanceForDate function
+export const getAttendanceForDate = async (dateString: string) => {
+  try {
+    console.log("Fetching attendance for date:", dateString);
+    
+    const { data, error } = await supabase
+      .from("attendance")
+      .select("*, employee(firstname, lastname)")
+      .eq("date", dateString);
+
+    if (error) {
+      throw error;
+    }
+    
+    console.log("Attendance data received:", data);
+    return data || [];
+  } catch (error: any) {
+    console.error("Error fetching attendance for date:", dateString, error.message);
     toast({
       title: "Failed to fetch attendance",
       description: error.message,
