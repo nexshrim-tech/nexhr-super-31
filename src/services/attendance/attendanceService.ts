@@ -22,7 +22,7 @@ export interface AttendanceRecord {
   notes?: string;
 }
 
-// Interface for update attendance record data - separate from the main record type
+// Interface for update attendance record data
 export interface AttendanceUpdateData {
   status?: string;
   notes?: string;

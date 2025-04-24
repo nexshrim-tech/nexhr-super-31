@@ -48,13 +48,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "assetmanagement_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-          {
             foreignKeyName: "assetmanagement_employeeid_fkey"
             columns: ["employeeid"]
             isOneToOne: false
@@ -89,13 +82,6 @@ export type Database = {
           status?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "attendance_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
           {
             foreignKeyName: "attendance_employeeid_fkey"
             columns: ["employeeid"]
@@ -135,13 +121,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "attendancesettings_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-          {
             foreignKeyName: "attendancesettings_employeeid_fkey"
             columns: ["employeeid"]
             isOneToOne: false
@@ -152,9 +131,8 @@ export type Database = {
       }
       customer: {
         Row: {
-          cid: string | null
           companysize: string | null
-          customerid: number
+          customerid: string
           email: string | null
           name: string | null
           password: string | null
@@ -162,9 +140,8 @@ export type Database = {
           planid: number | null
         }
         Insert: {
-          cid?: string | null
           companysize?: string | null
-          customerid?: never
+          customerid?: string
           email?: string | null
           name?: string | null
           password?: string | null
@@ -172,9 +149,8 @@ export type Database = {
           planid?: number | null
         }
         Update: {
-          cid?: string | null
           companysize?: string | null
-          customerid?: never
+          customerid?: string
           email?: string | null
           name?: string | null
           password?: string | null
@@ -220,13 +196,6 @@ export type Database = {
           numberofemployees?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "department_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
           {
             foreignKeyName: "department_managerid_fkey"
             columns: ["managerid"]
@@ -321,15 +290,7 @@ export type Database = {
           worklocation?: string | null
           zipcode?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "employee_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-        ]
+        Relationships: []
       }
       employeebankdetails: {
         Row: {
@@ -408,13 +369,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "expense_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-          {
             foreignKeyName: "expense_employeeid_fkey"
             columns: ["employeeid"]
             isOneToOne: false
@@ -469,13 +423,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "helpdesk_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-          {
             foreignKeyName: "helpdesk_employeeid_fkey"
             columns: ["employeeid"]
             isOneToOne: false
@@ -517,13 +464,6 @@ export type Database = {
           ticketid?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "helpdeskcomment_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
           {
             foreignKeyName: "helpdeskcomment_employeeid_fkey"
             columns: ["employeeid"]
@@ -570,13 +510,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "leave_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-          {
             foreignKeyName: "leave_employeeid_fkey"
             columns: ["employeeid"]
             isOneToOne: false
@@ -601,15 +534,7 @@ export type Database = {
           holidaydate?: string | null
           holidayid?: never
         }
-        Relationships: [
-          {
-            foreignKeyName: "manageholidays_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-        ]
+        Relationships: []
       }
       meetings: {
         Row: {
@@ -644,13 +569,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "meetings_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-          {
             foreignKeyName: "meetings_organizeremployeeid_fkey"
             columns: ["organizeremployeeid"]
             isOneToOne: false
@@ -681,15 +599,7 @@ export type Database = {
           officelocationid?: never
           premisesradius?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "officelocation_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-        ]
+        Relationships: []
       }
       payslip: {
         Row: {
@@ -720,13 +630,6 @@ export type Database = {
           year?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "payslip_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
           {
             foreignKeyName: "payslip_employeeid_fkey"
             columns: ["employeeid"]
@@ -843,13 +746,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "projectcomment_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-          {
             foreignKeyName: "projectcomment_employeeid_fkey"
             columns: ["employeeid"]
             isOneToOne: false
@@ -894,13 +790,6 @@ export type Database = {
           uploadtimestamp?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "projectdocuments_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
           {
             foreignKeyName: "projectdocuments_employeeid_fkey"
             columns: ["employeeid"]
@@ -956,13 +845,6 @@ export type Database = {
             referencedRelation: "employee"
             referencedColumns: ["employeeid"]
           },
-          {
-            foreignKeyName: "projects_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
         ]
       }
       projecttask: {
@@ -994,13 +876,6 @@ export type Database = {
           taskstatus?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "projecttask_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
           {
             foreignKeyName: "projecttask_employeeid_fkey"
             columns: ["employeeid"]
@@ -1071,13 +946,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "salary_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-          {
             foreignKeyName: "salary_employeeid_fkey"
             columns: ["employeeid"]
             isOneToOne: false
@@ -1112,13 +980,6 @@ export type Database = {
           trackid?: never
         }
         Relationships: [
-          {
-            foreignKeyName: "track_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
           {
             foreignKeyName: "track_employeeid_fkey"
             columns: ["employeeid"]
@@ -1175,13 +1036,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "employee"
             referencedColumns: ["employeeid"]
-          },
-          {
-            foreignKeyName: "tracklist_customerid_fkey"
-            columns: ["customerid"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
           },
           {
             foreignKeyName: "tracklist_employeeid_fkey"
