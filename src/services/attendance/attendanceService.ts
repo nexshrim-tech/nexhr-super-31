@@ -92,6 +92,7 @@ export const createAttendanceRecord = async (record: Partial<AttendanceRecord>) 
   }
 };
 
+// Fix the update function to remove circular reference
 export const updateAttendanceRecord = async (id: number, updates: Partial<Omit<AttendanceRecord, 'employee'>>) => {
   try {
     // Extract relevant fields to avoid sending extraneous data
@@ -164,19 +165,37 @@ export const getAllAttendance = async () => {
   }
 };
 
-// Add the missing getAttendanceForDate function
+// Fix getAttendanceForDate to properly handle date filtering
 export const getAttendanceForDate = async (dateString: string) => {
   try {
     console.log("Fetching attendance for date:", dateString);
     
+    // Get all attendance records with employee information
     const { data, error } = await supabase
       .from("attendance")
       .select("*, employee(firstname, lastname)");
 
-    // Filter data by date after retrieving it
-    const filteredData = data?.filter(record => 
+    if (error) {
+      throw error;
+    }
+
+    // Map the data to include the date property for filtering
+    const attendanceWithDate = data?.map(record => {
+      // Extract the date from checkintimestamp if exists
+      const date = record.checkintimestamp ? 
+        format(new Date(record.checkintimestamp), 'yyyy-MM-dd') : 
+        dateString; // Fallback to requested date if no timestamp
+      
+      return {
+        ...record,
+        date
+      };
+    }) || [];
+    
+    // Filter by the requested date
+    const filteredData = attendanceWithDate.filter(record => 
       record.date === dateString
-    ) || [];
+    );
     
     console.log("Attendance data received:", filteredData);
     return filteredData;

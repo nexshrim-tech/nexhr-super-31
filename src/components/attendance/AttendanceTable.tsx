@@ -32,18 +32,6 @@ const AttendanceTable = ({
     queryFn: () => getAttendanceForDate(formattedDate)
   });
 
-  const filteredRecords = records.filter(record => {
-    const searchLower = searchTerm.toLowerCase();
-    const employeeName = record.employee 
-      ? `${record.employee.firstname || ''} ${record.employee.lastname || ''}`.toLowerCase()
-      : '';
-    
-    return (
-      employeeName.includes(searchLower) ||
-      (record.status?.toLowerCase() || '').includes(searchLower)
-    );
-  });
-
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<AttendanceRecord>>({});
   const [localRecords, setLocalRecords] = useState<AttendanceRecord[]>([]);
@@ -104,7 +92,16 @@ const AttendanceTable = ({
       
       console.log("Saving record with data:", updatedRecord);
       
-      const savedRecord = await updateAttendanceRecord(updatedRecord.attendanceid || 0, updatedRecord);
+      const savedRecord = await updateAttendanceRecord(
+        updatedRecord.attendanceid || 0, 
+        {
+          checkintime: updatedRecord.checkintime,
+          checkouttime: updatedRecord.checkouttime,
+          status: updatedRecord.status,
+          notes: updatedRecord.notes,
+          date: updatedRecord.date
+        }
+      );
       
       if (savedRecord) {
         console.log("Received saved record:", savedRecord);
@@ -119,7 +116,7 @@ const AttendanceTable = ({
           updatedRecords[recordIndex] = {
             ...record,
             ...savedRecord,
-            employee: savedRecord.employee || record.employee,
+            employee: record.employee,
             status: savedRecord.status || editData.status
           };
           
@@ -166,7 +163,7 @@ const AttendanceTable = ({
     }
   };
 
-  const recordsToShow = localRecords.filter(record => {
+  const filteredRecords = localRecords.filter(record => {
     const searchLower = searchTerm.toLowerCase();
     const employeeName = record.employee 
       ? `${record.employee.firstname || ''} ${record.employee.lastname || ''}`.toLowerCase()
@@ -239,7 +236,7 @@ const AttendanceTable = ({
                     Loading records...
                   </TableCell>
                 </TableRow>
-              ) : recordsToShow.length > 0 ? recordsToShow.map((record) => (
+              ) : filteredRecords.length > 0 ? filteredRecords.map((record) => (
                 <TableRow key={`emp-${record.employeeid}-${record.attendanceid || 0}`}>
                   <TableCell>
                     <div className="flex items-center gap-3">
