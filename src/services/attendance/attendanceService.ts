@@ -86,9 +86,16 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       return [];
     }
 
-    // Fix for type instantiation error - explicitly define the type
-    const recordsWithDate: AttendanceRecord[] = (data || []).map(record => ({
-      ...record,
+    // Fix the type instantiation issue by explicitly mapping to the defined interface
+    const recordsWithDate: AttendanceRecord[] = (data || []).map((record: any) => ({
+      attendanceid: record.attendanceid,
+      checkintimestamp: record.checkintimestamp,
+      checkouttimestamp: record.checkouttimestamp,
+      customerid: record.customerid,
+      employeeid: record.employeeid,
+      selfieimagepath: record.selfieimagepath || '',
+      status: record.status || '',
+      employee: record.employee,
       date: formattedDate,
       checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
       checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -140,8 +141,8 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       country: emp.country,
       postalcode: emp.zipcode,
       education: emp.education,
-      employeestatus: emp.employeestatus,
-      employeetype: emp.employmenttype,
+      employmentstatus: emp.employmentstatus, // Changed from employeestatus to employmentstatus
+      employeetype: emp.employmenttype, // Changed to map from employmenttype
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
     };
