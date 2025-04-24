@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -115,11 +116,13 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
           employee: record.employee ? {
             firstname: record.employee.firstname || '',
             lastname: record.employee.lastname || '',
-            ...(record.employee.salary && {
+            ...(record.employee.salary && typeof record.employee.salary === 'object' && 
+              !('error' in record.employee.salary) && 
+              'basicsalary' in record.employee.salary ? {
               salary: {
                 basicsalary: record.employee.salary.basicsalary || 0
               }
-            })
+            } : {})
           } : undefined
         };
         
