@@ -103,7 +103,7 @@ const EmployeeDetails = () => {
               gender: empData.gender || '',
               address: empData.address || '',
               joining: empData.joiningdate || '',
-              status: empData.employeestatus || 'Active',
+              status: empData.employmentstatus || 'Active',
             };
             setEmployeeForm(formattedEmployee);
             setAdaptedEmployee(empData);
@@ -262,7 +262,7 @@ const EmployeeDetails = () => {
           gender: employeeForm.gender,
           address: employeeForm.address,
           joiningdate: employeeForm.joining,
-          employeestatus: employeeForm.status
+          employmentstatus: employeeForm.status
         };
         
         await updateEmployee(employee.employeeid, updatedEmployee);
@@ -300,7 +300,7 @@ const EmployeeDetails = () => {
         gender: employee.gender || '',
         address: employee.address || '',
         joining: employee.joiningdate || '',
-        status: employee.employeestatus || 'Active',
+        status: employee.employmentstatus || 'Active',
       };
       setEmployeeForm(formattedEmployee);
     }

@@ -76,7 +76,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
               <TableCell>{employee.email}</TableCell>
               <TableCell>{employee.jobtitle}</TableCell>
               <TableCell>
-                <Badge variant="secondary">{employee.employeestatus}</Badge>
+                <Badge variant="secondary">{employee.employmentstatus}</Badge>
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

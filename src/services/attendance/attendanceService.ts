@@ -86,7 +86,8 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
       return [];
     }
 
-    const recordsWithDate = (data || []).map(record => ({
+    // Fix for type instantiation error - explicitly define the type
+    const recordsWithDate: AttendanceRecord[] = (data || []).map(record => ({
       ...record,
       date: formattedDate,
       checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',

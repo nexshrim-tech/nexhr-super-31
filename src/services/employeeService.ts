@@ -95,7 +95,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       country: emp.country,
       postalcode: emp.zipcode,
       education: emp.education,
-      employeestatus: emp.employeestatus,
+      employmentstatus: emp.employmentstatus,
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory
@@ -226,7 +226,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       delete dbEmployee.postalcode;
     }
     
-    // Map employeestatus to employmentstatus since the schema doesn't have employeestatus
+    // Map employmentstatus to employmentstatus since the schema doesn't have employeestatus
     if (dbEmployee.employeestatus) {
       dbEmployee.employmentstatus = dbEmployee.employeestatus;
       delete dbEmployee.employeestatus;

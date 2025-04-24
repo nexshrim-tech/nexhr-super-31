@@ -16,7 +16,7 @@ export const adaptEmployeeData = (demoData: any): Employee => {
       ? parseInt(demoData.department) || 0 
       : demoData.department || 0,
     joiningdate: demoData.joining || demoData.joiningdate || '',
-    employeestatus: demoData.status || demoData.employeestatus || 'Active',
+    employmentstatus: demoData.status || demoData.employmentstatus || 'Active',
     gender: demoData.gender || '',
     dateofbirth: demoData.dob || demoData.dateofbirth || '',
     address: demoData.address || '',
@@ -38,7 +38,7 @@ export const adaptToUIFormat = (employee: Employee): any => {
     gender: employee.gender || '',
     address: employee.address || '',
     joining: employee.joiningdate || '',
-    status: employee.employeestatus || 'Active',
+    status: employee.employmentstatus || 'Active',
     avatar: employee.profilepicturepath || `${employee.firstname[0]}${employee.lastname[0]}`,
     // Default values for UI that might not be in the database
     tasks: [],
