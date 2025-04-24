@@ -87,27 +87,29 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
     
     if (data && Array.isArray(data)) {
       for (const record of data) {
-        // Explicitly create AttendanceRecord object with defined properties to avoid deep type instantiation
+        // Create a properly typed attendance record
         const attendanceRecord: AttendanceRecord = {
-          // Include attendanceid if it exists in the record
-          ...(record.attendanceid && { attendanceid: record.attendanceid }),
-          checkintimestamp: record.checkintimestamp,
-          checkouttimestamp: record.checkouttimestamp,
-          customerid: record.customerid,
-          employeeid: record.employeeid,
+          // Use only properties we know exist in the record
+          checkintimestamp: record.checkintimestamp || '',
+          checkouttimestamp: record.checkouttimestamp || '',
+          customerid: record.customerid || 0,
+          employeeid: record.employeeid || 0,
           selfieimagepath: record.selfieimagepath || '',
           status: record.status || '',
+          // Add optional properties
           employee: record.employee ? {
-            firstname: record.employee.firstname,
-            lastname: record.employee.lastname
+            firstname: record.employee.firstname || '',
+            lastname: record.employee.lastname || ''
           } : undefined,
           date: formattedDate,
           checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
           checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
           workhours: '',
-          // Include notes if it exists
-          ...(record.notes && { notes: record.notes })
+          // Only add these if they exist in the record
+          ...(typeof record.attendanceid === 'number' && { attendanceid: record.attendanceid }),
+          ...(typeof record.notes === 'string' && { notes: record.notes })
         };
+        
         recordsWithDate.push(attendanceRecord);
       }
     }
