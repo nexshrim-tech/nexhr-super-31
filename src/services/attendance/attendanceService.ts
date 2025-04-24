@@ -34,6 +34,11 @@ export interface AttendanceUpdateData {
   date?: string;
 }
 
+// Helper function to check if an object is a Supabase error
+const isSupabaseError = (obj: any): boolean => {
+  return obj && typeof obj === 'object' && 'error' in obj;
+};
+
 export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => {
   try {
     const { data, error } = await supabase
@@ -54,7 +59,49 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
       return [];
     }
 
-    return data || [];
+    // Process the data to ensure it matches AttendanceRecord type
+    const processedData: AttendanceRecord[] = data?.map(record => {
+      const attendanceRecord: AttendanceRecord = {
+        checkintimestamp: record.checkintimestamp || '',
+        checkouttimestamp: record.checkouttimestamp || '',
+        customerid: record.customerid || 0,
+        employeeid: record.employeeid || 0,
+        selfieimagepath: record.selfieimagepath || '',
+        status: record.status || '',
+      };
+      
+      // Only add attendanceid if it exists
+      if ('attendanceid' in record && record.attendanceid !== null) {
+        attendanceRecord.attendanceid = record.attendanceid;
+      }
+      
+      // Only add notes if they exist
+      if ('notes' in record && record.notes !== null) {
+        attendanceRecord.notes = record.notes;
+      }
+      
+      // Safely add employee information if it exists
+      if (record.employee) {
+        attendanceRecord.employee = {
+          firstname: record.employee.firstname || '',
+          lastname: record.employee.lastname || '',
+        };
+        
+        // Safely add salary information, making sure it's not an error object
+        if (record.employee.salary && 
+            !isSupabaseError(record.employee.salary) && 
+            typeof record.employee.salary === 'object' && 
+            'basicsalary' in record.employee.salary) {
+          attendanceRecord.employee.salary = {
+            basicsalary: record.employee.salary.basicsalary || 0
+          };
+        }
+      }
+      
+      return attendanceRecord;
+    }) || [];
+
+    return processedData;
   } catch (error) {
     console.error('Error in getAllAttendanceRecords:', error);
     return [];
@@ -111,19 +158,6 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
           checkintime: record.checkintimestamp ? format(parseISO(record.checkintimestamp), 'HH:mm') : '',
           checkouttime: record.checkouttimestamp ? format(parseISO(record.checkouttimestamp), 'HH:mm') : '',
           workhours: '',
-          
-          // Employee info if available
-          employee: record.employee ? {
-            firstname: record.employee.firstname || '',
-            lastname: record.employee.lastname || '',
-            ...(record.employee.salary && typeof record.employee.salary === 'object' && 
-              !('error' in record.employee.salary) && 
-              'basicsalary' in record.employee.salary ? {
-              salary: {
-                basicsalary: record.employee.salary.basicsalary || 0
-              }
-            } : {})
-          } : undefined
         };
         
         // Safely add optional properties only if they exist in the record
@@ -133,6 +167,25 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
         
         if ('notes' in record && typeof record.notes === 'string') {
           attendanceRecord.notes = record.notes;
+        }
+        
+        // Safely add employee information if it exists
+        if (record.employee) {
+          attendanceRecord.employee = {
+            firstname: record.employee.firstname || '',
+            lastname: record.employee.lastname || '',
+          };
+          
+          // Safely handle the salary object
+          const employeeSalary = record.employee.salary;
+          if (employeeSalary && 
+              !isSupabaseError(employeeSalary) && 
+              typeof employeeSalary === 'object' && 
+              'basicsalary' in employeeSalary) {
+            attendanceRecord.employee.salary = {
+              basicsalary: employeeSalary.basicsalary || 0
+            };
+          }
         }
         
         recordsWithDate.push(attendanceRecord);
