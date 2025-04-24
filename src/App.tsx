@@ -86,16 +86,14 @@ function AppRoutes() {
 
 function App() {
   return (
-    <>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <SubscriptionProvider>
-            <AppRoutes />
-            <Toaster />
-          </SubscriptionProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SubscriptionProvider>
+          <AppRoutes />
+          <Toaster />
+        </SubscriptionProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

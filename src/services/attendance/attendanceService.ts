@@ -15,7 +15,7 @@ export interface AttendanceRecord {
   employeeid: number;
   selfieimagepath: string;
   status: string;
-  // Use a specific type instead of recursively referencing employee
+  // Define employee as a simple object with just the needed properties
   employee?: {
     firstname: string;
     lastname: string;
