@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -11,7 +10,7 @@ export interface Employee {
   joiningdate?: string | null;
   profilepicturepath?: string;
   customerid?: string | number; // Updated to support both string (UUID) and number
-  phonenumber?: string;
+  phonenumber?: string; // Changed from number to string to match database
   address?: string;
   monthlysalary?: number; // Changed from salary to monthlysalary
   gender?: string;
@@ -58,7 +57,7 @@ interface EmployeeDB {
   employmenttype?: string | undefined;
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
-  phonenumber?: string;
+  phonenumber?: string; // Changed from number to string to match database
   company_employee_id?: string;
   terminationdate?: string | null;
   probationenddate?: string | null;
@@ -155,7 +154,7 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
-      phonenumber: emp.phonenumber,
+      phonenumber: emp.phonenumber, // Use the string phonenumber
       company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate
