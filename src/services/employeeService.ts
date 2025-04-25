@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -10,7 +11,7 @@ export interface Employee {
   joiningdate?: string | null;
   profilepicturepath?: string;
   customerid?: string | number; // Updated to support both string (UUID) and number
-  phonenumber?: string; // Changed from number to string to match database
+  phonenumber?: string; // String representation of phone number for consistency
   address?: string;
   monthlysalary?: number; // Changed from salary to monthlysalary
   gender?: string;
@@ -57,7 +58,7 @@ interface EmployeeDB {
   employmenttype?: string | undefined;
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
-  phonenumber?: string; // Changed from number to string to match database
+  phonenumber?: number; // Changed back to number to match database schema
   company_employee_id?: string;
   terminationdate?: string | null;
   probationenddate?: string | null;
@@ -80,7 +81,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       throw error;
     }
 
-    return (data || []).map((emp: EmployeeDB) => ({
+    return (data || []).map((emp: any) => ({
       employeeid: emp.employeeid,
       firstname: emp.firstname || '',
       lastname: emp.lastname || '',
@@ -103,7 +104,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
-      phonenumber: emp.phonenumber,
+      phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined, // Convert number to string
       company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate
@@ -129,7 +130,7 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
 
     if (!data) return null;
     
-    const emp = data as EmployeeDB;
+    const emp = data as any;
     
     return {
       employeeid: emp.employeeid,
@@ -154,7 +155,7 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
-      phonenumber: emp.phonenumber, // Use the string phonenumber
+      phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined, // Convert number to string
       company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate
@@ -322,6 +323,13 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
         : dbEmployee.monthlysalary;
     }
     
+    // Convert phonenumber to number if it's provided as string
+    if (dbEmployee.phonenumber !== undefined) {
+      dbEmployee.phonenumber = typeof dbEmployee.phonenumber === 'string'
+        ? parseInt(dbEmployee.phonenumber, 10)
+        : dbEmployee.phonenumber;
+    }
+    
     console.log('Updating employee with sanitized data:', dbEmployee);
     
     const { data, error } = await supabase
@@ -336,7 +344,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       throw error;
     }
 
-    const emp = data as EmployeeDB;
+    const emp = data as any;
 
     // Map database response back to our interface
     return {
@@ -362,7 +370,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
-      phonenumber: emp.phonenumber,
+      phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined, // Convert number to string
       company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate
