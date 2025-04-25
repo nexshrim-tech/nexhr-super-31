@@ -58,7 +58,7 @@ interface EmployeeDB {
   employmenttype?: string | undefined;
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
-  phonenumber?: number; // Changed back to number to match database schema
+  phonenumber?: number; // Database stores phonenumber as a number
   company_employee_id?: string;
   terminationdate?: string | null;
   probationenddate?: string | null;
@@ -239,6 +239,18 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       delete dbEmployee.postalcode;
     }
     
+    // Convert phonenumber to number for database storage
+    if (dbEmployee.phonenumber !== undefined) {
+      // Only try to parse if it's a non-empty string
+      if (typeof dbEmployee.phonenumber === 'string' && dbEmployee.phonenumber.trim() !== '') {
+        const parsedPhone = parseInt(dbEmployee.phonenumber, 10);
+        dbEmployee.phonenumber = !isNaN(parsedPhone) ? parsedPhone : null;
+      } else if (typeof dbEmployee.phonenumber !== 'number') {
+        // If it's not a string or number, set to null
+        dbEmployee.phonenumber = null;
+      }
+    }
+    
     const { data, error } = await supabase
       .from('employee')
       .insert(dbEmployee)
@@ -252,7 +264,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
 
     console.log('Employee added successfully:', data);
     
-    const emp = data as EmployeeDB;
+    const emp = data as any;
     
     // Map database response back to our interface
     return {
@@ -278,7 +290,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
-      phonenumber: emp.phonenumber,
+      phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate
@@ -323,11 +335,16 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
         : dbEmployee.monthlysalary;
     }
     
-    // Convert phonenumber to number if it's provided as string
+    // Convert phonenumber to number for database storage
     if (dbEmployee.phonenumber !== undefined) {
-      dbEmployee.phonenumber = typeof dbEmployee.phonenumber === 'string'
-        ? parseInt(dbEmployee.phonenumber, 10)
-        : dbEmployee.phonenumber;
+      // Only try to parse if it's a non-empty string
+      if (typeof dbEmployee.phonenumber === 'string' && dbEmployee.phonenumber.trim() !== '') {
+        const parsedPhone = parseInt(dbEmployee.phonenumber, 10);
+        dbEmployee.phonenumber = !isNaN(parsedPhone) ? parsedPhone : null;
+      } else if (typeof dbEmployee.phonenumber !== 'number') {
+        // If it's not a string or number, set to null
+        dbEmployee.phonenumber = null;
+      }
     }
     
     console.log('Updating employee with sanitized data:', dbEmployee);
