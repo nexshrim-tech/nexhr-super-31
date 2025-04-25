@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -47,7 +48,7 @@ interface EmployeeDB {
   state?: string;
   country?: string;
   zipcode?: string;
-  monthlysalary?: number; // Added missing monthlysalary property
+  monthlysalary?: number; // Added to match the database column
   // Additional fields from DB that might be missing in the current interface
   bloodgroup?: string;
   disabilitystatus?: string;
@@ -57,6 +58,10 @@ interface EmployeeDB {
   employmenttype?: string | undefined;
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
+  phonenumber?: string;
+  company_employee_id?: string;
+  terminationdate?: string | null;
+  probationenddate?: string | null;
 }
 
 export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
@@ -93,11 +98,16 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       state: emp.state,
       country: emp.country,
       postalcode: emp.zipcode,
+      monthlysalary: emp.monthlysalary, // Map monthlysalary correctly
       education: emp.education,
       employmentstatus: emp.employmentstatus as any,
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
-      employmenthistory: emp.employmenthistory
+      employmenthistory: emp.employmenthistory,
+      phonenumber: emp.phonenumber,
+      company_employee_id: emp.company_employee_id,
+      terminationdate: emp.terminationdate,
+      probationenddate: emp.probationenddate
     }));
   } catch (error) {
     console.error('Error in getEmployees:', error);
@@ -139,11 +149,16 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       state: emp.state,
       country: emp.country,
       postalcode: emp.zipcode,
+      monthlysalary: emp.monthlysalary, // Map monthlysalary correctly
       education: emp.education,
       employmentstatus: emp.employmentstatus as any,
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
-      employmenthistory: emp.employmenthistory
+      employmenthistory: emp.employmenthistory,
+      phonenumber: emp.phonenumber,
+      company_employee_id: emp.company_employee_id,
+      terminationdate: emp.terminationdate,
+      probationenddate: emp.probationenddate
     };
   } catch (error) {
     console.error('Error in getEmployeeById:', error);
@@ -188,7 +203,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     const dbEmployee: Record<string, any> = {
       ...cleanEmployee,
       employmentstatus: cleanEmployee.employmentstatus || 'Active',
-      // Changed from salary to monthlysalary
+      // Use monthlysalary directly
       monthlysalary: cleanEmployee.monthlysalary ? 
         (typeof cleanEmployee.monthlysalary === 'string' ? parseFloat(cleanEmployee.monthlysalary as string) : cleanEmployee.monthlysalary) : 
         null,
@@ -222,11 +237,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     if (dbEmployee.postalcode) {
       dbEmployee.zipcode = dbEmployee.postalcode;
       delete dbEmployee.postalcode;
-    }
-    
-    // Map employmentstatus to employmentstatus 
-    if (dbEmployee.employmentstatus) {
-      // Keep it as is - the field name matches the database column
     }
     
     const { data, error } = await supabase
@@ -267,7 +277,11 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       employmentstatus: emp.employmentstatus as any,
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
-      employmenthistory: emp.employmenthistory
+      employmenthistory: emp.employmenthistory,
+      phonenumber: emp.phonenumber,
+      company_employee_id: emp.company_employee_id,
+      terminationdate: emp.terminationdate,
+      probationenddate: emp.probationenddate
     };
   } catch (error) {
     console.error('Error in addEmployee:', error);
@@ -300,6 +314,13 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
     if (dbEmployee.postalcode) {
       dbEmployee.zipcode = dbEmployee.postalcode;
       delete dbEmployee.postalcode;
+    }
+    
+    // Handle monthlysalary conversion if needed
+    if (dbEmployee.monthlysalary !== undefined) {
+      dbEmployee.monthlysalary = typeof dbEmployee.monthlysalary === 'string' 
+        ? parseFloat(dbEmployee.monthlysalary) 
+        : dbEmployee.monthlysalary;
     }
     
     console.log('Updating employee with sanitized data:', dbEmployee);
@@ -341,7 +362,11 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       employmentstatus: emp.employmentstatus as any,
       employeetype: emp.employmenttype,
       workauthorization: emp.workauthorization,
-      employmenthistory: emp.employmenthistory
+      employmenthistory: emp.employmenthistory,
+      phonenumber: emp.phonenumber,
+      company_employee_id: emp.company_employee_id,
+      terminationdate: emp.terminationdate,
+      probationenddate: emp.probationenddate
     };
   } catch (error) {
     console.error('Error in updateEmployee:', error);
