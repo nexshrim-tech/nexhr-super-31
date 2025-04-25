@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
@@ -5,7 +6,7 @@ export interface EmployeeBasic {
   firstname: string | null;
   lastname: string | null;
   salary?: {
-    monthlysalary: number;
+    monthlysalary: number;  // We'll keep this structure for backward compatibility but populate it with monthlysalary
   } | null;
 }
 
@@ -63,7 +64,7 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
 
     const { data: salaryData, error: salaryError } = await supabase
       .from('employee')
-      .select('employeeid, monthlysalary');
+      .select('employeeid, monthlysalary'); // Changed from salary to monthlysalary
 
     if (salaryError) {
       console.error('Error fetching salary data:', salaryError);
@@ -71,7 +72,7 @@ export const getAllAttendanceRecords = async (): Promise<AttendanceRecord[]> => 
     }
 
     const salaryMap = new Map(
-      salaryData.map(salary => [salary.employeeid, salary.monthlysalary])
+      salaryData.map(salary => [salary.employeeid, salary.monthlysalary]) // Changed from salary to monthlysalary
     );
 
     const processedData: AttendanceRecord[] = (attendanceData || []).map((record: any) => {
@@ -134,7 +135,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
 
     const { data: salaryData, error: salaryError } = await supabase
       .from('employee')
-      .select('employeeid, monthlysalary');
+      .select('employeeid, monthlysalary'); // Changed from salary to monthlysalary
 
     if (salaryError) {
       console.error('Error fetching salary data:', salaryError);
@@ -142,7 +143,7 @@ export const getAttendanceForDate = async (date: Date | string): Promise<Attenda
     }
 
     const salaryMap = new Map(
-      salaryData.map(salary => [salary.employeeid, salary.monthlysalary])
+      salaryData.map(salary => [salary.employeeid, salary.monthlysalary]) // Changed from salary to monthlysalary
     );
 
     const recordsWithDate: AttendanceRecord[] = [];
@@ -222,7 +223,7 @@ export const updateAttendanceRecord = async (
     
     const { data: employeeData, error: salaryError } = await supabase
       .from('employee')
-      .select('monthlysalary')
+      .select('monthlysalary') // Changed from salary to monthlysalary
       .eq('employeeid', data.employeeid)
       .maybeSingle();
     
@@ -244,7 +245,7 @@ export const updateAttendanceRecord = async (
         firstname: safeString(data.employee.firstname),
         lastname: safeString(data.employee.lastname),
         salary: {
-          monthlysalary: employeeData?.monthlysalary || 0
+          monthlysalary: employeeData?.monthlysalary || 0 // Changed from salary to monthlysalary
         }
       };
     }

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -12,7 +13,7 @@ export interface Employee {
   customerid?: string | number; // Updated to support both string (UUID) and number
   phonenumber?: string;
   address?: string;
-  salary?: number;
+  monthlysalary?: number; // Changed from salary to monthlysalary
   gender?: string;
   dateofbirth?: string | null;
   education?: string | undefined;
@@ -20,7 +21,6 @@ export interface Employee {
   employmentstatus?: 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation';
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
-  monthlysalary?: number;
   city?: string;
   state?: string;
   country?: string;
@@ -188,9 +188,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     const dbEmployee: Record<string, any> = {
       ...cleanEmployee,
       employmentstatus: cleanEmployee.employmentstatus || 'Active',
-      salary: cleanEmployee.salary ? 
-        (typeof cleanEmployee.salary === 'string' ? parseFloat(cleanEmployee.salary as string) : cleanEmployee.salary) : 
-        null,
+      // Changed from salary to monthlysalary
       monthlysalary: cleanEmployee.monthlysalary ? 
         (typeof cleanEmployee.monthlysalary === 'string' ? parseFloat(cleanEmployee.monthlysalary as string) : cleanEmployee.monthlysalary) : 
         null,
@@ -264,6 +262,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       state: emp.state,
       country: emp.country,
       postalcode: emp.zipcode,
+      monthlysalary: emp.monthlysalary, // Changed from salary to monthlysalary
       education: emp.education,
       employmentstatus: emp.employmentstatus as any,
       employeetype: emp.employmenttype,
@@ -337,6 +336,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       state: emp.state,
       country: emp.country,
       postalcode: emp.zipcode,
+      monthlysalary: emp.monthlysalary, // Changed from salary to monthlysalary
       education: emp.education,
       employmentstatus: emp.employmentstatus as any,
       employeetype: emp.employmenttype,
