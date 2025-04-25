@@ -16,7 +16,7 @@ export interface Employee {
   gender?: string;
   dateofbirth?: string | null;
   education?: string | undefined;
-  employeetype?: string | undefined;
+  employmenttype?: string | undefined;
   employmentstatus?: 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation';
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
@@ -98,7 +98,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       monthlysalary: emp.monthlysalary,
       education: emp.education,
       employmentstatus: emp.employmentstatus as any,
-      employeetype: emp.employmenttype,
+      employmenttype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
@@ -149,7 +149,7 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       monthlysalary: emp.monthlysalary,
       education: emp.education,
       employmentstatus: emp.employmentstatus as any,
-      employeetype: emp.employmenttype,
+      employmenttype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
@@ -215,9 +215,9 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       }
     });
     
-    if (dbEmployee.employeetype) {
-      dbEmployee.employmenttype = dbEmployee.employeetype;
-      delete dbEmployee.employeetype;
+    if (dbEmployee.employmenttype) {
+      // Correct mapping - don't try to rename the field as it's already correct
+      // We keep employmenttype as is
     }
     
     if (dbEmployee.postalcode) {
@@ -269,7 +269,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       monthlysalary: emp.monthlysalary,
       education: emp.education,
       employmentstatus: emp.employmentstatus as any,
-      employeetype: emp.employmenttype,
+      employmenttype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
@@ -299,9 +299,8 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
     if (dbEmployee.terminationdate === '') dbEmployee.terminationdate = null;
     if (dbEmployee.probationenddate === '') dbEmployee.probationenddate = null;
     
-    if (dbEmployee.employeetype) {
-      dbEmployee.employmenttype = dbEmployee.employeetype;
-      delete dbEmployee.employeetype;
+    if (dbEmployee.employmenttype) {
+      // Correct mapping - keep as is
     }
     
     if (dbEmployee.postalcode) {
@@ -360,7 +359,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       monthlysalary: emp.monthlysalary,
       education: emp.education,
       employmentstatus: emp.employmentstatus as any,
-      employeetype: emp.employmenttype,
+      employmenttype: emp.employmenttype,
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,

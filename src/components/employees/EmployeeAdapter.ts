@@ -20,6 +20,7 @@ export const adaptEmployeeData = (demoData: any): Employee => {
     address: demoData.address || '',
     profilepicturepath: demoData.avatar || demoData.profilepicturepath || '',
     monthlysalary: demoData.monthlysalary || 0, // Using monthlysalary consistently
+    employmenttype: demoData.employmenttype || '', // Correctly mapping to employmenttype
   };
 };
 
@@ -40,6 +41,7 @@ export const adaptToUIFormat = (employee: Employee): any => {
     status: employee.employmentstatus || 'Active',
     avatar: employee.profilepicturepath || `${employee.firstname[0]}${employee.lastname[0]}`,
     monthlysalary: employee.monthlysalary || 0, // Using monthlysalary consistently
+    employmenttype: employee.employmenttype || '', // Correctly mapping to employmenttype
     // Default values for UI that might not be in the database
     tasks: [],
     assets: [],
