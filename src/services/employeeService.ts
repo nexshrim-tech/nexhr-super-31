@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -48,6 +47,7 @@ interface EmployeeDB {
   state?: string;
   country?: string;
   zipcode?: string;
+  monthlysalary?: number; // Added missing monthlysalary property
   // Additional fields from DB that might be missing in the current interface
   bloodgroup?: string;
   disabilitystatus?: string;
