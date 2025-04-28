@@ -59,7 +59,6 @@ interface EmployeeDB {
   workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
   phonenumber?: number;
-  company_employee_id?: string;
   terminationdate?: string | null;
   probationenddate?: string | null;
   fathersname?: string;
@@ -204,7 +203,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       employmenthistory: employee.employmenthistory || null,
       terminationdate: employee.terminationdate || null,
       probationenddate: employee.probationenddate || null,
-      company_employee_id: employee.employeeid || null,
       bloodgroup: employee.bloodgroup || null,
       maritalstatus: employee.maritalstatus || null,
       disabilitystatus: employee.disabilitystatus || null,
@@ -324,7 +322,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
     if ('employmenttype' in employee) dbEmployee.employmenttype = employee.employmenttype || null;
     if ('workauthorization' in employee) dbEmployee.workauthorization = employee.workauthorization || null;
     if ('employmenthistory' in employee) dbEmployee.employmenthistory = employee.employmenthistory || null;
-    if ('company_employee_id' in employee) dbEmployee.company_employee_id = employee.employeeid || null;
     if ('bloodgroup' in employee) dbEmployee.bloodgroup = employee.bloodgroup || null;
     if ('fathersname' in employee) dbEmployee.fathersname = employee.fathersname || null;
     if ('maritalstatus' in employee) dbEmployee.maritalstatus = employee.maritalstatus || null;
@@ -400,7 +397,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
-      company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate,
       bloodgroup: emp.bloodgroup,
