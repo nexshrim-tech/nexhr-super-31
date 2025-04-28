@@ -55,7 +55,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
             <TableRow key={employee.employeeid}>
               <TableCell>
                 <span className="font-mono text-sm">
-                  {employee.company_employee_id || `-`}
+                  {employee.employeeid || `-`}
                 </span>
               </TableCell>
               <TableCell>
