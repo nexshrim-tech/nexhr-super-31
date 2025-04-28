@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -285,8 +286,9 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
 
 export const updateEmployee = async (id: number, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
   try {
+    // Make sure we're not trying to update the employeeid
     const cleanEmployee = Object.fromEntries(
-      Object.entries(employee).filter(([_, value]) => value !== undefined)
+      Object.entries(employee).filter(([key, value]) => value !== undefined && key !== 'employeeid')
     );
     
     const dbEmployee: Record<string, any> = {
