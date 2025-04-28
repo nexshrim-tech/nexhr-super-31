@@ -17,7 +17,6 @@ export interface Employee {
   dateofbirth?: string | null;
   employmenttype?: string | undefined;
   employmentstatus?: 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation';
-  workauthorization?: string | undefined;
   city?: string;
   state?: string;
   country?: string;
@@ -53,7 +52,6 @@ interface EmployeeDB {
   documentpath?: string;
   employmentstatus?: string;
   employmenttype?: string | undefined;
-  workauthorization?: string | undefined;
   employmenthistory?: string | undefined;
   phonenumber?: number;
   terminationdate?: string | null;
@@ -99,7 +97,6 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       monthlysalary: emp.monthlysalary,
       employmentstatus: emp.employmentstatus as any,
       employmenttype: emp.employmenttype,
-      workauthorization: emp.workauthorization,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate,
@@ -151,7 +148,6 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       monthlysalary: emp.monthlysalary,
       employmentstatus: emp.employmentstatus as any,
       employmenttype: emp.employmenttype,
-      workauthorization: emp.workauthorization,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate,
@@ -191,7 +187,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       country: employee.country || null,
       employmentstatus: employee.employmentstatus || 'Active',
       employmenttype: employee.employmenttype || null,
-      workauthorization: employee.workauthorization || null,
       terminationdate: employee.terminationdate || null,
       probationenddate: employee.probationenddate || null,
       bloodgroup: employee.bloodgroup || null,
@@ -277,7 +272,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       monthlysalary: emp.monthlysalary,
       employmentstatus: emp.employmentstatus as any,
       employmenttype: emp.employmenttype,
-      workauthorization: emp.workauthorization,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate,
@@ -308,7 +302,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
     if ('country' in employee) dbEmployee.country = employee.country || null;
     if ('employmentstatus' in employee) dbEmployee.employmentstatus = employee.employmentstatus || null;
     if ('employmenttype' in employee) dbEmployee.employmenttype = employee.employmenttype || null;
-    if ('workauthorization' in employee) dbEmployee.workauthorization = employee.workauthorization || null;
     if ('bloodgroup' in employee) dbEmployee.bloodgroup = employee.bloodgroup || null;
     if ('fathersname' in employee) dbEmployee.fathersname = employee.fathersname || null;
     if ('maritalstatus' in employee) dbEmployee.maritalstatus = employee.maritalstatus || null;
@@ -380,7 +373,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       monthlysalary: emp.monthlysalary,
       employmentstatus: emp.employmentstatus as any,
       employmenttype: emp.employmenttype,
-      workauthorization: emp.workauthorization,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate,

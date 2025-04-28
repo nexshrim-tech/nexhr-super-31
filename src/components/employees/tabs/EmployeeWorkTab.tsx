@@ -12,7 +12,6 @@ interface EmployeeWorkTabProps {
     employeeId: string;
     joining: string;
     employmenttype?: string;
-    workAuthorization?: string;
     probationEndDate?: string;
   };
   geofencingEnabled: boolean;
@@ -121,19 +120,6 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
             </Select>
           ) : (
             <p className="text-sm font-medium">{employee.employmenttype || "Not specified"}</p>
-          )}
-        </div>
-        <div>
-          <Label>Work Authorization</Label>
-          {isEditMode ? (
-            <Input 
-              name="workAuthorization" 
-              value={employee.workAuthorization || ""} 
-              onChange={onInputChange} 
-              className="mt-1"
-            />
-          ) : (
-            <p className="text-sm font-medium">{employee.workAuthorization || "Not specified"}</p>
           )}
         </div>
         <div>
