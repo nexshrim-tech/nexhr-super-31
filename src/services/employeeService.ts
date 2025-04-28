@@ -22,7 +22,6 @@ export interface Employee {
   country?: string;
   postalcode?: string;
   terminationdate?: string | null;
-  probationenddate?: string | null;
   bloodgroup?: string;
   fathersname?: string;
   maritalstatus?: string;
@@ -55,7 +54,7 @@ interface EmployeeDB {
   employmenthistory?: string | undefined;
   phonenumber?: number;
   terminationdate?: string | null;
-  probationenddate?: string | null;
+  bloodgroup?: string;
   fathersname?: string;
   maritalstatus?: string;
 }
@@ -99,7 +98,6 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       employmenttype: emp.employmenttype,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       terminationdate: emp.terminationdate,
-      probationenddate: emp.probationenddate,
       bloodgroup: emp.bloodgroup,
       fathersname: emp.fathersname,
       maritalstatus: emp.maritalstatus,
@@ -150,7 +148,6 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       employmenttype: emp.employmenttype,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       terminationdate: emp.terminationdate,
-      probationenddate: emp.probationenddate,
       bloodgroup: emp.bloodgroup,
       fathersname: emp.fathersname,
       maritalstatus: emp.maritalstatus,
@@ -188,7 +185,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       employmentstatus: employee.employmentstatus || 'Active',
       employmenttype: employee.employmenttype || null,
       terminationdate: employee.terminationdate || null,
-      probationenddate: employee.probationenddate || null,
       bloodgroup: employee.bloodgroup || null,
       maritalstatus: employee.maritalstatus || null,
       disabilitystatus: employee.disabilitystatus || null,
@@ -274,7 +270,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       employmenttype: emp.employmenttype,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       terminationdate: emp.terminationdate,
-      probationenddate: emp.probationenddate,
       bloodgroup: emp.bloodgroup,
       fathersname: emp.fathersname,
       maritalstatus: emp.maritalstatus,
@@ -311,7 +306,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
     if ('joiningdate' in employee) dbEmployee.joiningdate = employee.joiningdate === '' ? null : employee.joiningdate;
     if ('dateofbirth' in employee) dbEmployee.dateofbirth = employee.dateofbirth === '' ? null : employee.dateofbirth;
     if ('terminationdate' in employee) dbEmployee.terminationdate = employee.terminationdate === '' ? null : employee.terminationdate;
-    if ('probationenddate' in employee) dbEmployee.probationenddate = employee.probationenddate === '' ? null : employee.probationenddate;
     
     if ('postalcode' in employee) {
       dbEmployee.zipcode = employee.postalcode || null;
@@ -375,7 +369,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       employmenttype: emp.employmenttype,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       terminationdate: emp.terminationdate,
-      probationenddate: emp.probationenddate,
       bloodgroup: emp.bloodgroup,
       fathersname: emp.fathersname,
       maritalstatus: emp.maritalstatus,

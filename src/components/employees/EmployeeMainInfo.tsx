@@ -59,7 +59,6 @@ const EmployeeMainInfo: React.FC<EmployeeMainInfoProps> = ({
                 ...employee,
                 education: employee.education,
                 employeeType: employee.employeeType,
-                probationEndDate: employee.probationEndDate,
               }}
               geofencingEnabled={geofencingEnabled}
               onGeofencingToggle={onGeofencingToggle}
