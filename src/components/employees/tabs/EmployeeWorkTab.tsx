@@ -14,7 +14,6 @@ interface EmployeeWorkTabProps {
     employmenttype?: string;
     workAuthorization?: string;
     probationEndDate?: string;
-    employmentHistory?: string;
   };
   geofencingEnabled: boolean;
   onGeofencingToggle: (checked: boolean) => void;
@@ -149,19 +148,6 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
             />
           ) : (
             <p className="text-sm font-medium">{employee.probationEndDate || "Not applicable"}</p>
-          )}
-        </div>
-        <div className="col-span-2">
-          <Label>Employment History</Label>
-          {isEditMode ? (
-            <Input 
-              name="employmentHistory" 
-              value={employee.employmentHistory || ""} 
-              onChange={onInputChange} 
-              className="mt-1"
-            />
-          ) : (
-            <p className="text-sm font-medium">{employee.employmentHistory || "Not specified"}</p>
           )}
         </div>
         <div className="col-span-2">
