@@ -46,7 +46,6 @@ interface EmployeeDB {
   country?: string;
   zipcode?: string;
   monthlysalary?: number;
-  bloodgroup?: string;
   disabilitystatus?: string;
   documentpath?: string;
   employmentstatus?: string;

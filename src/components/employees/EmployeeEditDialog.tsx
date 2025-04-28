@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,6 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
       if (sanitizedEmployee.joiningdate === '') sanitizedEmployee.joiningdate = null;
       if (sanitizedEmployee.dateofbirth === '') sanitizedEmployee.dateofbirth = null;
       if (sanitizedEmployee.terminationdate === '') sanitizedEmployee.terminationdate = null;
-      if (sanitizedEmployee.probationenddate === '') sanitizedEmployee.probationenddate = null;
       
       setEmployeeData(sanitizedEmployee);
     } else if (isNewEmployee) {
@@ -52,7 +52,7 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
   const handleChange = (field: keyof Employee, value: string | number) => {
     if (
       (field === 'joiningdate' || field === 'dateofbirth' || 
-       field === 'terminationdate' || field === 'probationenddate') && 
+       field === 'terminationdate') && 
       value === ''
     ) {
       setEmployeeData(prev => ({ ...prev, [field]: null }));
