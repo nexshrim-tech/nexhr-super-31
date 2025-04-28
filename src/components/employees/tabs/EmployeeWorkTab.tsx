@@ -12,7 +12,7 @@ interface EmployeeWorkTabProps {
     employeeId: string;
     joining: string;
     education?: string;
-    employeeType?: string;
+    employmenttype?: string;
     workAuthorization?: string;
     probationEndDate?: string;
     employmentHistory?: string;
@@ -84,6 +84,7 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
               value={employee.employeeId} 
               onChange={onInputChange} 
               className="mt-1"
+              readOnly
             />
           ) : (
             <p className="text-sm font-medium">{employee.employeeId}</p>
@@ -120,8 +121,8 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
           <Label>Employee Type</Label>
           {isEditMode ? (
             <Select 
-              value={employee.employeeType || ""} 
-              onValueChange={(value) => onSelectChange && onSelectChange("employeeType", value)}
+              value={employee.employmenttype || ""} 
+              onValueChange={(value) => onSelectChange && onSelectChange("employmenttype", value)}
             >
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select employee type" />
@@ -135,7 +136,7 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
               </SelectContent>
             </Select>
           ) : (
-            <p className="text-sm font-medium">{employee.employeeType || "Not specified"}</p>
+            <p className="text-sm font-medium">{employee.employmenttype || "Not specified"}</p>
           )}
         </div>
         <div>

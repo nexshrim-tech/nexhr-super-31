@@ -26,7 +26,6 @@ export interface Employee {
   postalcode?: string;
   terminationdate?: string | null;
   probationenddate?: string | null;
-  company_employee_id?: string;
   bloodgroup?: string;
   fathersname?: string;
   maritalstatus?: string;
@@ -108,7 +107,6 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
-      company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate,
       bloodgroup: emp.bloodgroup,
@@ -163,7 +161,6 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
-      company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate,
       bloodgroup: emp.bloodgroup,
@@ -295,7 +292,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       workauthorization: emp.workauthorization,
       employmenthistory: emp.employmenthistory,
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
-      company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
       probationenddate: emp.probationenddate,
       bloodgroup: emp.bloodgroup,
