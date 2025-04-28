@@ -65,7 +65,6 @@ interface EmployeeDB {
   probationenddate?: string | null;
   fathersname?: string;
   maritalstatus?: string;
-  disabilitystatus?: string;
 }
 
 export const getEmployees = async (customerId?: number): Promise<Employee[]> => {

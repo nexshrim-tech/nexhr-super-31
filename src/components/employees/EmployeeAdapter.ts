@@ -10,7 +10,7 @@ export const adaptEmployeeData = (demoData: any): Employee => {
     firstname: demoData.name ? demoData.name.split(' ')[0] : demoData.firstname || '',
     lastname: demoData.name ? demoData.name.split(' ')[1] || '' : demoData.lastname || '',
     email: demoData.email || '',
-    phonenumber: demoData.phone || demoData.phonenumber?.toString() || '', // Convert phone number to string
+    phonenumber: demoData.phone || demoData.phonenumber?.toString() || '', 
     jobtitle: demoData.role || demoData.jobtitle || '',
     department: demoData.department || '',
     joiningdate: demoData.joining || demoData.joiningdate || '',
