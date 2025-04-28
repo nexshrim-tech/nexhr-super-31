@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employee {
@@ -28,6 +27,10 @@ export interface Employee {
   terminationdate?: string | null;
   probationenddate?: string | null;
   company_employee_id?: string;
+  bloodgroup?: string;
+  fathersname?: string;
+  maritalstatus?: string;
+  disabilitystatus?: string;
 }
 
 interface EmployeeDB {
@@ -60,6 +63,9 @@ interface EmployeeDB {
   company_employee_id?: string;
   terminationdate?: string | null;
   probationenddate?: string | null;
+  fathersname?: string;
+  maritalstatus?: string;
+  disabilitystatus?: string;
 }
 
 export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
@@ -105,7 +111,11 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
-      probationenddate: emp.probationenddate
+      probationenddate: emp.probationenddate,
+      bloodgroup: emp.bloodgroup,
+      fathersname: emp.fathersname,
+      maritalstatus: emp.maritalstatus,
+      disabilitystatus: emp.disabilitystatus
     }));
   } catch (error) {
     console.error('Error in getEmployees:', error);
@@ -156,7 +166,11 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
-      probationenddate: emp.probationenddate
+      probationenddate: emp.probationenddate,
+      bloodgroup: emp.bloodgroup,
+      fathersname: emp.fathersname,
+      maritalstatus: emp.maritalstatus,
+      disabilitystatus: emp.disabilitystatus
     };
   } catch (error) {
     console.error('Error in getEmployeeById:', error);
@@ -172,11 +186,36 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw new Error('Employee must have firstname, lastname, and email');
     }
     
-    const cleanEmployee = Object.fromEntries(
-      Object.entries(employee).filter(([_, value]) => value !== undefined)
-    );
+    const dbEmployee: Record<string, any> = {
+      firstname: employee.firstname,
+      lastname: employee.lastname,
+      email: employee.email,
+      jobtitle: employee.jobtitle || null,
+      department: employee.department || null,
+      joiningdate: employee.joiningdate || null,
+      profilepicturepath: employee.profilepicturepath || null,
+      customerid: employee.customerid || null,
+      address: employee.address || null,
+      gender: employee.gender || null,
+      dateofbirth: employee.dateofbirth || null,
+      city: employee.city || null,
+      state: employee.state || null,
+      country: employee.country || null,
+      employmentstatus: employee.employmentstatus || 'Active',
+      employmenttype: employee.employmenttype || null,
+      education: employee.education || null,
+      workauthorization: employee.workauthorization || null,
+      employmenthistory: employee.employmenthistory || null,
+      terminationdate: employee.terminationdate || null,
+      probationenddate: employee.probationenddate || null,
+      company_employee_id: employee.company_employee_id || null,
+      bloodgroup: employee.bloodgroup || null,
+      maritalstatus: employee.maritalstatus || null,
+      disabilitystatus: employee.disabilitystatus || null,
+      fathersname: employee.fathersname || null
+    };
     
-    if (!cleanEmployee.customerid) {
+    if (!dbEmployee.customerid) {
       const { data: userData } = await supabase.auth.getUser();
       if (userData?.user) {
         const { data: customerData } = await supabase
@@ -186,51 +225,34 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
           .single();
 
         if (customerData?.customerid) {
-          cleanEmployee.customerid = customerData.customerid;
+          dbEmployee.customerid = customerData.customerid;
         }
       }
     }
     
-    console.log('Submitting formatted employee data to database:', cleanEmployee);
+    console.log('Submitting formatted employee data to database:', dbEmployee);
     
-    const dbEmployee: Record<string, any> = {
-      ...cleanEmployee,
-      employmentstatus: cleanEmployee.employmentstatus || 'Active',
-      monthlysalary: cleanEmployee.monthlysalary ? 
-        (typeof cleanEmployee.monthlysalary === 'string' ? parseFloat(cleanEmployee.monthlysalary as string) : cleanEmployee.monthlysalary) : 
-        null,
-    };
+    if (employee.monthlysalary !== undefined) {
+      dbEmployee.monthlysalary = typeof employee.monthlysalary === 'string' ? 
+        parseFloat(employee.monthlysalary as string) : employee.monthlysalary;
+    }
     
     if (dbEmployee.department && typeof dbEmployee.department === 'string') {
       const departmentId = parseInt(dbEmployee.department);
       if (!isNaN(departmentId)) {
         dbEmployee.department = departmentId;
-      } else {
-        delete dbEmployee.department;
       }
     }
     
-    ['joiningdate', 'dateofbirth', 'terminationdate', 'probationenddate'].forEach(field => {
-      if (dbEmployee[field] === '') {
-        dbEmployee[field] = null;
-      }
-    });
-    
-    if (dbEmployee.employmenttype) {
-      // Correct mapping - don't try to rename the field as it's already correct
-      // We keep employmenttype as is
+    if (employee.postalcode) {
+      dbEmployee.zipcode = employee.postalcode;
     }
     
-    if (dbEmployee.postalcode) {
-      dbEmployee.zipcode = dbEmployee.postalcode;
-      delete dbEmployee.postalcode;
-    }
-    
-    if (dbEmployee.phonenumber !== undefined) {
-      if (typeof dbEmployee.phonenumber === 'string' && dbEmployee.phonenumber.trim() !== '') {
-        const parsedPhone = parseInt(dbEmployee.phonenumber, 10);
+    if (employee.phonenumber !== undefined) {
+      if (typeof employee.phonenumber === 'string' && employee.phonenumber.trim() !== '') {
+        const parsedPhone = parseInt(employee.phonenumber, 10);
         dbEmployee.phonenumber = !isNaN(parsedPhone) ? parsedPhone : null;
-      } else if (typeof dbEmployee.phonenumber !== 'number') {
+      } else if (typeof employee.phonenumber !== 'number') {
         dbEmployee.phonenumber = null;
       }
     }
@@ -276,7 +298,11 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
-      probationenddate: emp.probationenddate
+      probationenddate: emp.probationenddate,
+      bloodgroup: emp.bloodgroup,
+      fathersname: emp.fathersname,
+      maritalstatus: emp.maritalstatus,
+      disabilitystatus: emp.disabilitystatus
     };
   } catch (error) {
     console.error('Error in addEmployee:', error);
@@ -286,41 +312,55 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
 
 export const updateEmployee = async (id: number, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
   try {
-    // Make sure we're not trying to update the employeeid
-    const cleanEmployee = Object.fromEntries(
-      Object.entries(employee).filter(([key, value]) => value !== undefined && key !== 'employeeid')
-    );
+    const dbEmployee: Record<string, any> = {};
     
-    const dbEmployee: Record<string, any> = {
-      ...cleanEmployee,
-      gender: cleanEmployee.gender || null,
-    };
+    if ('firstname' in employee) dbEmployee.firstname = employee.firstname || null;
+    if ('lastname' in employee) dbEmployee.lastname = employee.lastname || null;
+    if ('email' in employee) dbEmployee.email = employee.email || null;
+    if ('jobtitle' in employee) dbEmployee.jobtitle = employee.jobtitle || null;
+    if ('department' in employee) dbEmployee.department = employee.department || null;
+    if ('address' in employee) dbEmployee.address = employee.address || null;
+    if ('gender' in employee) dbEmployee.gender = employee.gender || null;
+    if ('city' in employee) dbEmployee.city = employee.city || null;
+    if ('state' in employee) dbEmployee.state = employee.state || null;
+    if ('country' in employee) dbEmployee.country = employee.country || null;
+    if ('education' in employee) dbEmployee.education = employee.education || null;
+    if ('employmentstatus' in employee) dbEmployee.employmentstatus = employee.employmentstatus || null;
+    if ('employmenttype' in employee) dbEmployee.employmenttype = employee.employmenttype || null;
+    if ('workauthorization' in employee) dbEmployee.workauthorization = employee.workauthorization || null;
+    if ('employmenthistory' in employee) dbEmployee.employmenthistory = employee.employmenthistory || null;
+    if ('company_employee_id' in employee) dbEmployee.company_employee_id = employee.company_employee_id || null;
+    if ('bloodgroup' in employee) dbEmployee.bloodgroup = employee.bloodgroup || null;
+    if ('fathersname' in employee) dbEmployee.fathersname = employee.fathersname || null;
+    if ('maritalstatus' in employee) dbEmployee.maritalstatus = employee.maritalstatus || null;
+    if ('disabilitystatus' in employee) dbEmployee.disabilitystatus = employee.disabilitystatus || null;
+    if ('profilepicturepath' in employee) dbEmployee.profilepicturepath = employee.profilepicturepath || null;
     
-    if (dbEmployee.joiningdate === '') dbEmployee.joiningdate = null;
-    if (dbEmployee.dateofbirth === '') dbEmployee.dateofbirth = null;
-    if (dbEmployee.terminationdate === '') dbEmployee.terminationdate = null;
-    if (dbEmployee.probationenddate === '') dbEmployee.probationenddate = null;
+    if ('joiningdate' in employee) dbEmployee.joiningdate = employee.joiningdate === '' ? null : employee.joiningdate;
+    if ('dateofbirth' in employee) dbEmployee.dateofbirth = employee.dateofbirth === '' ? null : employee.dateofbirth;
+    if ('terminationdate' in employee) dbEmployee.terminationdate = employee.terminationdate === '' ? null : employee.terminationdate;
+    if ('probationenddate' in employee) dbEmployee.probationenddate = employee.probationenddate === '' ? null : employee.probationenddate;
     
-    if (dbEmployee.employmenttype) {
-      // Correct mapping - keep as is
+    if ('postalcode' in employee) {
+      dbEmployee.zipcode = employee.postalcode || null;
     }
     
-    if (dbEmployee.postalcode) {
-      dbEmployee.zipcode = dbEmployee.postalcode;
-      delete dbEmployee.postalcode;
+    if ('monthlysalary' in employee) {
+      dbEmployee.monthlysalary = employee.monthlysalary !== undefined ? 
+        (typeof employee.monthlysalary === 'string' ? parseFloat(employee.monthlysalary) : employee.monthlysalary) : null;
     }
     
-    if (dbEmployee.monthlysalary !== undefined) {
-      dbEmployee.monthlysalary = typeof dbEmployee.monthlysalary === 'string' 
-        ? parseFloat(dbEmployee.monthlysalary) 
-        : dbEmployee.monthlysalary;
-    }
-    
-    if (dbEmployee.phonenumber !== undefined) {
-      if (typeof dbEmployee.phonenumber === 'string' && dbEmployee.phonenumber.trim() !== '') {
-        const parsedPhone = parseInt(dbEmployee.phonenumber, 10);
-        dbEmployee.phonenumber = !isNaN(parsedPhone) ? parsedPhone : null;
-      } else if (typeof dbEmployee.phonenumber !== 'number') {
+    if ('phonenumber' in employee) {
+      if (employee.phonenumber) {
+        if (typeof employee.phonenumber === 'string' && employee.phonenumber.trim() !== '') {
+          const parsedPhone = parseInt(employee.phonenumber, 10);
+          dbEmployee.phonenumber = !isNaN(parsedPhone) ? parsedPhone : null;
+        } else if (typeof employee.phonenumber === 'number') {
+          dbEmployee.phonenumber = employee.phonenumber;
+        } else {
+          dbEmployee.phonenumber = null;
+        }
+      } else {
         dbEmployee.phonenumber = null;
       }
     }
@@ -367,7 +407,11 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       phonenumber: emp.phonenumber ? emp.phonenumber.toString() : undefined,
       company_employee_id: emp.company_employee_id,
       terminationdate: emp.terminationdate,
-      probationenddate: emp.probationenddate
+      probationenddate: emp.probationenddate,
+      bloodgroup: emp.bloodgroup,
+      fathersname: emp.fathersname,
+      maritalstatus: emp.maritalstatus,
+      disabilitystatus: emp.disabilitystatus
     };
   } catch (error) {
     console.error('Error in updateEmployee:', error);

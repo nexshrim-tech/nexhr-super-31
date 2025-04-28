@@ -19,8 +19,21 @@ export const adaptEmployeeData = (demoData: any): Employee => {
     dateofbirth: demoData.dob || demoData.dateofbirth || '',
     address: demoData.address || '',
     profilepicturepath: demoData.avatar || demoData.profilepicturepath || '',
-    monthlysalary: demoData.monthlysalary || 0, // Using monthlysalary consistently
-    employmenttype: demoData.employmenttype || '', // Correctly mapping to employmenttype
+    monthlysalary: demoData.monthlysalary || 0,
+    employmenttype: demoData.employmenttype || '', 
+    city: demoData.city || '',
+    state: demoData.state || '',
+    country: demoData.country || '',
+    postalcode: demoData.postalcode || '',
+    education: demoData.education || '',
+    workauthorization: demoData.workauthorization || '',
+    employmenthistory: demoData.employmenthistory || '',
+    terminationdate: demoData.terminationdate || null,
+    probationenddate: demoData.probationenddate || null,
+    bloodgroup: demoData.bloodgroup || '',
+    fathersname: demoData.fathersname || '',
+    maritalstatus: demoData.maritalstatus || '',
+    disabilitystatus: demoData.disabilitystatus || ''
   };
 };
 
@@ -40,8 +53,21 @@ export const adaptToUIFormat = (employee: Employee): any => {
     joining: employee.joiningdate || '',
     status: employee.employmentstatus || 'Active',
     avatar: employee.profilepicturepath || `${employee.firstname[0]}${employee.lastname[0]}`,
-    monthlysalary: employee.monthlysalary || 0, // Using monthlysalary consistently
-    employmenttype: employee.employmenttype || '', // Correctly mapping to employmenttype
+    monthlysalary: employee.monthlysalary || 0,
+    employmenttype: employee.employmenttype || '',
+    city: employee.city || '',
+    state: employee.state || '',
+    country: employee.country || '',
+    postalcode: employee.postalcode || '',
+    education: employee.education || '',
+    workauthorization: employee.workauthorization || '',
+    employmenthistory: employee.employmenthistory || '',
+    terminationdate: employee.terminationdate || '',
+    probationenddate: employee.probationenddate || '',
+    bloodgroup: employee.bloodgroup || '',
+    fathersname: employee.fathersname || '',
+    maritalstatus: employee.maritalstatus || '',
+    disabilitystatus: employee.disabilitystatus || '',
     // Default values for UI that might not be in the database
     tasks: [],
     assets: [],
