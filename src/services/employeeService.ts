@@ -15,7 +15,6 @@ export interface Employee {
   monthlysalary?: number;
   gender?: string;
   dateofbirth?: string | null;
-  education?: string | undefined;
   employmenttype?: string | undefined;
   employmentstatus?: 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation';
   workauthorization?: string | undefined;
@@ -53,7 +52,6 @@ interface EmployeeDB {
   bloodgroup?: string;
   disabilitystatus?: string;
   documentpath?: string;
-  education?: string | undefined;
   employmentstatus?: string;
   employmenttype?: string | undefined;
   workauthorization?: string | undefined;
@@ -100,7 +98,6 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       country: emp.country,
       postalcode: emp.zipcode,
       monthlysalary: emp.monthlysalary,
-      education: emp.education,
       employmentstatus: emp.employmentstatus as any,
       employmenttype: emp.employmenttype,
       workauthorization: emp.workauthorization,
@@ -154,7 +151,6 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       country: emp.country,
       postalcode: emp.zipcode,
       monthlysalary: emp.monthlysalary,
-      education: emp.education,
       employmentstatus: emp.employmentstatus as any,
       employmenttype: emp.employmenttype,
       workauthorization: emp.workauthorization,
@@ -198,7 +194,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       country: employee.country || null,
       employmentstatus: employee.employmentstatus || 'Active',
       employmenttype: employee.employmenttype || null,
-      education: employee.education || null,
       workauthorization: employee.workauthorization || null,
       employmenthistory: employee.employmenthistory || null,
       terminationdate: employee.terminationdate || null,
@@ -284,7 +279,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       country: emp.country,
       postalcode: emp.zipcode,
       monthlysalary: emp.monthlysalary,
-      education: emp.education,
       employmentstatus: emp.employmentstatus as any,
       employmenttype: emp.employmenttype,
       workauthorization: emp.workauthorization,
@@ -317,7 +311,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
     if ('city' in employee) dbEmployee.city = employee.city || null;
     if ('state' in employee) dbEmployee.state = employee.state || null;
     if ('country' in employee) dbEmployee.country = employee.country || null;
-    if ('education' in employee) dbEmployee.education = employee.education || null;
     if ('employmentstatus' in employee) dbEmployee.employmentstatus = employee.employmentstatus || null;
     if ('employmenttype' in employee) dbEmployee.employmenttype = employee.employmenttype || null;
     if ('workauthorization' in employee) dbEmployee.workauthorization = employee.workauthorization || null;
@@ -391,7 +384,6 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       country: emp.country,
       postalcode: emp.zipcode,
       monthlysalary: emp.monthlysalary,
-      education: emp.education,
       employmentstatus: emp.employmentstatus as any,
       employmenttype: emp.employmenttype,
       workauthorization: emp.workauthorization,

@@ -11,7 +11,6 @@ interface EmployeeWorkTabProps {
     role: string;
     employeeId: string;
     joining: string;
-    education?: string;
     employmenttype?: string;
     workAuthorization?: string;
     probationEndDate?: string;
@@ -32,7 +31,6 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
   onInputChange,
   onSelectChange
 }) => {
-  // Ensure department string is lowercase for the select component if it exists
   const departmentValue = employee.department ? employee.department.toLowerCase() : '';
   
   return (
@@ -102,19 +100,6 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
             />
           ) : (
             <p className="text-sm font-medium">{employee.joining}</p>
-          )}
-        </div>
-        <div>
-          <Label>Education</Label>
-          {isEditMode ? (
-            <Input 
-              name="education" 
-              value={employee.education || ""} 
-              onChange={onInputChange} 
-              className="mt-1"
-            />
-          ) : (
-            <p className="text-sm font-medium">{employee.education || "Not specified"}</p>
           )}
         </div>
         <div>
