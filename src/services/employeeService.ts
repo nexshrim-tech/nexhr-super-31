@@ -54,6 +54,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     }
     
     const dbEmployee = mapEmployeeToDBFormat(employee);
+    console.log('Formatted employee data for database:', dbEmployee);
     
     if (!dbEmployee.customerid) {
       const { data: userData } = await supabase.auth.getUser();
@@ -69,8 +70,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
         }
       }
     }
-    
-    console.log('Submitting formatted employee data to database:', dbEmployee);
     
     const { data, error } = await supabase
       .from('employee')
@@ -92,9 +91,10 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
 
 export const updateEmployee = async (id: number, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
   try {
-    const dbEmployee = mapEmployeeToDBFormat(employee);
+    console.log('Updating employee with data:', employee);
     
-    console.log('Updating employee with sanitized data:', dbEmployee);
+    const dbEmployee = mapEmployeeToDBFormat(employee);
+    console.log('Formatted employee data for database update:', dbEmployee);
     
     const { data, error } = await supabase
       .from('employee')
