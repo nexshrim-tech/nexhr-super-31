@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -14,67 +15,48 @@ import { useSubscription } from "@/context/SubscriptionContext";
 import FeatureLock from "@/components/FeatureLock";
 import { Checkbox } from "@/components/ui/checkbox";
 import { addEmployee } from "@/services/employeeService";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-interface EmployeeFormData {
-  firstName: string;
-  lastName: string;
-  fatherName: string;
-  email: string;
-  phone: string;
-  department: string;
-  jobTitle: string;
-  employeeId: string;
-  joinDate: string;
-  password: string;
-  confirmPassword: string;
-  bloodGroup: string;
-  hasDisability: boolean;
-  gender: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  zip: string;
-  dateOfBirth?: string;
-  nationality?: string;
-  maritalStatus?: string;
-  employmentType?: string;
-  workLocation?: string;
-}
+const employeeFormSchema = z.object({
+  firstname: z.string().min(1, "First name is required"),
+  lastname: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address").min(1, "Email is required"),
+  phonenumber: z.string().optional(),
+  jobtitle: z.string().optional(),
+  department: z.string().optional(),
+  joiningdate: z.string().optional(),
+  profilepicturepath: z.string().optional(),
+  address: z.string().optional(),
+  gender: z.string().optional(),
+  dateofbirth: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
+  postalcode: z.string().optional(),
+  monthlysalary: z.number().optional(),
+  employmentstatus: z.string().optional(),
+  employmenttype: z.string().optional(),
+  bloodgroup: z.string().optional(),
+  fathersname: z.string().optional(),
+  maritalstatus: z.string().optional(),
+  disabilitystatus: z.string().optional(),
+  nationality: z.string().optional(),
+  worklocation: z.string().optional(),
+  leavebalance: z.number().optional(),
+  employeepassword: z.string().optional()
+});
+
+type EmployeeFormData = z.infer<typeof employeeFormSchema>;
 
 const AddEmployee = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
   const { toast } = useToast();
-  const { features } = useSubscription();
+  const { features, customerId } = useSubscription();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [formData, setFormData] = useState<EmployeeFormData>({
-    firstName: "",
-    lastName: "",
-    fatherName: "",
-    email: "",
-    phone: "",
-    department: "",
-    jobTitle: "",
-    employeeId: "",
-    joinDate: "",
-    password: "",
-    confirmPassword: "",
-    bloodGroup: "",
-    hasDisability: false,
-    gender: "",
-    address: "",
-    city: "",
-    state: "",
-    country: "",
-    zip: "",
-    dateOfBirth: "",
-    nationality: "",
-    maritalStatus: "",
-    employmentType: "",
-    workLocation: ""
-  });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formProgress, setFormProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documents, setDocuments] = useState({
@@ -82,6 +64,49 @@ const AddEmployee = () => {
     panCard: null as File | null
   });
 
+  const form = useForm<EmployeeFormData>({
+    resolver: zodResolver(employeeFormSchema),
+    defaultValues: {
+      firstname: "",
+      lastname: "",
+      email: "",
+      phonenumber: "",
+      jobtitle: "",
+      department: "",
+      joiningdate: "",
+      profilepicturepath: "",
+      address: "",
+      gender: "",
+      dateofbirth: "",
+      city: "",
+      state: "",
+      country: "",
+      postalcode: "",
+      monthlysalary: 0,
+      employmentstatus: "Active",
+      employmenttype: "",
+      bloodgroup: "",
+      fathersname: "",
+      maritalstatus: "",
+      disabilitystatus: "",
+      nationality: "",
+      worklocation: "",
+      leavebalance: 0,
+      employeepassword: ""
+    }
+  });
+
+  // Calculate form progress based on filled fields
+  React.useEffect(() => {
+    const watchedValues = form.watch();
+    const totalFields = Object.keys(watchedValues).length;
+    const filledFields = Object.values(watchedValues).filter(val => 
+      typeof val === "string" ? val.trim() !== "" : val !== undefined && val !== null
+    ).length;
+    setFormProgress(Math.floor((filledFields / totalFields) * 100));
+  }, [form.watch()]);
+
+  // Check if feature is available
   if (!features.employeeManagement) {
     return (
       <div className="flex h-full bg-gray-50">
@@ -117,6 +142,7 @@ const AddEmployee = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
+        form.setValue('profilepicturepath', reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -137,96 +163,45 @@ const AddEmployee = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
+  const onSubmit = async (data: EmployeeFormData) => {
+    setIsSubmitting(true);
     
-    const totalFields = Object.keys(formData).length;
-    const filledFields = Object.values(formData).filter(val => 
-      typeof val === "string" ? val.trim() !== "" : true
-    ).length;
-    setFormProgress(Math.floor((filledFields / totalFields) * 100));
-  };
-
-  const handleCheckboxChange = (checked: boolean) => {
-    setFormData(prev => ({ ...prev, hasDisability: checked }));
-  };
-
-  const handleSelectChange = (value: string, field: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-    
-    if (!formData.firstName) errors.firstName = "First name is required";
-    if (!formData.lastName) errors.lastName = "Last name is required";
-    if (!formData.email) errors.email = "Email is required";
-    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Email is invalid";
-    }
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      setIsSubmitting(true);
+    try {
+      console.log("Preparing to add employee with data:", data);
       
-      try {
-        console.log("Preparing to add employee with data:", formData);
-        
-        const employeeData = {
-          firstname: formData.firstName,
-          lastname: formData.lastName,
-          email: formData.email,
-          phonenumber: formData.phone || undefined,
-          jobtitle: formData.jobTitle || undefined,
-          joiningdate: formData.joinDate || undefined,
-          department: formData.department || undefined,
-          employmentstatus: 'Active' as 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation',
-          customerid: 1,
-          gender: formData.gender || undefined,
-          address: formData.address || undefined,
-          city: formData.city || undefined,
-          state: formData.state || undefined,
-          country: formData.country || undefined,
-          postalcode: formData.zip || undefined,
-          dateofbirth: formData.dateOfBirth || undefined,
-        };
-        
-        console.log("Submitting employee data to database:", employeeData);
-        
-        const result = await addEmployee(employeeData);
-        console.log("Employee added successfully:", result);
-        
-        toast({
-          title: "Employee added successfully",
-          description: "The employee has been successfully added to the system.",
-        });
-        
-        setTimeout(() => {
-          navigate("/all-employees");
-        }, 500);
-      } catch (error) {
-        console.error("Error saving employee:", error);
-        toast({
-          title: "Error adding employee",
-          description: "There was a problem adding the employee to the database. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
+      // Prepare employee data for submission
+      const employeeData = {
+        ...data,
+        customerid: customerId,
+        // Ensure numeric fields are properly typed
+        monthlysalary: data.monthlysalary || 0,
+        leavebalance: data.leavebalance || 0,
+        // Set default status if not provided
+        employmentstatus: data.employmentstatus || 'Active'
+      };
+      
+      console.log("Submitting employee data to database:", employeeData);
+      
+      const result = await addEmployee(employeeData);
+      console.log("Employee added successfully:", result);
+      
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields correctly.",
+        title: "Employee added successfully",
+        description: "The employee has been successfully added to the system.",
+      });
+      
+      setTimeout(() => {
+        navigate("/all-employees");
+      }, 500);
+    } catch (error) {
+      console.error("Error saving employee:", error);
+      toast({
+        title: "Error adding employee",
+        description: "There was a problem adding the employee to the database. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -248,465 +223,646 @@ const AddEmployee = () => {
             </Link>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="md:col-span-1">
-              <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center space-y-4">
-                    <div className="p-1 rounded-full bg-gradient-to-r from-nexhr-primary to-purple-600">
-                      <Avatar className="h-32 w-32 border-4 border-white">
-                        <AvatarImage src={avatarPreview || ""} alt="Profile" />
-                        <AvatarFallback className="bg-gradient-to-r from-gray-200 to-gray-300">Upload</AvatarFallback>
-                      </Avatar>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        id="avatar-upload"
-                        className="sr-only"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                      />
-                      <Label
-                        htmlFor="avatar-upload"
-                        className="cursor-pointer inline-flex items-center gap-2 text-sm text-nexhr-primary hover:text-purple-600 transition-colors"
-                      >
-                        <Upload className="h-4 w-4" />
-                        Upload photo
-                      </Label>
-                    </div>
-
-                    <div className="text-center">
-                      <h3 className="text-lg font-medium">Employee Information</h3>
-                      <p className="text-sm text-gray-500">
-                        Fill in all the required details to add a new employee
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 space-y-4">
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                      <h4 className="font-medium text-blue-800">Saving Progress</h4>
-                      <div className="mt-2">
-                        <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full" 
-                            style={{ width: `${formProgress}%` }}
-                          ></div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="md:col-span-1">
+                  <Card className="border-t-4 border-t-nexhr-primary shadow-md hover:shadow-lg transition-all duration-300">
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="p-1 rounded-full bg-gradient-to-r from-nexhr-primary to-purple-600">
+                          <Avatar className="h-32 w-32 border-4 border-white">
+                            <AvatarImage src={avatarPreview || ""} alt="Profile" />
+                            <AvatarFallback className="bg-gradient-to-r from-gray-200 to-gray-300">Upload</AvatarFallback>
+                          </Avatar>
                         </div>
-                      </div>
-                      <div className="mt-2 text-sm font-medium text-blue-600">
-                        {formProgress}% complete
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="md:col-span-2">
-              <Card className="shadow-md hover:shadow-lg transition-all duration-300 border-t-4 border-t-purple-600">
-                <CardHeader className="bg-gradient-to-r from-gray-50 to-white">
-                  <CardTitle className="text-gray-800">Employee Details</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid grid-cols-5 mb-6 bg-gradient-to-r from-gray-100 to-gray-50">
-                      <TabsTrigger value="personal" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Personal</TabsTrigger>
-                      <TabsTrigger value="employment" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Employment</TabsTrigger>
-                      <TabsTrigger value="contact" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Contact</TabsTrigger>
-                      <TabsTrigger value="bank" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Bank Details</TabsTrigger>
-                      <TabsTrigger value="documents" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Documents</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="personal" className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="firstName" className={formErrors.firstName ? "text-red-500" : ""}>First Name</Label>
-                          <Input 
-                            id="firstName" 
-                            placeholder="Enter first name" 
-                            value={formData.firstName}
-                            onChange={handleInputChange}
-                            className={formErrors.firstName ? "border-red-500" : ""}
+                        <div className="relative">
+                          <input
+                            type="file"
+                            id="avatar-upload"
+                            className="sr-only"
+                            accept="image/*"
+                            onChange={handleImageUpload}
                           />
-                          {formErrors.firstName && (
-                            <p className="text-xs text-red-500">{formErrors.firstName}</p>
-                          )}
+                          <Label
+                            htmlFor="avatar-upload"
+                            className="cursor-pointer inline-flex items-center gap-2 text-sm text-nexhr-primary hover:text-purple-600 transition-colors"
+                          >
+                            <Upload className="h-4 w-4" />
+                            Upload photo
+                          </Label>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="lastName" className={formErrors.lastName ? "text-red-500" : ""}>Last Name</Label>
-                          <Input 
-                            id="lastName" 
-                            placeholder="Enter last name" 
-                            value={formData.lastName}
-                            onChange={handleInputChange}
-                            className={formErrors.lastName ? "border-red-500" : ""}
-                          />
-                          {formErrors.lastName && (
-                            <p className="text-xs text-red-500">{formErrors.lastName}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="fatherName">Father's Name</Label>
-                          <Input 
-                            id="fatherName" 
-                            placeholder="Enter father's name" 
-                            value={formData.fatherName}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="dob">Date of Birth</Label>
-                          <Input id="dob" type="date" onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="gender">Gender</Label>
-                          <Select onValueChange={(value) => handleSelectChange(value, "gender")}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select gender" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="bloodGroup">Blood Group</Label>
-                          <Select onValueChange={(value) => handleSelectChange(value, "bloodGroup")}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select blood group" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="A+">A+</SelectItem>
-                              <SelectItem value="A-">A-</SelectItem>
-                              <SelectItem value="B+">B+</SelectItem>
-                              <SelectItem value="B-">B-</SelectItem>
-                              <SelectItem value="AB+">AB+</SelectItem>
-                              <SelectItem value="AB-">AB-</SelectItem>
-                              <SelectItem value="O+">O+</SelectItem>
-                              <SelectItem value="O-">O-</SelectItem>
-                              <SelectItem value="unknown">Unknown</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="nationality">Nationality</Label>
-                          <Input id="nationality" placeholder="Enter nationality" onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="marital-status">Marital Status</Label>
-                          <Select onValueChange={(value) => handleSelectChange(value, "maritalStatus")}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="single">Single</SelectItem>
-                              <SelectItem value="married">Married</SelectItem>
-                              <SelectItem value="divorced">Divorced</SelectItem>
-                              <SelectItem value="widowed">Widowed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2 pt-2 col-span-2">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id="hasDisability" 
-                              checked={formData.hasDisability}
-                              onCheckedChange={handleCheckboxChange}
-                            />
-                            <Label htmlFor="hasDisability" className="font-medium text-gray-700">
-                              Person with disability
-                            </Label>
-                          </div>
-                          <p className="text-xs text-gray-500 pl-6">
-                            This information is kept confidential and will only be used for inclusive workplace accommodations.
+
+                        <div className="text-center">
+                          <h3 className="text-lg font-medium">Employee Information</h3>
+                          <p className="text-sm text-gray-500">
+                            Fill in all the required details to add a new employee
                           </p>
                         </div>
                       </div>
-                      <div className="flex justify-end space-x-2 pt-4">
-                        <Button variant="outline">Cancel</Button>
-                        <Button onClick={() => setActiveTab("employment")}>Next</Button>
-                      </div>
-                    </TabsContent>
 
-                    <TabsContent value="employment" className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="employeeId">Employee ID</Label>
-                          <Input 
-                            id="employeeId" 
-                            placeholder="Enter employee ID" 
-                            value={formData.employeeId}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="jobTitle">Job Title</Label>
-                          <Input 
-                            id="jobTitle" 
-                            placeholder="Enter job title" 
-                            value={formData.jobTitle}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="department">Department</Label>
-                          <Select onValueChange={(value) => handleSelectChange(value, "department")}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select department" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="engineering">Engineering</SelectItem>
-                              <SelectItem value="design">Design</SelectItem>
-                              <SelectItem value="marketing">Marketing</SelectItem>
-                              <SelectItem value="hr">HR</SelectItem>
-                              <SelectItem value="finance">Finance</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="joinDate">Join Date</Label>
-                          <Input 
-                            id="joinDate" 
-                            type="date" 
-                            value={formData.joinDate}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="employment-type">Employment Type</Label>
-                          <Select onValueChange={(value) => handleSelectChange(value, "employmentType")}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="full-time">Full-time</SelectItem>
-                              <SelectItem value="part-time">Part-time</SelectItem>
-                              <SelectItem value="contract">Contract</SelectItem>
-                              <SelectItem value="intern">Intern</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="work-location">Work Location</Label>
-                          <Input id="work-location" placeholder="Enter work location" onChange={handleInputChange} />
-                        </div>
-                      </div>
-                      <div className="flex justify-end space-x-2 pt-4">
-                        <Button variant="outline" onClick={() => setActiveTab("personal")}>Previous</Button>
-                        <Button onClick={() => setActiveTab("contact")}>Next</Button>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="contact" className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="email" className={formErrors.email ? "text-red-500" : ""}>Email Address</Label>
-                          <Input 
-                            id="email" 
-                            type="email" 
-                            placeholder="Enter email address" 
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            className={formErrors.email ? "border-red-500" : ""}
-                          />
-                          {formErrors.email && (
-                            <p className="text-xs text-red-500">{formErrors.email}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Phone Number</Label>
-                          <Input 
-                            id="phone" 
-                            type="tel" 
-                            placeholder="Enter phone number" 
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="password" className={formErrors.password ? "text-red-500" : ""}>Password</Label>
-                          <Input 
-                            id="password" 
-                            type="password" 
-                            placeholder="Set password" 
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            className={formErrors.password ? "border-red-500" : ""}
-                          />
-                          {formErrors.password && (
-                            <p className="text-xs text-red-500">{formErrors.password}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="confirmPassword" className={formErrors.confirmPassword ? "text-red-500" : ""}>
-                            Confirm Password
-                          </Label>
-                          <Input 
-                            id="confirmPassword" 
-                            type="password" 
-                            placeholder="Confirm password" 
-                            value={formData.confirmPassword}
-                            onChange={handleInputChange}
-                            className={formErrors.confirmPassword ? "border-red-500" : ""}
-                          />
-                          {formErrors.confirmPassword && (
-                            <p className="text-xs text-red-500">{formErrors.confirmPassword}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="address">Address</Label>
-                          <Input id="address" placeholder="Enter address" onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="city">City</Label>
-                          <Input id="city" placeholder="Enter city" onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="state">State/Province</Label>
-                          <Input id="state" placeholder="Enter state or province" onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="zip">Zip/Postal Code</Label>
-                          <Input id="zip" placeholder="Enter zip or postal code" onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="country">Country</Label>
-                          <Input id="country" placeholder="Enter country" onChange={handleInputChange} />
-                        </div>
-                      </div>
-                      <div className="flex justify-end space-x-2 pt-4">
-                        <Button variant="outline" onClick={() => setActiveTab("employment")}>Previous</Button>
-                        <Button onClick={() => setActiveTab("bank")}>Next</Button>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="bank" className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="bank-name">Bank Name</Label>
-                          <Input id="bank-name" placeholder="Enter bank name" onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="branch-name">Branch Name</Label>
-                          <Input id="branch-name" placeholder="Enter branch name" onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="account-number">Account Number</Label>
-                          <Input id="account-number" placeholder="Enter account number" onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="ifsc-code">IFSC Code</Label>
-                          <Input id="ifsc-code" placeholder="Enter IFSC code" onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="account-type">Account Type</Label>
-                          <Select onValueChange={(value) => handleSelectChange(value, "accountType")}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select account type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="checking">Checking</SelectItem>
-                              <SelectItem value="savings">Savings</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="flex justify-end space-x-2 pt-4">
-                        <Button variant="outline" onClick={() => setActiveTab("contact")}>Previous</Button>
-                        <Button onClick={() => setActiveTab("documents")}>Next</Button>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="documents" className="space-y-4">
-                      <div className="grid grid-cols-2 gap-6">
-                        <Card>
-                          <CardContent className="pt-6">
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h4 className="font-medium">Aadhar Card</h4>
-                                  <p className="text-sm text-gray-500">Upload employee's Aadhar card</p>
-                                </div>
-                                <div className="relative">
-                                  <input
-                                    type="file"
-                                    id="aadhar-upload"
-                                    className="sr-only"
-                                    accept="image/*,.pdf"
-                                    onChange={(e) => handleDocumentUpload(e, 'aadharCard')}
-                                  />
-                                  <Label
-                                    htmlFor="aadhar-upload"
-                                    className="cursor-pointer inline-flex items-center gap-2 border px-3 py-2 rounded-md text-sm"
-                                  >
-                                    <FileText className="h-4 w-4" />
-                                    {documents.aadharCard ? 'Change File' : 'Upload File'}
-                                  </Label>
-                                </div>
-                              </div>
-                              {documents.aadharCard && (
-                                <div className="p-3 bg-green-50 text-green-800 rounded-md text-sm">
-                                  File uploaded: {documents.aadharCard.name}
-                                </div>
-                              )}
+                      <div className="mt-6 space-y-4">
+                        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                          <h4 className="font-medium text-blue-800">Saving Progress</h4>
+                          <div className="mt-2">
+                            <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full" 
+                                style={{ width: `${formProgress}%` }}
+                              ></div>
                             </div>
-                          </CardContent>
-                        </Card>
+                          </div>
+                          <div className="mt-2 text-sm font-medium text-blue-600">
+                            {formProgress}% complete
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
 
-                        <Card>
-                          <CardContent className="pt-6">
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h4 className="font-medium">PAN Card</h4>
-                                  <p className="text-sm text-gray-500">Upload employee's PAN card</p>
-                                </div>
-                                <div className="relative">
-                                  <input
-                                    type="file"
-                                    id="pan-upload"
-                                    className="sr-only"
-                                    accept="image/*,.pdf"
-                                    onChange={(e) => handleDocumentUpload(e, 'panCard')}
-                                  />
-                                  <Label
-                                    htmlFor="pan-upload"
-                                    className="cursor-pointer inline-flex items-center gap-2 border px-3 py-2 rounded-md text-sm"
-                                  >
-                                    <FileText className="h-4 w-4" />
-                                    {documents.panCard ? 'Change File' : 'Upload File'}
-                                  </Label>
-                                </div>
-                              </div>
-                              {documents.panCard && (
-                                <div className="p-3 bg-green-50 text-green-800 rounded-md text-sm">
-                                  File uploaded: {documents.panCard.name}
-                                </div>
+                <div className="md:col-span-2">
+                  <Card className="shadow-md hover:shadow-lg transition-all duration-300 border-t-4 border-t-purple-600">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-white">
+                      <CardTitle className="text-gray-800">Employee Details</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <TabsList className="grid grid-cols-5 mb-6 bg-gradient-to-r from-gray-100 to-gray-50">
+                          <TabsTrigger value="personal" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Personal</TabsTrigger>
+                          <TabsTrigger value="employment" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Employment</TabsTrigger>
+                          <TabsTrigger value="contact" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Contact</TabsTrigger>
+                          <TabsTrigger value="bank" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Bank Details</TabsTrigger>
+                          <TabsTrigger value="documents" className="data-[state=active]:bg-nexhr-primary data-[state=active]:text-white">Documents</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="personal" className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="firstname"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>First Name*</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter first name" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
                               )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
+                            />
+                            <FormField
+                              control={form.control}
+                              name="lastname"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Last Name*</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter last name" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="fathersname"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Father's Name</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter father's name" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="dateofbirth"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Date of Birth</FormLabel>
+                                  <FormControl>
+                                    <Input type="date" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="gender"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Gender</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select gender" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="Male">Male</SelectItem>
+                                      <SelectItem value="Female">Female</SelectItem>
+                                      <SelectItem value="Other">Other</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="bloodgroup"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Blood Group</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select blood group" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="A+">A+</SelectItem>
+                                      <SelectItem value="A-">A-</SelectItem>
+                                      <SelectItem value="B+">B+</SelectItem>
+                                      <SelectItem value="B-">B-</SelectItem>
+                                      <SelectItem value="AB+">AB+</SelectItem>
+                                      <SelectItem value="AB-">AB-</SelectItem>
+                                      <SelectItem value="O+">O+</SelectItem>
+                                      <SelectItem value="O-">O-</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="nationality"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Nationality</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter nationality" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="maritalstatus"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Marital Status</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select marital status" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="Single">Single</SelectItem>
+                                      <SelectItem value="Married">Married</SelectItem>
+                                      <SelectItem value="Divorced">Divorced</SelectItem>
+                                      <SelectItem value="Widowed">Widowed</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="disabilitystatus"
+                              render={({ field }) => (
+                                <FormItem className="col-span-2 flex flex-row items-start space-x-3 space-y-0 pt-2">
+                                  <FormControl>
+                                    <Checkbox 
+                                      checked={field.value === "Yes"} 
+                                      onCheckedChange={(checked) => field.onChange(checked ? "Yes" : "No")}
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel>Person with disability</FormLabel>
+                                    <p className="text-xs text-gray-500">
+                                      This information is kept confidential and will only be used for inclusive workplace accommodations.
+                                    </p>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <div className="flex justify-end space-x-2 pt-4">
+                            <Button variant="outline" type="button">Cancel</Button>
+                            <Button type="button" onClick={() => setActiveTab("employment")}>Next</Button>
+                          </div>
+                        </TabsContent>
 
-                      <div className="flex justify-end space-x-2 pt-4">
-                        <Button variant="outline" onClick={() => setActiveTab("bank")}>Previous</Button>
-                        <Button 
-                          onClick={handleSubmit} 
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? "Saving..." : "Save Employee"}
-                        </Button>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                        <TabsContent value="employment" className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="jobtitle"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Job Title</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter job title" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="department"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Department</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select department" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="Engineering">Engineering</SelectItem>
+                                      <SelectItem value="Design">Design</SelectItem>
+                                      <SelectItem value="Marketing">Marketing</SelectItem>
+                                      <SelectItem value="HR">HR</SelectItem>
+                                      <SelectItem value="Finance">Finance</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="joiningdate"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Join Date</FormLabel>
+                                  <FormControl>
+                                    <Input type="date" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="employmenttype"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Employment Type</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select type" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="Full-time">Full-time</SelectItem>
+                                      <SelectItem value="Part-time">Part-time</SelectItem>
+                                      <SelectItem value="Contract">Contract</SelectItem>
+                                      <SelectItem value="Intern">Intern</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="worklocation"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Work Location</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter work location" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="employmentstatus"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Employment Status</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="Active">Active</SelectItem>
+                                      <SelectItem value="Inactive">Inactive</SelectItem>
+                                      <SelectItem value="On Leave">On Leave</SelectItem>
+                                      <SelectItem value="Terminated">Terminated</SelectItem>
+                                      <SelectItem value="Probation">Probation</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="monthlysalary"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Monthly Salary</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="Enter monthly salary" 
+                                      {...field}
+                                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="leavebalance"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Leave Balance</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="Enter leave balance" 
+                                      {...field}
+                                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <div className="flex justify-end space-x-2 pt-4">
+                            <Button variant="outline" type="button" onClick={() => setActiveTab("personal")}>Previous</Button>
+                            <Button type="button" onClick={() => setActiveTab("contact")}>Next</Button>
+                          </div>
+                        </TabsContent>
+
+                        <TabsContent value="contact" className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Email Address*</FormLabel>
+                                  <FormControl>
+                                    <Input type="email" placeholder="Enter email address" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="phonenumber"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Phone Number</FormLabel>
+                                  <FormControl>
+                                    <Input type="tel" placeholder="Enter phone number" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="employeepassword"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Password</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="Set password" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="space-y-2">
+                              <Label htmlFor="confirmPassword">Confirm Password</Label>
+                              <Input 
+                                id="confirmPassword" 
+                                type="password" 
+                                placeholder="Confirm password"
+                              />
+                            </div>
+                            <FormField
+                              control={form.control}
+                              name="address"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Address</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter address" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="city"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>City</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter city" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="state"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>State/Province</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter state or province" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="postalcode"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Zip/Postal Code</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter zip or postal code" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="country"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Country</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter country" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <div className="flex justify-end space-x-2 pt-4">
+                            <Button variant="outline" type="button" onClick={() => setActiveTab("employment")}>Previous</Button>
+                            <Button type="button" onClick={() => setActiveTab("bank")}>Next</Button>
+                          </div>
+                        </TabsContent>
+
+                        <TabsContent value="bank" className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="bank-name">Bank Name</Label>
+                              <Input id="bank-name" placeholder="Enter bank name" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="branch-name">Branch Name</Label>
+                              <Input id="branch-name" placeholder="Enter branch name" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="account-number">Account Number</Label>
+                              <Input id="account-number" placeholder="Enter account number" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="ifsc-code">IFSC Code</Label>
+                              <Input id="ifsc-code" placeholder="Enter IFSC code" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="account-type">Account Type</Label>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select account type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="checking">Checking</SelectItem>
+                                  <SelectItem value="savings">Savings</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="flex justify-end space-x-2 pt-4">
+                            <Button variant="outline" type="button" onClick={() => setActiveTab("contact")}>Previous</Button>
+                            <Button type="button" onClick={() => setActiveTab("documents")}>Next</Button>
+                          </div>
+                        </TabsContent>
+
+                        <TabsContent value="documents" className="space-y-4">
+                          <div className="grid grid-cols-2 gap-6">
+                            <Card>
+                              <CardContent className="pt-6">
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h4 className="font-medium">Aadhar Card</h4>
+                                      <p className="text-sm text-gray-500">Upload employee's Aadhar card</p>
+                                    </div>
+                                    <div className="relative">
+                                      <input
+                                        type="file"
+                                        id="aadhar-upload"
+                                        className="sr-only"
+                                        accept="image/*,.pdf"
+                                        onChange={(e) => handleDocumentUpload(e, 'aadharCard')}
+                                      />
+                                      <Label
+                                        htmlFor="aadhar-upload"
+                                        className="cursor-pointer inline-flex items-center gap-2 border px-3 py-2 rounded-md text-sm"
+                                      >
+                                        <FileText className="h-4 w-4" />
+                                        {documents.aadharCard ? 'Change File' : 'Upload File'}
+                                      </Label>
+                                    </div>
+                                  </div>
+                                  {documents.aadharCard && (
+                                    <div className="p-3 bg-green-50 text-green-800 rounded-md text-sm">
+                                      File uploaded: {documents.aadharCard.name}
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            <Card>
+                              <CardContent className="pt-6">
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h4 className="font-medium">PAN Card</h4>
+                                      <p className="text-sm text-gray-500">Upload employee's PAN card</p>
+                                    </div>
+                                    <div className="relative">
+                                      <input
+                                        type="file"
+                                        id="pan-upload"
+                                        className="sr-only"
+                                        accept="image/*,.pdf"
+                                        onChange={(e) => handleDocumentUpload(e, 'panCard')}
+                                      />
+                                      <Label
+                                        htmlFor="pan-upload"
+                                        className="cursor-pointer inline-flex items-center gap-2 border px-3 py-2 rounded-md text-sm"
+                                      >
+                                        <FileText className="h-4 w-4" />
+                                        {documents.panCard ? 'Change File' : 'Upload File'}
+                                      </Label>
+                                    </div>
+                                  </div>
+                                  {documents.panCard && (
+                                    <div className="p-3 bg-green-50 text-green-800 rounded-md text-sm">
+                                      File uploaded: {documents.panCard.name}
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+
+                          <div className="flex justify-end space-x-2 pt-4">
+                            <Button variant="outline" type="button" onClick={() => setActiveTab("bank")}>Previous</Button>
+                            <Button 
+                              type="submit"
+                              disabled={isSubmitting}
+                            >
+                              {isSubmitting ? "Saving..." : "Save Employee"}
+                            </Button>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </form>
+          </Form>
         </div>
       </div>
     </div>
