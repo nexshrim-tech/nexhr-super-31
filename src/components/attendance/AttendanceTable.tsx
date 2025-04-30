@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -108,16 +109,20 @@ const AttendanceTable = ({
     setEditingId(record.employeeid);
     setEditData({
       employeeid: record.employeeid,
-      date: record.date,
+      date: record.date || formattedDate,
       checkintime: record.checkintime || formatTimeForInput(record.checkintimestamp),
       checkouttime: record.checkouttime || formatTimeForInput(record.checkouttimestamp),
       status: record.status || '',
-      notes: record.notes || ''
+      notes: record.notes || '',
+      customerid: record.customerid
     });
   };
 
   const handleSaveEdit = async (record: AttendanceRecord) => {
     try {
+      // Check if this is a new attendance record (for absent employees)
+      const isNewRecord = record.status === 'Absent' && !record.checkintimestamp;
+      
       const updatedRecord = {
         ...record,
         ...editData
@@ -125,14 +130,15 @@ const AttendanceTable = ({
       
       console.log("Saving record with data:", updatedRecord);
       
+      // Update record in Supabase
       const savedRecord = await updateAttendanceRecord(
         updatedRecord.employeeid, 
         {
+          status: updatedRecord.status,
           checkintime: updatedRecord.checkintime,
           checkouttime: updatedRecord.checkouttime,
-          status: updatedRecord.status,
-          notes: updatedRecord.notes,
-          date: updatedRecord.date
+          date: updatedRecord.date || formattedDate,
+          notes: updatedRecord.notes
         }
       );
       
@@ -158,8 +164,10 @@ const AttendanceTable = ({
       setEditingId(null);
       setEditData({});
       
-      // This will trigger a refetch due to real-time subscription
-      toast.success("Attendance record saved successfully");
+      toast.success(isNewRecord ? "Attendance record created" : "Attendance record updated");
+      
+      // Force refresh data
+      queryClient.invalidateQueries({ queryKey: ['attendance', formattedDate] });
     } catch (error) {
       console.error("Error saving edit:", error);
       toast.error("Failed to save attendance record");
@@ -182,7 +190,7 @@ const AttendanceTable = ({
     }
   };
   
-  const formatTimeForInput = (dateStr: string) => {
+  const formatTimeForInput = (dateStr: string | null) => {
     try {
       if (!dateStr) return '';
       const date = parseISO(dateStr);
@@ -274,7 +282,7 @@ const AttendanceTable = ({
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="" alt={record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : `Employee ${record.employeeid}`} />
+                        <AvatarImage src={record.selfieimagepath || ""} alt={record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : `Employee ${record.employeeid}`} />
                         <AvatarFallback>
                           {record.employee ? `${record.employee.firstname?.[0] || ''}${record.employee.lastname?.[0] || ''}` : 'EM'}
                         </AvatarFallback>
@@ -283,7 +291,7 @@ const AttendanceTable = ({
                         <div className="font-medium">
                           {record.employee ? `${record.employee.firstname} ${record.employee.lastname}` : `Employee ID: ${record.employeeid}`}
                         </div>
-                        <div className="text-xs text-gray-500">{record.employeeid}</div>
+                        <div className="text-xs text-gray-500">ID: {record.employeeid}</div>
                       </div>
                     </div>
                   </TableCell>
@@ -325,7 +333,7 @@ const AttendanceTable = ({
                           <SelectItem value="Absent">Absent</SelectItem>
                           <SelectItem value="Late">Late</SelectItem>
                           <SelectItem value="Half Day">Half Day</SelectItem>
-                          <SelectItem value="Not Marked">Not Marked</SelectItem>
+                          <SelectItem value="Work From Home">Work From Home</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (

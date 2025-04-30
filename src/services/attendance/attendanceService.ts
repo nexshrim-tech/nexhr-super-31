@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
@@ -154,30 +153,98 @@ export const updateAttendanceRecord = async (employeeId: number, updateData: Att
     
     if (updateData.notes) {
       // If we want to store notes, we'd need a column for it in the database
-      // For now, we'll just log it
       console.log('Notes would be saved:', updateData.notes);
     }
 
-    // Update the record in the database
-    const { data, error } = await supabase
-      .from('attendance')
-      .update(dataToUpdate)
-      .eq('employeeid', employeeId)
-      .select('*, employee:employeeid(firstname, lastname)')
-      .single();
+    // First check if record already exists for this employee on this date
+    const formattedDate = updateData.date;
+    const startOfDay = new Date(formattedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(formattedDate);
+    endOfDay.setHours(23, 59, 59, 999);
 
-    if (error) {
-      console.error('Error updating attendance record:', error);
-      throw error;
+    const { data: existingRecord, error: existingError } = await supabase
+      .from('attendance')
+      .select('*')
+      .eq('employeeid', employeeId)
+      .gte('checkintimestamp', startOfDay.toISOString())
+      .lte('checkintimestamp', endOfDay.toISOString())
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('Error checking for existing attendance record:', existingError);
+    }
+
+    let result;
+
+    // If record exists, update it
+    if (existingRecord) {
+      const { data, error } = await supabase
+        .from('attendance')
+        .update(dataToUpdate)
+        .eq('employeeid', employeeId)
+        .eq('checkintimestamp', existingRecord.checkintimestamp)
+        .select('*, employee:employeeid(firstname, lastname)')
+        .single();
+
+      if (error) {
+        console.error('Error updating attendance record:', error);
+        throw error;
+      }
+      
+      result = data;
+    } 
+    // If no record exists and we have check-in data, create a new one
+    else if (dataToUpdate.checkintimestamp || updateData.status === 'Present' || updateData.status === 'Late' || updateData.status === 'Half Day' || updateData.status === 'Work From Home') {
+      // Make sure we have a valid check-in timestamp
+      if (!dataToUpdate.checkintimestamp) {
+        // If no check-in time provided but status is present, use current time
+        const now = new Date(updateData.date);
+        now.setHours(9, 0, 0, 0); // Default to 9 AM
+        dataToUpdate.checkintimestamp = now.toISOString();
+      }
+      
+      // Set employeeid for the new record
+      dataToUpdate.employeeid = employeeId;
+      
+      const { data, error } = await supabase
+        .from('attendance')
+        .insert(dataToUpdate)
+        .select('*, employee:employeeid(firstname, lastname)')
+        .single();
+
+      if (error) {
+        console.error('Error creating attendance record:', error);
+        throw error;
+      }
+      
+      result = data;
+    }
+    // For other cases where we don't need to create a record (like keeping Absent status)
+    else {
+      // Return a constructed record for the UI
+      return {
+        employeeid: employeeId,
+        customerid: null,
+        checkintimestamp: null,
+        checkouttimestamp: null,
+        status: updateData.status || 'Absent',
+        date: updateData.date,
+        checkintime: updateData.checkintime || '',
+        checkouttime: updateData.checkouttime || '',
+        workhours: '-',
+        notes: updateData.notes
+      };
     }
 
     // Format the data to match the expected format in the UI
     const updatedRecord = {
-      ...data,
+      ...result,
       date: updateData.date,
-      checkintime: data.checkintimestamp ? format(new Date(data.checkintimestamp), 'HH:mm') : '',
-      checkouttime: data.checkouttimestamp ? format(new Date(data.checkouttimestamp), 'HH:mm') : '',
-      workhours: calculateWorkHours(data.checkintimestamp, data.checkouttimestamp),
+      checkintime: result.checkintimestamp ? format(new Date(result.checkintimestamp), 'HH:mm') : '',
+      checkouttime: result.checkouttimestamp ? format(new Date(result.checkouttimestamp), 'HH:mm') : '',
+      workhours: calculateWorkHours(result.checkintimestamp, result.checkouttimestamp),
       notes: updateData.notes
     } as AttendanceRecord;
 
