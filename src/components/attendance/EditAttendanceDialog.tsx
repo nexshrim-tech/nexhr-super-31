@@ -35,7 +35,7 @@ const EditAttendanceDialog = ({
   if (!currentRecord) return null;
   
   const employeeName = currentRecord.employee 
-    ? `${currentRecord.employee.firstname} ${currentRecord.employee.lastname}`
+    ? `${currentRecord.employee.firstname || ''} ${currentRecord.employee.lastname || ''}`
     : `Employee ID: ${currentRecord.employeeid}`;
   
   // Use the appropriate date field
