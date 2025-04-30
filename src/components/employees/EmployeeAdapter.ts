@@ -1,5 +1,5 @@
 
-import { Employee } from "@/services/employeeService";
+import { Employee } from "@/types/employee";
 
 // This adapter function converts the demo data format to match the Employee interface
 export const adaptEmployeeData = (demoData: any): Employee => {

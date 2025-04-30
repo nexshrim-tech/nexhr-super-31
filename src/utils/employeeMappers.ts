@@ -88,6 +88,5 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
     }
   }
 
-  console.log('Final employee data for database operation:', dbEmployee);
   return dbEmployee;
 };
