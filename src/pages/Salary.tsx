@@ -1,27 +1,20 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { useToast } from "@/hooks/use-toast";
 import SalaryStats from "@/components/salary/SalaryStats";
 import SalaryTrends from "@/components/salary/SalaryTrends";
 import SalaryListSection from "@/components/salary/SalaryListSection";
 import PayslipDialog from "@/components/salary/PayslipDialog";
-import { EmployeeSalary, SalaryData } from "@/types/salary";
+import { EmployeeSalary, SalaryData, SalaryAllowances, SalaryDeductions } from "@/types/salary";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from "recharts";
+import SalaryDetailsForm from "@/components/SalaryDetailsForm";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
-// Sample data
-const salaryData: SalaryData[] = [
-  { month: "Jan", amount: 250000 },
-  { month: "Feb", amount: 255000 },
-  { month: "Mar", amount: 260000 },
-  { month: "Apr", amount: 270000 },
-  { month: "May", amount: 275000 },
-  { month: "Jun", amount: 280000 },
-  { month: "Jul", amount: 285000 },
-  { month: "Aug", amount: 290000 },
-];
-
+// Sample departmental data
 const departmentSalaryData = [
   { name: "Engineering", value: 150000, fill: "#8884d8" },
   { name: "Design", value: 75000, fill: "#83a6ed" },
@@ -37,138 +30,102 @@ const employeeGrowthData = [
   { name: "Q4", growth: 3.5 },
 ];
 
-const employeeSalaries: EmployeeSalary[] = [
-  {
-    id: 1,
-    employee: { name: "Olivia Rhye", avatar: "OR" },
-    position: "UI Designer",
-    department: "Design",
-    salary: 75000,
-    lastIncrement: "2023-01-15",
-    status: "Paid",
-    allowances: {
-      basicSalary: 45000,
-      hra: 22500,
-      conveyanceAllowance: 3750,
-      medicalAllowance: 3750,
-      specialAllowance: 0,
-      otherAllowances: 0
-    },
-    deductions: {
-      incomeTax: 7500,
-      providentFund: 3750,
-      professionalTax: 200,
-      loanDeduction: 0,
-      otherDeductions: 0,
-      esi: 750
-    }
-  },
-  {
-    id: 2,
-    employee: { name: "Phoenix Baker", avatar: "PB" },
-    position: "Product Manager",
-    department: "Product",
-    salary: 85000,
-    lastIncrement: "2023-02-10",
-    status: "Paid",
-    allowances: {
-      basicSalary: 51000,
-      hra: 25500,
-      conveyanceAllowance: 4250,
-      medicalAllowance: 4250,
-      specialAllowance: 0,
-      otherAllowances: 0
-    },
-    deductions: {
-      incomeTax: 8500,
-      providentFund: 4250,
-      professionalTax: 200,
-      loanDeduction: 0,
-      otherDeductions: 0,
-      esi: 850
-    }
-  },
-  {
-    id: 3,
-    employee: { name: "Lana Steiner", avatar: "LS" },
-    position: "Frontend Developer",
-    department: "Engineering",
-    salary: 80000,
-    lastIncrement: "2023-03-20",
-    status: "Paid",
-    allowances: {
-      basicSalary: 48000,
-      hra: 24000,
-      conveyanceAllowance: 4000,
-      medicalAllowance: 4000,
-      specialAllowance: 0,
-      otherAllowances: 0
-    },
-    deductions: {
-      incomeTax: 8000,
-      providentFund: 4000,
-      professionalTax: 200,
-      loanDeduction: 0,
-      otherDeductions: 0,
-      esi: 800
-    }
-  },
-  {
-    id: 4,
-    employee: { name: "Demi Wilkinson", avatar: "DW" },
-    position: "Backend Developer",
-    department: "Engineering",
-    salary: 82000,
-    lastIncrement: "2023-02-15",
-    status: "Pending",
-    allowances: {
-      basicSalary: 49200,
-      hra: 24600,
-      conveyanceAllowance: 4100,
-      medicalAllowance: 4100,
-      specialAllowance: 0,
-      otherAllowances: 0
-    },
-    deductions: {
-      incomeTax: 8200,
-      providentFund: 4100,
-      professionalTax: 200,
-      loanDeduction: 0,
-      otherDeductions: 0,
-      esi: 820
-    }
-  },
-  {
-    id: 5,
-    employee: { name: "Candice Wu", avatar: "CW" },
-    position: "Full Stack Developer",
-    department: "Engineering",
-    salary: 90000,
-    lastIncrement: "2023-01-05",
-    status: "Paid",
-    allowances: {
-      basicSalary: 54000,
-      hra: 27000,
-      conveyanceAllowance: 4500,
-      medicalAllowance: 4500,
-      specialAllowance: 0,
-      otherAllowances: 0
-    },
-    deductions: {
-      incomeTax: 9000,
-      providentFund: 4500,
-      professionalTax: 200,
-      loanDeduction: 0,
-      otherDeductions: 0,
-      esi: 900
-    }
-  },
-];
-
 const Salary = () => {
   const [openSalarySlip, setOpenSalarySlip] = useState(false);
+  const [openSalaryForm, setOpenSalaryForm] = useState(false);
   const [selectedSalaryData, setSelectedSalaryData] = useState<EmployeeSalary | null>(null);
+  const [employeeSalaries, setEmployeeSalaries] = useState<EmployeeSalary[]>([]);
+  const [salaryData, setSalaryData] = useState<SalaryData[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchSalaryData();
+    fetchSalaryTrends();
+
+    // Set up Supabase realtime subscription
+    const salaryChannel = supabase
+      .channel('salary-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'salary'
+        },
+        () => {
+          fetchSalaryData();
+          fetchSalaryTrends();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(salaryChannel);
+    };
+  }, []);
+
+  const fetchSalaryData = async () => {
+    try {
+      // This data will be fetched by the SalaryListSection component directly
+    } catch (error) {
+      console.error("Error fetching salary data:", error);
+    }
+  };
+
+  const fetchSalaryTrends = async () => {
+    try {
+      // Get current year and previous months
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      
+      // Calculate months for salary trends (current month and previous 7 months)
+      const months = [];
+      for (let i = 7; i >= 0; i--) {
+        let month = currentMonth - i;
+        let year = currentYear;
+        
+        if (month <= 0) {
+          month += 12;
+          year -= 1;
+        }
+        
+        months.push({ month, year });
+      }
+
+      // Fetch payslip data aggregated by month
+      const trends: SalaryData[] = [];
+      
+      for (const { month, year } of months) {
+        const { data, error } = await supabase
+          .from('payslip')
+          .select('amount')
+          .eq('month', month)
+          .eq('year', year);
+
+        if (error) {
+          console.error('Error fetching payslip data:', error);
+          continue;
+        }
+
+        const totalAmount = data.reduce((sum, record) => sum + (record.amount || 0), 0);
+        trends.push({
+          month: getMonthName(month).substring(0, 3),
+          amount: totalAmount
+        });
+      }
+
+      setSalaryData(trends);
+    } catch (error) {
+      console.error("Error fetching salary trends:", error);
+    }
+  };
+
+  const getMonthName = (month: number) => {
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"];
+    return monthNames[month - 1] || "";
+  };
 
   const handleGenerateSalarySlip = (employeeData: EmployeeSalary) => {
     setSelectedSalaryData(employeeData);
@@ -182,6 +139,109 @@ const Salary = () => {
       title: "Viewing latest payslip",
       description: `Showing payslip for ${employeeData.employee.name}`,
     });
+  };
+
+  const handleUpdateSalaryDetails = (employee: EmployeeSalary) => {
+    setSelectedSalaryData(employee);
+    setOpenSalaryForm(true);
+  };
+
+  const handleSaveSalaryDetails = async (allowances: SalaryAllowances, deductions: SalaryDeductions) => {
+    if (!selectedSalaryData) return;
+
+    try {
+      const { error } = await supabase
+        .from('salary')
+        .update({
+          basicsalary: allowances.basicSalary,
+          hra: allowances.hra,
+          conveyanceallowance: allowances.conveyanceAllowance,
+          medicalallowance: allowances.medicalAllowance,
+          specialallowance: allowances.specialAllowance,
+          otherallowance: allowances.otherAllowances,
+          incometax: deductions.incomeTax,
+          pf: deductions.providentFund,
+          professionaltax: deductions.professionalTax,
+          esiemployee: deductions.esi,
+          loandeduction: deductions.loanDeduction,
+          otherdeduction: deductions.otherDeductions
+        })
+        .eq('salaryid', selectedSalaryData.id);
+
+      if (error) {
+        console.error('Error updating salary:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update salary details",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: `Salary updated for ${selectedSalaryData.employee.name}`,
+      });
+
+      setOpenSalaryForm(false);
+    } catch (error) {
+      console.error('Error updating salary:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleGeneratePayslip = async () => {
+    if (!selectedSalaryData) return;
+    
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      
+      // Calculate total amount (sum of allowances - deductions)
+      const totalAllowances = Object.values(selectedSalaryData.allowances).reduce((sum, value) => sum + value, 0);
+      const totalDeductions = Object.values(selectedSalaryData.deductions).reduce((sum, value) => sum + value, 0);
+      const netAmount = totalAllowances - totalDeductions;
+      
+      // Insert new payslip record
+      const { error } = await supabase
+        .from('payslip')
+        .insert({
+          employeeid: selectedSalaryData.id,
+          year: year,
+          month: month,
+          amount: netAmount,
+          generatedtimestamp: now.toISOString()
+        });
+      
+      if (error) {
+        console.error('Error generating payslip:', error);
+        toast({
+          title: "Error",
+          description: "Failed to generate payslip",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      toast({
+        title: "Success",
+        description: `Payslip generated for ${selectedSalaryData.employee.name}`,
+      });
+      
+      setOpenSalarySlip(false);
+    } catch (error) {
+      console.error('Error generating payslip:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -271,6 +331,18 @@ const Salary = () => {
         onOpenChange={setOpenSalarySlip}
         employeeData={selectedSalaryData}
       />
+
+      {selectedSalaryData && (
+        <SalaryDetailsForm
+          isOpen={openSalaryForm}
+          onClose={() => setOpenSalaryForm(false)}
+          employeeName={selectedSalaryData.employee.name}
+          initialSalary={selectedSalaryData.salary}
+          onSave={handleSaveSalaryDetails}
+          initialAllowances={selectedSalaryData.allowances}
+          initialDeductions={selectedSalaryData.deductions}
+        />
+      )}
     </div>
   );
 };

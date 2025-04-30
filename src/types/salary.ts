@@ -42,3 +42,31 @@ export interface SalaryData {
   month: string;
   amount: number;
 }
+
+export interface SalaryRecord {
+  salaryid: number;
+  employeeid: number;
+  customerid: number;
+  basicsalary: number;
+  hra: number;
+  conveyanceallowance: number;
+  medicalallowance: number;
+  specialallowance: number;
+  otherallowance: number;
+  incometax: number;
+  pf: number;
+  professionaltax: number;
+  esiemployee: number;
+  loandeduction: number;
+  otherdeduction: number;
+}
+
+export interface PayslipDBRecord {
+  payslipid: number;
+  employeeid: number;
+  customerid: number;
+  year: number;
+  month: number;
+  amount: number;
+  generatedtimestamp: string;
+}
