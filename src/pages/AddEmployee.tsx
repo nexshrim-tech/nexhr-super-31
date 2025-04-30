@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -19,34 +18,37 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Employee } from "@/types/employee";
 
+// Define the form schema based on the Employee type
+// Making required fields required in the schema
 const employeeFormSchema = z.object({
   firstname: z.string().min(1, "First name is required"),
   lastname: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address").min(1, "Email is required"),
   phonenumber: z.string().optional(),
-  jobtitle: z.string().optional(),
-  department: z.string().optional(),
-  joiningdate: z.string().optional(),
-  profilepicturepath: z.string().optional(),
-  address: z.string().optional(),
-  gender: z.string().optional(),
-  dateofbirth: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  country: z.string().optional(),
-  postalcode: z.string().optional(),
-  monthlysalary: z.number().optional(),
-  employmentstatus: z.string().optional(),
-  employmenttype: z.string().optional(),
-  bloodgroup: z.string().optional(),
-  fathersname: z.string().optional(),
-  maritalstatus: z.string().optional(),
-  disabilitystatus: z.string().optional(),
-  nationality: z.string().optional(),
-  worklocation: z.string().optional(),
-  leavebalance: z.number().optional(),
-  employeepassword: z.string().optional()
+  jobtitle: z.string().default(""),
+  department: z.string().default(""),
+  joiningdate: z.string().nullable().default(null),
+  profilepicturepath: z.string().default(""),
+  address: z.string().default(""),
+  gender: z.string().default(""),
+  dateofbirth: z.string().nullable().default(null),
+  city: z.string().default(""),
+  state: z.string().default(""),
+  country: z.string().default(""),
+  postalcode: z.string().default(""),
+  monthlysalary: z.number().default(0),
+  employmentstatus: z.enum(["Active", "Inactive", "On Leave", "Terminated", "Probation"]).default("Active"),
+  employmenttype: z.string().default(""),
+  bloodgroup: z.string().default(""),
+  fathersname: z.string().default(""),
+  maritalstatus: z.string().default(""),
+  disabilitystatus: z.string().default("No"),
+  nationality: z.string().default(""),
+  worklocation: z.string().default(""),
+  leavebalance: z.number().default(0),
+  employeepassword: z.string().default("")
 });
 
 type EmployeeFormData = z.infer<typeof employeeFormSchema>;
@@ -73,11 +75,11 @@ const AddEmployee = () => {
       phonenumber: "",
       jobtitle: "",
       department: "",
-      joiningdate: "",
+      joiningdate: null,
       profilepicturepath: "",
       address: "",
       gender: "",
-      dateofbirth: "",
+      dateofbirth: null,
       city: "",
       state: "",
       country: "",
@@ -88,7 +90,7 @@ const AddEmployee = () => {
       bloodgroup: "",
       fathersname: "",
       maritalstatus: "",
-      disabilitystatus: "",
+      disabilitystatus: "No",
       nationality: "",
       worklocation: "",
       leavebalance: 0,
@@ -169,15 +171,35 @@ const AddEmployee = () => {
     try {
       console.log("Preparing to add employee with data:", data);
       
-      // Prepare employee data for submission
-      const employeeData = {
-        ...data,
-        customerid: customerId,
-        // Ensure numeric fields are properly typed
-        monthlysalary: data.monthlysalary || 0,
-        leavebalance: data.leavebalance || 0,
-        // Set default status if not provided
-        employmentstatus: data.employmentstatus || 'Active'
+      // Ensure all required fields are provided as non-optional
+      const employeeData: Omit<Employee, "employeeid"> = {
+        firstname: data.firstname,
+        lastname: data.lastname,
+        email: data.email,
+        customerid: customerId || "",
+        phonenumber: data.phonenumber || "",
+        jobtitle: data.jobtitle || "",
+        department: data.department || "",
+        joiningdate: data.joiningdate || null,
+        profilepicturepath: data.profilepicturepath || "",
+        address: data.address || "",
+        gender: data.gender || "",
+        dateofbirth: data.dateofbirth || null,
+        city: data.city || "",
+        state: data.state || "",
+        country: data.country || "",
+        postalcode: data.postalcode || "",
+        monthlysalary: data.monthlysalary,
+        employmentstatus: data.employmentstatus,
+        employmenttype: data.employmenttype || "",
+        bloodgroup: data.bloodgroup || "",
+        fathersname: data.fathersname || "",
+        maritalstatus: data.maritalstatus || "",
+        disabilitystatus: data.disabilitystatus || "",
+        nationality: data.nationality || "",
+        worklocation: data.worklocation || "",
+        leavebalance: data.leavebalance,
+        employeepassword: data.employeepassword || ""
       };
       
       console.log("Submitting employee data to database:", employeeData);
