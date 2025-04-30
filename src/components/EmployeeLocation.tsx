@@ -114,17 +114,16 @@ const EmployeeLocation = () => {
   const toggleLiveTracking = () => {
     setIsLive(!isLive);
     
-    toast({
-      description: isLive 
-        ? "You have stopped tracking employee locations in real-time." 
-        : "You are now tracking employee locations in real-time."
-    });
+    // Fix: Use the correct toast API syntax
+    toast(isLive 
+      ? "You have stopped tracking employee locations in real-time." 
+      : "You are now tracking employee locations in real-time."
+    );
   };
 
   const handleExportMap = () => {
-    toast({
-      description: "The current map view has been exported."
-    });
+    // Fix: Use the correct toast API syntax
+    toast("The current map view has been exported.");
   };
 
   return (
@@ -157,9 +156,8 @@ const EmployeeLocation = () => {
                 Export Map
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                toast({
-                  description: "Location filter has been applied."
-                });
+                // Fix: Use the correct toast API syntax
+                toast("Location filter has been applied.");
               }} className="cursor-pointer">
                 <Filter className="h-4 w-4 mr-2" />
                 Filter View
