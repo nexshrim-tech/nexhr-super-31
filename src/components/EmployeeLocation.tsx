@@ -1,23 +1,111 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Filter, MapPin, Settings, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import LocationMapComponent from "./LocationMapComponent";
+
+interface EmployeeLocation {
+  employeeid: number;
+  latitude: number;
+  longitude: number;
+  timestamp: string;
+  employee?: {
+    firstname?: string;
+    lastname?: string;
+    jobtitle?: string;
+  };
+}
 
 const EmployeeLocation = () => {
   const [isLive, setIsLive] = useState(false);
+  const [employeeLocations, setEmployeeLocations] = useState<EmployeeLocation[]>([]);
   const isMobile = useIsMobile();
-  const { toast } = useToast();
+  
+  const { data: locations = [], isLoading, error } = useQuery({
+    queryKey: ['employee-locations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('track')
+        .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+        .order('timestamp', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching location data:', error);
+        throw error;
+      }
+      
+      return (data || []) as EmployeeLocation[];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  useEffect(() => {
+    setEmployeeLocations(locations);
+  }, [locations]);
+  
+  useEffect(() => {
+    if (isLive) {
+      // Set up real-time listener for location changes
+      const channel = supabase
+        .channel('track-changes')
+        .on('postgres_changes', 
+          {
+            event: '*',
+            schema: 'public',
+            table: 'track'
+          },
+          async (payload) => {
+            console.log('Track data changed:', payload);
+            
+            // Fetch the latest data including the employee details
+            const { data } = await supabase
+              .from('track')
+              .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+              .eq('trackid', payload.new.trackid)
+              .single();
+              
+            if (data) {
+              // Update the locations state
+              setEmployeeLocations(prevLocations => {
+                const existingIndex = prevLocations.findIndex(
+                  loc => loc.employeeid === data.employeeid
+                );
+                
+                if (existingIndex >= 0) {
+                  // Update existing employee location
+                  const updatedLocations = [...prevLocations];
+                  updatedLocations[existingIndex] = data as EmployeeLocation;
+                  return updatedLocations;
+                } else {
+                  // Add new employee location
+                  return [...prevLocations, data as EmployeeLocation];
+                }
+              });
+              
+              toast.info(`${data.employee?.firstname || 'Employee'} location updated`);
+            }
+          }
+        )
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [isLive]);
   
   const toggleLiveTracking = () => {
     setIsLive(!isLive);
@@ -80,53 +168,11 @@ const EmployeeLocation = () => {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="h-[280px] bg-gray-100 relative overflow-hidden">
-          <img 
-            src="/lovable-uploads/016a0f11-68a9-490e-8ef9-08b4721cb325.png" 
-            alt="Employee Location Map" 
-            className="absolute w-full h-full object-cover transition-transform hover:scale-[1.02] duration-700 ease-in-out"
+        <div className="h-[280px] relative overflow-hidden">
+          <LocationMapComponent 
+            employeeLocations={employeeLocations}
+            isLoading={isLoading}
           />
-          
-          {/* Map markers with tooltips */}
-          <div className="absolute left-[25%] top-[45%] group cursor-pointer">
-            <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse flex items-center justify-center shadow-md">
-              <div className="w-2 h-2 bg-blue-100 rounded-full"></div>
-            </div>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white shadow-md rounded-md px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-              <p className="font-medium">Chisom Chukwukwe</p>
-              <p>Main Office, Floor 2</p>
-            </div>
-          </div>
-          
-          <div className="absolute left-[45%] top-[30%] group cursor-pointer">
-            <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse flex items-center justify-center shadow-md">
-              <div className="w-2 h-2 bg-green-100 rounded-full"></div>
-            </div>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white shadow-md rounded-md px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-              <p className="font-medium">David Cooper</p>
-              <p>Conference Room A</p>
-            </div>
-          </div>
-          
-          <div className="absolute left-[65%] top-[50%] group cursor-pointer">
-            <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse flex items-center justify-center shadow-md">
-              <div className="w-2 h-2 bg-yellow-100 rounded-full"></div>
-            </div>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white shadow-md rounded-md px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-              <p className="font-medium">Sarah Miller</p>
-              <p>Cafeteria</p>
-            </div>
-          </div>
-          
-          <div className="absolute left-[35%] top-[65%] group cursor-pointer">
-            <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse flex items-center justify-center shadow-md">
-              <div className="w-2 h-2 bg-purple-100 rounded-full"></div>
-            </div>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white shadow-md rounded-md px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-              <p className="font-medium">Michael Johnson</p>
-              <p>Reception Area</p>
-            </div>
-          </div>
           
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent h-20 pointer-events-none"></div>
           

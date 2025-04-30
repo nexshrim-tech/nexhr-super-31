@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import UserHeader from "@/components/UserHeader";
@@ -24,11 +23,38 @@ const Index = () => {
     // Enable real-time subscriptions for the dashboard tables
     const setupRealtime = async () => {
       try {
-        // Add the required tables to the supabase_realtime publication
-        // This is done via SQL, so we notify the user that real-time is enabled
+        // Enable real-time for track table
+        const channel = supabase
+          .channel('dashboard-updates')
+          .on('postgres_changes', 
+            {
+              event: '*',
+              schema: 'public',
+              table: 'track'
+            },
+            (payload) => {
+              console.log('Employee location updated:', payload);
+            }
+          )
+          .on('postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'attendance'
+            },
+            (payload) => {
+              console.log('Attendance updated:', payload);
+            }
+          )
+          .subscribe();
+          
         toast.success('Dashboard real-time updates enabled', {
           description: 'Your dashboard will update automatically when data changes',
         });
+        
+        return () => {
+          supabase.removeChannel(channel);
+        };
       } catch (error) {
         console.error('Error setting up real-time:', error);
       }
