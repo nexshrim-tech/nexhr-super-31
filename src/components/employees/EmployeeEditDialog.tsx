@@ -31,7 +31,10 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
 
   useEffect(() => {
     if (employee) {
-      const sanitizedEmployee = { ...employee };
+      // Create a deep copy of the employee object to prevent issues with state management
+      const sanitizedEmployee = JSON.parse(JSON.stringify(employee));
+      
+      // Ensure special date fields are properly formatted
       if (sanitizedEmployee.joiningdate === '') sanitizedEmployee.joiningdate = null;
       if (sanitizedEmployee.dateofbirth === '') sanitizedEmployee.dateofbirth = null;
       if (sanitizedEmployee.terminationdate === '') sanitizedEmployee.terminationdate = null;
@@ -100,6 +103,7 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
       let result: Employee;
       
       if (isNewEmployee) {
+        // Ensure all fields have appropriate default values for new employees
         const newEmployeeData = {
           ...employeeData,
           customerid: customerId || 1,
@@ -117,12 +121,14 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
           monthlysalary: employeeData.monthlysalary || 0
         };
         
+        console.log("Creating new employee with complete data:", newEmployeeData);
         result = await addEmployee(newEmployeeData as Omit<Employee, 'employeeid'>);
         toast({
           title: "Success",
           description: "Employee created successfully",
         });
       } else if (employee?.employeeid) {
+        console.log("Updating existing employee with ID:", employee.employeeid);
         result = await updateEmployee(employee.employeeid, employeeData);
         toast({
           title: "Success",
