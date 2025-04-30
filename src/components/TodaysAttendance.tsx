@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Download } from "lucide-react";
@@ -111,6 +112,7 @@ const TodaysAttendance = () => {
         </div>
       </CardContent>
     </Card>
+  );
 };
 
 export default TodaysAttendance;
