@@ -1,4 +1,5 @@
 
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,17 +9,142 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, UserPlus, UserMinus, Briefcase } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Employee } from "@/types/employee";
+import { useQuery } from "@tanstack/react-query";
+import { getEmployees } from "@/services/employeeService";
 
 const EmployeeStats = () => {
+  const [selectedTimeRange, setSelectedTimeRange] = useState("all");
+  const [stats, setStats] = useState({
+    totalEmployees: 0,
+    newHires: 0,
+    departures: 0,
+    layoffs: 0
+  });
+
+  const { data: employees = [], isLoading } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => getEmployees(),
+  });
+
+  useEffect(() => {
+    if (!employees.length) return;
+
+    // Calculate time range cutoffs
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
+    // Filter employees based on selected time range
+    const filteredEmployees = employees.filter((employee) => {
+      if (selectedTimeRange === "all") return true;
+      
+      const joiningDate = employee.joiningdate ? new Date(employee.joiningdate) : null;
+      if (!joiningDate) return false;
+      
+      return selectedTimeRange === "7d" 
+        ? joiningDate >= sevenDaysAgo 
+        : joiningDate >= thirtyDaysAgo;
+    });
+
+    // Calculate statistics
+    const totalEmployees = filteredEmployees.filter(e => e.employmentstatus === "Active").length;
+    const newHires = filteredEmployees.filter(e => {
+      const joiningDate = e.joiningdate ? new Date(e.joiningdate) : null;
+      if (!joiningDate) return false;
+      
+      return selectedTimeRange === "7d"
+        ? joiningDate >= sevenDaysAgo
+        : selectedTimeRange === "30d"
+          ? joiningDate >= thirtyDaysAgo
+          : true;
+    }).length;
+
+    const departures = filteredEmployees.filter(e => e.employmentstatus === "Inactive").length;
+    const layoffs = filteredEmployees.filter(e => e.employmentstatus === "Terminated").length;
+
+    setStats({
+      totalEmployees,
+      newHires,
+      departures,
+      layoffs
+    });
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'employee'
+        },
+        () => {
+          // Refetch data when changes occur
+          getEmployees().then(updatedEmployees => {
+            const filteredUpdated = updatedEmployees.filter((employee) => {
+              if (selectedTimeRange === "all") return true;
+              
+              const joiningDate = employee.joiningdate ? new Date(employee.joiningdate) : null;
+              if (!joiningDate) return false;
+              
+              return selectedTimeRange === "7d" 
+                ? joiningDate >= sevenDaysAgo 
+                : joiningDate >= thirtyDaysAgo;
+            });
+
+            const updatedTotalEmployees = filteredUpdated.filter(e => e.employmentstatus === "Active").length;
+            const updatedNewHires = filteredUpdated.filter(e => {
+              const joiningDate = e.joiningdate ? new Date(e.joiningdate) : null;
+              if (!joiningDate) return false;
+              
+              return selectedTimeRange === "7d"
+                ? joiningDate >= sevenDaysAgo
+                : selectedTimeRange === "30d"
+                  ? joiningDate >= thirtyDaysAgo
+                  : true;
+            }).length;
+
+            const updatedDepartures = filteredUpdated.filter(e => e.employmentstatus === "Inactive").length;
+            const updatedLayoffs = filteredUpdated.filter(e => e.employmentstatus === "Terminated").length;
+
+            setStats({
+              totalEmployees: updatedTotalEmployees,
+              newHires: updatedNewHires,
+              departures: updatedDepartures,
+              layoffs: updatedLayoffs
+            });
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [employees, selectedTimeRange]);
+
+  if (isLoading) {
+    return (
+      <Card className="shadow-md border-t-2 border-t-nexhr-primary animate-scale-in">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">Loading employee statistics...</CardTitle>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   return (
     <Card className="shadow-md border-t-2 border-t-nexhr-primary animate-scale-in">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <div>
             <CardTitle className="text-base font-medium">Employee Statistics</CardTitle>
-            <p className="text-xs text-muted-foreground">1 Jan 2024 - 20 Aug 2024</p>
+            <p className="text-xs text-muted-foreground">Real-time data</p>
           </div>
-          <Tabs defaultValue="all">
+          <Tabs defaultValue={selectedTimeRange} onValueChange={setSelectedTimeRange}>
             <TabsList className="bg-muted">
               <TabsTrigger value="7d">7d</TabsTrigger>
               <TabsTrigger value="30d">30d</TabsTrigger>
@@ -37,11 +163,11 @@ const EmployeeStats = () => {
           </div>
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center gap-1">
-              <span className="text-2xl font-semibold">127</span>
+              <span className="text-2xl font-semibold">{stats.totalEmployees}</span>
               <span className="text-xs text-muted-foreground">people</span>
             </div>
             <Badge className="bg-nexhr-green text-white">
-              +34%
+              Live
             </Badge>
           </div>
         </div>
@@ -54,11 +180,11 @@ const EmployeeStats = () => {
           </div>
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center gap-1">
-              <span className="text-2xl font-semibold">6</span>
+              <span className="text-2xl font-semibold">{stats.newHires}</span>
               <span className="text-xs text-muted-foreground">people</span>
             </div>
             <Badge className="bg-nexhr-green text-white">
-              +9%
+              Live
             </Badge>
           </div>
         </div>
@@ -71,11 +197,11 @@ const EmployeeStats = () => {
           </div>
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center gap-1">
-              <span className="text-2xl font-semibold">2</span>
+              <span className="text-2xl font-semibold">{stats.departures}</span>
               <span className="text-xs text-muted-foreground">people</span>
             </div>
             <Badge className="bg-nexhr-red text-white">
-              -5%
+              Live
             </Badge>
           </div>
         </div>
@@ -88,11 +214,11 @@ const EmployeeStats = () => {
           </div>
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center gap-1">
-              <span className="text-2xl font-semibold">6</span>
+              <span className="text-2xl font-semibold">{stats.layoffs}</span>
               <span className="text-xs text-muted-foreground">people</span>
             </div>
-            <Badge className="bg-nexhr-green text-white">
-              +8%
+            <Badge className="bg-amber-600 text-white">
+              Live
             </Badge>
           </div>
         </div>

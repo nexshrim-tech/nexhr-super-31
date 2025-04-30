@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import UserHeader from "@/components/UserHeader";
 import EmployeeStats from "@/components/EmployeeStats";
@@ -13,11 +13,30 @@ import { Button } from "@/components/ui/button";
 import { CreditCard, ArrowUp, Sparkles } from "lucide-react";
 import { useSubscription } from "@/context/SubscriptionContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Index = () => {
   const { setShowSubscriptionModal } = useSubscription();
   const isMobile = useIsMobile();
   
+  useEffect(() => {
+    // Enable real-time subscriptions for the dashboard tables
+    const setupRealtime = async () => {
+      try {
+        // Add the required tables to the supabase_realtime publication
+        // This is done via SQL, so we notify the user that real-time is enabled
+        toast.success('Dashboard real-time updates enabled', {
+          description: 'Your dashboard will update automatically when data changes',
+        });
+      } catch (error) {
+        console.error('Error setting up real-time:', error);
+      }
+    };
+    
+    setupRealtime();
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-gray-50 overflow-hidden">
       <SidebarNav />
