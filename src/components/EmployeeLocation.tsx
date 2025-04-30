@@ -22,6 +22,7 @@ interface EmployeeLocation {
   latitude: number;
   longitude: number;
   timestamp: string;
+  trackid?: number;  // Adding trackid as optional to match the type coming from Supabase
   employee?: {
     firstname?: string;
     lastname?: string;
@@ -70,32 +71,35 @@ const EmployeeLocation = () => {
           async (payload) => {
             console.log('Track data changed:', payload);
             
-            // Fetch the latest data including the employee details
-            const { data } = await supabase
-              .from('track')
-              .select('*, employee:employeeid(firstname, lastname, jobtitle)')
-              .eq('trackid', payload.new.trackid)
-              .single();
-              
-            if (data) {
-              // Update the locations state
-              setEmployeeLocations(prevLocations => {
-                const existingIndex = prevLocations.findIndex(
-                  loc => loc.employeeid === data.employeeid
-                );
+            // Type safety check for payload.new and trackid
+            if (payload.new && typeof payload.new === 'object' && 'trackid' in payload.new) {
+              // Fetch the latest data including the employee details
+              const { data } = await supabase
+                .from('track')
+                .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+                .eq('trackid', payload.new.trackid)
+                .single();
                 
-                if (existingIndex >= 0) {
-                  // Update existing employee location
-                  const updatedLocations = [...prevLocations];
-                  updatedLocations[existingIndex] = data as EmployeeLocation;
-                  return updatedLocations;
-                } else {
-                  // Add new employee location
-                  return [...prevLocations, data as EmployeeLocation];
-                }
-              });
-              
-              toast.info(`${data.employee?.firstname || 'Employee'} location updated`);
+              if (data) {
+                // Update the locations state
+                setEmployeeLocations(prevLocations => {
+                  const existingIndex = prevLocations.findIndex(
+                    loc => loc.employeeid === data.employeeid
+                  );
+                  
+                  if (existingIndex >= 0) {
+                    // Update existing employee location
+                    const updatedLocations = [...prevLocations];
+                    updatedLocations[existingIndex] = data as EmployeeLocation;
+                    return updatedLocations;
+                  } else {
+                    // Add new employee location
+                    return [...prevLocations, data as EmployeeLocation];
+                  }
+                });
+                
+                toast.info(`${data.employee?.firstname || 'Employee'} location updated`);
+              }
             }
           }
         )
@@ -111,7 +115,6 @@ const EmployeeLocation = () => {
     setIsLive(!isLive);
     
     toast({
-      title: isLive ? "Live tracking stopped" : "Live tracking started",
       description: isLive 
         ? "You have stopped tracking employee locations in real-time." 
         : "You are now tracking employee locations in real-time."
@@ -120,8 +123,7 @@ const EmployeeLocation = () => {
 
   const handleExportMap = () => {
     toast({
-      title: "Map exported",
-      description: "The current map view has been exported.",
+      description: "The current map view has been exported."
     });
   };
 
@@ -156,7 +158,6 @@ const EmployeeLocation = () => {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
                 toast({
-                  title: "Filter applied",
                   description: "Location filter has been applied."
                 });
               }} className="cursor-pointer">

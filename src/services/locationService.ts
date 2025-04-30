@@ -8,6 +8,11 @@ export interface EmployeeLocation {
   latitude: number;
   longitude: number;
   timestamp?: string;
+  employee?: {
+    firstname?: string;
+    lastname?: string;
+    jobtitle?: string;
+  };
 }
 
 export const getEmployeeLocations = async (): Promise<EmployeeLocation[]> => {
@@ -64,16 +69,26 @@ export const updateEmployeeLocation = async (
 
 export const enableRealtimeForTrackTable = async (): Promise<void> => {
   try {
-    // Enable realtime on the track table
-    await supabase
-      .from('track')
-      .on('*', payload => {
-        console.log('Track change received', payload);
-      })
+    // Create a channel for realtime updates instead of using the deprecated method
+    const channel = supabase
+      .channel('track-changes')
+      .on('postgres_changes', 
+        {
+          event: '*',
+          schema: 'public',
+          table: 'track'
+        },
+        payload => {
+          console.log('Track change received', payload);
+        }
+      )
       .subscribe();
       
     console.log('Realtime enabled for track table');
+    
+    return Promise.resolve();
   } catch (error) {
     console.error('Error enabling realtime for track table:', error);
+    return Promise.reject(error);
   }
 };
