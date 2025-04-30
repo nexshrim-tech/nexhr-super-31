@@ -7,7 +7,7 @@ export interface AttendanceSettings {
   employeeid: number;
   customerid?: number;
   workstarttime?: string;
-  latethreshold?: string;
+  latethreshold?: string; // Changed from unknown to string
   geofencingenabled?: boolean;
   photoverificationenabled?: boolean;
 }
@@ -24,7 +24,13 @@ export const getAttendanceSettings = async (employeeId: number): Promise<Attenda
       throw error;
     }
     
-    return data;
+    // Convert the latethreshold to string to match our interface
+    const typedData = data?.map(item => ({
+      ...item,
+      latethreshold: item.latethreshold ? String(item.latethreshold) : undefined
+    }));
+    
+    return typedData as AttendanceSettings[];
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
     throw error;
@@ -33,9 +39,12 @@ export const getAttendanceSettings = async (employeeId: number): Promise<Attenda
 
 export const updateAttendanceSettings = async (id: number, settings: Partial<AttendanceSettings>): Promise<AttendanceSettings> => {
   try {
+    // Remove the attendancesettingid if it exists in settings to avoid type error
+    const { attendancesettingid, ...updateData } = settings;
+    
     const { data, error } = await supabase
       .from('attendancesettings')
-      .update(settings)
+      .update(updateData)
       .eq('attendancesettingid', id)
       .select()
       .single();
@@ -45,7 +54,11 @@ export const updateAttendanceSettings = async (id: number, settings: Partial<Att
       throw error;
     }
     
-    return data;
+    // Convert the latethreshold to string
+    return {
+      ...data,
+      latethreshold: data.latethreshold ? String(data.latethreshold) : undefined
+    } as AttendanceSettings;
   } catch (error) {
     console.error('Error in updateAttendanceSettings:', error);
     throw error;
@@ -65,7 +78,11 @@ export const createAttendanceSettings = async (settings: Omit<AttendanceSettings
       throw error;
     }
     
-    return data;
+    // Convert the latethreshold to string
+    return {
+      ...data,
+      latethreshold: data.latethreshold ? String(data.latethreshold) : undefined
+    } as AttendanceSettings;
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);
     throw error;
