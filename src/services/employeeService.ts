@@ -121,6 +121,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
 
 export const deleteEmployee = async (id: number): Promise<void> => {
   try {
+    // Completely delete the employee record from the database
     const { error } = await supabase
       .from('employee')
       .delete()
@@ -130,6 +131,8 @@ export const deleteEmployee = async (id: number): Promise<void> => {
       console.error('Error deleting employee:', error);
       throw error;
     }
+    
+    console.log(`Employee with ID ${id} has been permanently deleted`);
   } catch (error) {
     console.error('Error in deleteEmployee:', error);
     throw error;

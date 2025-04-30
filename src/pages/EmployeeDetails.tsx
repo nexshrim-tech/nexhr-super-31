@@ -171,11 +171,12 @@ const EmployeeDetails = () => {
   const handleRemoveEmployee = async () => {
     if (employee) {
       try {
+        // Completely delete the employee from the database
         await deleteEmployee(employee.employeeid);
         
         toast({
           title: "Employee removed",
-          description: "The employee has been successfully removed from the system.",
+          description: "The employee has been permanently deleted from the system.",
         });
         
         // Navigate back to the employees list
@@ -184,7 +185,7 @@ const EmployeeDetails = () => {
         console.error("Error removing employee:", error);
         toast({
           title: "Error",
-          description: "Failed to remove employee. Please try again.",
+          description: "Failed to delete employee. Please try again.",
           variant: "destructive",
         });
       }

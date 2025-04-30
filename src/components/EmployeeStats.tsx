@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import {
   Card,
@@ -77,22 +78,26 @@ const EmployeeStats = () => {
     const newStats = calculateStats(employees);
     setStats(newStats);
 
-    // Set up real-time subscription
+    // Set up real-time subscription to track all employee changes including deletions
     const channel = supabase
       .channel('employee-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'employee'
         },
         (payload) => {
           console.log('Employee data changed:', payload);
           
-          // Refetch data when changes occur
+          // Refetch data when changes occur to update stats
           refetch().then(() => {
-            toast("Employee data updated");
+            if (payload.eventType === 'DELETE') {
+              toast("Employee has been deleted");
+            } else {
+              toast("Employee data updated");
+            }
           });
         }
       )
