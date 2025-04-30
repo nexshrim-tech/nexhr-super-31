@@ -3,164 +3,69 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface AttendanceSettings {
   id?: number;
-  employeeid?: number;
-  geofencingenabled: boolean;
-  latethreshold: string;
-  photoverificationenabled: boolean;
-  workstarttime: string;
-  workendtime?: string | null;
-  created_at?: string | null;
-}
-
-// Defining the DB type to handle the mapping correctly
-interface AttendanceSettingsDB {
-  attendancesettingid: number;
+  attendancesettingid?: number;
   employeeid: number;
   customerid?: number;
-  geofencingenabled: boolean;
-  latethreshold: unknown;
-  photoverificationenabled: boolean;
-  workstarttime: string;
-  workendtime?: string | null;
-  created_at?: string | null;
+  workstarttime?: string;
+  latethreshold?: string;
+  geofencingenabled?: boolean;
+  photoverificationenabled?: boolean;
 }
 
-type AttendanceSettingsData = Omit<AttendanceSettings, 'id'>;
-
-export const getAttendanceSettings = async (employeeId?: number): Promise<AttendanceSettings[]> => {
+export const getAttendanceSettings = async (employeeId: number): Promise<AttendanceSettings[] | null> => {
   try {
-    const query = supabase
+    const { data, error } = await supabase
       .from('attendancesettings')
-      .select('*');
+      .select('*')
+      .eq('employeeid', employeeId);
     
-    const finalQuery = employeeId 
-      ? query.eq('employeeid', employeeId)
-      : query;
-    
-    const { data, error } = await finalQuery;
-
     if (error) {
       console.error('Error fetching attendance settings:', error);
       throw error;
     }
-
-    // Map database fields to interface fields
-    return (data || []).map((item: AttendanceSettingsDB) => ({
-      id: item.attendancesettingid,
-      employeeid: item.employeeid,
-      geofencingenabled: item.geofencingenabled || false,
-      latethreshold: String(item.latethreshold || '15'),
-      photoverificationenabled: item.photoverificationenabled || false,
-      workstarttime: item.workstarttime || '09:00',
-      workendtime: item.workendtime || null,
-      created_at: item.created_at || null
-    }));
+    
+    return data;
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
     throw error;
   }
 };
 
-export const updateAttendanceSettings = async (
-  id: number, 
-  settings: Partial<AttendanceSettings>
-): Promise<AttendanceSettings> => {
+export const updateAttendanceSettings = async (id: number, settings: Partial<AttendanceSettings>): Promise<AttendanceSettings> => {
   try {
-    // Clean up undefined values
-    const cleanSettings = Object.fromEntries(
-      Object.entries(settings).filter(([_, value]) => value !== undefined)
-    );
-    
-    // Map interface fields to database fields
-    const dbSettings: Record<string, any> = {};
-    if ('geofencingenabled' in cleanSettings) dbSettings.geofencingenabled = cleanSettings.geofencingenabled;
-    if ('latethreshold' in cleanSettings) dbSettings.latethreshold = cleanSettings.latethreshold;
-    if ('photoverificationenabled' in cleanSettings) dbSettings.photoverificationenabled = cleanSettings.photoverificationenabled;
-    if ('workstarttime' in cleanSettings) dbSettings.workstarttime = cleanSettings.workstarttime;
-    if ('workendtime' in cleanSettings) dbSettings.workendtime = cleanSettings.workendtime;
-    
-    const { data: updatedData, error } = await supabase
+    const { data, error } = await supabase
       .from('attendancesettings')
-      .update(dbSettings)
+      .update(settings)
       .eq('attendancesettingid', id)
       .select()
       .single();
-
+    
     if (error) {
       console.error('Error updating attendance settings:', error);
       throw error;
     }
-
-    const data = updatedData as AttendanceSettingsDB;
-
-    // Map database response to interface
-    return {
-      id: data.attendancesettingid,
-      employeeid: data.employeeid,
-      geofencingenabled: data.geofencingenabled || false,
-      latethreshold: String(data.latethreshold || '15'),
-      photoverificationenabled: data.photoverificationenabled || false,
-      workstarttime: data.workstarttime || '09:00',
-      workendtime: data.workendtime || null,
-      created_at: data.created_at || null
-    };
+    
+    return data;
   } catch (error) {
     console.error('Error in updateAttendanceSettings:', error);
     throw error;
   }
 };
 
-export const createAttendanceSettings = async (
-  settings: AttendanceSettingsData
-): Promise<AttendanceSettings> => {
+export const createAttendanceSettings = async (settings: Omit<AttendanceSettings, 'id' | 'attendancesettingid'>): Promise<AttendanceSettings> => {
   try {
-    // Clean up undefined values
-    const cleanSettings = Object.fromEntries(
-      Object.entries(settings).filter(([_, value]) => value !== undefined)
-    );
-    
-    // Ensure employeeid is properly handled
-    if (cleanSettings.employeeid && typeof cleanSettings.employeeid === 'string') {
-      cleanSettings.employeeid = parseInt(cleanSettings.employeeid, 10);
-    }
-    
-    // Map interface fields to database fields
-    const dbSettings: Record<string, any> = {
-      employeeid: cleanSettings.employeeid,
-      geofencingenabled: Boolean(cleanSettings.geofencingenabled),
-      latethreshold: String(cleanSettings.latethreshold || '15'),
-      photoverificationenabled: Boolean(cleanSettings.photoverificationenabled),
-      workstarttime: String(cleanSettings.workstarttime || '09:00')
-    };
-    
-    if (cleanSettings.workendtime) {
-      dbSettings.workendtime = String(cleanSettings.workendtime);
-    }
-    
-    const { data: insertedData, error } = await supabase
+    const { data, error } = await supabase
       .from('attendancesettings')
-      .insert(dbSettings)
+      .insert(settings)
       .select()
       .single();
-
+    
     if (error) {
       console.error('Error creating attendance settings:', error);
       throw error;
     }
-
-    const data = insertedData as AttendanceSettingsDB;
-
-    // Map database response to interface
-    return {
-      id: data.attendancesettingid,
-      employeeid: data.employeeid,
-      geofencingenabled: data.geofencingenabled || false,
-      latethreshold: String(data.latethreshold || '15'),
-      photoverificationenabled: data.photoverificationenabled || false,
-      workstarttime: data.workstarttime || '09:00',
-      workendtime: data.workendtime || null,
-      created_at: data.created_at || null
-    };
+    
+    return data;
   } catch (error) {
     console.error('Error in createAttendanceSettings:', error);
     throw error;
