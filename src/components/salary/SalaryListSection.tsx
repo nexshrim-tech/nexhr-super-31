@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, History, FileText } from "lucide-react";
+import { Search, History, FileText, Edit } from "lucide-react";
 import { EmployeeSalary, PayslipRecord } from "@/types/salary";
 import EmployeeTable from "./EmployeeTable";
 import EmployeeCard from "./EmployeeCard";
@@ -22,12 +22,14 @@ interface SalaryListSectionProps {
   employees: EmployeeSalary[];
   onGenerateSalarySlip: (employee: EmployeeSalary) => void;
   onViewLatestPayslip?: (employee: EmployeeSalary) => void;
+  onUpdateSalaryDetails?: (employee: EmployeeSalary) => void;
 }
 
 const SalaryListSection: React.FC<SalaryListSectionProps> = ({ 
   employees: initialEmployees, 
   onGenerateSalarySlip,
-  onViewLatestPayslip 
+  onViewLatestPayslip,
+  onUpdateSalaryDetails
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("table");
@@ -55,8 +57,22 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
       )
       .subscribe();
 
+    const employeeChannel = supabase
+      .channel('employee-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'employee'
+        },
+        () => fetchEmployeeSalaries()
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(salaryChannel);
+      supabase.removeChannel(employeeChannel);
     };
   }, []);
 
@@ -64,22 +80,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
     try {
       setLoading(true);
       
-      // Get salary data
-      const { data: salaryData, error: salaryError } = await supabase
-        .from('salary')
-        .select('*');
-
-      if (salaryError) {
-        console.error('Error fetching salary data:', salaryError);
-        toast({
-          title: "Error",
-          description: "Failed to fetch salary data",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Get employee data
+      // Get all employees first
       const { data: employeeData, error: employeeError } = await supabase
         .from('employee')
         .select('*');
@@ -94,48 +95,69 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
         return;
       }
 
-      // Map the data to our component format
-      const mappedEmployees = salaryData?.map(salary => {
-        const employee = employeeData?.find(e => e.employeeid === salary.employeeid);
-        
-        if (!employee) return null;
-        
-        return {
-          id: salary.salaryid,
-          employee: { 
-            name: `${employee.firstname || ''} ${employee.lastname || ''}`.trim(), 
-            avatar: employee.firstname ? employee.firstname[0] + (employee.lastname ? employee.lastname[0] : '') : 'EA'
-          },
-          position: employee.jobtitle || 'Unknown',
-          department: employee.department || 'Unknown',
-          salary: salary.basicsalary + 
-                 salary.hra + 
-                 salary.conveyanceallowance + 
-                 salary.medicalallowance +
-                 salary.specialallowance +
-                 salary.otherallowance,
-          lastIncrement: employee.joiningdate || new Date().toISOString(),
-          status: "Paid", // Default status
-          allowances: {
-            basicSalary: salary.basicsalary || 0,
-            hra: salary.hra || 0,
-            conveyanceAllowance: salary.conveyanceallowance || 0,
-            medicalAllowance: salary.medicalallowance || 0,
-            specialAllowance: salary.specialallowance || 0,
-            otherAllowances: salary.otherallowance || 0,
-          },
-          deductions: {
-            incomeTax: salary.incometax || 0,
-            providentFund: salary.pf || 0,
-            professionalTax: salary.professionaltax || 0,
-            loanDeduction: salary.loandeduction || 0,
-            otherDeductions: salary.otherdeduction || 0,
-            esi: salary.esiemployee || 0,
-          }
-        };
-      }).filter(Boolean) as EmployeeSalary[];
+      // Now get all salary data
+      const { data: salaryData, error: salaryError } = await supabase
+        .from('salary')
+        .select('*');
 
-      setEmployees(mappedEmployees || initialEmployees);
+      if (salaryError) {
+        console.error('Error fetching salary data:', salaryError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch salary data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Map the data to our component format
+      // We'll create a record for each employee who has a salary entry
+      const mappedEmployees: EmployeeSalary[] = [];
+
+      for (const employee of employeeData || []) {
+        // Find the salary data for this employee
+        const salary = salaryData?.find(s => s.employeeid === employee.employeeid);
+        
+        // Only include employees who have salary data
+        if (salary) {
+          mappedEmployees.push({
+            id: employee.employeeid,
+            employee: { 
+              name: `${employee.firstname || ''} ${employee.lastname || ''}`.trim(), 
+              avatar: employee.firstname ? employee.firstname[0] + (employee.lastname ? employee.lastname[0] : '') : 'EA'
+            },
+            position: employee.jobtitle || 'Unknown',
+            department: employee.department || 'Unknown',
+            salary: salary.basicsalary + 
+                   salary.hra + 
+                   salary.conveyanceallowance + 
+                   salary.medicalallowance +
+                   salary.specialallowance +
+                   salary.otherallowance,
+            lastIncrement: employee.joiningdate || new Date().toISOString(),
+            status: "Paid", // Default status
+            allowances: {
+              basicSalary: salary.basicsalary || 0,
+              hra: salary.hra || 0,
+              conveyanceAllowance: salary.conveyanceallowance || 0,
+              medicalAllowance: salary.medicalallowance || 0,
+              specialAllowance: salary.specialallowance || 0,
+              otherAllowances: salary.otherallowance || 0,
+            },
+            deductions: {
+              incomeTax: salary.incometax || 0,
+              providentFund: salary.pf || 0,
+              professionalTax: salary.professionaltax || 0,
+              loanDeduction: salary.loandeduction || 0,
+              otherDeductions: salary.otherdeduction || 0,
+              esi: salary.esiemployee || 0,
+            }
+          });
+        }
+      }
+
+      setEmployees(mappedEmployees.length > 0 ? mappedEmployees : initialEmployees);
+      console.log("Fetched employees with salary data:", mappedEmployees.length);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -237,23 +259,30 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
         <CardContent>
           {loading ? (
             <div className="text-center py-4">Loading salary data...</div>
-          ) : viewMode === "table" ? (
-            <EmployeeTable 
-              employees={filteredEmployees} 
-              onGenerateSalarySlip={onGenerateSalarySlip}
-              onViewHistory={handleViewHistory}
-            />
+          ) : filteredEmployees.length > 0 ? (
+            viewMode === "table" ? (
+              <EmployeeTable 
+                employees={filteredEmployees} 
+                onGenerateSalarySlip={onGenerateSalarySlip}
+                onViewHistory={handleViewHistory}
+                onUpdateSalaryDetails={onUpdateSalaryDetails}
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredEmployees.map((employee) => (
+                  <EmployeeCard 
+                    key={employee.id}
+                    employee={employee} 
+                    onGenerateSalarySlip={onGenerateSalarySlip}
+                    onViewHistory={handleViewHistory}
+                    onViewLatestPayslip={onViewLatestPayslip}
+                    onUpdateSalaryDetails={onUpdateSalaryDetails}
+                  />
+                ))}
+              </div>
+            )
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredEmployees.map((employee) => (
-                <EmployeeCard 
-                  key={employee.id}
-                  employee={employee} 
-                  onGenerateSalarySlip={onGenerateSalarySlip}
-                  onViewHistory={handleViewHistory}
-                />
-              ))}
-            </div>
+            <div className="text-center py-4">No employees with salary data found.</div>
           )}
         </CardContent>
       </Card>

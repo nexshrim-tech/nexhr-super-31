@@ -13,13 +13,15 @@ interface EmployeeCardProps {
   onGenerateSalarySlip: (employee: EmployeeSalary) => void;
   onViewHistory?: (employee: EmployeeSalary) => void;
   onViewLatestPayslip?: (employee: EmployeeSalary) => void;
+  onUpdateSalaryDetails?: (employee: EmployeeSalary) => void;
 }
 
 const EmployeeCard: React.FC<EmployeeCardProps> = ({ 
   employee, 
   onGenerateSalarySlip, 
   onViewHistory,
-  onViewLatestPayslip
+  onViewLatestPayslip,
+  onUpdateSalaryDetails
 }) => {
   return (
     <Card key={employee.id}>
@@ -55,7 +57,7 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
             <p className="font-medium">{format(new Date(employee.lastIncrement), "MMM d, yyyy")}</p>
           </div>
         </div>
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button 
             variant="outline" 
             size="sm"
@@ -70,6 +72,15 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
               onClick={() => onViewHistory(employee)}
             >
               <History className="h-4 w-4 mr-1" /> History
+            </Button>
+          )}
+          {onUpdateSalaryDetails && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onUpdateSalaryDetails(employee)}
+            >
+              <Edit className="h-4 w-4 mr-1" /> Edit
             </Button>
           )}
           {onViewLatestPayslip && (
