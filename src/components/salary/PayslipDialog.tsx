@@ -20,12 +20,14 @@ interface PayslipDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employeeData: EmployeeSalary | null;
+  onGeneratePayslip?: () => Promise<void>;
 }
 
 const PayslipDialog: React.FC<PayslipDialogProps> = ({
   open,
   onOpenChange,
-  employeeData
+  employeeData,
+  onGeneratePayslip
 }) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -72,8 +74,12 @@ const PayslipDialog: React.FC<PayslipDialogProps> = ({
         description: `Payslip generated for ${employeeData.employee.name}`,
       });
       
-      // You could implement a download functionality here
-      // For now, just close the dialog
+      // If an external handler is provided, call it
+      if (onGeneratePayslip) {
+        await onGeneratePayslip();
+      }
+      
+      // Close the dialog
       onOpenChange(false);
     } catch (error) {
       console.error('Error generating payslip:', error);
