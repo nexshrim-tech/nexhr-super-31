@@ -25,6 +25,11 @@ export interface Employee {
   fathersname?: string;
   maritalstatus?: string;
   disabilitystatus?: string;
+  nationality?: string;
+  worklocation?: string;
+  leavebalance?: number;
+  employeepassword?: string;
+  documentpath?: string;
 }
 
 export interface EmployeeDB {
@@ -55,4 +60,8 @@ export interface EmployeeDB {
   bloodgroup?: string;
   fathersname?: string;
   maritalstatus?: string;
+  nationality?: string;
+  worklocation?: string;
+  leavebalance?: number;
+  employeepassword?: string;
 }

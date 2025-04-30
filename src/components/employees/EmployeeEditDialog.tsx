@@ -8,8 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Employee, updateEmployee, addEmployee } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
 
 interface EmployeeEditDialogProps {
   isOpen: boolean;
@@ -61,7 +59,13 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
         bloodgroup: '',
         fathersname: '',
         maritalstatus: '',
-        disabilitystatus: ''
+        disabilitystatus: '',
+        nationality: '',
+        worklocation: '',
+        leavebalance: 0,
+        employeepassword: '',
+        documentpath: '',
+        profilepicturepath: ''
       });
     }
   }, [employee, isNewEmployee, customerId]);
@@ -99,6 +103,18 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
         const newEmployeeData = {
           ...employeeData,
           customerid: customerId || 1,
+          fathersname: employeeData.fathersname || '',
+          nationality: employeeData.nationality || '',
+          maritalstatus: employeeData.maritalstatus || '',
+          worklocation: employeeData.worklocation || '',
+          employmenttype: employeeData.employmenttype || '',
+          bloodgroup: employeeData.bloodgroup || '',
+          disabilitystatus: employeeData.disabilitystatus || '',
+          employeepassword: employeeData.employeepassword || '',
+          documentpath: employeeData.documentpath || '',
+          leavebalance: employeeData.leavebalance || 0,
+          profilepicturepath: employeeData.profilepicturepath || '',
+          monthlysalary: employeeData.monthlysalary || 0
         };
         
         result = await addEmployee(newEmployeeData as Omit<Employee, 'employeeid'>);
@@ -198,6 +214,28 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="nationality" className="text-right">
+              Nationality
+            </Label>
+            <Input
+              id="nationality"
+              value={employeeData.nationality || ''}
+              onChange={(e) => handleChange('nationality', e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="worklocation" className="text-right">
+              Work Location
+            </Label>
+            <Input
+              id="worklocation"
+              value={employeeData.worklocation || ''}
+              onChange={(e) => handleChange('worklocation', e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="phonenumber" className="text-right">
               Phone
             </Label>
@@ -216,7 +254,19 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
               id="monthlysalary"
               type="number"
               value={employeeData.monthlysalary || 0}
-              onChange={(e) => handleChange('monthlysalary', e.target.value)}
+              onChange={(e) => handleChange('monthlysalary', e.target.value ? parseFloat(e.target.value) : 0)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="leavebalance" className="text-right">
+              Leave Balance
+            </Label>
+            <Input
+              id="leavebalance"
+              type="number"
+              value={employeeData.leavebalance || 0}
+              onChange={(e) => handleChange('leavebalance', e.target.value ? parseFloat(e.target.value) : 0)}
               className="col-span-3"
             />
           </div>
@@ -422,6 +472,17 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
               onChange={(e) => handleChange('terminationdate', e.target.value)}
               className="col-span-3"
               disabled={employeeData.employmentstatus !== 'Terminated'}
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="profilepicturepath" className="text-right">
+              Profile Picture URL
+            </Label>
+            <Input
+              id="profilepicturepath"
+              value={employeeData.profilepicturepath || ''}
+              onChange={(e) => handleChange('profilepicturepath', e.target.value)}
+              className="col-span-3"
             />
           </div>
         </div>

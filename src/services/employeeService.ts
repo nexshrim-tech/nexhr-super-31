@@ -53,7 +53,25 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw new Error('Employee must have firstname, lastname, and email');
     }
     
-    const dbEmployee = mapEmployeeToDBFormat(employee);
+    // Set default values for fields that might be undefined
+    const employeeWithDefaults = {
+      ...employee,
+      fathersname: employee.fathersname || '',
+      dateofbirth: employee.dateofbirth || null,
+      nationality: employee.nationality || '',
+      maritalstatus: employee.maritalstatus || '',
+      worklocation: employee.worklocation || '',
+      employmenttype: employee.employmenttype || '',
+      bloodgroup: employee.bloodgroup || '',
+      disabilitystatus: employee.disabilitystatus || '',
+      employeepassword: employee.employeepassword || '',
+      documentpath: employee.documentpath || '',
+      leavebalance: employee.leavebalance || 0,
+      profilepicturepath: employee.profilepicturepath || '',
+      monthlysalary: employee.monthlysalary || 0
+    };
+    
+    const dbEmployee = mapEmployeeToDBFormat(employeeWithDefaults);
     console.log('Formatted employee data for database:', dbEmployee);
     
     if (!dbEmployee.customerid) {
@@ -93,7 +111,26 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
   try {
     console.log('Updating employee with data:', employee);
     
-    const dbEmployee = mapEmployeeToDBFormat(employee);
+    // Ensure we're not sending undefined values that would override existing data with nulls
+    const cleanedEmployee = Object.entries(employee).reduce((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as Record<string, any>);
+    
+    // Set empty strings to proper defaults for certain fields
+    if (cleanedEmployee.fathersname === '') cleanedEmployee.fathersname = null;
+    if (cleanedEmployee.nationality === '') cleanedEmployee.nationality = null;
+    if (cleanedEmployee.maritalstatus === '') cleanedEmployee.maritalstatus = null;
+    if (cleanedEmployee.worklocation === '') cleanedEmployee.worklocation = null;
+    if (cleanedEmployee.employmenttype === '') cleanedEmployee.employmenttype = null;
+    if (cleanedEmployee.bloodgroup === '') cleanedEmployee.bloodgroup = null;
+    if (cleanedEmployee.disabilitystatus === '') cleanedEmployee.disabilitystatus = null;
+    if (cleanedEmployee.documentpath === '') cleanedEmployee.documentpath = null;
+    if (cleanedEmployee.profilepicturepath === '') cleanedEmployee.profilepicturepath = null;
+    
+    const dbEmployee = mapEmployeeToDBFormat(cleanedEmployee);
     console.log('Formatted employee data for database update:', dbEmployee);
     
     const { data, error } = await supabase

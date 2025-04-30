@@ -26,13 +26,18 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   bloodgroup: emp.bloodgroup || '',
   fathersname: emp.fathersname || '',
   maritalstatus: emp.maritalstatus || '',
-  disabilitystatus: emp.disabilitystatus || ''
+  disabilitystatus: emp.disabilitystatus || '',
+  nationality: emp.nationality || '',
+  worklocation: emp.worklocation || '',
+  leavebalance: emp.leavebalance || 0,
+  employeepassword: emp.employeepassword || '',
+  documentpath: emp.documentpath || ''
 });
 
 export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<string, any> => {
   const dbEmployee: Record<string, any> = {};
   
-  // Map all fields that exist in the database schema
+  // Map all fields that exist in the database schema, ensuring they're included even if null
   if ('firstname' in employee) dbEmployee.firstname = employee.firstname || null;
   if ('lastname' in employee) dbEmployee.lastname = employee.lastname || null;
   if ('email' in employee) dbEmployee.email = employee.email || null;
@@ -54,19 +59,27 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
   if ('fathersname' in employee) dbEmployee.fathersname = employee.fathersname || null;
   if ('maritalstatus' in employee) dbEmployee.maritalstatus = employee.maritalstatus || null;
   if ('disabilitystatus' in employee) dbEmployee.disabilitystatus = employee.disabilitystatus || null;
+  if ('nationality' in employee) dbEmployee.nationality = employee.nationality || null;
+  if ('worklocation' in employee) dbEmployee.worklocation = employee.worklocation || null;
+  if ('leavebalance' in employee) dbEmployee.leavebalance = employee.leavebalance || null;
+  if ('employeepassword' in employee) dbEmployee.employeepassword = employee.employeepassword || null;
+  if ('documentpath' in employee) dbEmployee.documentpath = employee.documentpath || null;
   
   // Handle special cases with different field names or formats
   if ('postalcode' in employee) dbEmployee.zipcode = employee.postalcode || null;
   
   // Handle numeric values
-  if ('monthlysalary' in employee && employee.monthlysalary !== undefined) {
-    dbEmployee.monthlysalary = typeof employee.monthlysalary === 'string' 
-      ? parseFloat(employee.monthlysalary) 
-      : employee.monthlysalary;
+  if ('monthlysalary' in employee) {
+    const salary = employee.monthlysalary !== undefined ? employee.monthlysalary : null;
+    if (salary !== null) {
+      dbEmployee.monthlysalary = typeof salary === 'string' ? parseFloat(salary) : salary;
+    } else {
+      dbEmployee.monthlysalary = 0; // Default to 0 instead of null for salary
+    }
   }
   
   // Handle phonenumber conversion for the database (expects numeric)
-  if ('phonenumber' in employee && employee.phonenumber) {
+  if ('phonenumber' in employee) {
     if (typeof employee.phonenumber === 'string' && employee.phonenumber.trim() !== '') {
       // Remove non-numeric characters before parsing
       const cleanedNumber = employee.phonenumber.replace(/\D/g, '');
