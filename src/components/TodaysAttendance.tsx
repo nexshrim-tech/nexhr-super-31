@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Download } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { getAttendanceForDate, AttendanceRecord } from "@/services/attendance/attendanceService";
+import { 
+  getAttendanceForDate, 
+  AttendanceRecord, 
+  setupAttendanceSubscription 
+} from "@/services/attendance/attendanceService";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const TodaysAttendance = () => {
@@ -38,25 +41,39 @@ const TodaysAttendance = () => {
     });
     
     // Set up real-time listener for attendance changes
-    const channel = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'attendance'
-        },
-        (payload) => {
-          // When attendance data changes, refetch the latest data
-          refetch();
-          toast.info("Attendance data updated");
+    const channel = setupAttendanceSubscription();
+    
+    channel.on('broadcast', { event: 'attendance-update' }, (payload) => {
+      console.log('Received attendance update:', payload);
+      refetch();
+      toast.info("Attendance data updated");
+    });
+    
+    // Listen for database changes
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'attendance'
+      },
+      (payload) => {
+        console.log('Attendance data changed:', payload);
+        // When attendance data changes, refetch the latest data
+        refetch();
+        
+        if (payload.eventType === 'INSERT') {
+          toast.info("New attendance record added");
+        } else if (payload.eventType === 'UPDATE') {
+          toast.info("Attendance record updated");
+        } else if (payload.eventType === 'DELETE') {
+          toast.info("Attendance record deleted");
         }
-      )
-      .subscribe();
+      }
+    );
       
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
   }, [attendanceData, refetch]);
 

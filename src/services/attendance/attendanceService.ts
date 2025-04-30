@@ -66,6 +66,25 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
   }
 };
 
+// Enable real-time subscription for attendance records
+export const setupAttendanceSubscription = () => {
+  return supabase
+    .channel('attendance-changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
+        schema: 'public',
+        table: 'attendance'
+      },
+      (payload) => {
+        console.log('Attendance data changed:', payload);
+        return payload;
+      }
+    )
+    .subscribe();
+};
+
 export const updateAttendanceRecord = async (employeeId: number, updateData: AttendanceUpdateData): Promise<AttendanceRecord> => {
   try {
     // Prepare the update data

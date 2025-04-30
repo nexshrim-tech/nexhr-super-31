@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getAttendanceForDate, AttendanceRecord, updateAttendanceRecord } from "@/services/attendance/attendanceService";
+import { getAttendanceForDate, AttendanceRecord, updateAttendanceRecord, setupAttendanceSubscription } from "@/services/attendance/attendanceService";
+import { toast } from "sonner";
 
 interface AttendanceTableProps {
   selectedDate: Date;
@@ -41,7 +42,39 @@ const AttendanceTable = ({
       setLocalRecords(records as AttendanceRecord[]);
       console.log("Local records updated from query:", records);
     }
-  }, [records]);
+    
+    // Set up real-time updates for attendance records
+    const channel = setupAttendanceSubscription();
+    
+    // Listen for database changes
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'attendance'
+      },
+      (payload) => {
+        console.log('Attendance data changed in table component:', payload);
+        
+        // When attendance data changes, invalidate and refetch
+        queryClient.invalidateQueries({ queryKey: ['attendance', formattedDate] });
+        
+        // Display appropriate toast message based on the event type
+        if (payload.eventType === 'INSERT') {
+          toast.success("New attendance record added");
+        } else if (payload.eventType === 'UPDATE') {
+          toast.info("Attendance record updated");
+        } else if (payload.eventType === 'DELETE') {
+          toast.info("Attendance record removed");
+        }
+      }
+    );
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [records, queryClient, formattedDate]);
 
   const renderAttendanceStatus = (status: string | null) => {
     if (!status) return null;
@@ -125,9 +158,11 @@ const AttendanceTable = ({
       setEditingId(null);
       setEditData({});
       
-      queryClient.invalidateQueries({ queryKey: ['attendance', formattedDate] });
+      // This will trigger a refetch due to real-time subscription
+      toast.success("Attendance record saved successfully");
     } catch (error) {
       console.error("Error saving edit:", error);
+      toast.error("Failed to save attendance record");
     }
   };
 
@@ -297,7 +332,7 @@ const AttendanceTable = ({
                       renderAttendanceStatus(record.status)
                     )}
                   </TableCell>
-                  <TableCell>{record.workhours ? `${record.workhours}h` : '-'}</TableCell>
+                  <TableCell>{record.workhours ? `${record.workhours}` : '-'}</TableCell>
                   <TableCell className="text-right">
                     {editingId === record.employeeid ? (
                       <div className="flex justify-end gap-2">
