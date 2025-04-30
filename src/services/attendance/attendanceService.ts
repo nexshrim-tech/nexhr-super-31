@@ -39,27 +39,65 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
     
-    const { data, error } = await supabase
+    // First get all employees
+    const { data: employees, error: employeesError } = await supabase
+      .from('employee')
+      .select('employeeid, firstname, lastname')
+      .eq('employmentstatus', 'Active');
+    
+    if (employeesError) {
+      console.error('Error fetching employees:', employeesError);
+      throw employeesError;
+    }
+    
+    // Then get attendance records for the day
+    const { data: attendanceData, error: attendanceError } = await supabase
       .from('attendance')
       .select('*, employee:employeeid(firstname, lastname)')
       .gte('checkintimestamp', startOfDay.toISOString())
       .lte('checkintimestamp', endOfDay.toISOString());
 
-    if (error) {
-      console.error('Error fetching attendance data:', error);
-      throw error;
+    if (attendanceError) {
+      console.error('Error fetching attendance data:', attendanceError);
+      throw attendanceError;
     }
 
     // Format the data to match the expected format in the UI
-    const formattedData = (data || []).map(record => ({
+    const formattedAttendanceData = (attendanceData || []).map(record => ({
       ...record,
       date: date,
       checkintime: record.checkintimestamp ? format(new Date(record.checkintimestamp), 'HH:mm') : '',
       checkouttime: record.checkouttimestamp ? format(new Date(record.checkouttimestamp), 'HH:mm') : '',
       workhours: calculateWorkHours(record.checkintimestamp, record.checkouttimestamp)
     }));
-
-    return formattedData as AttendanceRecord[];
+    
+    // Create a map of employees with attendance records
+    const employeesWithAttendance = new Map(
+      formattedAttendanceData.map(record => [record.employeeid, record])
+    );
+    
+    // For employees without attendance, mark them as absent
+    const absentEmployees = employees
+      .filter(emp => !employeesWithAttendance.has(emp.employeeid))
+      .map(emp => ({
+        employeeid: emp.employeeid,
+        customerid: null,
+        checkintimestamp: null,
+        checkouttimestamp: null,
+        status: 'Absent',
+        date: date,
+        checkintime: '',
+        checkouttime: '',
+        workhours: '-',
+        employee: {
+          firstname: emp.firstname,
+          lastname: emp.lastname
+        },
+        notes: 'Automatically marked absent'
+      }));
+    
+    // Combine the actual attendance with absent records
+    return [...formattedAttendanceData, ...absentEmployees];
   } catch (error) {
     console.error('Error in getAttendanceForDate:', error);
     throw error;
