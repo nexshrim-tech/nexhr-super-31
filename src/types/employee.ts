@@ -52,7 +52,7 @@ export interface EmployeeDB {
   disabilitystatus?: string;
   documentpath?: string;
   employmentstatus?: string;
-  employmenttype?: string | undefined;
+  employmenttype?: string;
   phonenumber?: number;
   bloodgroup?: string;
   fathersname?: string;
