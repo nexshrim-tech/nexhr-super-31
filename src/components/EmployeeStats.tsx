@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   Card,
@@ -13,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Employee } from "@/types/employee";
 import { useQuery } from "@tanstack/react-query";
 import { getEmployees } from "@/services/employeeService";
+import { toast } from "sonner";
 
 const EmployeeStats = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState("all");
@@ -23,21 +23,20 @@ const EmployeeStats = () => {
     layoffs: 0
   });
 
-  const { data: employees = [], isLoading } = useQuery({
+  const { data: employees = [], isLoading, refetch } = useQuery({
     queryKey: ['employees'],
     queryFn: () => getEmployees(),
   });
 
-  useEffect(() => {
-    if (!employees.length) return;
-
+  // Function to calculate stats based on the current employee data and time range
+  const calculateStats = (employeeData: Employee[]) => {
     // Calculate time range cutoffs
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     
     // Filter employees based on selected time range
-    const filteredEmployees = employees.filter((employee) => {
+    const filteredEmployees = employeeData.filter((employee) => {
       if (selectedTimeRange === "all") return true;
       
       const joiningDate = employee.joiningdate ? new Date(employee.joiningdate) : null;
@@ -64,16 +63,23 @@ const EmployeeStats = () => {
     const departures = filteredEmployees.filter(e => e.employmentstatus === "Inactive").length;
     const layoffs = filteredEmployees.filter(e => e.employmentstatus === "Terminated").length;
 
-    setStats({
+    return {
       totalEmployees,
       newHires,
       departures,
       layoffs
-    });
+    };
+  };
+
+  useEffect(() => {
+    if (!employees.length) return;
+
+    const newStats = calculateStats(employees);
+    setStats(newStats);
 
     // Set up real-time subscription
     const channel = supabase
-      .channel('schema-db-changes')
+      .channel('employee-changes')
       .on(
         'postgres_changes',
         {
@@ -81,41 +87,12 @@ const EmployeeStats = () => {
           schema: 'public',
           table: 'employee'
         },
-        () => {
+        (payload) => {
+          console.log('Employee data changed:', payload);
+          
           // Refetch data when changes occur
-          getEmployees().then(updatedEmployees => {
-            const filteredUpdated = updatedEmployees.filter((employee) => {
-              if (selectedTimeRange === "all") return true;
-              
-              const joiningDate = employee.joiningdate ? new Date(employee.joiningdate) : null;
-              if (!joiningDate) return false;
-              
-              return selectedTimeRange === "7d" 
-                ? joiningDate >= sevenDaysAgo 
-                : joiningDate >= thirtyDaysAgo;
-            });
-
-            const updatedTotalEmployees = filteredUpdated.filter(e => e.employmentstatus === "Active").length;
-            const updatedNewHires = filteredUpdated.filter(e => {
-              const joiningDate = e.joiningdate ? new Date(e.joiningdate) : null;
-              if (!joiningDate) return false;
-              
-              return selectedTimeRange === "7d"
-                ? joiningDate >= sevenDaysAgo
-                : selectedTimeRange === "30d"
-                  ? joiningDate >= thirtyDaysAgo
-                  : true;
-            }).length;
-
-            const updatedDepartures = filteredUpdated.filter(e => e.employmentstatus === "Inactive").length;
-            const updatedLayoffs = filteredUpdated.filter(e => e.employmentstatus === "Terminated").length;
-
-            setStats({
-              totalEmployees: updatedTotalEmployees,
-              newHires: updatedNewHires,
-              departures: updatedDepartures,
-              layoffs: updatedLayoffs
-            });
+          refetch().then(() => {
+            toast("Employee data updated");
           });
         }
       )
@@ -124,7 +101,7 @@ const EmployeeStats = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [employees, selectedTimeRange]);
+  }, [employees, selectedTimeRange, refetch]);
 
   if (isLoading) {
     return (

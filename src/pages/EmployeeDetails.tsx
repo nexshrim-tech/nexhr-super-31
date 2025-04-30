@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -179,6 +178,7 @@ const EmployeeDetails = () => {
           description: "The employee has been successfully removed from the system.",
         });
         
+        // Navigate back to the employees list
         navigate("/all-employees");
       } catch (error) {
         console.error("Error removing employee:", error);
