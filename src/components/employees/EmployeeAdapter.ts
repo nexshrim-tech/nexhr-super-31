@@ -28,7 +28,13 @@ export const adaptEmployeeData = (demoData: any): Employee => {
     bloodgroup: demoData.bloodgroup || '',
     fathersname: demoData.fathersname || '',
     maritalstatus: demoData.maritalstatus || '',
-    disabilitystatus: demoData.disabilitystatus || ''
+    disabilitystatus: demoData.disabilitystatus || '',
+    nationality: demoData.nationality || '',
+    worklocation: demoData.worklocation || '',
+    leavebalance: demoData.leavebalance || 0,
+    employeepassword: demoData.employeepassword || '',
+    documentpath: demoData.documentpath || '',
+    customerid: demoData.customerid || ''
   };
 };
 
@@ -58,6 +64,11 @@ export const adaptToUIFormat = (employee: Employee): any => {
     fathersname: employee.fathersname || '',
     maritalstatus: employee.maritalstatus || '',
     disabilitystatus: employee.disabilitystatus || '',
+    nationality: employee.nationality || '',
+    worklocation: employee.worklocation || '',
+    leavebalance: employee.leavebalance || 0,
+    employeepassword: employee.employeepassword || '',
+    documentpath: employee.documentpath || '',
     // Default values for UI that might not be in the database
     tasks: [],
     assets: [],

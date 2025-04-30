@@ -72,6 +72,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       }
     }
     
+    // Make sure all fields are included in the insert operation
     const { data, error } = await supabase
       .from('employee')
       .insert(dbEmployee)
@@ -98,6 +99,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
     const dbEmployee = mapEmployeeToDBFormat(employee);
     console.log('Formatted employee data for database update:', dbEmployee);
     
+    // Make sure all fields are included in the update operation
     const { data, error } = await supabase
       .from('employee')
       .update(dbEmployee)

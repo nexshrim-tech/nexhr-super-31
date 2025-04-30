@@ -36,8 +36,8 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
 export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<string, any> => {
   const dbEmployee: Record<string, any> = {};
   
-  // Handle all fields explicitly, using empty strings or appropriate default values instead of null
-  // This ensures the fields are included in the database operation
+  // Map all fields explicitly with appropriate default values
+  // This ensures all fields are included in the database operation
   dbEmployee.firstname = employee.firstname || '';
   dbEmployee.lastname = employee.lastname || '';
   dbEmployee.email = employee.email || '';
@@ -80,7 +80,7 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
       // Remove non-numeric characters before parsing
       const cleanedNumber = employee.phonenumber.replace(/\D/g, '');
       const parsedPhone = cleanedNumber ? parseInt(cleanedNumber, 10) : null;
-      dbEmployee.phonenumber = !isNaN(parsedPhone) ? parsedPhone : null;
+      dbEmployee.phonenumber = !isNaN(parsedPhone as number) ? parsedPhone : null;
     } else if (typeof employee.phonenumber === 'number') {
       dbEmployee.phonenumber = employee.phonenumber;
     } else {
