@@ -53,7 +53,6 @@ export interface EmployeeDB {
   documentpath?: string;
   employmentstatus?: string;
   employmenttype?: string | undefined;
-  employmenthistory?: string | undefined;
   phonenumber?: number;
   bloodgroup?: string;
   fathersname?: string;
