@@ -20,7 +20,6 @@ export interface Employee {
   postalcode?: string;
   employmentstatus?: 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation';
   employmenttype?: string;
-  terminationdate?: string | null;
   bloodgroup?: string;
   fathersname?: string;
   maritalstatus?: string;
@@ -56,7 +55,6 @@ export interface EmployeeDB {
   employmenttype?: string | undefined;
   employmenthistory?: string | undefined;
   phonenumber?: number;
-  terminationdate?: string | null;
   bloodgroup?: string;
   fathersname?: string;
   maritalstatus?: string;

@@ -37,7 +37,6 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
       // Ensure special date fields are properly formatted
       if (sanitizedEmployee.joiningdate === '') sanitizedEmployee.joiningdate = null;
       if (sanitizedEmployee.dateofbirth === '') sanitizedEmployee.dateofbirth = null;
-      if (sanitizedEmployee.terminationdate === '') sanitizedEmployee.terminationdate = null;
       
       setEmployeeData(sanitizedEmployee);
       console.log('Initialized employee data:', sanitizedEmployee);
@@ -75,8 +74,7 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
 
   const handleChange = (field: keyof Employee, value: string | number) => {
     if (
-      (field === 'joiningdate' || field === 'dateofbirth' || 
-       field === 'terminationdate') && 
+      (field === 'joiningdate' || field === 'dateofbirth') && 
       value === ''
     ) {
       setEmployeeData(prev => ({ ...prev, [field]: null }));
@@ -152,7 +150,6 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
     }
   };
 
-  // Add these extra fields to the form to ensure all data is captured
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -465,19 +462,6 @@ const EmployeeEditDialog: React.FC<EmployeeEditDialogProps> = ({
               value={employeeData.dateofbirth || ''}
               onChange={(e) => handleChange('dateofbirth', e.target.value)}
               className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="terminationdate" className="text-right">
-              Termination Date
-            </Label>
-            <Input
-              id="terminationdate"
-              type="date"
-              value={employeeData.terminationdate || ''}
-              onChange={(e) => handleChange('terminationdate', e.target.value)}
-              className="col-span-3"
-              disabled={employeeData.employmentstatus !== 'Terminated'}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

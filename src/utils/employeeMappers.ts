@@ -22,7 +22,6 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   employmentstatus: emp.employmentstatus as 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation' || 'Active',
   employmenttype: emp.employmenttype || '',
   phonenumber: emp.phonenumber ? emp.phonenumber.toString() : '',
-  terminationdate: emp.terminationdate || null,
   bloodgroup: emp.bloodgroup || '',
   fathersname: emp.fathersname || '',
   maritalstatus: emp.maritalstatus || '',
@@ -56,7 +55,6 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
   dbEmployee.zipcode = employee.postalcode || '';
   dbEmployee.employmentstatus = employee.employmentstatus || 'Active';
   dbEmployee.employmenttype = employee.employmenttype || '';
-  dbEmployee.terminationdate = employee.terminationdate || null;
   dbEmployee.bloodgroup = employee.bloodgroup || '';
   dbEmployee.fathersname = employee.fathersname || '';
   dbEmployee.maritalstatus = employee.maritalstatus || '';
