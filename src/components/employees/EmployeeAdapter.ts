@@ -13,13 +13,15 @@ export const adaptEmployeeData = (demoData: any): Employee => {
     phonenumber: demoData.phone || demoData.phonenumber?.toString() || '', 
     jobtitle: demoData.role || demoData.jobtitle || '',
     department: demoData.department || '',
-    joiningdate: demoData.joining || demoData.joiningdate || '',
+    joiningdate: demoData.joining || demoData.joiningdate || null,
     employmentstatus: demoData.status || demoData.employmentstatus || 'Active',
     gender: demoData.gender || '',
-    dateofbirth: demoData.dob || demoData.dateofbirth || '',
+    dateofbirth: demoData.dob || demoData.dateofbirth || null,
     address: demoData.address || '',
     profilepicturepath: demoData.avatar || demoData.profilepicturepath || '',
-    monthlysalary: demoData.monthlysalary || 0,
+    monthlysalary: typeof demoData.monthlysalary === 'string' 
+      ? parseFloat(demoData.monthlysalary) 
+      : (demoData.monthlysalary || 0),
     employmenttype: demoData.employmenttype || '', 
     city: demoData.city || '',
     state: demoData.state || '',
@@ -31,7 +33,9 @@ export const adaptEmployeeData = (demoData: any): Employee => {
     disabilitystatus: demoData.disabilitystatus || '',
     nationality: demoData.nationality || '',
     worklocation: demoData.worklocation || '',
-    leavebalance: demoData.leavebalance || 0,
+    leavebalance: typeof demoData.leavebalance === 'string' 
+      ? parseInt(demoData.leavebalance) 
+      : (demoData.leavebalance || 0),
     employeepassword: demoData.employeepassword || '',
     documentpath: demoData.documentpath || '',
     customerid: demoData.customerid || ''
@@ -61,9 +65,9 @@ export const adaptToUIFormat = (employee: Employee): any => {
     country: employee.country || '',
     postalcode: employee.postalcode || '',
     bloodgroup: employee.bloodgroup || '',
-    fathersname: employee.fathersname || '',
+    fatherName: employee.fathersname || '',
     maritalstatus: employee.maritalstatus || '',
-    disabilitystatus: employee.disabilitystatus || '',
+    hasDisability: employee.disabilitystatus === 'Yes',
     nationality: employee.nationality || '',
     worklocation: employee.worklocation || '',
     leavebalance: employee.leavebalance || 0,

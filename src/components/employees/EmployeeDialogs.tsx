@@ -14,7 +14,7 @@ interface EmployeeDialogsProps {
   isPasswordDialogOpen: boolean;
   showOfficialDocsDialog: boolean;
   employee: Employee | null;
-  adaptedEmployee: Employee;
+  adaptedEmployee: Employee | null;
   payslips: any[];
   onDocumentUpload: (type: 'aadhar' | 'pan') => void;
   onCloseDocumentDialog: () => void;
@@ -54,7 +54,7 @@ const EmployeeDialogs: React.FC<EmployeeDialogsProps> = ({
       <EmployeeEditDialog
         isOpen={editDialogOpen}
         onOpenChange={setEditDialogOpen}
-        employee={adaptedEmployee}
+        employee={adaptedEmployee || undefined}
         onSave={onEditSave}
       />
 
@@ -67,7 +67,7 @@ const EmployeeDialogs: React.FC<EmployeeDialogsProps> = ({
       <PasswordChangeDialog
         isOpen={isPasswordDialogOpen}
         onOpenChange={setIsPasswordDialogOpen}
-        employee={adaptedEmployee}
+        employee={adaptedEmployee || undefined}
       />
 
       <OfficialDocumentsDialog 

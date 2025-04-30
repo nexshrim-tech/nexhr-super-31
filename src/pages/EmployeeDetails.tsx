@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -6,7 +7,7 @@ import FeatureLock from "@/components/FeatureLock";
 import SidebarNav from "@/components/SidebarNav";
 import { Employee, getEmployeeById, updateEmployee, deleteEmployee } from "@/services/employeeService";
 import { getAttendanceSettings, updateAttendanceSettings, createAttendanceSettings } from "@/services/attendance/attendanceSettingsService";
-import { adaptEmployeeData } from "@/components/employees/EmployeeAdapter";
+import { adaptEmployeeData, adaptToUIFormat } from "@/components/employees/EmployeeAdapter";
 import EmployeeProfileCard from "@/components/employees/EmployeeProfileCard";
 import EmployeeTasksSection from "@/components/employees/EmployeeTasksSection";
 import EmployeeAssetsSection from "@/components/employees/EmployeeAssetsSection";
@@ -16,43 +17,6 @@ import ConfirmDeleteDialog from "@/components/employees/ConfirmDeleteDialog";
 import EmployeeDetailsHeader from "@/components/employees/EmployeeDetailsHeader";
 import EmployeeMainInfo from "@/components/employees/EmployeeMainInfo";
 import EmployeeDialogs from "@/components/employees/EmployeeDialogs";
-
-const employeeData = {
-  id: "EMP001",
-  name: "Chisom Chukwukwe",
-  email: "work@email.com",
-  phone: "+369 258 147",
-  employeeId: "5278429811",
-  role: "UI/UX Designer",
-  department: "Design",
-  dob: "08/25/25",
-  gender: "Male",
-  address: "1597 540 0985",
-  joining: "Sat May 18 2024",
-  expense: "$123.45",
-  avatar: "CC",
-  status: "Active",
-  location: { lat: 48.8606, lng: 2.3376 },
-  tasks: [
-    { id: 1, name: "Create Wireframes", deadline: "08/02/25", status: "Completed", action: "Active" },
-    { id: 2, name: "Use dummy data in tasks", deadline: "08/02/25", status: "Completed", action: "Active" },
-    { id: 3, name: "Fix Scrolling in Prototype", deadline: "08/02/25", status: "Pending", action: "Inactive" },
-  ],
-  assets: [],
-  leaves: "5/10",
-  fatherName: "John Chukwukwe",
-  bankDetails: {
-    accountNumber: "1234567890",
-    ifscCode: "ABCD0123456",
-    branchName: "Main Branch",
-    bankName: "State Bank"
-  },
-  documents: {
-    aadharCard: "aadhar_card.pdf",
-    panCard: "pan_card.pdf"
-  },
-  geofencingEnabled: true
-};
 
 const payslipsData = [
   { id: "PAY001", employee: "Chisom Chukwukwe", period: "January 2024", amount: 85000, date: "2024-01-31" },
@@ -72,9 +36,9 @@ const EmployeeDetails = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
-  const [employeeForm, setEmployeeForm] = useState<any>(employeeData);
-  const [adaptedEmployee, setAdaptedEmployee] = useState<Employee>(adaptEmployeeData(employeeData));
-  const [geofencingEnabled, setGeofencingEnabled] = useState(employeeData.geofencingEnabled);
+  const [employeeForm, setEmployeeForm] = useState<any>(null);
+  const [adaptedEmployee, setAdaptedEmployee] = useState<Employee | null>(null);
+  const [geofencingEnabled, setGeofencingEnabled] = useState(false);
   const { toast } = useToast();
   
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -92,22 +56,12 @@ const EmployeeDetails = () => {
           
           if (empData) {
             setEmployee(empData);
-            const formattedEmployee = {
-              ...employeeData,
-              name: `${empData.firstname} ${empData.lastname}`,
-              email: empData.email,
-              phone: empData.phonenumber || '',
-              role: empData.jobtitle || '',
-              department: empData.department?.toString() || '',
-              dob: empData.dateofbirth || '',
-              gender: empData.gender || '',
-              address: empData.address || '',
-              joining: empData.joiningdate || '',
-              status: empData.employmentstatus || 'Active',
-            };
-            setEmployeeForm(formattedEmployee);
+            // Convert to UI format for the form
+            const uiFormattedData = adaptToUIFormat(empData);
+            setEmployeeForm(uiFormattedData);
             setAdaptedEmployee(empData);
             
+            // Fetch attendance settings
             const settings = await getAttendanceSettings(employeeId);
             if (settings && settings.length > 0) {
               setAttendanceSettings(settings[0]);
@@ -248,27 +202,49 @@ const EmployeeDetails = () => {
   };
 
   const handleSaveProfile = async () => {
-    if (employee) {
+    if (employee && employeeForm) {
       try {
-        const updatedEmployee = {
-          ...employee,
+        // Convert from UI format back to the database model format
+        const updatedEmployeeData: Partial<Employee> = {
           firstname: employeeForm.name.split(' ')[0] || '',
           lastname: employeeForm.name.split(' ')[1] || '',
-          email: employeeForm.email,
-          phonenumber: employeeForm.phone,
-          jobtitle: employeeForm.role,
-          department: employeeForm.department || undefined,
-          dateofbirth: employeeForm.dob,
-          gender: employeeForm.gender,
-          address: employeeForm.address,
-          joiningdate: employeeForm.joining,
-          employmentstatus: employeeForm.status
+          email: employeeForm.email || '',
+          phonenumber: employeeForm.phone || '',
+          jobtitle: employeeForm.role || '',
+          department: employeeForm.department || '',
+          dateofbirth: employeeForm.dob || null,
+          gender: employeeForm.gender || '',
+          address: employeeForm.address || '',
+          joiningdate: employeeForm.joining || null,
+          employmentstatus: employeeForm.status || 'Active',
+          employmenttype: employeeForm.employmenttype || '',
+          city: employeeForm.city || '',
+          state: employeeForm.state || '',
+          country: employeeForm.country || '',
+          postalcode: employeeForm.postalcode || '',
+          bloodgroup: employeeForm.bloodgroup || '',
+          fathersname: employeeForm.fatherName || '',
+          maritalstatus: employeeForm.maritalstatus || '',
+          disabilitystatus: employeeForm.hasDisability ? 'Yes' : 'No',
+          nationality: employeeForm.nationality || '',
+          worklocation: employeeForm.worklocation || '',
+          monthlysalary: typeof employeeForm.monthlysalary === 'string' 
+            ? parseFloat(employeeForm.monthlysalary) 
+            : (employeeForm.monthlysalary || 0),
+          leavebalance: typeof employeeForm.leavebalance === 'string' 
+            ? parseInt(employeeForm.leavebalance) 
+            : (employeeForm.leavebalance || 0)
         };
         
-        await updateEmployee(employee.employeeid, updatedEmployee);
+        await updateEmployee(employee.employeeid, updatedEmployeeData);
         
-        setEmployee(updatedEmployee);
-        setAdaptedEmployee(updatedEmployee);
+        // Refresh employee data from the database
+        const refreshedEmployee = await getEmployeeById(employee.employeeid);
+        if (refreshedEmployee) {
+          setEmployee(refreshedEmployee);
+          setAdaptedEmployee(refreshedEmployee);
+          setEmployeeForm(adaptToUIFormat(refreshedEmployee));
+        }
         
         toast({
           title: "Profile updated",
@@ -289,20 +265,7 @@ const EmployeeDetails = () => {
 
   const handleCancelEdit = () => {
     if (employee) {
-      const formattedEmployee = {
-        ...employeeForm,
-        name: `${employee.firstname} ${employee.lastname}`,
-        email: employee.email,
-        phone: employee.phonenumber || '',
-        role: employee.jobtitle || '',
-        department: employee.department?.toString() || '',
-        dob: employee.dateofbirth || '',
-        gender: employee.gender || '',
-        address: employee.address || '',
-        joining: employee.joiningdate || '',
-        status: employee.employmentstatus || 'Active',
-      };
-      setEmployeeForm(formattedEmployee);
+      setEmployeeForm(adaptToUIFormat(employee));
     }
     
     setIsEditMode(false);
@@ -348,6 +311,23 @@ const EmployeeDetails = () => {
             <EmployeeDetailsHeader />
             <div className="flex justify-center items-center h-64">
               <p className="text-gray-500">Loading employee details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Guard against no employee data
+  if (!employeeForm) {
+    return (
+      <div className="flex h-full bg-gray-50">
+        <SidebarNav />
+        <div className="flex-1 overflow-auto">
+          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6">
+            <EmployeeDetailsHeader />
+            <div className="flex justify-center items-center h-64">
+              <p className="text-gray-500">No employee data available.</p>
             </div>
           </div>
         </div>
@@ -403,6 +383,8 @@ const EmployeeDetails = () => {
           <ConfirmDeleteDialog 
             employeeName={employeeForm.name}
             onConfirmDelete={handleEmployeeActions.handleRemoveEmployee}
+            showDeleteDialog={showDeleteDialog}
+            setShowDeleteDialog={setShowDeleteDialog}
           />
 
           <EmployeeDialogs 

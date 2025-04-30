@@ -1,15 +1,16 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Employee } from "@/services/employeeService";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Employee } from "@/services/employeeService";
-import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
+import { AlertCircle, Check } from "lucide-react";
 
 interface PasswordChangeDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  employee: Employee | null;
+  employee?: Employee;
 }
 
 const PasswordChangeDialog: React.FC<PasswordChangeDialogProps> = ({
@@ -19,69 +20,88 @@ const PasswordChangeDialog: React.FC<PasswordChangeDialogProps> = ({
 }) => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const { toast } = useToast();
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState("");
 
-  const handlePasswordChange = () => {
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure both passwords match.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Reset states
+    setError("");
+    
+    // Simple validation
     if (newPassword.length < 8) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 8 characters long.",
-        variant: "destructive"
-      });
+      setError("Password must be at least 8 characters long");
       return;
     }
-
-    toast({
-      title: "Password updated",
-      description: `Password has been updated for ${employee?.firstname} ${employee?.lastname}.`
-    });
-    onOpenChange(false);
-    setNewPassword("");
-    setConfirmPassword("");
+    
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    
+    // Here we would normally update the password in the database
+    // For now, just show success message
+    setShowSuccess(true);
+    
+    // Reset form after 2 seconds and close dialog
+    setTimeout(() => {
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowSuccess(false);
+      onOpenChange(false);
+    }, 2000);
   };
+
+  const employeeName = employee ? `${employee.firstname} ${employee.lastname}` : 'Employee';
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Change Password</DialogTitle>
-          <DialogDescription>
-            {employee && `Set a new password for ${employee.firstname} ${employee.lastname}`}
-          </DialogDescription>
+          <DialogTitle>{showSuccess ? "Password Updated" : `Change Password for ${employeeName}`}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Input 
-              id="new-password" 
-              type="password" 
-              placeholder="Enter new password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
+        
+        {showSuccess ? (
+          <div className="py-6 flex flex-col items-center justify-center">
+            <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <Check className="h-6 w-6 text-green-600" />
+            </div>
+            <p className="text-center">Password has been successfully updated.</p>
           </div>
-          <div className="space-y-2">
-            <Input 
-              id="confirm-password" 
-              type="password" 
-              placeholder="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handlePasswordChange}>Update Password</Button>
-        </DialogFooter>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            
+            {error && (
+              <div className="flex items-center text-red-600 gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button type="submit">Update Password</Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
