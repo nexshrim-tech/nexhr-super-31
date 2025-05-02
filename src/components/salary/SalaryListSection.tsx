@@ -40,10 +40,12 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Improved fetch and subscription logic
   useEffect(() => {
+    // Initial data fetch
     fetchEmployeeSalaries();
 
-    // Subscribe to realtime changes
+    // Set up real-time subscriptions with more specific channels
     const salaryChannel = supabase
       .channel('salary-changes')
       .on(
@@ -53,7 +55,10 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
           schema: 'public',
           table: 'salary'
         },
-        () => fetchEmployeeSalaries()
+        () => {
+          console.log('Salary data changed, refreshing...');
+          fetchEmployeeSalaries();
+        }
       )
       .subscribe();
 
@@ -66,15 +71,38 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
           schema: 'public',
           table: 'employee'
         },
-        () => fetchEmployeeSalaries()
+        () => {
+          console.log('Employee data changed, refreshing...');
+          fetchEmployeeSalaries();
+        }
+      )
+      .subscribe();
+
+    const payslipChannel = supabase
+      .channel('payslip-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payslip'
+        },
+        () => {
+          console.log('Payslip data changed, refreshing...');
+          if (selectedEmployee) {
+            handleViewHistory(selectedEmployee);
+          }
+        }
       )
       .subscribe();
 
     return () => {
+      // Cleanup subscriptions
       supabase.removeChannel(salaryChannel);
       supabase.removeChannel(employeeChannel);
+      supabase.removeChannel(payslipChannel);
     };
-  }, []);
+  }, [selectedEmployee]); // Added selectedEmployee as dependency
 
   const fetchEmployeeSalaries = async () => {
     try {
@@ -110,8 +138,21 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
         return;
       }
 
+      // Get payslip data for status information
+      const { data: payslipData, error: payslipError } = await supabase
+        .from('payslip')
+        .select('*');
+
+      if (payslipError) {
+        console.error('Error fetching payslip data:', payslipError);
+      }
+
+      // Current month and year for payslip status check
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
       // Map the data to our component format
-      // We'll create a record for each employee who has a salary entry
       const mappedEmployees: EmployeeSalary[] = [];
 
       for (const employee of employeeData || []) {
@@ -120,6 +161,13 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
         
         // Only include employees who have salary data
         if (salary) {
+          // Check if employee has a payslip for current month
+          const hasCurrentPayslip = payslipData?.some(
+            p => p.employeeid === employee.employeeid && 
+                 p.year === currentYear && 
+                 p.month === currentMonth
+          );
+
           mappedEmployees.push({
             id: employee.employeeid,
             employee: { 
@@ -135,7 +183,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
                    salary.specialallowance +
                    salary.otherallowance,
             lastIncrement: employee.joiningdate || new Date().toISOString(),
-            status: "Paid", // Default status
+            status: hasCurrentPayslip ? "Paid" : "Pending",
             allowances: {
               basicSalary: salary.basicsalary || 0,
               hra: salary.hra || 0,
@@ -170,19 +218,18 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
     }
   };
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
-
+  // Improved history view with real-time data
   const handleViewHistory = async (employee: EmployeeSalary) => {
     setSelectedEmployee(employee);
     
     try {
-      // Fetch payslip history from Supabase
+      // Fetch payslip history from Supabase with order by year and month
       const { data, error } = await supabase
         .from('payslip')
         .select('*')
-        .eq('employeeid', employee.id);
+        .eq('employeeid', employee.id)
+        .order('year', { ascending: false })
+        .order('month', { ascending: false });
 
       if (error) {
         console.error('Error fetching payslip history:', error);
@@ -304,6 +351,10 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
       </Dialog>
     </>
   );
+
+  function handleSearch(event: React.ChangeEvent<HTMLInputElement>) {
+    setSearchTerm(event.target.value);
+  }
 };
 
 export default SalaryListSection;

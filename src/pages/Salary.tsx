@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { useToast } from "@/hooks/use-toast";
@@ -39,13 +38,15 @@ const Salary = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Improved fetch and subscription setup
   useEffect(() => {
+    // Initial data fetch
     fetchSalaryData();
     fetchSalaryTrends();
 
-    // Set up Supabase realtime subscription
+    // Set up real-time subscriptions with better error handling
     const salaryChannel = supabase
-      .channel('salary-changes')
+      .channel('salary-page-changes')
       .on(
         'postgres_changes',
         {
@@ -53,67 +54,158 @@ const Salary = () => {
           schema: 'public',
           table: 'salary'
         },
-        () => {
+        (payload) => {
+          console.log('Salary table updated:', payload.eventType);
           fetchSalaryData();
           fetchSalaryTrends();
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payslip'
+        },
+        (payload) => {
+          console.log('Payslip table updated:', payload.eventType);
+          fetchSalaryData();
+          fetchSalaryTrends();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*', 
+          schema: 'public',
+          table: 'employee'
+        },
+        (payload) => {
+          console.log('Employee table updated:', payload.eventType);
+          fetchSalaryData();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to real-time updates');
+        } else {
+          console.log('Subscription status:', status);
+        }
+      });
 
     return () => {
+      // Clean up subscription
       supabase.removeChannel(salaryChannel);
     };
   }, []);
 
   const fetchSalaryData = async () => {
     try {
-      // Get salary data and employee data together to initialize
+      console.log("Fetching salary data from Supabase...");
       setLoading(true);
       
-      // This is just to initialize, SalaryListSection will handle the actual fetching
+      // Get employee data with proper error handling
       const { data: employeeData, error: employeeError } = await supabase
         .from('employee')
-        .select('*')
-        .limit(10); // Just to set up the initial structure
+        .select('*');
 
       if (employeeError) {
         console.error("Error fetching employee data:", employeeError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch employee data: " + employeeError.message,
+          variant: "destructive",
+        });
         return;
       }
 
-      // Map to our expected format for initial display
-      const initialEmployees = employeeData?.map(emp => ({
-        id: emp.employeeid,
-        employee: { 
-          name: `${emp.firstname || ''} ${emp.lastname || ''}`.trim(), 
-          avatar: emp.firstname ? emp.firstname[0] + (emp.lastname ? emp.lastname[0] : '') : 'EA'
-        },
-        position: emp.jobtitle || 'Unknown',
-        department: emp.department || 'Unknown',
-        salary: emp.monthlysalary || 0,
-        lastIncrement: emp.joiningdate || new Date().toISOString(),
-        status: "Pending",
-        allowances: {
-          basicSalary: 0,
-          hra: 0,
-          conveyanceAllowance: 0,
-          medicalAllowance: 0,
-          specialAllowance: 0,
-          otherAllowances: 0
-        },
-        deductions: {
-          incomeTax: 0,
-          providentFund: 0,
-          professionalTax: 0,
-          esi: 0,
-          loanDeduction: 0,
-          otherDeductions: 0
-        }
-      })) || [];
+      // Get salary data with proper error handling
+      const { data: salaryData, error: salaryError } = await supabase
+        .from('salary')
+        .select('*');
+
+      if (salaryError) {
+        console.error("Error fetching salary data:", salaryError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch salary data: " + salaryError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get current year and month for payslip status
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
       
-      setEmployeeSalaries(initialEmployees);
+      // Fetch payslips for status determination
+      const { data: payslipData, error: payslipError } = await supabase
+        .from('payslip')
+        .select('*')
+        .eq('year', currentYear)
+        .eq('month', currentMonth);
+      
+      if (payslipError) {
+        console.error("Error fetching payslip data:", payslipError);
+      }
+
+      // Map employee data with salary information
+      const employeesWithSalary = employeeData
+        .filter(emp => salaryData.some(sal => sal.employeeid === emp.employeeid))
+        .map(emp => {
+          const salary = salaryData.find(sal => sal.employeeid === emp.employeeid);
+          
+          // Check if employee has a payslip for current month
+          const hasCurrentPayslip = payslipData?.some(p => p.employeeid === emp.employeeid);
+          
+          // Calculate total salary components
+          const totalAllowances = (salary?.basicsalary || 0) + 
+                                 (salary?.hra || 0) + 
+                                 (salary?.conveyanceallowance || 0) +
+                                 (salary?.medicalallowance || 0) +
+                                 (salary?.specialallowance || 0) +
+                                 (salary?.otherallowance || 0);
+          
+          return {
+            id: emp.employeeid,
+            employee: {
+              name: `${emp.firstname || ''} ${emp.lastname || ''}`.trim(),
+              avatar: emp.firstname ? emp.firstname[0] + (emp.lastname ? emp.lastname[0] : '') : 'EA'
+            },
+            position: emp.jobtitle || 'Unknown',
+            department: emp.department || 'Unknown',
+            salary: totalAllowances,
+            lastIncrement: emp.joiningdate || new Date().toISOString(),
+            status: hasCurrentPayslip ? "Paid" : "Pending",
+            allowances: {
+              basicSalary: salary?.basicsalary || 0,
+              hra: salary?.hra || 0,
+              conveyanceAllowance: salary?.conveyanceallowance || 0,
+              medicalAllowance: salary?.medicalallowance || 0,
+              specialAllowance: salary?.specialallowance || 0,
+              otherAllowances: salary?.otherallowance || 0
+            },
+            deductions: {
+              incomeTax: salary?.incometax || 0,
+              providentFund: salary?.pf || 0,
+              professionalTax: salary?.professionaltax || 0,
+              esi: salary?.esiemployee || 0,
+              loanDeduction: salary?.loandeduction || 0,
+              otherDeductions: salary?.otherdeduction || 0
+            }
+          };
+        });
+      
+      console.log(`Found ${employeesWithSalary.length} employees with salary data`);
+      setEmployeeSalaries(employeesWithSalary);
     } catch (error) {
-      console.error("Error fetching salary data:", error);
+      console.error("Error processing salary data:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while processing salary data",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -172,6 +264,94 @@ const Salary = () => {
     const monthNames = ["January", "February", "March", "April", "May", "June",
                         "July", "August", "September", "October", "November", "December"];
     return monthNames[month - 1] || "";
+  };
+
+  const handleGeneratePayslip = async () => {
+    if (!selectedSalaryData) return;
+    
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      
+      // Calculate total amount (sum of allowances - deductions)
+      const totalAllowances = Object.values(selectedSalaryData.allowances).reduce((sum, value) => sum + value, 0);
+      const totalDeductions = Object.values(selectedSalaryData.deductions).reduce((sum, value) => sum + value, 0);
+      const netAmount = totalAllowances - totalDeductions;
+      
+      // Check if a payslip already exists for this month/year/employee
+      const { data: existingPayslip, error: checkError } = await supabase
+        .from('payslip')
+        .select('payslipid')
+        .eq('employeeid', selectedSalaryData.id)
+        .eq('year', year)
+        .eq('month', month);
+        
+      if (checkError) {
+        console.error('Error checking for existing payslip:', checkError);
+        toast({
+          title: "Error",
+          description: "Failed to check for existing payslip",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      let result;
+      
+      if (existingPayslip && existingPayslip.length > 0) {
+        // Update existing payslip
+        result = await supabase
+          .from('payslip')
+          .update({
+            amount: netAmount,
+            generatedtimestamp: now.toISOString()
+          })
+          .eq('payslipid', existingPayslip[0].payslipid);
+          
+        toast({
+          title: "Success",
+          description: `Payslip updated for ${selectedSalaryData.employee.name}`,
+        });
+      } else {
+        // Insert new payslip record
+        result = await supabase
+          .from('payslip')
+          .insert({
+            employeeid: selectedSalaryData.id,
+            year: year,
+            month: month,
+            amount: netAmount,
+            generatedtimestamp: now.toISOString()
+          });
+          
+        toast({
+          title: "Success",
+          description: `Payslip generated for ${selectedSalaryData.employee.name}`,
+        });
+      }
+      
+      if (result.error) {
+        console.error('Error generating payslip:', result.error);
+        toast({
+          title: "Error",
+          description: "Failed to generate payslip",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Close the dialog and refresh data
+      setOpenSalarySlip(false);
+      fetchSalaryData(); // Refresh data to update status
+    } catch (error) {
+      console.error('Error generating payslip:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleGenerateSalarySlip = (employeeData: EmployeeSalary) => {
@@ -275,92 +455,6 @@ const Salary = () => {
       setOpenSalaryForm(false);
     } catch (error) {
       console.error('Error updating salary:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleGeneratePayslip = async () => {
-    if (!selectedSalaryData) return;
-    
-    try {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
-      
-      // Calculate total amount (sum of allowances - deductions)
-      const totalAllowances = Object.values(selectedSalaryData.allowances).reduce((sum, value) => sum + value, 0);
-      const totalDeductions = Object.values(selectedSalaryData.deductions).reduce((sum, value) => sum + value, 0);
-      const netAmount = totalAllowances - totalDeductions;
-      
-      // Check if a payslip already exists for this month/year/employee
-      const { data: existingPayslip, error: checkError } = await supabase
-        .from('payslip')
-        .select('payslipid')
-        .eq('employeeid', selectedSalaryData.id)
-        .eq('year', year)
-        .eq('month', month);
-        
-      if (checkError) {
-        console.error('Error checking for existing payslip:', checkError);
-        toast({
-          title: "Error",
-          description: "Failed to check for existing payslip",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      let result;
-      
-      if (existingPayslip && existingPayslip.length > 0) {
-        // Update existing payslip
-        result = await supabase
-          .from('payslip')
-          .update({
-            amount: netAmount,
-            generatedtimestamp: now.toISOString()
-          })
-          .eq('payslipid', existingPayslip[0].payslipid);
-          
-        toast({
-          title: "Success",
-          description: `Payslip updated for ${selectedSalaryData.employee.name}`,
-        });
-      } else {
-        // Insert new payslip record
-        result = await supabase
-          .from('payslip')
-          .insert({
-            employeeid: selectedSalaryData.id,
-            year: year,
-            month: month,
-            amount: netAmount,
-            generatedtimestamp: now.toISOString()
-          });
-          
-        toast({
-          title: "Success",
-          description: `Payslip generated for ${selectedSalaryData.employee.name}`,
-        });
-      }
-      
-      if (result.error) {
-        console.error('Error generating payslip:', result.error);
-        toast({
-          title: "Error",
-          description: "Failed to generate payslip",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      setOpenSalarySlip(false);
-    } catch (error) {
-      console.error('Error generating payslip:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
