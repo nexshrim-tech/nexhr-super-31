@@ -154,10 +154,58 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
 
       // Map the data to our component format
       const mappedEmployees: EmployeeSalary[] = [];
+      const updatedSalaries = [];
 
       for (const employee of employeeData || []) {
         // Find the salary data for this employee
-        const salary = salaryData?.find(s => s.employeeid === employee.employeeid);
+        let salary = salaryData?.find(s => s.employeeid === employee.employeeid);
+        
+        // If employee has monthlysalary but no salary record or monthlysalary doesn't match, sync it
+        if (employee.monthlysalary && (!salary || (salary.monthlysalary !== employee.monthlysalary))) {
+          // Prepare to update or create salary record
+          const baseSalary = employee.monthlysalary || 0;
+          
+          if (!salary) {
+            // Create new salary record
+            console.log(`Creating new salary record for employee ${employee.employeeid} with salary ${baseSalary}`);
+            
+            const hra = baseSalary * 0.4; // 40% of base salary as HRA
+            const conveyance = 1600; // Standard conveyance allowance
+            const medical = 1250; // Standard medical allowance
+            const special = baseSalary * 0.1; // 10% as special allowance
+            
+            const newSalary = {
+              employeeid: employee.employeeid,
+              basicsalary: baseSalary * 0.45, // 45% of monthly salary as basic
+              hra: hra,
+              conveyanceallowance: conveyance,
+              medicalallowance: medical,
+              specialallowance: special,
+              otherallowance: 0,
+              incometax: baseSalary * 0.05, // 5% of monthly salary as tax
+              pf: baseSalary * 0.12, // 12% of monthly salary as PF
+              professionaltax: 200, // Fixed professional tax
+              esiemployee: baseSalary * 0.0075, // 0.75% of monthly salary as ESI
+              loandeduction: 0,
+              otherdeduction: 0,
+              monthlysalary: baseSalary
+            };
+            
+            updatedSalaries.push({ type: 'insert', data: newSalary });
+            salary = newSalary;
+          } else if (salary.monthlysalary !== employee.monthlysalary) {
+            // Update existing salary record with new monthly salary
+            console.log(`Updating salary record for employee ${employee.employeeid} from ${salary.monthlysalary} to ${employee.monthlysalary}`);
+            
+            const updateSalary = {
+              ...salary,
+              monthlysalary: employee.monthlysalary
+            };
+            
+            updatedSalaries.push({ type: 'update', id: salary.salaryid, data: updateSalary });
+            salary = updateSalary;
+          }
+        }
         
         // Only include employees who have salary data
         if (salary) {
@@ -201,6 +249,42 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
               esi: salary.esiemployee || 0,
             }
           });
+        }
+      }
+
+      // Batch update all salary records that need syncing
+      if (updatedSalaries.length > 0) {
+        console.log(`Batch updating ${updatedSalaries.length} salary records`);
+        
+        // Process inserts
+        const inserts = updatedSalaries.filter(item => item.type === 'insert');
+        if (inserts.length > 0) {
+          const { error: insertError } = await supabase
+            .from('salary')
+            .insert(inserts.map(item => item.data));
+            
+          if (insertError) {
+            console.error('Error inserting salary records:', insertError);
+          } else {
+            console.log(`Created ${inserts.length} new salary records`);
+          }
+        }
+        
+        // Process updates (one by one to avoid conflicts)
+        const updates = updatedSalaries.filter(item => item.type === 'update');
+        for (const update of updates) {
+          const { error: updateError } = await supabase
+            .from('salary')
+            .update(update.data)
+            .eq('salaryid', update.id);
+            
+          if (updateError) {
+            console.error(`Error updating salary record ${update.id}:`, updateError);
+          }
+        }
+        
+        if (updates.length > 0) {
+          console.log(`Updated ${updates.length} existing salary records`);
         }
       }
 

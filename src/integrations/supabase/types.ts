@@ -885,6 +885,7 @@ export type Database = {
           incometax: number | null
           loandeduction: number | null
           medicalallowance: number | null
+          monthlysalary: number | null
           otherallowance: number | null
           otherdeduction: number | null
           pf: number | null
@@ -902,6 +903,7 @@ export type Database = {
           incometax?: number | null
           loandeduction?: number | null
           medicalallowance?: number | null
+          monthlysalary?: number | null
           otherallowance?: number | null
           otherdeduction?: number | null
           pf?: number | null
@@ -919,6 +921,7 @@ export type Database = {
           incometax?: number | null
           loandeduction?: number | null
           medicalallowance?: number | null
+          monthlysalary?: number | null
           otherallowance?: number | null
           otherdeduction?: number | null
           pf?: number | null
