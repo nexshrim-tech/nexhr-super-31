@@ -64,7 +64,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             id: expense.expenseid,
             description: expense.description || '',
             category: expense.category || 'Uncategorized',
-            amount: parseFloat(expense.amount) || 0,
+            amount: expense.amount || 0,
             submittedBy: { 
               // Fix the type error by explicitly converting submittedby to string
               name: expense.submittedby ? `Employee #${String(expense.submittedby)}` : 'Unknown',
