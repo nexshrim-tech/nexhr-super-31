@@ -177,9 +177,8 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
             // Get customerid from employee record - required field for salary table
             const customerid = employee.customerid || 0;
             
-            // Create a new salary object without salaryid (let Supabase generate it)
-            // Use the TablesInsert type from the Database definition
-            const newSalary: Database["public"]["Tables"]["salary"]["Insert"] = {
+            // Create a new salary object
+            const newSalary = {
               employeeid: employee.employeeid,
               customerid: customerid,
               basicsalary: baseSalary * 0.45, // 45% of monthly salary as basic
