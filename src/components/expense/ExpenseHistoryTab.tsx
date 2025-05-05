@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExpenseHistoryTable from './ExpenseHistoryTable';
@@ -63,8 +64,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             category: expense.category || 'Uncategorized',
             amount: parseFloat(expense.amount) || 0,
             submittedBy: { 
-              // Use a placeholder for employee name since we're not joining tables
-              // Convert submittedby to string and handle null/undefined values
+              // Convert submittedby to string to fix type error
               name: expense.submittedby ? `Employee #${String(expense.submittedby)}` : 'Unknown',
               avatar: 'UN'
             },

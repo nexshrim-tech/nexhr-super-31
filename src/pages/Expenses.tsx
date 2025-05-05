@@ -120,8 +120,7 @@ const Expenses = () => {
             category: expense.category || 'Uncategorized',
             amount: parseFloat(expense.amount) || 0,
             submittedBy: { 
-              // Use a placeholder for employee name since we're not joining tables
-              // Convert submittedby to string first to fix type error
+              // Convert submittedby to string to fix type error
               name: expense.submittedby ? `Employee #${String(expense.submittedby)}` : 'Unknown',
               avatar: 'UN'
             },
