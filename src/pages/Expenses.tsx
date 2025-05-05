@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -49,6 +48,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import * as FileSaver from 'file-saver';
 import * as XLSX from 'xlsx';
+import { getEmployeeById } from "@/services/employeeService";
 
 const expensesData = [
   { name: "Jan", amount: 12000 },
@@ -116,22 +116,41 @@ const Expenses = () => {
 
         if (data) {
           // Transform the data to match the ExpenseItem interface
-          const formattedData: ExpenseItem[] = data.map(expense => ({
-            id: expense.expenseid,
-            description: expense.description || '',
-            category: expense.category || 'Uncategorized',
-            amount: expense.amount || 0,
-            submittedBy: { 
-              // Fix the type error by explicitly converting submittedby to string
-              name: expense.submittedby ? `Employee #${String(expense.submittedby)}` : 'Unknown',
-              avatar: 'UN'
-            },
-            date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
-            status: expense.status || 'Pending',
-            expenseid: expense.expenseid,
-            billpath: expense.billpath
-          }));
-
+          const formattedDataPromises = data.map(async (expense) => {
+            // Get employee name if submittedby is present
+            let submitterName = `Employee #${String(expense.submittedby)}`;
+            let avatarText = 'UN';
+            
+            if (expense.submittedby) {
+              try {
+                const employee = await getEmployeeById(expense.submittedby);
+                if (employee) {
+                  submitterName = `${employee.firstname} ${employee.lastname}`;
+                  avatarText = `${employee.firstname.charAt(0)}${employee.lastname.charAt(0)}`.toUpperCase();
+                }
+              } catch (err) {
+                console.error('Error fetching employee details:', err);
+              }
+            }
+            
+            return {
+              id: expense.expenseid,
+              description: expense.description || '',
+              category: expense.category || 'Uncategorized',
+              amount: expense.amount || 0,
+              submittedBy: { 
+                name: submitterName,
+                avatar: avatarText
+              },
+              date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
+              status: expense.status || 'Pending',
+              expenseid: expense.expenseid,
+              billpath: expense.billpath
+            };
+          });
+          
+          const formattedData = await Promise.all(formattedDataPromises);
+          
           setExpenses(formattedData);
           
           // Calculate statistics
