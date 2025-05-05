@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExpenseHistoryTable from './ExpenseHistoryTable';
@@ -46,7 +45,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             amount,
             submissiondate,
             status,
-            employee:employeeid (firstname, lastname)
+            employee:submittedby (firstname, lastname)
           `);
 
         if (error) {

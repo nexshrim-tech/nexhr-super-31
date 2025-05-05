@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -103,7 +102,7 @@ const Expenses = () => {
             amount,
             submissiondate,
             status,
-            employee:employeeid (firstname, lastname)
+            employee:submittedby (firstname, lastname)
           `);
 
         if (error) {
