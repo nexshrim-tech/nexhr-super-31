@@ -174,8 +174,12 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
             const medical = 1250; // Standard medical allowance
             const special = baseSalary * 0.1; // 10% as special allowance
             
+            // Get customerid from employee record - required field for salary table
+            const customerid = employee.customerid || 0;
+            
             const newSalary = {
               employeeid: employee.employeeid,
+              customerid: customerid, // Add the customerid field
               basicsalary: baseSalary * 0.45, // 45% of monthly salary as basic
               hra: hra,
               conveyanceallowance: conveyance,
