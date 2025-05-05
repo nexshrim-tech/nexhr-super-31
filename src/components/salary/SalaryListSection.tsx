@@ -25,6 +25,46 @@ interface SalaryListSectionProps {
   onUpdateSalaryDetails?: (employee: EmployeeSalary) => void;
 }
 
+// Utility function to calculate salary components based on base salary
+const calculateSalaryComponents = (baseSalary: number) => {
+  // Standard percentages for salary components
+  const basicSalaryPercentage = 0.45; // 45% of monthly salary as basic
+  const hraPercentage = 0.40;         // 40% of basic as HRA
+  const specialAllowancePercentage = 0.10; // 10% of basic as special allowance
+  const pfPercentage = 0.12;          // 12% of basic salary for PF
+  const incomeTaxPercentage = 0.05;   // 5% of basic salary for income tax
+  const esiPercentage = 0.0075;       // 0.75% of basic salary for ESI
+  
+  // Standard fixed amounts
+  const conveyanceAllowance = 1600;   // Fixed conveyance allowance
+  const medicalAllowance = 1250;      // Fixed medical allowance
+  const professionalTax = 200;        // Fixed professional tax
+  
+  // Calculate components
+  const basicSalary = baseSalary * basicSalaryPercentage;
+  const hra = baseSalary * hraPercentage;
+  const specialAllowance = baseSalary * specialAllowancePercentage;
+  const pf = baseSalary * pfPercentage;
+  const incomeTax = baseSalary * incomeTaxPercentage;
+  const esi = baseSalary * esiPercentage;
+  
+  return {
+    basicsalary: basicSalary,
+    hra: hra,
+    conveyanceallowance: conveyanceAllowance,
+    medicalallowance: medicalAllowance,
+    specialallowance: specialAllowance,
+    otherallowance: 0,
+    incometax: incomeTax,
+    pf: pf,
+    professionaltax: professionalTax,
+    esiemployee: esi,
+    loandeduction: 0,
+    otherdeduction: 0,
+    monthlysalary: baseSalary
+  };
+};
+
 const SalaryListSection: React.FC<SalaryListSectionProps> = ({ 
   employees: initialEmployees, 
   onGenerateSalarySlip,
@@ -169,41 +209,52 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
             // Create new salary record
             console.log(`Creating new salary record for employee ${employee.employeeid} with salary ${baseSalary}`);
             
-            const hra = baseSalary * 0.4; // 40% of base salary as HRA
-            const conveyance = 1600; // Standard conveyance allowance
-            const medical = 1250; // Standard medical allowance
-            const special = baseSalary * 0.1; // 10% as special allowance
+            // Calculate all salary components based on base salary
+            const salaryComponents = calculateSalaryComponents(baseSalary);
             
             // Get customerid from employee record - required field for salary table
             const customerid = employee.customerid || 0;
             
-            // Create a new salary object - use Supabase Insert type to avoid primary key error
+            // Create a new salary object with all required fields explicitly set
             const newSalary = {
               employeeid: employee.employeeid,
               customerid: customerid,
-              basicsalary: baseSalary * 0.45, // 45% of monthly salary as basic
-              hra: hra,
-              conveyanceallowance: conveyance,
-              medicalallowance: medical,
-              specialallowance: special,
-              otherallowance: 0,
-              incometax: baseSalary * 0.05, // 5% of monthly salary as tax
-              pf: baseSalary * 0.12, // 12% of monthly salary as PF
-              professionaltax: 200, // Fixed professional tax
-              esiemployee: baseSalary * 0.0075, // 0.75% of monthly salary as ESI
-              loandeduction: 0,
-              otherdeduction: 0,
-              monthlysalary: baseSalary
-            } as Database['public']['Tables']['salary']['Insert'];
+              basicsalary: salaryComponents.basicsalary,
+              hra: salaryComponents.hra,
+              conveyanceallowance: salaryComponents.conveyanceallowance,
+              medicalallowance: salaryComponents.medicalallowance,
+              specialallowance: salaryComponents.specialallowance,
+              otherallowance: salaryComponents.otherallowance,
+              incometax: salaryComponents.incometax,
+              pf: salaryComponents.pf, 
+              professionaltax: salaryComponents.professionaltax,
+              esiemployee: salaryComponents.esiemployee,
+              loandeduction: salaryComponents.loandeduction,
+              otherdeduction: salaryComponents.otherdeduction,
+              monthlysalary: salaryComponents.monthlysalary
+            };
             
             updatedSalaries.push({ type: 'insert', data: newSalary });
             salary = newSalary;
           } else if (salary.monthlysalary !== employee.monthlysalary) {
-            // Update existing salary record with new monthly salary
+            // Update existing salary record with new monthly salary and recalculate components
             console.log(`Updating salary record for employee ${employee.employeeid} from ${salary.monthlysalary} to ${employee.monthlysalary}`);
+            
+            // Calculate updated components based on new base salary
+            const updatedComponents = calculateSalaryComponents(baseSalary);
             
             const updateSalary = {
               ...salary,
+              basicsalary: updatedComponents.basicsalary,
+              hra: updatedComponents.hra,
+              conveyanceallowance: updatedComponents.conveyanceallowance,
+              medicalallowance: updatedComponents.medicalallowance,
+              specialallowance: updatedComponents.specialallowance,
+              otherallowance: updatedComponents.otherallowance,
+              incometax: updatedComponents.incometax,
+              pf: updatedComponents.pf,
+              professionaltax: updatedComponents.professionaltax,
+              esiemployee: updatedComponents.esiemployee,
               monthlysalary: employee.monthlysalary
             };
             
