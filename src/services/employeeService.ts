@@ -40,10 +40,10 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
         state: '',
         country: '',
         zipcode: '',
-        phonenumber: 0,
+        phonenumber: '', // Fixed: Using empty string instead of number
         jobtitle: '',
         department: '',
-        employmentstatus: '',
+        employmentstatus: 'Active', // Fixed: Using a valid employmentstatus value
         gender: '',
       };
     }
