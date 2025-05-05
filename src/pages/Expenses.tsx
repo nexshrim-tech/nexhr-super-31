@@ -270,10 +270,8 @@ const Expenses = () => {
         throw new Error('Error checking for employees');
       }
       
-      // Set a valid submittedby or null if no employees exist
-      const submittedBy = employeeData && employeeData.length > 0 
-        ? employeeData[0].employeeid 
-        : null;
+      // Set submittedby to 0 to indicate it was added from the platform by an admin
+      const submittedBy = 0; // Use 0 to indicate platform admin
       
       let billPath = null;
       
@@ -321,7 +319,7 @@ const Expenses = () => {
         description: formData.description,
         category: formData.category,
         amount: parseFloat(formData.amount),
-        submittedby: submittedBy, // Use a valid employeeid or null
+        submittedby: submittedBy, // Use 0 to indicate platform admin
         submissiondate: new Date().toISOString(),
         status: "Pending",
         billpath: billPath

@@ -27,6 +27,27 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
 
 export const getEmployeeById = async (id: number): Promise<Employee | null> => {
   try {
+    // Check if this is an admin-added expense (id might be null or 0)
+    if (!id || id === 0) {
+      return {
+        employeeid: 0,
+        firstname: 'Admin',
+        lastname: 'User',
+        email: '',
+        // Include other required fields with default values
+        address: '',
+        city: '',
+        state: '',
+        country: '',
+        zipcode: '',
+        phonenumber: 0,
+        jobtitle: '',
+        department: '',
+        employmentstatus: '',
+        gender: '',
+      };
+    }
+
     const { data, error } = await supabase
       .from('employee')
       .select()
