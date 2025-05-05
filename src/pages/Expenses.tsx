@@ -121,7 +121,7 @@ const Expenses = () => {
             amount: parseFloat(expense.amount) || 0,
             submittedBy: { 
               // Convert submittedby to string to fix type error
-              name: expense.submittedby ? `Employee #${String(expense.submittedby)}` : 'Unknown',
+              name: expense.submittedby ? `Employee #${expense.submittedby.toString()}` : 'Unknown',
               avatar: 'UN'
             },
             date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExpenseHistoryTable from './ExpenseHistoryTable';
@@ -65,7 +64,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             amount: parseFloat(expense.amount) || 0,
             submittedBy: { 
               // Convert submittedby to string to fix type error
-              name: expense.submittedby ? `Employee #${String(expense.submittedby)}` : 'Unknown',
+              name: expense.submittedby ? `Employee #${expense.submittedby.toString()}` : 'Unknown',
               avatar: 'UN'
             },
             date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
