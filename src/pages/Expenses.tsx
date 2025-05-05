@@ -684,7 +684,7 @@ const Expenses = () => {
                     <div className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
-                          data={expensesData}
+                          data={getMonthlyExpenseData()}
                           margin={{
                             top: 5,
                             right: 20,
@@ -720,75 +720,7 @@ const Expenses = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full bg-blue-500" />
-                          <div>Office Expenses</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium flex items-center">
-                            <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
-                            45,600
-                          </div>
-                          <div className="text-sm text-gray-500">38%</div>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full bg-purple-500" />
-                          <div>Travel</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium flex items-center">
-                            <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
-                            26,400
-                          </div>
-                          <div className="text-sm text-gray-500">22%</div>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full bg-green-500" />
-                          <div>Software</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium flex items-center">
-                            <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
-                            19,200
-                          </div>
-                          <div className="text-sm text-gray-500">16%</div>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                          <div>Meals & Entertainment</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium flex items-center">
-                            <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
-                            12,000
-                          </div>
-                          <div className="text-sm text-gray-500">10%</div>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full bg-red-500" />
-                          <div>Other</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium flex items-center">
-                            <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
-                            16,800
-                          </div>
-                          <div className="text-sm text-gray-500">14%</div>
-                        </div>
-                      </div>
+                      {getCategoryBreakdown()}
                     </div>
                   </CardContent>
                 </Card>
@@ -953,6 +885,90 @@ const Expenses = () => {
       </Dialog>
     </div>
   );
+
+  // Helper function to get monthly expense data for LineChart
+  function getMonthlyExpenseData() {
+    const monthlyData: Record<string, number> = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Initialize with zero values
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const month = new Date(today);
+      month.setMonth(today.getMonth() - i);
+      const monthKey = months[month.getMonth()];
+      monthlyData[monthKey] = 0;
+    }
+    
+    // Fill with actual data
+    expenses.forEach(expense => {
+      if (expense.status === "Approved") {
+        const date = new Date(expense.date);
+        const monthKey = months[date.getMonth()];
+        // Only count last 6 months
+        const monthsAgo = (today.getFullYear() - date.getFullYear()) * 12 + today.getMonth() - date.getMonth();
+        if (monthsAgo >= 0 && monthsAgo <= 6) {
+          monthlyData[monthKey] = (monthlyData[monthKey] || 0) + expense.amount;
+        }
+      }
+    });
+    
+    // Convert to array format for recharts
+    return Object.entries(monthlyData).map(([name, amount]) => ({ name, amount }));
+  }
+
+  // Helper function to generate category breakdown for the UI
+  function getCategoryBreakdown() {
+    const categoryData: Record<string, number> = {};
+    let total = 0;
+    
+    // Calculate totals by category
+    expenses.forEach(expense => {
+      if (expense.status === "Approved") {
+        categoryData[expense.category] = (categoryData[expense.category] || 0) + expense.amount;
+        total += expense.amount;
+      }
+    });
+    
+    // Sort categories by amount
+    const sortedCategories = Object.entries(categoryData)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5); // Get top 5
+    
+    // Calculate "Other" category if needed
+    if (Object.keys(categoryData).length > 5) {
+      const otherTotal = Object.entries(categoryData)
+        .sort((a, b) => b[1] - a[1])
+        .slice(5)
+        .reduce((sum, [amount]) => sum + amount, 0);
+      
+      sortedCategories.push(["Other", otherTotal]);
+    }
+    
+    // Colors for categories
+    const colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF0000'];
+    
+    // Generate UI elements
+    return sortedCategories.map(([category, amount], index) => {
+      const percentage = total > 0 ? Math.round((amount / total) * 100) : 0;
+      
+      return (
+        <div key={category} className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
+            <div>{category}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="font-medium flex items-center">
+              <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
+              {amount.toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-500">{percentage}%</div>
+          </div>
+        </div>
+      );
+    });
+  }
 };
 
 export default Expenses;

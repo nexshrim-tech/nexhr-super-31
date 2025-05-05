@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { 
@@ -22,7 +22,7 @@ import {
   Tooltip,
   Legend
 } from "recharts";
-import { ArrowUpRight, TrendingUp, DollarSign, Calendar } from 'lucide-react';
+import { ArrowUpRight, TrendingUp, DollarSign, Calendar, IndianRupee } from 'lucide-react';
 
 interface ExpenseDataPoint {
   id: number;
@@ -208,7 +208,10 @@ const ExpenseAdvancedAnalytics: React.FC<ExpenseAdvancedAnalyticsProps> = ({ exp
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalExpenseAmount.toLocaleString()}</div>
+            <div className="text-2xl font-bold flex items-center">
+              <IndianRupee className="h-5 w-5 mr-1" />
+              {totalExpenseAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </div>
             <div className="flex items-center mt-1 text-sm">
               <span className={yoyGrowth >= 0 ? "text-green-600" : "text-red-600"}>
                 {yoyGrowth >= 0 ? "↑" : "↓"} {Math.abs(yoyGrowth).toFixed(1)}%
@@ -226,7 +229,10 @@ const ExpenseAdvancedAnalytics: React.FC<ExpenseAdvancedAnalyticsProps> = ({ exp
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${averageExpenseAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold flex items-center">
+              <IndianRupee className="h-5 w-5 mr-1" />
+              {averageExpenseAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </div>
             <div className="text-muted-foreground text-sm mt-1">
               Based on {expenses.filter(expense => expense.status === "Approved").length} approved expenses
             </div>
@@ -257,7 +263,7 @@ const ExpenseAdvancedAnalytics: React.FC<ExpenseAdvancedAnalyticsProps> = ({ exp
                       <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name as keyof typeof STATUS_COLORS]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={(value) => [value, 'Count']} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -291,28 +297,34 @@ const ExpenseAdvancedAnalytics: React.FC<ExpenseAdvancedAnalyticsProps> = ({ exp
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tickFormatter={(value) => `$${value}`}
-                    />
-                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, "Amount"]} />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="amount" 
-                      name="Expense" 
-                      stroke="#3944BC" 
-                      strokeWidth={3} 
-                      dot={{ fill: "#3944BC", r: 4 }}
-                      activeDot={{ r: 8 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {monthlyData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tickFormatter={(value) => `₹${value}`}
+                      />
+                      <Tooltip formatter={(value) => [`₹${Number(value).toLocaleString()}`, "Amount"]} />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="amount" 
+                        name="Expense" 
+                        stroke="#3944BC" 
+                        strokeWidth={3} 
+                        dot={{ fill: "#3944BC", r: 4 }}
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    No monthly expense data available
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -325,34 +337,40 @@ const ExpenseAdvancedAnalytics: React.FC<ExpenseAdvancedAnalyticsProps> = ({ exp
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={categoryData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                    <XAxis 
-                      type="number" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tickFormatter={(value) => `$${value}`}
-                    />
-                    <YAxis 
-                      type="category" 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                    />
-                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, "Amount"]} />
-                    <Bar 
-                      dataKey="value" 
-                      name="Amount" 
-                      fill="#3944BC" 
-                      radius={[0, 4, 4, 0]}
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {categoryData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={categoryData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                      <XAxis 
+                        type="number" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tickFormatter={(value) => `₹${value}`}
+                      />
+                      <YAxis 
+                        type="category" 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                      />
+                      <Tooltip formatter={(value) => [`₹${Number(value).toLocaleString()}`, "Amount"]} />
+                      <Bar 
+                        dataKey="value" 
+                        name="Amount" 
+                        fill="#3944BC" 
+                        radius={[0, 4, 4, 0]}
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    No category data available
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -365,28 +383,34 @@ const ExpenseAdvancedAnalytics: React.FC<ExpenseAdvancedAnalyticsProps> = ({ exp
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={quarterlyTrendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tickFormatter={(value) => `$${value}`}
-                    />
-                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, "Amount"]} />
-                    <Bar 
-                      dataKey="amount" 
-                      name="Quarterly Expense" 
-                      fill="#8884d8"
-                      radius={[4, 4, 0, 0]}
-                    >
-                      {quarterlyTrendData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {quarterlyTrendData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={quarterlyTrendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tickFormatter={(value) => `₹${value}`}
+                      />
+                      <Tooltip formatter={(value) => [`₹${Number(value).toLocaleString()}`, "Amount"]} />
+                      <Bar 
+                        dataKey="amount" 
+                        name="Quarterly Expense" 
+                        fill="#8884d8"
+                        radius={[4, 4, 0, 0]}
+                      >
+                        {quarterlyTrendData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    No quarterly data available
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -399,17 +423,26 @@ const ExpenseAdvancedAnalytics: React.FC<ExpenseAdvancedAnalyticsProps> = ({ exp
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {topExpenses.map((expense, index) => (
-                  <div key={expense.id} className="flex justify-between items-center border-b pb-3 last:border-0">
-                    <div>
-                      <div className="font-medium">{expense.description}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {expense.category} • {new Date(expense.date).toLocaleDateString()}
+                {topExpenses.length > 0 ? (
+                  topExpenses.map((expense, index) => (
+                    <div key={expense.id} className="flex justify-between items-center border-b pb-3 last:border-0">
+                      <div>
+                        <div className="font-medium">{expense.description}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {expense.category} • {new Date(expense.date).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="font-semibold flex items-center">
+                        <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
+                        {expense.amount.toLocaleString()}
                       </div>
                     </div>
-                    <div className="font-semibold">${expense.amount.toLocaleString()}</div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No approved expenses found
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
