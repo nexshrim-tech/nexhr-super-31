@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -216,7 +217,8 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
             const customerid = employee.customerid || 0;
             
             // Create a new salary object with all required fields explicitly set
-            const newSalary = {
+            // Using partial type to handle the fact that salaryid will be auto-generated
+            const newSalary: Database['public']['Tables']['salary']['Insert'] = {
               employeeid: employee.employeeid,
               customerid: customerid,
               basicsalary: salaryComponents.basicsalary,
@@ -235,7 +237,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
             };
             
             updatedSalaries.push({ type: 'insert', data: newSalary });
-            salary = newSalary;
+            salary = newSalary as any; // Cast to any to avoid TypeScript errors
           } else if (salary.monthlysalary !== employee.monthlysalary) {
             // Update existing salary record with new monthly salary and recalculate components
             console.log(`Updating salary record for employee ${employee.employeeid} from ${salary.monthlysalary} to ${employee.monthlysalary}`);
