@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -121,8 +122,8 @@ const Expenses = () => {
             category: expense.category || 'Uncategorized',
             amount: parseFloat(expense.amount) || 0,
             submittedBy: { 
-              // Convert submittedby to string to fix type error
-              name: expense.submittedby ? `Employee #${expense.submittedby.toString()}` : 'Unknown',
+              // Fix type error by explicitly converting submittedby to string
+              name: expense.submittedby ? `Employee #${String(expense.submittedby)}` : 'Unknown',
               avatar: 'UN'
             },
             date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
