@@ -36,6 +36,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
     const fetchExpenses = async () => {
       setLoading(true);
       try {
+        // Use simplified query that doesn't try to join employee table
         const { data, error } = await supabase
           .from('expense')
           .select(`
@@ -45,7 +46,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             amount,
             submissiondate,
             status,
-            employee:submittedby (firstname, lastname)
+            submittedby
           `);
 
         if (error) {
@@ -60,12 +61,9 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             category: expense.category || 'Uncategorized',
             amount: parseFloat(expense.amount) || 0,
             submittedBy: { 
-              name: expense.employee ? 
-                `${expense.employee.firstname || ''} ${expense.employee.lastname || ''}` : 
-                'Unknown User',
-              avatar: expense.employee ? 
-                `${expense.employee.firstname?.[0] || ''}${expense.employee.lastname?.[0] || ''}` : 
-                'UN'
+              // Use a placeholder for employee name since we're not joining tables
+              name: `Employee #${expense.submittedby || 'Unknown'}`,
+              avatar: 'UN'
             },
             date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
             status: expense.status || 'Pending',
