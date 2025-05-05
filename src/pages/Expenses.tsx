@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -257,10 +258,29 @@ const Expenses = () => {
       
       let billPath = null;
       
-      // If there's a receipt file, upload it to storage
+      // If there's a receipt file, upload it to storage with improved folder structure
       if (formData.receipt && formData.receipt.size > 0) {
         const fileExt = formData.receipt.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        
+        // Get company name for folder structure - using a default if not available
+        const { data: companyData } = await supabase
+          .from('customer')
+          .select('name')
+          .limit(1);
+        
+        const companyName = companyData && companyData.length > 0 && companyData[0].name 
+          ? companyData[0].name.replace(/\s+/g, '_').toLowerCase() 
+          : 'default_company';
+        
+        // Create date-based folder structure: company/year/month/day
+        const now = new Date();
+        const year = now.getFullYear().toString();
+        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+        const day = now.getDate().toString().padStart(2, '0');
+        
+        // Create folder path: company/YYYY/MM/DD/timestamp-randomstring.ext
+        const folderPath = `${companyName}/${year}/${month}/${day}`;
+        const fileName = `${folderPath}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
         
         const { data: fileData, error: uploadError } = await supabase.storage
           .from('expense-bills')
@@ -378,8 +398,13 @@ const Expenses = () => {
     }
     
     try {
-      // Extract file name from the public URL
-      const fileName = billpath.split('/').pop();
+      // Extract file name from the public URL, handling the new folder structure
+      const urlParts = billpath.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      
+      // Parse folder path from the URL
+      const folderStructure = urlParts.slice(-5).join('/');
+      
       if (!fileName) {
         throw new Error("Invalid file path");
       }
@@ -387,7 +412,7 @@ const Expenses = () => {
       // Download the file
       const { data, error } = await supabase.storage
         .from('expense-bills')
-        .download(fileName);
+        .download(folderStructure);
         
       if (error) {
         throw error;

@@ -29,16 +29,36 @@ const ExpenseHistoryTable: React.FC<ExpenseHistoryTableProps> = ({ expenses, onV
     }
     
     try {
-      // Extract file name from the public URL
-      const fileName = expense.billpath.split('/').pop();
-      if (!fileName) {
+      // Extract file name and path from the public URL with the new structure
+      const urlParts = expense.billpath.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      
+      // Get the path part from the URL (handling both old and new structure)
+      let filePath;
+      
+      // Handle the new structure (company/year/month/day/file.ext)
+      if (urlParts.length >= 5) {
+        // Attempt to get the company/YYYY/MM/DD/filename.ext structure
+        const storageUrlParts = expense.billpath.split('expense-bills/');
+        if (storageUrlParts.length > 1) {
+          filePath = storageUrlParts[1];
+        } else {
+          // Fallback to just the filename
+          filePath = fileName;
+        }
+      } else {
+        // Handle the old structure (just filename)
+        filePath = fileName;
+      }
+      
+      if (!filePath) {
         throw new Error("Invalid file path");
       }
       
-      // Download the file
+      // Download the file with the correct path
       const { data, error } = await supabase.storage
         .from('expense-bills')
-        .download(fileName);
+        .download(filePath);
         
       if (error) {
         throw error;
