@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExpenseHistoryTable from './ExpenseHistoryTable';
@@ -18,6 +19,7 @@ export interface ExpenseItem {
   status: string;
   attachmentType?: string;
   expenseid?: number;
+  billpath?: string;
 }
 
 interface ExpenseHistoryTabProps {
@@ -48,7 +50,8 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             amount,
             submissiondate,
             status,
-            submittedby
+            submittedby,
+            billpath
           `);
 
         if (error) {
@@ -69,7 +72,8 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             },
             date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
             status: expense.status || 'Pending',
-            expenseid: expense.expenseid
+            expenseid: expense.expenseid,
+            billpath: expense.billpath
           }));
 
           setExpenses(formattedData);

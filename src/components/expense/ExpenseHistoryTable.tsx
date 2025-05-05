@@ -3,9 +3,11 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IndianRupee, Eye } from "lucide-react";
+import { IndianRupee, Eye, Download } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ExpenseItem } from './ExpenseHistoryTab';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ExpenseHistoryTableProps {
   expenses: ExpenseItem[];
@@ -14,6 +16,58 @@ interface ExpenseHistoryTableProps {
 }
 
 const ExpenseHistoryTable: React.FC<ExpenseHistoryTableProps> = ({ expenses, onViewExpense, isLoading = false }) => {
+  const { toast } = useToast();
+
+  const handleDownload = async (expense: ExpenseItem) => {
+    if (!expense.billpath) {
+      toast({
+        title: "No Receipt",
+        description: "There is no receipt attached to this expense.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // Extract file name from the public URL
+      const fileName = expense.billpath.split('/').pop();
+      if (!fileName) {
+        throw new Error("Invalid file path");
+      }
+      
+      // Download the file
+      const { data, error } = await supabase.storage
+        .from('expense-bills')
+        .download(fileName);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Create a download link
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Receipt Downloaded",
+        description: "The receipt has been downloaded to your device.",
+      });
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to download the receipt',
+        variant: 'destructive',
+      });
+    }
+  };
+  
   if (isLoading) {
     return (
       <div className="rounded-md border p-8 flex justify-center">
@@ -75,13 +129,24 @@ const ExpenseHistoryTable: React.FC<ExpenseHistoryTableProps> = ({ expenses, onV
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => onViewExpense(expense)}
-                  >
-                    <Eye className="h-4 w-4 mr-1" /> View
-                  </Button>
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => onViewExpense(expense)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" /> View
+                    </Button>
+                    {expense.billpath && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownload(expense)}
+                      >
+                        <Download className="h-4 w-4 mr-1" /> Download
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))

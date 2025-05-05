@@ -6,6 +6,7 @@ import EmployeeEditDialog from "./EmployeeEditDialog";
 import PayslipDialog from "./PayslipDialog";
 import PasswordChangeDialog from "./PasswordChangeDialog";
 import OfficialDocumentsDialog from "./OfficialDocumentsDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EmployeeDialogsProps {
   documentEditDialog: 'aadhar' | 'pan' | null;
@@ -16,7 +17,7 @@ interface EmployeeDialogsProps {
   employee: Employee | null;
   adaptedEmployee: Employee | null;
   payslips: any[];
-  onDocumentUpload: (type: 'aadhar' | 'pan') => void;
+  onDocumentUpload: (type: 'aadhar' | 'pan', filePath: string) => void;
   onCloseDocumentDialog: () => void;
   setEditDialogOpen: (open: boolean) => void;
   setPayslipDialogOpen: (open: boolean) => void;
@@ -49,6 +50,7 @@ const EmployeeDialogs: React.FC<EmployeeDialogsProps> = ({
         isOpen={documentEditDialog !== null}
         onClose={onCloseDocumentDialog}
         onUpload={onDocumentUpload}
+        employeeId={employee?.employeeid}
       />
 
       <EmployeeEditDialog

@@ -105,7 +105,8 @@ const Expenses = () => {
             amount,
             submissiondate,
             status,
-            submittedby
+            submittedby,
+            billpath
           `);
 
         if (error) {
@@ -126,7 +127,8 @@ const Expenses = () => {
             },
             date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
             status: expense.status || 'Pending',
-            expenseid: expense.expenseid
+            expenseid: expense.expenseid,
+            billpath: expense.billpath
           }));
 
           setExpenses(formattedData);
@@ -253,6 +255,29 @@ const Expenses = () => {
         ? employeeData[0].employeeid 
         : null;
       
+      let billPath = null;
+      
+      // If there's a receipt file, upload it to storage
+      if (formData.receipt && formData.receipt.size > 0) {
+        const fileExt = formData.receipt.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        
+        const { data: fileData, error: uploadError } = await supabase.storage
+          .from('expense-bills')
+          .upload(fileName, formData.receipt);
+          
+        if (uploadError) {
+          throw uploadError;
+        }
+        
+        // Get the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('expense-bills')
+          .getPublicUrl(fileName);
+          
+        billPath = publicUrl;
+      }
+      
       const newExpense = {
         description: formData.description,
         category: formData.category,
@@ -260,6 +285,7 @@ const Expenses = () => {
         submittedby: submittedBy, // Use a valid employeeid or null
         submissiondate: new Date().toISOString(),
         status: "Pending",
+        billpath: billPath
       };
       
       const { data, error } = await supabase
@@ -336,6 +362,56 @@ const Expenses = () => {
       toast({
         title: 'Error',
         description: 'Failed to reject the expense',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDownloadReceipt = async (billpath: string | undefined) => {
+    if (!billpath) {
+      toast({
+        title: "No Receipt",
+        description: "There is no receipt attached to this expense.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // Extract file name from the public URL
+      const fileName = billpath.split('/').pop();
+      if (!fileName) {
+        throw new Error("Invalid file path");
+      }
+      
+      // Download the file
+      const { data, error } = await supabase.storage
+        .from('expense-bills')
+        .download(fileName);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Create a download link
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Receipt Downloaded",
+        description: "The receipt has been downloaded to your device.",
+      });
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to download the receipt',
         variant: 'destructive',
       });
     }
@@ -786,25 +862,43 @@ const Expenses = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center p-4 bg-gray-100 rounded-md min-h-[300px] items-center">
-            {selectedExpense?.attachmentType === "image" ? (
+            {selectedExpense?.billpath ? (
               <div className="flex flex-col items-center">
-                <FileImage className="h-24 w-24 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-500">Image Preview (Placeholder)</p>
+                {selectedExpense.billpath.toLowerCase().endsWith('.pdf') ? (
+                  <FileText className="h-24 w-24 text-gray-400" />
+                ) : (
+                  <img 
+                    src={selectedExpense.billpath} 
+                    alt="Receipt" 
+                    className="max-h-[300px] max-w-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = ""; // Placeholder for error
+                      e.currentTarget.alt = "Failed to load image";
+                      // Show FileImage icon as fallback
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        parent.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-gray-400"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path></svg>';
+                    }}
+                  />
+                )}
+                <p className="mt-2 text-sm text-gray-500">
+                  {selectedExpense.billpath.toLowerCase().endsWith('.pdf') ? "PDF Document" : "Receipt Image"}
+                </p>
               </div>
             ) : (
               <div className="flex flex-col items-center">
                 <FileText className="h-24 w-24 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-500">PDF Document (Placeholder)</p>
+                <p className="mt-2 text-sm text-gray-500">No receipt available</p>
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              toast({
-                title: "Receipt Downloaded",
-                description: "The receipt has been downloaded to your device.",
-              });
-            }}>
+            <Button 
+              variant="outline" 
+              onClick={() => handleDownloadReceipt(selectedExpense?.billpath)}
+              disabled={!selectedExpense?.billpath}
+            >
               <Download className="mr-2 h-4 w-4" />
               Download
             </Button>
