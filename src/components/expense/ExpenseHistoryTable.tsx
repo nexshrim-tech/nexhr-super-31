@@ -5,24 +5,26 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-interface ExpenseHistoryItem {
-  id: number;
-  description: string;
-  category: string;
-  amount: number;
-  submittedBy: { name: string; avatar: string };
-  date: string;
-  status: string;
-  attachmentType?: string;
-}
+import { ExpenseItem } from './ExpenseHistoryTab';
 
 interface ExpenseHistoryTableProps {
-  expenses: ExpenseHistoryItem[];
-  onViewExpense: (expense: ExpenseHistoryItem) => void;
+  expenses: ExpenseItem[];
+  onViewExpense: (expense: ExpenseItem) => void;
+  isLoading?: boolean;
 }
 
-const ExpenseHistoryTable: React.FC<ExpenseHistoryTableProps> = ({ expenses, onViewExpense }) => {
+const ExpenseHistoryTable: React.FC<ExpenseHistoryTableProps> = ({ expenses, onViewExpense, isLoading = false }) => {
+  if (isLoading) {
+    return (
+      <div className="rounded-md border p-8 flex justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-sm text-gray-500">Loading expenses...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border">
       <Table>

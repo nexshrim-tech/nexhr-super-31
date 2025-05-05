@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ExpenseHistoryTab from "@/components/expense/ExpenseHistoryTab";
+import ExpenseHistoryTab, { ExpenseItem } from "@/components/expense/ExpenseHistoryTab";
 import ExpenseAdvancedAnalytics from "@/components/expense/ExpenseAdvancedAnalytics";
 import { 
   ResponsiveContainer, 
@@ -46,6 +46,7 @@ import {
   CartesianGrid, 
   Tooltip 
 } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
 
 const expensesData = [
   { name: "Jan", amount: 12000 },
@@ -56,59 +57,6 @@ const expensesData = [
   { name: "Jun", amount: 19000 },
   { name: "Jul", amount: 21000 },
   { name: "Aug", amount: 18000 },
-];
-
-const initialExpenses = [
-  {
-    id: 1,
-    description: "Office Supplies",
-    category: "Office Expenses",
-    amount: 250.00,
-    submittedBy: { name: "Olivia Rhye", avatar: "OR" },
-    date: "2023-08-01",
-    status: "Approved",
-    attachmentType: "image",
-  },
-  {
-    id: 2,
-    description: "Team Lunch",
-    category: "Meals & Entertainment",
-    amount: 150.00,
-    submittedBy: { name: "Phoenix Baker", avatar: "PB" },
-    date: "2023-08-02",
-    status: "Pending",
-    attachmentType: "pdf",
-  },
-  {
-    id: 3,
-    description: "Software Subscription",
-    category: "Software",
-    amount: 99.99,
-    submittedBy: { name: "Lana Steiner", avatar: "LS" },
-    date: "2023-08-03",
-    status: "Approved",
-    attachmentType: "pdf",
-  },
-  {
-    id: 4,
-    description: "Travel to Client",
-    category: "Travel",
-    amount: 350.00,
-    submittedBy: { name: "Demi Wilkinson", avatar: "DW" },
-    date: "2023-08-04",
-    status: "Rejected",
-    attachmentType: "image",
-  },
-  {
-    id: 5,
-    description: "Office Furniture",
-    category: "Office Expenses",
-    amount: 750.00,
-    submittedBy: { name: "Candice Wu", avatar: "CW" },
-    date: "2023-08-05",
-    status: "Approved",
-    attachmentType: "image",
-  },
 ];
 
 const expenseCategories = [
@@ -124,87 +72,134 @@ const expenseCategories = [
   "Miscellaneous"
 ];
 
-const historicalExpenses = [
-  {
-    id: 101,
-    description: "Annual Software Licenses",
-    category: "Software",
-    amount: 2499.99,
-    submittedBy: { name: "Olivia Rhye", avatar: "OR" },
-    date: "2023-01-15",
-    status: "Approved",
-    attachmentType: "pdf",
-  },
-  {
-    id: 102,
-    description: "Quarterly Team Lunch",
-    category: "Meals & Entertainment",
-    amount: 560.75,
-    submittedBy: { name: "Phoenix Baker", avatar: "PB" },
-    date: "2023-02-22",
-    status: "Approved",
-    attachmentType: "image",
-  },
-  {
-    id: 103,
-    description: "Office Chairs (5)",
-    category: "Office Expenses",
-    amount: 1250.00,
-    submittedBy: { name: "Lana Steiner", avatar: "LS" },
-    date: "2023-03-10",
-    status: "Approved",
-    attachmentType: "pdf",
-  },
-  {
-    id: 104,
-    description: "Client Visit - Tokyo",
-    category: "Travel",
-    amount: 3750.50,
-    submittedBy: { name: "Demi Wilkinson", avatar: "DW" },
-    date: "2023-04-05",
-    status: "Approved",
-    attachmentType: "pdf",
-  },
-  {
-    id: 105,
-    description: "Marketing Campaign",
-    category: "Marketing",
-    amount: 5000.00,
-    submittedBy: { name: "Candice Wu", avatar: "CW" },
-    date: "2023-05-18",
-    status: "Approved",
-    attachmentType: "pdf",
-  },
-  {
-    id: 106,
-    description: "Team Building Event",
-    category: "Meals & Entertainment",
-    amount: 1200.00,
-    submittedBy: { name: "Olivia Rhye", avatar: "OR" },
-    date: "2023-06-22",
-    status: "Approved",
-    attachmentType: "image",
-  },
-  {
-    id: 107,
-    description: "Office Renovation",
-    category: "Office Expenses",
-    amount: 8500.00,
-    submittedBy: { name: "Phoenix Baker", avatar: "PB" },
-    date: "2023-07-15",
-    status: "Approved",
-    attachmentType: "pdf",
-  },
-];
-
 const Expenses = () => {
-  const [expenses, setExpenses] = useState(initialExpenses);
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
   const [showExpenseAttachment, setShowExpenseAttachment] = useState(false);
-  const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseItem | null>(null);
   const [activeMainTab, setActiveMainTab] = useState("current");
+  const [loading, setLoading] = useState(true);
+  const [totalStats, setTotalStats] = useState({
+    total: 0,
+    pending: 0,
+    pendingCount: 0,
+    monthlyTotal: 0,
+    monthlyChange: 0
+  });
+  
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('expense')
+          .select(`
+            expenseid,
+            description,
+            category,
+            amount,
+            submissiondate,
+            status,
+            employee:employeeid (firstname, lastname)
+          `);
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          // Transform the data to match the ExpenseItem interface
+          const formattedData: ExpenseItem[] = data.map(expense => ({
+            id: expense.expenseid,
+            description: expense.description || '',
+            category: expense.category || 'Uncategorized',
+            amount: parseFloat(expense.amount) || 0,
+            submittedBy: { 
+              name: expense.employee ? 
+                `${expense.employee.firstname || ''} ${expense.employee.lastname || ''}` : 
+                'Unknown User',
+              avatar: expense.employee ? 
+                `${expense.employee.firstname?.[0] || ''}${expense.employee.lastname?.[0] || ''}` : 
+                'UN'
+            },
+            date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
+            status: expense.status || 'Pending',
+            expenseid: expense.expenseid
+          }));
+
+          setExpenses(formattedData);
+          
+          // Calculate statistics
+          const total = formattedData.reduce((sum, exp) => sum + exp.amount, 0);
+          const pendingExpenses = formattedData.filter(exp => exp.status === 'Pending');
+          const pendingTotal = pendingExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+          
+          // Calculate current month expenses
+          const now = new Date();
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
+          const currentMonthExpenses = formattedData.filter(exp => {
+            const expDate = new Date(exp.date);
+            return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
+          });
+          const currentMonthTotal = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+          
+          // Calculate previous month for comparison
+          const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+          const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+          const lastMonthExpenses = formattedData.filter(exp => {
+            const expDate = new Date(exp.date);
+            return expDate.getMonth() === lastMonth && expDate.getFullYear() === lastMonthYear;
+          });
+          const lastMonthTotal = lastMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+          
+          // Calculate percent change
+          const percentChange = lastMonthTotal > 0 
+            ? ((currentMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 
+            : 0;
+            
+          setTotalStats({
+            total,
+            pending: pendingTotal,
+            pendingCount: pendingExpenses.length,
+            monthlyTotal: currentMonthTotal,
+            monthlyChange: percentChange
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching expenses:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch expense data',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExpenses();
+    
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('expense-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'expense'
+      }, () => {
+        // Refetch data when expenses change
+        fetchExpenses();
+      })
+      .subscribe();
+      
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [toast]);
 
   const handleExport = () => {
     toast({
@@ -214,57 +209,101 @@ const Expenses = () => {
     // In a real app, this would handle actual CSV export
   };
 
-  const handleAddExpense = (formData: any) => {
-    const newExpense = {
-      id: expenses.length + 1,
-      description: formData.description,
-      category: formData.category,
-      amount: parseFloat(formData.amount),
-      submittedBy: { name: "Current User", avatar: "CU" },
-      date: new Date().toISOString().split('T')[0],
-      status: "Pending",
-      attachmentType: formData.receipt ? "image" : "",
-    };
-    
-    setExpenses([...expenses, newExpense]);
-    setShowAddExpenseDialog(false);
-    toast({
-      title: "Expense Added",
-      description: "Your expense has been submitted for approval.",
-    });
+  const handleAddExpense = async (formData: any) => {
+    try {
+      const newExpense = {
+        description: formData.description,
+        category: formData.category,
+        amount: parseFloat(formData.amount),
+        submittedby: 1, // Default submitter ID, would normally use authenticated user ID
+        submissiondate: new Date().toISOString(),
+        status: "Pending",
+        // billpath: formData.receipt ? "path/to/receipt" : null, // Would handle actual file upload
+      };
+      
+      const { data, error } = await supabase
+        .from('expense')
+        .insert(newExpense)
+        .select();
+        
+      if (error) {
+        throw error;
+      }
+      
+      setShowAddExpenseDialog(false);
+      toast({
+        title: "Expense Added",
+        description: "Your expense has been submitted for approval.",
+      });
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add the expense',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleViewExpense = (expense: any) => {
+  const handleViewExpense = (expense: ExpenseItem) => {
     setSelectedExpense(expense);
     setShowExpenseAttachment(true);
   };
 
-  const handleApproveExpense = (id: number) => {
-    setExpenses(expenses.map(exp => 
-      exp.id === id ? { ...exp, status: "Approved" } : exp
-    ));
-    toast({
-      title: "Expense Approved",
-      description: "The expense has been approved successfully.",
-    });
+  const handleApproveExpense = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('expense')
+        .update({ status: 'Approved' })
+        .eq('expenseid', id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Expense Approved",
+        description: "The expense has been approved successfully.",
+      });
+    } catch (error) {
+      console.error('Error approving expense:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to approve the expense',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleRejectExpense = (id: number) => {
-    setExpenses(expenses.map(exp => 
-      exp.id === id ? { ...exp, status: "Rejected" } : exp
-    ));
-    toast({
-      title: "Expense Rejected",
-      description: "The expense has been rejected.",
-    });
+  const handleRejectExpense = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('expense')
+        .update({ status: 'Rejected' })
+        .eq('expenseid', id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Expense Rejected",
+        description: "The expense has been rejected.",
+      });
+    } catch (error) {
+      console.error('Error rejecting expense:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reject the expense',
+        variant: 'destructive',
+      });
+    }
   };
 
   const filteredExpenses = expenses.filter(expense => {
     if (activeTab === "all") return true;
     return expense.status.toLowerCase() === activeTab.toLowerCase();
   });
-
-  const allExpenses = [...expenses, ...historicalExpenses];
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -301,7 +340,9 @@ const Expenses = () => {
                 <CardTitle className="text-base">Total Expenses</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">$120,345.67</div>
+                <div className="text-2xl font-semibold">
+                  ${loading ? "..." : totalStats.total.toFixed(2)}
+                </div>
                 <p className="text-sm text-gray-500">Year to Date</p>
               </CardContent>
             </Card>
@@ -310,8 +351,12 @@ const Expenses = () => {
                 <CardTitle className="text-base">Pending Approval</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">$3,250.00</div>
-                <p className="text-sm text-gray-500">5 expenses</p>
+                <div className="text-2xl font-semibold">
+                  ${loading ? "..." : totalStats.pending.toFixed(2)}
+                </div>
+                <p className="text-sm text-gray-500">
+                  {loading ? "..." : totalStats.pendingCount} expense{totalStats.pendingCount !== 1 ? "s" : ""}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -319,9 +364,16 @@ const Expenses = () => {
                 <CardTitle className="text-base">This Month</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">$18,000.00</div>
+                <div className="text-2xl font-semibold">
+                  ${loading ? "..." : totalStats.monthlyTotal.toFixed(2)}
+                </div>
                 <p className="text-sm text-gray-500">
-                  <span className="text-green-600">↑ 5.3%</span> vs last month
+                  {!loading && (
+                    <span className={totalStats.monthlyChange >= 0 ? "text-green-600" : "text-red-600"}>
+                      {totalStats.monthlyChange >= 0 ? "↑" : "↓"} {Math.abs(totalStats.monthlyChange).toFixed(1)}%
+                    </span>
+                  )}
+                  {!loading && " vs last month"}
                 </p>
               </CardContent>
             </Card>
@@ -351,91 +403,107 @@ const Expenses = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Submitted By</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredExpenses.map((expense) => (
-                          <TableRow key={expense.id}>
-                            <TableCell className="font-medium">{expense.description}</TableCell>
-                            <TableCell>{expense.category}</TableCell>
-                            <TableCell>${expense.amount.toFixed(2)}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarImage src="" alt={expense.submittedBy.name} />
-                                  <AvatarFallback>{expense.submittedBy.avatar}</AvatarFallback>
-                                </Avatar>
-                                <span className="text-sm">{expense.submittedBy.name}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{expense.date}</TableCell>
-                            <TableCell>
-                              <Badge
-                                className={`${
-                                  expense.status === "Approved"
-                                    ? "bg-green-100 text-green-800"
-                                    : expense.status === "Pending"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {expense.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleViewExpense(expense)}
-                                >
-                                  View
-                                </Button>
-                                {expense.status === "Pending" && (
-                                  <>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="text-green-600"
-                                      onClick={() => handleApproveExpense(expense.id)}
-                                    >
-                                      Approve
-                                    </Button>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="text-red-600"
-                                      onClick={() => handleRejectExpense(expense.id)}
-                                    >
-                                      Reject
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
+                  {loading ? (
+                    <div className="rounded-md border p-8 flex justify-center">
+                      <div className="flex flex-col items-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <p className="mt-2 text-sm text-gray-500">Loading expenses...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Submitted By</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredExpenses.length > 0 ? (
+                            filteredExpenses.map((expense) => (
+                              <TableRow key={expense.id}>
+                                <TableCell className="font-medium">{expense.description}</TableCell>
+                                <TableCell>{expense.category}</TableCell>
+                                <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src="" alt={expense.submittedBy.name} />
+                                      <AvatarFallback>{expense.submittedBy.avatar}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm">{expense.submittedBy.name}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{expense.date}</TableCell>
+                                <TableCell>
+                                  <Badge
+                                    className={`${
+                                      expense.status === "Approved"
+                                        ? "bg-green-100 text-green-800"
+                                        : expense.status === "Pending"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-red-100 text-red-800"
+                                    }`}
+                                  >
+                                    {expense.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleViewExpense(expense)}
+                                    >
+                                      View
+                                    </Button>
+                                    {expense.status === "Pending" && (
+                                      <>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="text-green-600"
+                                          onClick={() => handleApproveExpense(expense.id)}
+                                        >
+                                          Approve
+                                        </Button>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="text-red-600"
+                                          onClick={() => handleRejectExpense(expense.id)}
+                                        >
+                                          Reject
+                                        </Button>
+                                      </>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                                No expense history found.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
             
             <TabsContent value="history">
               <ExpenseHistoryTab
-                expenseHistory={allExpenses}
                 onViewExpense={handleViewExpense}
               />
             </TabsContent>
@@ -547,7 +615,7 @@ const Expenses = () => {
             </TabsContent>
             
             <TabsContent value="advanced">
-              <ExpenseAdvancedAnalytics expenses={allExpenses} />
+              <ExpenseAdvancedAnalytics expenses={expenses} />
             </TabsContent>
           </Tabs>
         </div>

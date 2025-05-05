@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExpenseHistoryTable from './ExpenseHistoryTable';
 import ExpenseFilters from './ExpenseFilters';
 import { DateRange } from 'react-day-picker';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-interface ExpenseItem {
+export interface ExpenseItem {
   id: number;
   description: string;
   category: string;
@@ -14,18 +16,97 @@ interface ExpenseItem {
   date: string;
   status: string;
   attachmentType?: string;
+  expenseid?: number;
 }
 
 interface ExpenseHistoryTabProps {
-  expenseHistory: ExpenseItem[];
+  expenseHistory?: ExpenseItem[];
   onViewExpense: (expense: ExpenseItem) => void;
 }
 
-const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory, onViewExpense }) => {
-  const [filteredExpenses, setFilteredExpenses] = useState(expenseHistory);
+const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = [], onViewExpense }) => {
+  const [expenses, setExpenses] = useState<ExpenseItem[]>(expenseHistory);
+  const [filteredExpenses, setFilteredExpenses] = useState<ExpenseItem[]>(expenses);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
   // Extract unique categories from expense data
-  const categories = Array.from(new Set(expenseHistory.map(expense => expense.category)));
+  const categories = Array.from(new Set(expenses.map(expense => expense.category)));
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('expense')
+          .select(`
+            expenseid,
+            description,
+            category,
+            amount,
+            submissiondate,
+            status,
+            employee:employeeid (firstname, lastname)
+          `);
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          // Transform the data to match the ExpenseItem interface
+          const formattedData: ExpenseItem[] = data.map(expense => ({
+            id: expense.expenseid,
+            description: expense.description || '',
+            category: expense.category || 'Uncategorized',
+            amount: parseFloat(expense.amount) || 0,
+            submittedBy: { 
+              name: expense.employee ? 
+                `${expense.employee.firstname || ''} ${expense.employee.lastname || ''}` : 
+                'Unknown User',
+              avatar: expense.employee ? 
+                `${expense.employee.firstname?.[0] || ''}${expense.employee.lastname?.[0] || ''}` : 
+                'UN'
+            },
+            date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
+            status: expense.status || 'Pending',
+            expenseid: expense.expenseid
+          }));
+
+          setExpenses(formattedData);
+          setFilteredExpenses(formattedData);
+        }
+      } catch (error) {
+        console.error('Error fetching expenses:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch expense data',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExpenses();
+    
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('expense-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'expense'
+      }, () => {
+        // Refetch data when expenses change
+        fetchExpenses();
+      })
+      .subscribe();
+      
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [toast]);
 
   const handleFilter = (filters: {
     search: string;
@@ -35,7 +116,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory, o
     minAmount: number | undefined;
     maxAmount: number | undefined;
   }) => {
-    const filtered = expenseHistory.filter(expense => {
+    const filtered = expenses.filter(expense => {
       // Search filter
       if (filters.search && !expense.description.toLowerCase().includes(filters.search.toLowerCase())) {
         return false;
@@ -99,6 +180,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory, o
         <ExpenseHistoryTable 
           expenses={filteredExpenses}
           onViewExpense={onViewExpense}
+          isLoading={loading}
         />
       </CardContent>
     </Card>
