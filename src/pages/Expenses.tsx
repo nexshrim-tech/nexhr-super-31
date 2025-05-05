@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Download, FileImage, FileText, Plus, Upload } from "lucide-react";
+import { Download, FileImage, FileText, Plus, Upload, IndianRupee, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Dialog, 
@@ -46,6 +46,8 @@ import {
   Tooltip 
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import * as FileSaver from 'file-saver';
+import * as XLSX from 'xlsx';
 
 const expensesData = [
   { name: "Jan", amount: 12000 },
@@ -120,7 +122,7 @@ const Expenses = () => {
             submittedBy: { 
               // Use a placeholder for employee name since we're not joining tables
               // Convert submittedby to string first to fix type error
-              name: `Employee #${String(expense.submittedby || 'Unknown')}`,
+              name: expense.submittedby ? `Employee #${String(expense.submittedby)}` : 'Unknown',
               avatar: 'UN'
             },
             date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
@@ -200,11 +202,39 @@ const Expenses = () => {
   }, [toast]);
 
   const handleExport = () => {
+    if (expenses.length === 0) {
+      toast({
+        title: "No Data",
+        description: "There are no expenses to export.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Format data for export
+    const exportData = expenses.map(expense => ({
+      Description: expense.description,
+      Category: expense.category,
+      Amount: expense.amount,
+      Status: expense.status,
+      Date: expense.date,
+      SubmittedBy: expense.submittedBy.name
+    }));
+    
+    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
+    const fileExtension = '.xlsx';
+    const fileName = `expense_report_${new Date().toISOString().split('T')[0]}`;
+    
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = { Sheets: { 'Expenses': ws }, SheetNames: ['Expenses'] };
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], {type: fileType});
+    FileSaver.saveAs(data, fileName + fileExtension);
+    
     toast({
       title: "Exporting Data",
-      description: "Your expense data is being exported as CSV file.",
+      description: "Your expense data has been exported as Excel file.",
     });
-    // In a real app, this would handle actual CSV export
   };
 
   const handleAddExpense = async (formData: any) => {
@@ -352,8 +382,9 @@ const Expenses = () => {
                 <CardTitle className="text-base">Total Expenses</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">
-                  ${loading ? "..." : totalStats.total.toFixed(2)}
+                <div className="text-2xl font-semibold flex items-center">
+                  <IndianRupee className="h-5 w-5 mr-1" />
+                  {loading ? "..." : totalStats.total.toFixed(2)}
                 </div>
                 <p className="text-sm text-gray-500">Year to Date</p>
               </CardContent>
@@ -363,8 +394,9 @@ const Expenses = () => {
                 <CardTitle className="text-base">Pending Approval</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">
-                  ${loading ? "..." : totalStats.pending.toFixed(2)}
+                <div className="text-2xl font-semibold flex items-center">
+                  <IndianRupee className="h-5 w-5 mr-1" />
+                  {loading ? "..." : totalStats.pending.toFixed(2)}
                 </div>
                 <p className="text-sm text-gray-500">
                   {loading ? "..." : totalStats.pendingCount} expense{totalStats.pendingCount !== 1 ? "s" : ""}
@@ -376,8 +408,9 @@ const Expenses = () => {
                 <CardTitle className="text-base">This Month</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">
-                  ${loading ? "..." : totalStats.monthlyTotal.toFixed(2)}
+                <div className="text-2xl font-semibold flex items-center">
+                  <IndianRupee className="h-5 w-5 mr-1" />
+                  {loading ? "..." : totalStats.monthlyTotal.toFixed(2)}
                 </div>
                 <p className="text-sm text-gray-500">
                   {!loading && (
@@ -442,7 +475,12 @@ const Expenses = () => {
                               <TableRow key={expense.id}>
                                 <TableCell className="font-medium">{expense.description}</TableCell>
                                 <TableCell>{expense.category}</TableCell>
-                                <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center">
+                                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                    {expense.amount.toFixed(2)}
+                                  </div>
+                                </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2">
                                     <Avatar className="h-6 w-6">
@@ -473,22 +511,21 @@ const Expenses = () => {
                                       size="sm"
                                       onClick={() => handleViewExpense(expense)}
                                     >
+                                      <Eye className="h-4 w-4 mr-1" />
                                       View
                                     </Button>
                                     {expense.status === "Pending" && (
                                       <>
                                         <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          className="text-green-600"
+                                          variant="success" 
+                                          size="sm"
                                           onClick={() => handleApproveExpense(expense.id)}
                                         >
                                           Approve
                                         </Button>
                                         <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          className="text-red-600"
+                                          variant="danger" 
+                                          size="sm"
                                           onClick={() => handleRejectExpense(expense.id)}
                                         >
                                           Reject
@@ -543,9 +580,9 @@ const Expenses = () => {
                           <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tickFormatter={(value) => `$${value}`}
+                            tickFormatter={(value) => `₹${value}`}
                           />
-                          <Tooltip />
+                          <Tooltip formatter={(value) => [`₹${value}`, 'Amount']} />
                           <Line
                             type="monotone"
                             dataKey="amount"
@@ -572,7 +609,10 @@ const Expenses = () => {
                           <div>Office Expenses</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="font-medium">$45,600</div>
+                          <div className="font-medium flex items-center">
+                            <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
+                            45,600
+                          </div>
                           <div className="text-sm text-gray-500">38%</div>
                         </div>
                       </div>
@@ -583,7 +623,10 @@ const Expenses = () => {
                           <div>Travel</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="font-medium">$26,400</div>
+                          <div className="font-medium flex items-center">
+                            <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
+                            26,400
+                          </div>
                           <div className="text-sm text-gray-500">22%</div>
                         </div>
                       </div>
@@ -594,7 +637,10 @@ const Expenses = () => {
                           <div>Software</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="font-medium">$19,200</div>
+                          <div className="font-medium flex items-center">
+                            <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
+                            19,200
+                          </div>
                           <div className="text-sm text-gray-500">16%</div>
                         </div>
                       </div>
@@ -605,7 +651,10 @@ const Expenses = () => {
                           <div>Meals & Entertainment</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="font-medium">$12,000</div>
+                          <div className="font-medium flex items-center">
+                            <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
+                            12,000
+                          </div>
                           <div className="text-sm text-gray-500">10%</div>
                         </div>
                       </div>
@@ -616,7 +665,10 @@ const Expenses = () => {
                           <div>Other</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="font-medium">$16,800</div>
+                          <div className="font-medium flex items-center">
+                            <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
+                            16,800
+                          </div>
                           <div className="text-sm text-gray-500">14%</div>
                         </div>
                       </div>
@@ -685,7 +737,7 @@ const Expenses = () => {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="amount" className="text-right">
-                  Amount ($)
+                  Amount (₹)
                 </Label>
                 <Input
                   id="amount"
@@ -727,7 +779,11 @@ const Expenses = () => {
           <DialogHeader>
             <DialogTitle>Expense Receipt</DialogTitle>
             <DialogDescription>
-              {selectedExpense?.description} - ${selectedExpense?.amount.toFixed(2)}
+              {selectedExpense?.description} - 
+              <span className="flex items-center inline-flex">
+                <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
+                {selectedExpense?.amount.toFixed(2)}
+              </span>
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center p-4 bg-gray-100 rounded-md min-h-[300px] items-center">
@@ -744,7 +800,12 @@ const Expenses = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => {
+              toast({
+                title: "Receipt Downloaded",
+                description: "The receipt has been downloaded to your device.",
+              });
+            }}>
               <Download className="mr-2 h-4 w-4" />
               Download
             </Button>

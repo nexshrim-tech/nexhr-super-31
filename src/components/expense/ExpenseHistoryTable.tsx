@@ -3,7 +3,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { IndianRupee, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ExpenseItem } from './ExpenseHistoryTab';
 
@@ -45,7 +45,12 @@ const ExpenseHistoryTable: React.FC<ExpenseHistoryTableProps> = ({ expenses, onV
               <TableRow key={expense.id}>
                 <TableCell className="font-medium">{expense.description}</TableCell>
                 <TableCell>{expense.category}</TableCell>
-                <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                <TableCell>
+                  <div className="flex items-center">
+                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                    {expense.amount.toFixed(2)}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">

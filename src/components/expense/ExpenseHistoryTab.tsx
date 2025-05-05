@@ -5,6 +5,8 @@ import ExpenseFilters from './ExpenseFilters';
 import { DateRange } from 'react-day-picker';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/formatters";
+import { IndianRupee } from "lucide-react";
 
 export interface ExpenseItem {
   id: number;
