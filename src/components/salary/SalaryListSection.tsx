@@ -177,7 +177,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
             // Get customerid from employee record - required field for salary table
             const customerid = employee.customerid || 0;
             
-            // Create a new salary object
+            // Create a new salary object - use Supabase Insert type to avoid primary key error
             const newSalary = {
               employeeid: employee.employeeid,
               customerid: customerid,
@@ -194,7 +194,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
               loandeduction: 0,
               otherdeduction: 0,
               monthlysalary: baseSalary
-            };
+            } as Database['public']['Tables']['salary']['Insert'];
             
             updatedSalaries.push({ type: 'insert', data: newSalary });
             salary = newSalary;
