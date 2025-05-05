@@ -16,6 +16,7 @@ import {
 import PayslipHistory from "./PayslipHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types";
 
 interface SalaryListSectionProps {
   employees: EmployeeSalary[];
@@ -177,7 +178,8 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
             const customerid = employee.customerid || 0;
             
             // Create a new salary object without salaryid (let Supabase generate it)
-            const newSalary = {
+            // Use the TablesInsert type from the Database definition
+            const newSalary: Database["public"]["Tables"]["salary"]["Insert"] = {
               employeeid: employee.employeeid,
               customerid: customerid,
               basicsalary: baseSalary * 0.45, // 45% of monthly salary as basic
