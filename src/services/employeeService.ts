@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Employee } from '@/types/employee';
 import { mapEmployeeDBToEmployee, mapEmployeeToDBFormat } from '@/utils/employeeMappers';
@@ -39,7 +38,7 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
         city: '',
         state: '',
         country: '',
-        zipcode: '',
+        postalcode: '', // Fixed: Changed 'zipcode' to 'postalcode' to match Employee interface
         phonenumber: '', // Fixed: Using empty string instead of number
         jobtitle: '',
         department: '',
