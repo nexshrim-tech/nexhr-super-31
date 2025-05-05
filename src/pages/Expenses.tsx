@@ -119,7 +119,8 @@ const Expenses = () => {
             amount: parseFloat(expense.amount) || 0,
             submittedBy: { 
               // Use a placeholder for employee name since we're not joining tables
-              name: `Employee #${expense.submittedby || 'Unknown'}`,
+              // Convert submittedby to string first to fix type error
+              name: `Employee #${String(expense.submittedby || 'Unknown')}`,
               avatar: 'UN'
             },
             date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',

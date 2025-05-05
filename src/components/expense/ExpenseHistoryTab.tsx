@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExpenseHistoryTable from './ExpenseHistoryTable';
@@ -62,7 +63,8 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             amount: parseFloat(expense.amount) || 0,
             submittedBy: { 
               // Use a placeholder for employee name since we're not joining tables
-              name: `Employee #${expense.submittedby || 'Unknown'}`,
+              // Convert submittedby to string first
+              name: `Employee #${String(expense.submittedby || 'Unknown')}`,
               avatar: 'UN'
             },
             date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
