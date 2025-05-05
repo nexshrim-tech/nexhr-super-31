@@ -209,14 +209,28 @@ const Expenses = () => {
 
   const handleAddExpense = async (formData: any) => {
     try {
+      // First check if we have any valid employees in the system
+      const { data: employeeData, error: employeeError } = await supabase
+        .from('employee')
+        .select('employeeid')
+        .limit(1);
+        
+      if (employeeError) {
+        throw new Error('Error checking for employees');
+      }
+      
+      // Set a valid submittedby or null if no employees exist
+      const submittedBy = employeeData && employeeData.length > 0 
+        ? employeeData[0].employeeid 
+        : null;
+      
       const newExpense = {
         description: formData.description,
         category: formData.category,
         amount: parseFloat(formData.amount),
-        submittedby: 1, // Default submitter ID, would normally use authenticated user ID
+        submittedby: submittedBy, // Use a valid employeeid or null
         submissiondate: new Date().toISOString(),
         status: "Pending",
-        // billpath: formData.receipt ? "path/to/receipt" : null, // Would handle actual file upload
       };
       
       const { data, error } = await supabase
@@ -237,7 +251,7 @@ const Expenses = () => {
       console.error('Error adding expense:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add the expense',
+        description: 'Failed to add the expense. Make sure employee records exist in the system.',
         variant: 'destructive',
       });
     }
