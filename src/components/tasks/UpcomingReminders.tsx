@@ -70,7 +70,7 @@ const UpcomingReminders: React.FC<UpcomingRemindersProps> = ({ tasks = [] }) => 
             const nextWeek = new Date();
             nextWeek.setDate(today.getDate() + 7);
             
-            // Use tracklist table with RLS - no need to filter by customerid as RLS will handle this
+            // With RLS enabled, the query will automatically filter by the authenticated user's customerid
             const { data: upcomingData, error } = await supabase
               .from('tracklist')
               .select('*')

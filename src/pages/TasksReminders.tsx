@@ -325,7 +325,7 @@ const TasksReminders = () => {
         resources: "[]"
       };
       
-      // Insert task data - no need to specify customerid as RLS will use auth.uid()
+      // With RLS enabled, supabase will automatically set the customerid to the authenticated user's ID
       const { data, error } = await supabase
         .from('tracklist')
         .insert(taskData)
