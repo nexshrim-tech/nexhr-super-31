@@ -72,7 +72,7 @@ const UpcomingReminders: React.FC<{tasks?: Task[]}> = ({ tasks = [] }) => {
               .select('*')
               .gte('deadline', today.toISOString().split('T')[0])
               .lte('deadline', nextWeek.toISOString().split('T')[0])
-              .eq('customerid', authData.user.id)
+              .eq('customerid', authData.user.id) // This needs to be treated as a string
               .order('deadline', { ascending: true })
               .limit(3);
               
