@@ -34,12 +34,23 @@ const convertTracklistToTask = (tracklistItem: any) => {
 
 // Helper function to convert Task to tracklist format
 const convertTaskToTracklist = (task: any) => {
+  let assignedToValue = null;
+  
+  // If assignedTo is a number or a string that can be parsed as a number, convert it
+  if (task.assignedTo) {
+    if (typeof task.assignedTo === 'number') {
+      assignedToValue = task.assignedTo;
+    } else if (typeof task.assignedTo === 'string' && !isNaN(Number(task.assignedTo))) {
+      assignedToValue = Number(task.assignedTo);
+    }
+  }
+  
   return {
     tasktitle: task.title,
     deadline: task.dueDate,
     status: task.status,
     priority: task.priority,
-    assignedto: task.assignedTo ? Number(task.assignedTo) : null, // Ensure assignedto is a number or null
+    assignedto: assignedToValue, // Ensure assignedto is a number or null
     comments: JSON.stringify(task.comments || []),
     resources: JSON.stringify(task.resources || []),
     description: task.description || ''
@@ -112,7 +123,7 @@ const TasksReminders = () => {
   const fetchTasks = async (uid: string) => {
     setLoading(true);
     try {
-      // Use the UUID directly as customerid
+      // Use the UUID directly as customerid (as a string)
       const { data: tracklistData, error: tracklistError } = await supabase
         .from('tracklist')
         .select('*')
@@ -259,7 +270,7 @@ const TasksReminders = () => {
           .from('tracklist')
           .update(taskData)
           .eq('tracklistid', currentTask.tracklistid)
-          .eq('customerid', userId); // Use UUID directly
+          .eq('customerid', userId); // Use UUID directly as string
           
         if (error) throw error;
         
@@ -311,7 +322,7 @@ const TasksReminders = () => {
         status: newTask.status,
         priority: newTask.priority,
         assignedto: newTask.assignedTo ? Number(newTask.assignedTo) : null,
-        customerid: userId, // Use UUID directly
+        customerid: userId, // Use UUID directly as string
         comments: "[]",
         resources: "[]"
       };
@@ -396,7 +407,7 @@ const TasksReminders = () => {
             comments: JSON.stringify(updatedComments) 
           })
           .eq('tracklistid', currentTask.tracklistid)
-          .eq('customerid', userId); // Use UUID directly
+          .eq('customerid', userId); // Use UUID directly as string
           
         if (error) throw error;
         
@@ -489,7 +500,7 @@ const TasksReminders = () => {
             resources: JSON.stringify(updatedResources) 
           })
           .eq('tracklistid', currentTask.tracklistid)
-          .eq('customerid', userId); // Use UUID directly
+          .eq('customerid', userId); // Use UUID directly as string
           
         if (error) throw error;
         
