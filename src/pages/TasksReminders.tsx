@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -80,6 +79,7 @@ const TasksReminders = () => {
   const [resourceDescription, setResourceDescription] = useState("");
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userIdAsNumber, setUserIdAsNumber] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Get current user and fetch tasks
@@ -88,7 +88,12 @@ const TasksReminders = () => {
       const { data } = await supabase.auth.getUser();
       if (data?.user) {
         setUserId(data.user.id);
-        fetchTasks(data.user.id);
+        
+        // Convert UUID to a simple numeric representation for the database
+        const numericId = parseInt(data.user.id.replace(/-/g, ""), 16) % 1000000;
+        setUserIdAsNumber(numericId);
+        
+        fetchTasks(data.user.id, numericId);
       } else {
         setLoading(false);
         toast({
@@ -106,9 +111,15 @@ const TasksReminders = () => {
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           setUserId(session.user.id);
-          fetchTasks(session.user.id);
+          
+          // Convert UUID to a simple numeric representation
+          const numericId = parseInt(session.user.id.replace(/-/g, ""), 16) % 1000000;
+          setUserIdAsNumber(numericId);
+          
+          fetchTasks(session.user.id, numericId);
         } else if (event === 'SIGNED_OUT') {
           setUserId(null);
+          setUserIdAsNumber(null);
           setTasks([]);
         }
       }
@@ -120,14 +131,14 @@ const TasksReminders = () => {
   }, []);
 
   // Fetch tasks from Supabase
-  const fetchTasks = async (uid: string) => {
+  const fetchTasks = async (uid: string, numericId: number) => {
     setLoading(true);
     try {
-      // Use the UUID directly as customerid (as a string)
+      // Use the numeric ID for the customerid field
       const { data: tracklistData, error: tracklistError } = await supabase
         .from('tracklist')
         .select('*')
-        .eq('customerid', uid);
+        .eq('customerid', numericId);
       
       if (tracklistError) {
         console.error('Error fetching tasks from tracklist:', tracklistError);
@@ -259,7 +270,7 @@ const TasksReminders = () => {
 
   // Handle save edit
   const handleSaveEdit = async () => {
-    if (!currentTask || !userId) return;
+    if (!currentTask || !userIdAsNumber) return;
     
     try {
       // Check if we're working with a Supabase tracklist item
@@ -270,12 +281,14 @@ const TasksReminders = () => {
           .from('tracklist')
           .update(taskData)
           .eq('tracklistid', currentTask.tracklistid)
-          .eq('customerid', userId); // Use UUID directly as string
+          .eq('customerid', userIdAsNumber); // Use numeric ID
           
         if (error) throw error;
         
         // Refresh tasks
-        fetchTasks(userId);
+        if (userId) {
+          fetchTasks(userId, userIdAsNumber);
+        }
       } else {
         // Handle local sample data
         setTasks(prevTasks => 
@@ -303,7 +316,7 @@ const TasksReminders = () => {
 
   // Handle add task
   const handleAddTask = async () => {
-    if (!userId) return;
+    if (!userId || !userIdAsNumber) return;
     
     if (!newTask.title || !newTask.dueDate || !newTask.assignedTo) {
       toast({
@@ -322,7 +335,7 @@ const TasksReminders = () => {
         status: newTask.status,
         priority: newTask.priority,
         assignedto: newTask.assignedTo ? Number(newTask.assignedTo) : null,
-        customerid: userId, // Use UUID directly as string
+        customerid: userIdAsNumber, // Use numeric ID
         comments: "[]",
         resources: "[]"
       };
@@ -356,7 +369,7 @@ const TasksReminders = () => {
       setIsAddDialogOpen(false);
       
       // Refresh tasks
-      fetchTasks(userId);
+      fetchTasks(userId, userIdAsNumber);
     } catch (error) {
       console.error('Error adding task:', error);
       toast({
@@ -369,7 +382,7 @@ const TasksReminders = () => {
 
   // Handle add comment
   const handleAddComment = async () => {
-    if (!newComment.trim() || !userId || !currentTask) {
+    if (!newComment.trim() || !userIdAsNumber || !currentTask) {
       toast({
         title: "Missing information",
         description: "Please enter a comment.",
@@ -407,12 +420,14 @@ const TasksReminders = () => {
             comments: JSON.stringify(updatedComments) 
           })
           .eq('tracklistid', currentTask.tracklistid)
-          .eq('customerid', userId); // Use UUID directly as string
+          .eq('customerid', userIdAsNumber); // Use numeric ID
           
         if (error) throw error;
         
         // Refresh the task
-        fetchTasks(userId);
+        if (userId) {
+          fetchTasks(userId, userIdAsNumber);
+        }
       } else {
         // Handle local sample data
         const newCommentObj = {
@@ -462,7 +477,7 @@ const TasksReminders = () => {
 
   // Handle add resource
   const handleAddResource = async () => {
-    if (!newResource || !userId || !currentTask) {
+    if (!newResource || !userIdAsNumber || !currentTask) {
       toast({
         title: "Missing information",
         description: "Please select a file to upload.",
@@ -500,12 +515,14 @@ const TasksReminders = () => {
             resources: JSON.stringify(updatedResources) 
           })
           .eq('tracklistid', currentTask.tracklistid)
-          .eq('customerid', userId); // Use UUID directly as string
+          .eq('customerid', userIdAsNumber); // Use numeric ID
           
         if (error) throw error;
         
         // Refresh the task
-        fetchTasks(userId);
+        if (userId) {
+          fetchTasks(userId, userIdAsNumber);
+        }
       } else {
         // Handle local sample data
         const newResourceObj = {
