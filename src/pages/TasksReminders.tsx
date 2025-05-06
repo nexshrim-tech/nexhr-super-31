@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -116,7 +115,7 @@ const TasksReminders = () => {
       const { data: tracklistData, error: tracklistError } = await supabase
         .from('tracklist')
         .select('*')
-        .eq('customerid', String(uid))  // Convert UUID to string
+        .eq('customerid', uid)  // Using UUID directly
         .order('deadline', { ascending: false });
       
       if (tracklistError) {
@@ -310,18 +309,15 @@ const TasksReminders = () => {
         status: newTask.status,
         priority: newTask.priority,
         assignedto: newTask.assignedTo,
-        customerid: String(userId), // Convert UUID to string
+        customerid: userId, // Use UUID directly
         comments: "[]",  // Empty JSON array as string
         resources: "[]"  // Empty JSON array as string
       };
       
-      // Insert a single object with correct types for Supabase
+      // Insert task data
       const { data, error } = await supabase
         .from('tracklist')
-        .insert({
-          ...taskData,
-          assignedto: typeof taskData.assignedto === 'string' ? taskData.assignedto : String(taskData.assignedto)
-        })
+        .insert(taskData)
         .select();
         
       if (error) throw error;
@@ -564,7 +560,6 @@ const TasksReminders = () => {
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
               <div className="md:col-span-1 space-y-6">
-                {/* Pass tasks as a prop to UpcomingReminders */}
                 <UpcomingReminders tasks={tasks} />
                 <TaskSummary tasks={tasks} />
               </div>

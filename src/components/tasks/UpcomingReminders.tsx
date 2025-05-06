@@ -72,7 +72,7 @@ const UpcomingReminders = ({ tasks = [] }: { tasks?: Task[] }) => {
               .select('*')
               .gte('deadline', today.toISOString().split('T')[0])
               .lte('deadline', nextWeek.toISOString().split('T')[0])
-              .eq('customerid', String(authData.user.id)) // Convert UUID to string
+              .eq('customerid', authData.user.id) // Using UUID directly as customerid is UUID type
               .order('deadline', { ascending: true })
               .limit(3);
               
