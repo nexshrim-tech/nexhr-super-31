@@ -39,7 +39,7 @@ const convertTaskToTracklist = (task: any) => {
     deadline: task.dueDate,
     status: task.status,
     priority: task.priority,
-    assignedto: task.assignedTo,
+    assignedto: task.assignedTo ? Number(task.assignedTo) : null, // Ensure assignedto is a number or null
     comments: JSON.stringify(task.comments || []),
     resources: JSON.stringify(task.resources || []),
     description: task.description || ''
@@ -116,7 +116,7 @@ const TasksReminders = () => {
       const { data: tracklistData, error: tracklistError } = await supabase
         .from('tracklist')
         .select('*')
-        .eq('customerid', uid)  // Using UUID directly
+        .eq('customerid', uid.toString())  // Convert UUID to string
         .order('deadline', { ascending: false });
       
       if (tracklistError) {
@@ -309,8 +309,8 @@ const TasksReminders = () => {
         deadline: newTask.dueDate,
         status: newTask.status,
         priority: newTask.priority,
-        assignedto: newTask.assignedTo,
-        customerid: userId, // Use UUID directly
+        assignedto: newTask.assignedTo ? Number(newTask.assignedTo) : null, // Ensure assignedto is a number or null
+        customerid: userId.toString(), // Convert UUID to string
         comments: "[]",  // Empty JSON array as string
         resources: "[]"  // Empty JSON array as string
       };
