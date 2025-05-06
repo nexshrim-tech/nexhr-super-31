@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,34 @@ import {
   CommentDialog, 
   ResourceDialog 
 } from "@/components/tasks/TaskDialogs";
+
+// Helper function to convert tracklist item to Task format
+const convertTracklistToTask = (tracklistItem: any) => {
+  return {
+    id: tracklistItem.tracklistid || tracklistItem.id,
+    title: tracklistItem.tasktitle || tracklistItem.title,
+    dueDate: tracklistItem.deadline,
+    status: tracklistItem.status,
+    priority: tracklistItem.priority,
+    assignedTo: tracklistItem.assignedto,
+    comments: tracklistItem.comments ? JSON.parse(tracklistItem.comments) : [],
+    resources: tracklistItem.resources ? JSON.parse(tracklistItem.resources) : []
+  };
+};
+
+// Helper function to convert Task to tracklist format
+const convertTaskToTracklist = (task: any) => {
+  return {
+    tasktitle: task.title,
+    deadline: task.dueDate,
+    status: task.status,
+    priority: task.priority,
+    assignedto: task.assignedTo,
+    comments: JSON.stringify(task.comments || []),
+    resources: JSON.stringify(task.resources || []),
+    description: task.description || ''
+  };
+};
 
 const TasksReminders = () => {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -83,19 +112,22 @@ const TasksReminders = () => {
   const fetchTasks = async (uid: string) => {
     setLoading(true);
     try {
-      // Try to fetch from our new tasks table first (with UUID user_id)
-      const { data: newTasks, error: newTasksError } = await supabase
-        .from('tasks')
+      // Try to fetch from tracklist table
+      const { data: tracklistData, error: tracklistError } = await supabase
+        .from('tracklist')
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('customerid', uid)
+        .order('deadline', { ascending: false });
       
-      if (newTasksError) {
-        console.error('Error fetching tasks:', newTasksError);
+      if (tracklistError) {
+        console.error('Error fetching tasks from tracklist:', tracklistError);
       }
 
       // Fall back to sample data if no tasks in database
-      if (newTasks && newTasks.length > 0) {
-        setTasks(newTasks);
+      if (tracklistData && tracklistData.length > 0) {
+        // Convert tracklist items to Task format
+        const formattedTasks = tracklistData.map(convertTracklistToTask);
+        setTasks(formattedTasks);
       } else {
         // Sample data as fallback
         setTasks([
@@ -219,20 +251,14 @@ const TasksReminders = () => {
     if (!currentTask || !userId) return;
     
     try {
-      // Check if we're working with a Supabase task (has UUID id)
-      if (typeof currentTask.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentTask.id)) {
+      // Check if we're working with a Supabase tracklist item
+      if (currentTask.tracklistid) {
+        const taskData = convertTaskToTracklist(currentTask);
+        
         const { error } = await supabase
-          .from('tasks')
-          .update({
-            title: currentTask.title,
-            due_date: currentTask.dueDate,
-            status: currentTask.status,
-            priority: currentTask.priority,
-            assigned_to: typeof currentTask.assignedTo === 'object' ? 
-              currentTask.assignedTo.name : currentTask.assignedTo,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentTask.id);
+          .from('tracklist')
+          .update(taskData)
+          .eq('tracklistid', currentTask.tracklistid);
           
         if (error) throw error;
         
@@ -277,23 +303,28 @@ const TasksReminders = () => {
     }
     
     try {
-      // Add to Supabase
+      // Add to Supabase tracklist
+      const taskData = {
+        tasktitle: newTask.title,
+        deadline: newTask.dueDate,
+        status: newTask.status,
+        priority: newTask.priority,
+        assignedto: newTask.assignedTo,
+        customerid: userId,
+        comments: "[]",  // Empty JSON array as string
+        resources: "[]"  // Empty JSON array as string
+      };
+      
       const { data, error } = await supabase
-        .from('tasks')
-        .insert([{
-          user_id: userId,
-          title: newTask.title,
-          due_date: newTask.dueDate,
-          status: newTask.status,
-          priority: newTask.priority,
-          assigned_to: newTask.assignedTo
-        }])
+        .from('tracklist')
+        .insert([taskData])
         .select();
         
       if (error) throw error;
       
       if (data && data.length > 0) {
-        setTasks(prevTasks => [...data, ...prevTasks]);
+        const formattedTasks = data.map(convertTracklistToTask);
+        setTasks(prevTasks => [...formattedTasks, ...prevTasks]);
       }
       
       toast({
@@ -335,15 +366,34 @@ const TasksReminders = () => {
     }
     
     try {
-      // For Supabase tasks
-      if (typeof currentTask.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentTask.id)) {
+      // For Supabase tracklist items
+      if (currentTask.tracklistid) {
+        // Get current comments
+        let currentComments = [];
+        try {
+          currentComments = JSON.parse(currentTask.comments || "[]");
+        } catch (e) {
+          currentComments = [];
+        }
+        
+        // Add new comment
+        const newCommentObj = {
+          id: Date.now(),
+          author: "Current User",
+          avatar: "CU",
+          text: newComment,
+          date: new Date().toISOString().split('T')[0]
+        };
+        
+        const updatedComments = [...currentComments, newCommentObj];
+        
+        // Update the tracklist item
         const { error } = await supabase
-          .from('task_comments')
-          .insert({
-            task_id: currentTask.id,
-            user_id: userId,
-            comment: newComment
-          });
+          .from('tracklist')
+          .update({ 
+            comments: JSON.stringify(updatedComments) 
+          })
+          .eq('tracklistid', currentTask.tracklistid);
           
         if (error) throw error;
         
@@ -408,19 +458,34 @@ const TasksReminders = () => {
     }
     
     try {
-      // For Supabase tasks
-      if (typeof currentTask.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(currentTask.id)) {
-        // In a real implementation, we would upload the file to storage
-        // For now, just record the resource metadata
+      // For Supabase tracklist items
+      if (currentTask.tracklistid) {
+        // Get current resources
+        let currentResources = [];
+        try {
+          currentResources = JSON.parse(currentTask.resources || "[]");
+        } catch (e) {
+          currentResources = [];
+        }
+        
+        // Add new resource (in a real implementation, we would upload the file to storage)
+        const newResourceObj = {
+          id: Date.now(),
+          name: newResource.name,
+          type: newResource.type,
+          uploadedBy: "Current User",
+          date: new Date().toISOString().split('T')[0]
+        };
+        
+        const updatedResources = [...currentResources, newResourceObj];
+        
+        // Update the tracklist item
         const { error } = await supabase
-          .from('task_resources')
-          .insert({
-            task_id: currentTask.id,
-            user_id: userId,
-            name: newResource.name,
-            url: URL.createObjectURL(newResource), // This is just a temporary URL
-            type: newResource.type
-          });
+          .from('tracklist')
+          .update({ 
+            resources: JSON.stringify(updatedResources) 
+          })
+          .eq('tracklistid', currentTask.tracklistid);
           
         if (error) throw error;
         

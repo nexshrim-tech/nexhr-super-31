@@ -17,6 +17,20 @@ interface Task {
   assignedTo?: { name: string; avatar: string } | string;
 }
 
+// Helper function to convert tracklist item to Task format
+const convertTracklistToTask = (tracklistItem: any): Task => {
+  return {
+    id: tracklistItem.tracklistid || tracklistItem.id,
+    title: tracklistItem.tasktitle || tracklistItem.title,
+    due_date: tracklistItem.deadline,
+    dueDate: tracklistItem.deadline || tracklistItem.dueDate,
+    status: tracklistItem.status,
+    priority: tracklistItem.priority,
+    assigned_to: tracklistItem.assignedto,
+    assignedTo: tracklistItem.assignedto || tracklistItem.assignedTo
+  };
+};
+
 const UpcomingReminders: React.FC<{tasks?: Task[]}> = ({ tasks = [] }) => {
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
 
@@ -46,22 +60,30 @@ const UpcomingReminders: React.FC<{tasks?: Task[]}> = ({ tasks = [] }) => {
     } else {
       const fetchUpcomingTasks = async () => {
         try {
-          const { data } = await supabase.auth.getUser();
-          if (data?.user) {
+          const { data: authData } = await supabase.auth.getUser();
+          if (authData?.user) {
             const today = new Date();
             const nextWeek = new Date();
             nextWeek.setDate(today.getDate() + 7);
             
-            const { data: upcomingData } = await supabase
-              .from('tasks')
+            // Use tracklist table instead of tasks
+            const { data: upcomingData, error } = await supabase
+              .from('tracklist')
               .select('*')
-              .gte('due_date', today.toISOString().split('T')[0])
-              .lte('due_date', nextWeek.toISOString().split('T')[0])
-              .order('due_date', { ascending: true })
+              .gte('deadline', today.toISOString().split('T')[0])
+              .lte('deadline', nextWeek.toISOString().split('T')[0])
+              .order('deadline', { ascending: true })
               .limit(3);
               
+            if (error) {
+              console.error("Error fetching upcoming tasks:", error);
+              return;
+            }
+              
             if (upcomingData) {
-              setUpcomingTasks(upcomingData);
+              // Convert tracklist items to Task format
+              const formattedTasks = upcomingData.map(convertTracklistToTask);
+              setUpcomingTasks(formattedTasks);
             }
           }
         } catch (error) {
