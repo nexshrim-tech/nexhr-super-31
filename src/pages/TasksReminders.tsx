@@ -111,84 +111,99 @@ const TasksReminders = () => {
   const fetchTasks = async (uid: string) => {
     setLoading(true);
     try {
-      // Try to fetch from tracklist table
-      const { data: tracklistData, error: tracklistError } = await supabase
-        .from('tracklist')
-        .select('*')
-        .eq('customerid', Number(uid.toString()))  // Convert UUID string to number
-        .order('deadline', { ascending: false });
+      // Get customer ID for the current user
+      const { data: customerData, error: customerError } = await supabase
+        .from('customer')
+        .select('customerid')
+        .eq('customerid', uid)
+        .single();
       
-      if (tracklistError) {
-        console.error('Error fetching tasks from tracklist:', tracklistError);
+      if (customerError) {
+        console.error('Error fetching customer data:', customerError);
+        setLoading(false);
+        return;
       }
-
-      // Fall back to sample data if no tasks in database
-      if (tracklistData && tracklistData.length > 0) {
+      
+      // Use the retrieved customer ID to fetch tasks
+      if (customerData) {
+        const { data: tracklistData, error: tracklistError } = await supabase
+          .from('tracklist')
+          .select('*')
+          .eq('customerid', uid);  // Use the UUID directly as customerid
+        
+        if (tracklistError) {
+          console.error('Error fetching tasks from tracklist:', tracklistError);
+          setLoading(false);
+          return;
+        }
+        
         // Convert tracklist items to Task format
-        const formattedTasks = tracklistData.map(convertTracklistToTask);
-        setTasks(formattedTasks);
-      } else {
-        // Sample data as fallback
-        setTasks([
-          {
-            id: 1,
-            title: "Schedule Performance Reviews",
-            dueDate: "2023-08-15",
-            status: "In Progress",
-            priority: "High",
-            assignedTo: { name: "Olivia Rhye", avatar: "OR" },
-            comments: [
-              { id: 1, author: "Demi Wilkinson", avatar: "DW", text: "I've started scheduling these. Will complete by tomorrow.", date: "2023-08-10" }
-            ],
-            resources: [
-              { id: 1, name: "Review_Template.docx", type: "document", uploadedBy: "Olivia Rhye", date: "2023-08-08" }
-            ]
-          },
-          {
-            id: 2,
-            title: "Update Employee Handbook",
-            dueDate: "2023-08-20",
-            status: "To Do",
-            priority: "Medium",
-            assignedTo: { name: "Phoenix Baker", avatar: "PB" },
-            comments: [],
-            resources: []
-          },
-          {
-            id: 3,
-            title: "Conduct Team Building Activity",
-            dueDate: "2023-08-25",
-            status: "To Do",
-            priority: "Medium",
-            assignedTo: { name: "Lana Steiner", avatar: "LS" },
-            comments: [],
-            resources: []
-          },
-          {
-            id: 4,
-            title: "Review Leave Applications",
-            dueDate: "2023-08-10",
-            status: "Completed",
-            priority: "High",
-            assignedTo: { name: "Demi Wilkinson", avatar: "DW" },
-            comments: [
-              { id: 1, author: "Demi Wilkinson", avatar: "DW", text: "All applications have been reviewed and approved.", date: "2023-08-10" }
-            ],
-            resources: [
-              { id: 1, name: "Leave_Summary.pdf", type: "document", uploadedBy: "Demi Wilkinson", date: "2023-08-10" }
-            ]
-          },
-          {
-            id: 5,
-            title: "Finalize Q3 Budget",
-            dueDate: "2023-08-12",
-            status: "In Progress",
-            priority: "High",
-            assignedTo: { name: "Candice Wu", avatar: "CW" },
-            comments: [],
-            resources: []
-          },
-        ]);
+        if (tracklistData && tracklistData.length > 0) {
+          const formattedTasks = tracklistData.map(convertTracklistToTask);
+          setTasks(formattedTasks);
+        } else {
+          // Sample data as fallback - in a real app, you might just show an empty state
+          setTasks([
+            {
+              id: 1,
+              title: "Schedule Performance Reviews",
+              dueDate: "2023-08-15",
+              status: "In Progress",
+              priority: "High",
+              assignedTo: { name: "Olivia Rhye", avatar: "OR" },
+              comments: [
+                { id: 1, author: "Demi Wilkinson", avatar: "DW", text: "I've started scheduling these. Will complete by tomorrow.", date: "2023-08-10" }
+              ],
+              resources: [
+                { id: 1, name: "Review_Template.docx", type: "document", uploadedBy: "Olivia Rhye", date: "2023-08-08" }
+              ]
+            },
+            {
+              id: 2,
+              title: "Update Employee Handbook",
+              dueDate: "2023-08-20",
+              status: "To Do",
+              priority: "Medium",
+              assignedTo: { name: "Phoenix Baker", avatar: "PB" },
+              comments: [],
+              resources: []
+            },
+            {
+              id: 3,
+              title: "Conduct Team Building Activity",
+              dueDate: "2023-08-25",
+              status: "To Do",
+              priority: "Medium",
+              assignedTo: { name: "Lana Steiner", avatar: "LS" },
+              comments: [],
+              resources: []
+            },
+            {
+              id: 4,
+              title: "Review Leave Applications",
+              dueDate: "2023-08-10",
+              status: "Completed",
+              priority: "High",
+              assignedTo: { name: "Demi Wilkinson", avatar: "DW" },
+              comments: [
+                { id: 1, author: "Demi Wilkinson", avatar: "DW", text: "All applications have been reviewed and approved.", date: "2023-08-10" }
+              ],
+              resources: [
+                { id: 1, name: "Leave_Summary.pdf", type: "document", uploadedBy: "Demi Wilkinson", date: "2023-08-10" }
+              ]
+            },
+            {
+              id: 5,
+              title: "Finalize Q3 Budget",
+              dueDate: "2023-08-12",
+              status: "In Progress",
+              priority: "High",
+              assignedTo: { name: "Candice Wu", avatar: "CW" },
+              comments: [],
+              resources: []
+            },
+          ]);
+        }
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -257,7 +272,8 @@ const TasksReminders = () => {
         const { error } = await supabase
           .from('tracklist')
           .update(taskData)
-          .eq('tracklistid', currentTask.tracklistid);
+          .eq('tracklistid', currentTask.tracklistid)
+          .eq('customerid', userId); // Add customerid filter for extra security
           
         if (error) throw error;
         
@@ -308,13 +324,13 @@ const TasksReminders = () => {
         deadline: newTask.dueDate,
         status: newTask.status,
         priority: newTask.priority,
-        assignedto: newTask.assignedTo ? Number(newTask.assignedTo) : null, // Ensure assignedto is a number or null
-        customerid: Number(userId.toString()), // Convert UUID string to number
-        comments: "[]",  // Empty JSON array as string
-        resources: "[]"  // Empty JSON array as string
+        assignedto: newTask.assignedTo ? Number(newTask.assignedTo) : null,
+        customerid: userId, // Use UUID directly
+        comments: "[]",
+        resources: "[]"
       };
       
-      // Insert task data - using number type conversion for numeric fields
+      // Insert task data
       const { data, error } = await supabase
         .from('tracklist')
         .insert(taskData)
@@ -393,7 +409,8 @@ const TasksReminders = () => {
           .update({ 
             comments: JSON.stringify(updatedComments) 
           })
-          .eq('tracklistid', currentTask.tracklistid);
+          .eq('tracklistid', currentTask.tracklistid)
+          .eq('customerid', userId); // Add customerid filter for extra security
           
         if (error) throw error;
         
@@ -485,7 +502,8 @@ const TasksReminders = () => {
           .update({ 
             resources: JSON.stringify(updatedResources) 
           })
-          .eq('tracklistid', currentTask.tracklistid);
+          .eq('tracklistid', currentTask.tracklistid)
+          .eq('customerid', userId); // Add customerid filter for extra security
           
         if (error) throw error;
         
