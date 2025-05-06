@@ -116,7 +116,7 @@ const TasksReminders = () => {
       const { data: tracklistData, error: tracklistError } = await supabase
         .from('tracklist')
         .select('*')
-        .eq('customerid', uid)
+        .eq('customerid', String(uid))  // Convert UUID to string
         .order('deadline', { ascending: false });
       
       if (tracklistError) {
@@ -310,15 +310,18 @@ const TasksReminders = () => {
         status: newTask.status,
         priority: newTask.priority,
         assignedto: newTask.assignedTo,
-        customerid: userId,
+        customerid: String(userId), // Convert UUID to string
         comments: "[]",  // Empty JSON array as string
         resources: "[]"  // Empty JSON array as string
       };
       
-      // Insert a single object, not an array
+      // Insert a single object with correct types for Supabase
       const { data, error } = await supabase
         .from('tracklist')
-        .insert(taskData)
+        .insert({
+          ...taskData,
+          assignedto: typeof taskData.assignedto === 'string' ? taskData.assignedto : String(taskData.assignedto)
+        })
         .select();
         
       if (error) throw error;
@@ -561,6 +564,7 @@ const TasksReminders = () => {
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
               <div className="md:col-span-1 space-y-6">
+                {/* Pass tasks as a prop to UpcomingReminders */}
                 <UpcomingReminders tasks={tasks} />
                 <TaskSummary tasks={tasks} />
               </div>
