@@ -31,7 +31,11 @@ const convertTracklistToTask = (tracklistItem: any): Task => {
   };
 };
 
-const UpcomingReminders = ({ tasks = [] }: { tasks?: Task[] }) => {
+interface UpcomingRemindersProps {
+  tasks?: Task[];
+}
+
+const UpcomingReminders: React.FC<UpcomingRemindersProps> = ({ tasks = [] }) => {
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
 
   useEffect(() => {
@@ -72,7 +76,7 @@ const UpcomingReminders = ({ tasks = [] }: { tasks?: Task[] }) => {
               .select('*')
               .gte('deadline', today.toISOString().split('T')[0])
               .lte('deadline', nextWeek.toISOString().split('T')[0])
-              .eq('customerid', authData.user.id) // Using UUID directly as customerid is UUID type
+              .eq('customerid', authData.user.id) // Using UUID directly
               .order('deadline', { ascending: true })
               .limit(3);
               

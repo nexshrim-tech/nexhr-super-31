@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -314,7 +315,7 @@ const TasksReminders = () => {
         resources: "[]"  // Empty JSON array as string
       };
       
-      // Insert task data
+      // Insert task data - using number type conversion for numeric fields
       const { data, error } = await supabase
         .from('tracklist')
         .insert(taskData)
