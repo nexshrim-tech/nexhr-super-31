@@ -116,7 +116,7 @@ const TasksReminders = () => {
       const { data: tracklistData, error: tracklistError } = await supabase
         .from('tracklist')
         .select('*')
-        .eq('customerid', uid.toString())  // Convert UUID to string
+        .eq('customerid', Number(uid.toString()))  // Convert UUID string to number
         .order('deadline', { ascending: false });
       
       if (tracklistError) {
@@ -310,7 +310,7 @@ const TasksReminders = () => {
         status: newTask.status,
         priority: newTask.priority,
         assignedto: newTask.assignedTo ? Number(newTask.assignedTo) : null, // Ensure assignedto is a number or null
-        customerid: userId.toString(), // Convert UUID to string
+        customerid: Number(userId.toString()), // Convert UUID string to number
         comments: "[]",  // Empty JSON array as string
         resources: "[]"  // Empty JSON array as string
       };

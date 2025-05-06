@@ -76,7 +76,7 @@ const UpcomingReminders: React.FC<UpcomingRemindersProps> = ({ tasks = [] }) => 
               .select('*')
               .gte('deadline', today.toISOString().split('T')[0])
               .lte('deadline', nextWeek.toISOString().split('T')[0])
-              .eq('customerid', authData.user.id.toString()) // Convert UUID to string
+              .eq('customerid', Number(authData.user.id.toString())) // Convert UUID string to number
               .order('deadline', { ascending: true })
               .limit(3);
               
