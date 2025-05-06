@@ -70,16 +70,12 @@ const UpcomingReminders: React.FC<UpcomingRemindersProps> = ({ tasks = [] }) => 
             const nextWeek = new Date();
             nextWeek.setDate(today.getDate() + 7);
             
-            // Use tracklist table and ensure we only get the current user's data
-            // For UUID/string customerid issue, convert customerid to number before using it
-            const userIdAsNumber = parseInt(authData.user.id.replace(/-/g, ""), 16) % 1000000; // Convert UUID to a simple number
-            
+            // Use tracklist table with RLS - no need to filter by customerid as RLS will handle this
             const { data: upcomingData, error } = await supabase
               .from('tracklist')
               .select('*')
               .gte('deadline', today.toISOString().split('T')[0])
               .lte('deadline', nextWeek.toISOString().split('T')[0])
-              .eq('customerid', userIdAsNumber) // Use the converted numeric ID
               .order('deadline', { ascending: true })
               .limit(3);
               

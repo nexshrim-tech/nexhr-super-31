@@ -79,7 +79,6 @@ const TasksReminders = () => {
   const [resourceDescription, setResourceDescription] = useState("");
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const [userIdAsNumber, setUserIdAsNumber] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Get current user and fetch tasks
@@ -88,12 +87,7 @@ const TasksReminders = () => {
       const { data } = await supabase.auth.getUser();
       if (data?.user) {
         setUserId(data.user.id);
-        
-        // Convert UUID to a simple numeric representation for the database
-        const numericId = parseInt(data.user.id.replace(/-/g, ""), 16) % 1000000;
-        setUserIdAsNumber(numericId);
-        
-        fetchTasks(data.user.id, numericId);
+        fetchTasks(data.user.id);
       } else {
         setLoading(false);
         toast({
@@ -111,15 +105,9 @@ const TasksReminders = () => {
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           setUserId(session.user.id);
-          
-          // Convert UUID to a simple numeric representation
-          const numericId = parseInt(session.user.id.replace(/-/g, ""), 16) % 1000000;
-          setUserIdAsNumber(numericId);
-          
-          fetchTasks(session.user.id, numericId);
+          fetchTasks(session.user.id);
         } else if (event === 'SIGNED_OUT') {
           setUserId(null);
-          setUserIdAsNumber(null);
           setTasks([]);
         }
       }
@@ -131,14 +119,13 @@ const TasksReminders = () => {
   }, []);
 
   // Fetch tasks from Supabase
-  const fetchTasks = async (uid: string, numericId: number) => {
+  const fetchTasks = async (uid: string) => {
     setLoading(true);
     try {
-      // Use the numeric ID for the customerid field
+      // With RLS enabled, supabase will only return data for the current user
       const { data: tracklistData, error: tracklistError } = await supabase
         .from('tracklist')
-        .select('*')
-        .eq('customerid', numericId);
+        .select('*');
       
       if (tracklistError) {
         console.error('Error fetching tasks from tracklist:', tracklistError);
@@ -270,7 +257,7 @@ const TasksReminders = () => {
 
   // Handle save edit
   const handleSaveEdit = async () => {
-    if (!currentTask || !userIdAsNumber) return;
+    if (!currentTask || !userId) return;
     
     try {
       // Check if we're working with a Supabase tracklist item
@@ -280,14 +267,13 @@ const TasksReminders = () => {
         const { error } = await supabase
           .from('tracklist')
           .update(taskData)
-          .eq('tracklistid', currentTask.tracklistid)
-          .eq('customerid', userIdAsNumber); // Use numeric ID
+          .eq('tracklistid', currentTask.tracklistid);
           
         if (error) throw error;
         
         // Refresh tasks
         if (userId) {
-          fetchTasks(userId, userIdAsNumber);
+          fetchTasks(userId);
         }
       } else {
         // Handle local sample data
@@ -316,7 +302,7 @@ const TasksReminders = () => {
 
   // Handle add task
   const handleAddTask = async () => {
-    if (!userId || !userIdAsNumber) return;
+    if (!userId) return;
     
     if (!newTask.title || !newTask.dueDate || !newTask.assignedTo) {
       toast({
@@ -335,12 +321,11 @@ const TasksReminders = () => {
         status: newTask.status,
         priority: newTask.priority,
         assignedto: newTask.assignedTo ? Number(newTask.assignedTo) : null,
-        customerid: userIdAsNumber, // Use numeric ID
         comments: "[]",
         resources: "[]"
       };
       
-      // Insert task data
+      // Insert task data - no need to specify customerid as RLS will use auth.uid()
       const { data, error } = await supabase
         .from('tracklist')
         .insert(taskData)
@@ -369,7 +354,7 @@ const TasksReminders = () => {
       setIsAddDialogOpen(false);
       
       // Refresh tasks
-      fetchTasks(userId, userIdAsNumber);
+      fetchTasks(userId);
     } catch (error) {
       console.error('Error adding task:', error);
       toast({
@@ -382,7 +367,7 @@ const TasksReminders = () => {
 
   // Handle add comment
   const handleAddComment = async () => {
-    if (!newComment.trim() || !userIdAsNumber || !currentTask) {
+    if (!newComment.trim() || !userId || !currentTask) {
       toast({
         title: "Missing information",
         description: "Please enter a comment.",
@@ -419,14 +404,13 @@ const TasksReminders = () => {
           .update({ 
             comments: JSON.stringify(updatedComments) 
           })
-          .eq('tracklistid', currentTask.tracklistid)
-          .eq('customerid', userIdAsNumber); // Use numeric ID
+          .eq('tracklistid', currentTask.tracklistid);
           
         if (error) throw error;
         
         // Refresh the task
         if (userId) {
-          fetchTasks(userId, userIdAsNumber);
+          fetchTasks(userId);
         }
       } else {
         // Handle local sample data
@@ -477,7 +461,7 @@ const TasksReminders = () => {
 
   // Handle add resource
   const handleAddResource = async () => {
-    if (!newResource || !userIdAsNumber || !currentTask) {
+    if (!newResource || !userId || !currentTask) {
       toast({
         title: "Missing information",
         description: "Please select a file to upload.",
@@ -514,14 +498,13 @@ const TasksReminders = () => {
           .update({ 
             resources: JSON.stringify(updatedResources) 
           })
-          .eq('tracklistid', currentTask.tracklistid)
-          .eq('customerid', userIdAsNumber); // Use numeric ID
+          .eq('tracklistid', currentTask.tracklistid);
           
         if (error) throw error;
         
         // Refresh the task
         if (userId) {
-          fetchTasks(userId, userIdAsNumber);
+          fetchTasks(userId);
         }
       } else {
         // Handle local sample data
