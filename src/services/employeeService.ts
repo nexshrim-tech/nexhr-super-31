@@ -1,14 +1,18 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Employee } from '@/types/employee';
 import { mapEmployeeDBToEmployee, mapEmployeeToDBFormat } from '@/utils/employeeMappers';
 
 export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
   try {
-    let query = supabase.from('employee').select();
+    console.log('Fetching employees with auth user...');
+    // Get the current auth user to make sure we're authenticated
+    const { data: authData } = await supabase.auth.getUser();
+    console.log('Auth user:', authData?.user?.email || 'Not authenticated');
     
-    if (customerId) {
-      query = query.eq('customerid', customerId);
-    }
+    // With RLS enabled, we don't need to filter by customerid explicitly
+    // It will be handled by the RLS policies
+    let query = supabase.from('employee').select();
     
     const { data, error } = await query.order('employeeid');
 
@@ -17,6 +21,7 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
       throw error;
     }
 
+    console.log(`Fetched ${data?.length || 0} employees`);
     return (data || []).map(mapEmployeeDBToEmployee);
   } catch (error) {
     console.error('Error in getEmployees:', error);
@@ -77,20 +82,15 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     const dbEmployee = mapEmployeeToDBFormat(employee);
     console.log('Formatted employee data for database:', dbEmployee);
     
-    if (!dbEmployee.customerid) {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        const { data: customerData } = await supabase
-          .from('customer')
-          .select('customerid')
-          .eq('customerid', userData.user.id)
-          .single();
-
-        if (customerData?.customerid) {
-          dbEmployee.customerid = customerData.customerid;
-        }
-      }
+    // Get the current auth user's ID to use as the customerid
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      throw new Error('You must be logged in to add an employee');
     }
+    
+    // Ensure customerid is set to the current auth user's ID
+    dbEmployee.customerid = userData.user.id;
+    console.log('Setting customerid to auth user ID:', userData.user.id);
     
     // Make sure all fields are included in the insert operation
     const { data, error } = await supabase

@@ -66,6 +66,8 @@ const UpcomingReminders: React.FC<UpcomingRemindersProps> = ({ tasks = [] }) => 
         try {
           const { data: authData } = await supabase.auth.getUser();
           if (authData?.user) {
+            console.log("Authenticated user:", authData.user.email);
+            
             const today = new Date();
             const nextWeek = new Date();
             nextWeek.setDate(today.getDate() + 7);
@@ -85,10 +87,13 @@ const UpcomingReminders: React.FC<UpcomingRemindersProps> = ({ tasks = [] }) => 
             }
               
             if (upcomingData) {
+              console.log("Fetched upcoming tasks:", upcomingData.length);
               // Convert tracklist items to Task format
               const formattedTasks = upcomingData.map(convertTracklistToTask);
               setUpcomingTasks(formattedTasks);
             }
+          } else {
+            console.log("No authenticated user found");
           }
         } catch (error) {
           console.error("Error fetching upcoming tasks:", error);

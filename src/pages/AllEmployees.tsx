@@ -6,6 +6,7 @@ import { Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getEmployees, Employee } from "@/services/employeeService";
+import { supabase } from "@/integrations/supabase/client";
 import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import EmployeeFilters from "@/components/employees/EmployeeFilters";
 import EmployeeListHeader from "@/components/employees/EmployeeListHeader";
@@ -22,9 +23,26 @@ const AllEmployees = () => {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        console.log("User not authenticated, redirecting to login");
+        navigate("/login");
+        return;
+      }
+      console.log("User authenticated:", data.user.email);
+      setIsAuthenticated(true);
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   const loadEmployees = async () => {
     setIsLoading(true);
@@ -46,16 +64,18 @@ const AllEmployees = () => {
   };
 
   useEffect(() => {
-    loadEmployees();
-  }, []);
+    if (isAuthenticated) {
+      loadEmployees();
+    }
+  }, [isAuthenticated]);
 
   // Listen for route changes to refresh data when navigating to this page
   useEffect(() => {
-    if (location.pathname === '/all-employees') {
+    if (location.pathname === '/all-employees' && isAuthenticated) {
       console.log('Employee directory page loaded, refreshing employee list...');
       loadEmployees();
     }
-  }, [location.pathname]);
+  }, [location.pathname, isAuthenticated]);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearch = 
@@ -89,6 +109,10 @@ const AllEmployees = () => {
     loadEmployees(); // Reload the employee list to get the latest data from the server
     setIsEditDialogOpen(false);
   };
+
+  if (!isAuthenticated) {
+    return null; // Don't render anything until authentication check is complete
+  }
 
   return (
     <Layout>
@@ -127,13 +151,19 @@ const AllEmployees = () => {
           </CardHeader>
           
           <CardContent className="p-0">
-            <EmployeeTable 
-              employees={filteredEmployees}
-              onViewEmployee={handleViewEmployee}
-              onEditEmployee={handleEditEmployee}
-              onPasswordChange={handlePasswordChange}
-              isLoading={isLoading}
-            />
+            {employees.length === 0 && !isLoading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">No employees found. Add your first employee to get started.</p>
+              </div>
+            ) : (
+              <EmployeeTable 
+                employees={filteredEmployees}
+                onViewEmployee={handleViewEmployee}
+                onEditEmployee={handleEditEmployee}
+                onPasswordChange={handlePasswordChange}
+                isLoading={isLoading}
+              />
+            )}
             
             <div className="p-4">
               <EmployeePagination 
