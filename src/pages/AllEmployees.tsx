@@ -6,7 +6,7 @@ import { Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getEmployees, Employee } from "@/services/employeeService";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import EmployeeFilters from "@/components/employees/EmployeeFilters";
 import EmployeeListHeader from "@/components/employees/EmployeeListHeader";
@@ -23,31 +23,15 @@ const AllEmployees = () => {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        console.log("User not authenticated, redirecting to login");
-        navigate("/login");
-        return;
-      }
-      console.log("User authenticated:", data.user.email);
-      setIsAuthenticated(true);
-    };
-    
-    checkAuth();
-  }, [navigate]);
+  const { user, customerId } = useAuth();
 
   const loadEmployees = async () => {
     setIsLoading(true);
     try {
-      console.log('Fetching employees...');
+      console.log('Fetching employees for customer ID:', customerId);
       const data = await getEmployees();
       console.log('Employees loaded:', data);
       setEmployees(data);
@@ -64,18 +48,20 @@ const AllEmployees = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (user) {
       loadEmployees();
+    } else {
+      navigate('/login');
     }
-  }, [isAuthenticated]);
+  }, [user, navigate]);
 
   // Listen for route changes to refresh data when navigating to this page
   useEffect(() => {
-    if (location.pathname === '/all-employees' && isAuthenticated) {
+    if (location.pathname === '/all-employees' && user) {
       console.log('Employee directory page loaded, refreshing employee list...');
       loadEmployees();
     }
-  }, [location.pathname, isAuthenticated]);
+  }, [location.pathname, user]);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearch = 
@@ -110,7 +96,7 @@ const AllEmployees = () => {
     setIsEditDialogOpen(false);
   };
 
-  if (!isAuthenticated) {
+  if (!user) {
     return null; // Don't render anything until authentication check is complete
   }
 

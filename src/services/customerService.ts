@@ -23,6 +23,8 @@ export const getCurrentCustomer = async (user: User | null): Promise<Customer | 
   if (!user) return null;
   
   try {
+    console.log("Fetching customer data for user:", user.id);
+    
     // Get customer data directly using auth.uid()
     const { data: customer, error } = await supabase
       .from('customer')
@@ -35,6 +37,7 @@ export const getCurrentCustomer = async (user: User | null): Promise<Customer | 
       return null;
     }
     
+    console.log("Retrieved customer data:", customer);
     return customer;
   } catch (error) {
     console.error('Error in getCurrentCustomer:', error);
@@ -42,8 +45,10 @@ export const getCurrentCustomer = async (user: User | null): Promise<Customer | 
   }
 };
 
-export const createCustomer = async (data: Omit<Customer, 'customerid'>): Promise<Customer | null> => {
+export const createCustomer = async (data: Partial<Customer>): Promise<Customer | null> => {
   try {
+    console.log("Creating customer with data:", data);
+    
     const { data: customer, error } = await supabase
       .from('customer')
       .insert([data])
@@ -55,6 +60,7 @@ export const createCustomer = async (data: Omit<Customer, 'customerid'>): Promis
       throw error;
     }
     
+    console.log("Created customer:", customer);
     return customer;
   } catch (error) {
     console.error('Error in createCustomer:', error);

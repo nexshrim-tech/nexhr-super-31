@@ -3,18 +3,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { Employee } from '@/types/employee';
 import { mapEmployeeDBToEmployee, mapEmployeeToDBFormat } from '@/utils/employeeMappers';
 
-export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
+export const getEmployees = async (): Promise<Employee[]> => {
   try {
     console.log('Fetching employees with auth user...');
     // Get the current auth user to make sure we're authenticated
     const { data: authData } = await supabase.auth.getUser();
     console.log('Auth user:', authData?.user?.email || 'Not authenticated');
     
-    // With RLS enabled, we don't need to filter by customerid explicitly
-    // It will be handled by the RLS policies
-    let query = supabase.from('employee').select();
+    if (!authData?.user) {
+      console.error('No authenticated user found');
+      return [];
+    }
     
-    const { data, error } = await query.order('employeeid');
+    // With RLS enabled, we don't need to filter by customerid explicitly
+    // It will be handled by the RLS policies that we've set up
+    const { data, error } = await supabase
+      .from('employee')
+      .select()
+      .order('employeeid');
 
     if (error) {
       console.error('Error fetching employees:', error);
@@ -38,16 +44,15 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
         firstname: 'Admin',
         lastname: 'User',
         email: '',
-        // Include other required fields with default values
         address: '',
         city: '',
         state: '',
         country: '',
-        postalcode: '', // Fixed: Changed 'zipcode' to 'postalcode' to match Employee interface
-        phonenumber: '', // Fixed: Using empty string instead of number
+        postalcode: '',
+        phonenumber: '',
         jobtitle: '',
         department: '',
-        employmentstatus: 'Active', // Fixed: Using a valid employmentstatus value
+        employmentstatus: 'Active',
         gender: '',
       };
     }
@@ -80,7 +85,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     
     // Convert the employee data to database format
     const dbEmployee = mapEmployeeToDBFormat(employee);
-    console.log('Formatted employee data for database:', dbEmployee);
     
     // Get the current auth user's ID to use as the customerid
     const { data: userData } = await supabase.auth.getUser();
@@ -88,7 +92,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw new Error('You must be logged in to add an employee');
     }
     
-    // Ensure customerid is set to the current auth user's ID
+    // Important: Set customerid as the authenticated user's ID
     dbEmployee.customerid = userData.user.id;
     console.log('Setting customerid to auth user ID:', userData.user.id);
     

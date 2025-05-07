@@ -1,13 +1,16 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { getCurrentCustomer, createCustomer } from '@/services/customerService';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  customerId: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
   signOut: () => Promise<void>;
@@ -28,8 +31,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Get user's customerid
+  const fetchCustomerId = async (user: User) => {
+    try {
+      const customer = await getCurrentCustomer(user);
+      if (customer) {
+        console.log("Found customer record with ID:", customer.customerid);
+        setCustomerId(customer.customerid);
+      } else {
+        console.log("No customer record found for user");
+        setCustomerId(null);
+      }
+    } catch (error) {
+      console.error("Error fetching customer ID:", error);
+      setCustomerId(null);
+    }
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -38,14 +59,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (event === 'SIGNED_IN') {
-          console.log("User signed in:", session?.user?.email);
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log("User signed in:", session.user.email);
+          // Fetch the customer ID after sign in
+          fetchCustomerId(session.user);
           toast({
             title: "Signed in successfully",
             description: "Welcome back!",
           });
         } else if (event === 'SIGNED_OUT') {
           console.log("User signed out");
+          setCustomerId(null);
           toast({
             title: "Signed out successfully",
             description: "You have been signed out.",
@@ -54,10 +78,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
+    // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session check:", session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchCustomerId(session.user);
+      }
+      
       setIsLoading(false);
     }).catch(error => {
       console.error("Error fetching initial session:", error);
@@ -124,6 +154,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       console.log('Sign up successful:', data);
+      
+      // Create customer record for the new user
+      if (data.user) {
+        try {
+          const customerData = {
+            name: metadata.company_name || metadata.full_name || '',
+            email: email,
+            phonenumber: metadata.phone_number || '',
+            companysize: metadata.company_size || '',
+            customerid: data.user.id // Use auth user id as customerid
+          };
+          
+          console.log("Creating customer record:", customerData);
+          await createCustomer(customerData);
+          setCustomerId(data.user.id);
+        } catch (customerError) {
+          console.error("Error creating customer record:", customerError);
+        }
+      }
+      
       toast({
         title: "Sign up successful",
         description: "Please check your email to verify your account.",
@@ -150,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         throw error;
       }
+      setCustomerId(null);
       navigate('/login');
     } catch (error: any) {
       console.error('Error signing out:', error.message);
@@ -167,6 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     isLoading,
+    customerId,
     signIn,
     signUp,
     signOut

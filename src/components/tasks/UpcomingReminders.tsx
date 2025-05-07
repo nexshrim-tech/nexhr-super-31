@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell } from "lucide-react";
 import TaskCard from "./TaskCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 interface Task {
   id: string | number;
@@ -37,6 +38,7 @@ interface UpcomingRemindersProps {
 
 const UpcomingReminders: React.FC<UpcomingRemindersProps> = ({ tasks = [] }) => {
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
+  const { user } = useAuth();
 
   useEffect(() => {
     // Find upcoming tasks from provided tasks or fetch from database
@@ -64,36 +66,36 @@ const UpcomingReminders: React.FC<UpcomingRemindersProps> = ({ tasks = [] }) => 
     } else {
       const fetchUpcomingTasks = async () => {
         try {
-          const { data: authData } = await supabase.auth.getUser();
-          if (authData?.user) {
-            console.log("Authenticated user:", authData.user.email);
-            
-            const today = new Date();
-            const nextWeek = new Date();
-            nextWeek.setDate(today.getDate() + 7);
-            
-            // With RLS enabled, the query will automatically filter by the authenticated user's customerid
-            const { data: upcomingData, error } = await supabase
-              .from('tracklist')
-              .select('*')
-              .gte('deadline', today.toISOString().split('T')[0])
-              .lte('deadline', nextWeek.toISOString().split('T')[0])
-              .order('deadline', { ascending: true })
-              .limit(3);
-              
-            if (error) {
-              console.error("Error fetching upcoming tasks:", error);
-              return;
-            }
-              
-            if (upcomingData) {
-              console.log("Fetched upcoming tasks:", upcomingData.length);
-              // Convert tracklist items to Task format
-              const formattedTasks = upcomingData.map(convertTracklistToTask);
-              setUpcomingTasks(formattedTasks);
-            }
-          } else {
+          if (!user) {
             console.log("No authenticated user found");
+            return;
+          }
+          
+          console.log("Authenticated user:", user.email);
+          
+          const today = new Date();
+          const nextWeek = new Date();
+          nextWeek.setDate(today.getDate() + 7);
+          
+          // With RLS enabled, the query will automatically filter by the authenticated user's customerid
+          const { data: upcomingData, error } = await supabase
+            .from('tracklist')
+            .select('*')
+            .gte('deadline', today.toISOString().split('T')[0])
+            .lte('deadline', nextWeek.toISOString().split('T')[0])
+            .order('deadline', { ascending: true })
+            .limit(3);
+            
+          if (error) {
+            console.error("Error fetching upcoming tasks:", error);
+            return;
+          }
+            
+          if (upcomingData) {
+            console.log("Fetched upcoming tasks:", upcomingData.length);
+            // Convert tracklist items to Task format
+            const formattedTasks = upcomingData.map(convertTracklistToTask);
+            setUpcomingTasks(formattedTasks);
           }
         } catch (error) {
           console.error("Error fetching upcoming tasks:", error);
@@ -102,7 +104,7 @@ const UpcomingReminders: React.FC<UpcomingRemindersProps> = ({ tasks = [] }) => 
       
       fetchUpcomingTasks();
     }
-  }, [tasks]);
+  }, [tasks, user]);
 
   const getSubtitle = (task: Task) => {
     const dueDate = task.due_date || task.dueDate;
