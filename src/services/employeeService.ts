@@ -28,8 +28,16 @@ export const getEmployees = async (): Promise<Employee[]> => {
     }
 
     console.log(`Fetched ${data?.length || 0} employees`);
-    // Explicitly cast data to EmployeeDB[] to ensure proper typing
-    return (data || []).map((emp: EmployeeDB) => mapEmployeeDBToEmployee(emp));
+    
+    // Handle type conversion explicitly to avoid TypeScript errors
+    return (data || []).map(emp => {
+      // Convert to the expected shape if needed
+      const employeeData: EmployeeDB = {
+        ...emp,
+        customerid: emp.customerid ? String(emp.customerid) : undefined
+      };
+      return mapEmployeeDBToEmployee(employeeData);
+    });
   } catch (error) {
     console.error('Error in getEmployees:', error);
     throw error;
@@ -69,8 +77,15 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       throw error;
     }
 
-    // Cast data as EmployeeDB to ensure type compatibility
-    return data ? mapEmployeeDBToEmployee(data as EmployeeDB) : null;
+    if (!data) return null;
+    
+    // Convert customerid to string if it exists
+    const employeeData: EmployeeDB = {
+      ...data,
+      customerid: data.customerid ? String(data.customerid) : undefined
+    };
+    
+    return mapEmployeeDBToEmployee(employeeData);
   } catch (error) {
     console.error('Error in getEmployeeById:', error);
     throw error;
@@ -110,8 +125,15 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw error;
     }
 
-    // Cast data as EmployeeDB to ensure type compatibility
-    return mapEmployeeDBToEmployee(data as EmployeeDB);
+    if (!data) throw new Error('No data returned from insert operation');
+    
+    // Convert customerid to string if it exists
+    const employeeData: EmployeeDB = {
+      ...data,
+      customerid: data.customerid ? String(data.customerid) : undefined
+    };
+    
+    return mapEmployeeDBToEmployee(employeeData);
   } catch (error) {
     console.error('Error in addEmployee:', error);
     throw error;
@@ -139,8 +161,15 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       throw error;
     }
 
-    // Cast data as EmployeeDB to ensure type compatibility
-    return mapEmployeeDBToEmployee(data as EmployeeDB);
+    if (!data) throw new Error('No data returned from update operation');
+    
+    // Convert customerid to string if it exists
+    const employeeData: EmployeeDB = {
+      ...data,
+      customerid: data.customerid ? String(data.customerid) : undefined
+    };
+    
+    return mapEmployeeDBToEmployee(employeeData);
   } catch (error) {
     console.error('Error in updateEmployee:', error);
     throw error;

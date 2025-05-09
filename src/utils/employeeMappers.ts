@@ -10,7 +10,7 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   department: emp.department || '',
   joiningdate: emp.joiningdate || null,
   profilepicturepath: emp.profilepicturepath || '',
-  customerid: emp.customerid, // Now handles UUID as string
+  customerid: emp.customerid, // Already handles UUID as string
   address: emp.address || '',
   gender: emp.gender || '',
   dateofbirth: emp.dateofbirth || null,
