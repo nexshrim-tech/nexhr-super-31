@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Employee } from '@/types/employee';
+import { Employee, EmployeeDB } from '@/types/employee';
 import { mapEmployeeDBToEmployee, mapEmployeeToDBFormat } from '@/utils/employeeMappers';
 
 export const getEmployees = async (): Promise<Employee[]> => {
@@ -28,7 +28,8 @@ export const getEmployees = async (): Promise<Employee[]> => {
     }
 
     console.log(`Fetched ${data?.length || 0} employees`);
-    return (data || []).map(mapEmployeeDBToEmployee);
+    // Explicitly cast data to EmployeeDB[] to ensure proper typing
+    return (data || []).map((emp: EmployeeDB) => mapEmployeeDBToEmployee(emp));
   } catch (error) {
     console.error('Error in getEmployees:', error);
     throw error;
@@ -68,7 +69,8 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
       throw error;
     }
 
-    return data ? mapEmployeeDBToEmployee(data) : null;
+    // Cast data as EmployeeDB to ensure type compatibility
+    return data ? mapEmployeeDBToEmployee(data as EmployeeDB) : null;
   } catch (error) {
     console.error('Error in getEmployeeById:', error);
     throw error;
@@ -108,7 +110,8 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw error;
     }
 
-    return mapEmployeeDBToEmployee(data);
+    // Cast data as EmployeeDB to ensure type compatibility
+    return mapEmployeeDBToEmployee(data as EmployeeDB);
   } catch (error) {
     console.error('Error in addEmployee:', error);
     throw error;
@@ -136,7 +139,8 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
       throw error;
     }
 
-    return mapEmployeeDBToEmployee(data);
+    // Cast data as EmployeeDB to ensure type compatibility
+    return mapEmployeeDBToEmployee(data as EmployeeDB);
   } catch (error) {
     console.error('Error in updateEmployee:', error);
     throw error;
