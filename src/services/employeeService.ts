@@ -92,7 +92,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw new Error('You must be logged in to add an employee');
     }
     
-    // Important: Set customerid as the authenticated user's ID
+    // Important: Set customerid as the authenticated user's ID (UUID)
     dbEmployee.customerid = userData.user.id;
     console.log('Setting customerid to auth user ID:', userData.user.id);
     

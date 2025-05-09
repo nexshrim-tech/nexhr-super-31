@@ -10,7 +10,7 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   department: emp.department || '',
   joiningdate: emp.joiningdate || null,
   profilepicturepath: emp.profilepicturepath || '',
-  customerid: emp.customerid,
+  customerid: emp.customerid, // Now handles UUID as string
   address: emp.address || '',
   gender: emp.gender || '',
   dateofbirth: emp.dateofbirth || null,
@@ -45,7 +45,7 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
   dbEmployee.department = employee.department || '';
   dbEmployee.joiningdate = employee.joiningdate || null;
   dbEmployee.profilepicturepath = employee.profilepicturepath || '';
-  dbEmployee.customerid = employee.customerid || null;
+  dbEmployee.customerid = employee.customerid || null; // Handles UUID as string
   dbEmployee.address = employee.address || '';
   dbEmployee.gender = employee.gender || '';
   dbEmployee.dateofbirth = employee.dateofbirth || null;
