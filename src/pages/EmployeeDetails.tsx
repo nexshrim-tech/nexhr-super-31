@@ -103,7 +103,8 @@ const EmployeeDetails = () => {
           });
         } else {
           await createAttendanceSettings({
-            employeeid: employee.employeeid,
+            employee_id: employee.employeeid,
+            customerid: employee.customerid || "",
             geofencingenabled: value,
             photoverificationenabled: false,
             latethreshold: "15",

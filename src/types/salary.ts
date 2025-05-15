@@ -11,10 +11,27 @@ export interface PayrollItem {
   status: string;
 }
 
-export interface SalaryComponent {
-  componentName: string;
+export interface SalaryData {
+  month: string;
   amount: number;
-  type: 'earning' | 'deduction';
+}
+
+export interface SalaryAllowances {
+  basicSalary: number;
+  hra: number;
+  conveyanceAllowance: number;
+  medicalAllowance: number;
+  specialAllowance: number;
+  otherAllowances: number;
+}
+
+export interface SalaryDeductions {
+  incomeTax: number;
+  providentFund: number;
+  professionalTax: number;
+  esi: number;
+  loanDeduction: number;
+  otherDeductions: number;
 }
 
 export interface EmployeeSalary {
@@ -28,22 +45,8 @@ export interface EmployeeSalary {
   salary: number;
   lastIncrement: string;
   status: string;
-  allowances: {
-    basicSalary: number;
-    hra: number;
-    conveyanceAllowance: number;
-    medicalAllowance: number;
-    specialAllowance: number;
-    otherAllowances: number;
-  };
-  deductions: {
-    incomeTax: number;
-    providentFund: number;
-    professionalTax: number;
-    esi: number;
-    loanDeduction: number;
-    otherDeductions: number;
-  };
+  allowances: SalaryAllowances;
+  deductions: SalaryDeductions;
 }
 
 export interface PayslipRecord {
@@ -63,4 +66,10 @@ export interface SalaryDetail {
   total: number;
   generatedAt: string;
   status: 'draft' | 'processed' | 'paid';
+}
+
+export interface SalaryComponent {
+  componentName: string;
+  amount: number;
+  type: 'earning' | 'deduction';
 }

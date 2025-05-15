@@ -6,7 +6,7 @@ import { Download, Filter, MapPin, Settings, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -67,8 +67,8 @@ const EmployeeLocation = () => {
         latitude: Number(item.latitude),
         longitude: Number(item.longitude),
         timestamp: item.timestamp,
-        // Handle the employee field correctly, whether it returns data or an error
-        employee: typeof item.employee === 'object' && item.employee 
+        // Handle the employee field safely, whether it returns data or an error
+        employee: item.employee && typeof item.employee === 'object' 
           ? {
               firstname: item.employee.firstname,
               lastname: item.employee.lastname,
@@ -131,7 +131,7 @@ const EmployeeLocation = () => {
                   longitude: Number(data.longitude),
                   timestamp: data.timestamp,
                   // Handle potential error or missing data
-                  employee: typeof data.employee === 'object' && data.employee 
+                  employee: data.employee && typeof data.employee === 'object'
                     ? {
                         firstname: data.employee.firstname,
                         lastname: data.employee.lastname,
@@ -162,7 +162,10 @@ const EmployeeLocation = () => {
                 });
                 
                 const employeeName = newLocation.employee?.firstname || 'Employee';
-                toast.info(`${employeeName} location updated`);
+                toast({
+                  title: "Location Updated",
+                  description: `${employeeName} location updated`
+                });
               }
             }
           }
@@ -178,14 +181,19 @@ const EmployeeLocation = () => {
   const toggleLiveTracking = () => {
     setIsLive(!isLive);
     
-    toast(isLive 
-      ? "You have stopped tracking employee locations in real-time." 
-      : "You are now tracking employee locations in real-time."
-    );
+    toast({
+      title: isLive ? "Tracking Stopped" : "Tracking Started",
+      description: isLive 
+        ? "You have stopped tracking employee locations in real-time." 
+        : "You are now tracking employee locations in real-time."
+    });
   };
 
   const handleExportMap = () => {
-    toast("The current map view has been exported.");
+    toast({
+      title: "Map Exported",
+      description: "The current map view has been exported."
+    });
   };
 
   return (
@@ -218,7 +226,10 @@ const EmployeeLocation = () => {
                 Export Map
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                toast("Location filter has been applied.");
+                toast({
+                  title: "Filter Applied",
+                  description: "Location filter has been applied."
+                });
               }} className="cursor-pointer">
                 <Filter className="h-4 w-4 mr-2" />
                 Filter View
