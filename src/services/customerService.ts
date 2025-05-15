@@ -13,7 +13,7 @@ export interface Customer {
   subscriptionstatus?: string;
   subscriptionenddate?: string;
   email: string | null;
-  password: string | null;
+  password?: string | null;
   phonenumber: string | null;
   companysize: string | null;
   planid: number | null;
@@ -25,7 +25,7 @@ export const getCurrentCustomer = async (user: User | null): Promise<Customer | 
   try {
     console.log("Fetching customer data for user:", user.id);
     
-    // Get customer data directly using auth.uid()
+    // Get customer data using user.id
     const { data: customer, error } = await supabase
       .from('customer')
       .select('*')
@@ -48,6 +48,11 @@ export const getCurrentCustomer = async (user: User | null): Promise<Customer | 
 export const createCustomer = async (data: Partial<Customer>): Promise<Customer | null> => {
   try {
     console.log("Creating customer with data:", data);
+    
+    // Ensure the data contains a customerid
+    if (!data.customerid) {
+      throw new Error("Customer ID is required");
+    }
     
     const { data: customer, error } = await supabase
       .from('customer')

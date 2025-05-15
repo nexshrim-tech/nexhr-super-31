@@ -127,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
+      // First, create the user in Supabase Auth
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -155,22 +156,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('Sign up successful:', data);
       
-      // Create customer record for the new user
+      // If there's no trigger, manually create a customer record as a fallback
       if (data.user) {
         try {
           const customerData = {
+            customerid: data.user.id, // Use auth user id as customerid
             name: metadata.company_name || metadata.full_name || '',
             email: email,
             phonenumber: metadata.phone_number || '',
             companysize: metadata.company_size || '',
-            customerid: data.user.id // Use auth user id as customerid
           };
           
-          console.log("Creating customer record:", customerData);
-          await createCustomer(customerData);
+          console.log("Creating customer record as fallback:", customerData);
+          
+          // Check if a customer record already exists
+          const existingCustomer = await getCurrentCustomer(data.user);
+          
+          if (!existingCustomer) {
+            // Only create if it doesn't exist
+            await createCustomer(customerData);
+          }
+          
           setCustomerId(data.user.id);
         } catch (customerError) {
           console.error("Error creating customer record:", customerError);
+          // We don't want to fail the signup if this fails
+          // The trigger should handle this anyway
         }
       }
       
