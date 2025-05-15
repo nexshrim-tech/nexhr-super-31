@@ -47,11 +47,18 @@ const PayslipDialog: React.FC<PayslipDialogProps> = ({
       const year = now.getFullYear();
       const month = now.getMonth() + 1;
       
+      // Convert employeeid to number for database compatibility
+      const numericEmployeeId = parseInt(employeeData.id);
+      
+      if (isNaN(numericEmployeeId)) {
+        throw new Error("Invalid employee ID");
+      }
+      
       // Insert new payslip record
       const { data, error } = await supabase
         .from('payslip')
         .insert({
-          employeeid: employeeData.id,
+          employeeid: numericEmployeeId,
           year: year,
           month: month,
           amount: netSalary,
@@ -261,6 +268,49 @@ Generated on ${format(new Date(), "dd/MM/yyyy")}
       </DialogContent>
     </Dialog>
   );
+  
+  function handleDownloadPayslip() {
+    if (!employeeData) return;
+    
+    // Generate a simple text version of the payslip
+    const payslipText = `
+Payslip for ${employeeData.employee.name}
+Position: ${employeeData.position}
+Department: ${employeeData.department}
+Period: ${format(new Date(), "MMMM yyyy")}
+
+ALLOWANCES
+Basic Salary: ₹${employeeData.allowances.basicSalary.toFixed(2)}
+HRA: ₹${employeeData.allowances.hra.toFixed(2)}
+Conveyance Allowance: ₹${employeeData.allowances.conveyanceAllowance.toFixed(2)}
+Medical Allowance: ₹${employeeData.allowances.medicalAllowance.toFixed(2)}
+Special Allowance: ₹${employeeData.allowances.specialAllowance.toFixed(2)}
+Other Allowances: ₹${employeeData.allowances.otherAllowances.toFixed(2)}
+Total Allowances: ₹${totalAllowances.toFixed(2)}
+
+DEDUCTIONS
+Income Tax: ₹${employeeData.deductions.incomeTax.toFixed(2)}
+Provident Fund: ₹${employeeData.deductions.providentFund.toFixed(2)}
+Professional Tax: ₹${employeeData.deductions.professionalTax.toFixed(2)}
+ESI: ₹${employeeData.deductions.esi.toFixed(2)}
+Loan Deduction: ₹${employeeData.deductions.loanDeduction.toFixed(2)}
+Other Deductions: ₹${employeeData.deductions.otherDeductions.toFixed(2)}
+Total Deductions: ₹${totalDeductions.toFixed(2)}
+
+NET SALARY: ₹${netSalary.toFixed(2)}
+
+Generated on ${format(new Date(), "dd/MM/yyyy")}
+    `.trim();
+
+    // Create a blob and download it
+    const blob = new Blob([payslipText], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, `payslip_${employeeData.employee.name.replace(/\s+/g, '_').toLowerCase()}_${format(new Date(), 'MMM_yyyy')}.txt`);
+    
+    toast({
+      title: "Success",
+      description: "Payslip downloaded successfully",
+    });
+  }
 };
 
 export default PayslipDialog;

@@ -50,7 +50,7 @@ const EmployeeDetails = () => {
       if (id && !isNaN(parseInt(id))) {
         try {
           setLoading(true);
-          const employeeId = parseInt(id);
+          const employeeId = id;
           const empData = await getEmployeeById(employeeId);
           
           if (empData) {
@@ -64,7 +64,7 @@ const EmployeeDetails = () => {
             const settings = await getAttendanceSettings(employeeId);
             if (settings && settings.length > 0) {
               setAttendanceSettings(settings[0]);
-              setGeofencingEnabled(settings[0].geofencingenabled);
+              setGeofencingEnabled(settings[0].geofencingenabled || false);
             }
           } else {
             toast({
@@ -95,10 +95,10 @@ const EmployeeDetails = () => {
   const handleGeofencingToggle = async (value: boolean) => {
     setGeofencingEnabled(value);
     
-    if (employee) {
+    if (employee && employee.employeeid) {
       try {
         if (attendanceSettings) {
-          await updateAttendanceSettings(attendanceSettings.id!, {
+          await updateAttendanceSettings(attendanceSettings.id, {
             geofencingenabled: value
           });
         } else {

@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceSettings {
+  id?: string;
   attendancesettingid?: string;
   employeeid?: string;
   employee_id?: string;
@@ -13,11 +14,15 @@ export interface AttendanceSettings {
 }
 
 // Get all attendance settings
-export const getAttendanceSettings = async (): Promise<AttendanceSettings[]> => {
+export const getAttendanceSettings = async (employeeId?: string): Promise<AttendanceSettings[]> => {
   try {
-    const { data, error } = await supabase
-      .from('attendancesettings')
-      .select('*');
+    let query = supabase.from('attendancesettings').select('*');
+    
+    if (employeeId) {
+      query = query.eq('employee_id', employeeId);
+    }
+    
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching attendance settings:", error);
@@ -26,6 +31,7 @@ export const getAttendanceSettings = async (): Promise<AttendanceSettings[]> => 
 
     // Map database fields to interface
     return (data || []).map(item => ({
+      id: String(item.attendancesettingid),
       attendancesettingid: String(item.attendancesettingid),
       employeeid: String(item.employee_id), // Map to employeeid for backward compatibility
       employee_id: String(item.employee_id),
@@ -60,6 +66,7 @@ export const getEmployeeAttendanceSettings = async (employeeId: string): Promise
     }
 
     return {
+      id: String(data.attendancesettingid),
       attendancesettingid: String(data.attendancesettingid),
       employeeid: String(data.employee_id), // Map to employeeid for backward compatibility
       employee_id: String(data.employee_id),
@@ -75,32 +82,34 @@ export const getEmployeeAttendanceSettings = async (employeeId: string): Promise
   }
 };
 
-// Create or update attendance settings
-export const upsertAttendanceSettings = async (settings: AttendanceSettings): Promise<AttendanceSettings> => {
+// Create attendance settings
+export const createAttendanceSettings = async (settings: Omit<AttendanceSettings, "attendancesettingid">): Promise<AttendanceSettings> => {
   try {
-    // Make sure to map employeeid to employee_id if it exists
-    const settingsToUpsert = {
-      ...settings,
-      employee_id: settings.employee_id || settings.employeeid
+    // Format settings to match database schema
+    const settingsToInsert = {
+      employee_id: settings.employee_id || settings.employeeid,
+      customerid: settings.customerid,
+      workstarttime: settings.workstarttime,
+      latethreshold: settings.latethreshold,
+      geofencingenabled: settings.geofencingenabled,
+      photoverificationenabled: settings.photoverificationenabled
     };
-    
-    // Remove employeeid to prevent Supabase from trying to insert it
-    delete settingsToUpsert.employeeid;
     
     const { data, error } = await supabase
       .from('attendancesettings')
-      .upsert(settingsToUpsert)
+      .insert(settingsToInsert)
       .select()
       .single();
 
     if (error) {
-      console.error("Error upserting attendance settings:", error);
+      console.error("Error creating attendance settings:", error);
       throw error;
     }
 
     return {
+      id: String(data.attendancesettingid),
       attendancesettingid: String(data.attendancesettingid),
-      employeeid: String(data.employee_id), // Map to employeeid for backward compatibility
+      employeeid: String(data.employee_id),
       employee_id: String(data.employee_id),
       customerid: String(data.customerid),
       workstarttime: data.workstarttime,
@@ -109,7 +118,52 @@ export const upsertAttendanceSettings = async (settings: AttendanceSettings): Pr
       photoverificationenabled: data.photoverificationenabled
     };
   } catch (error) {
-    console.error("Error in upsertAttendanceSettings:", error);
+    console.error("Error in createAttendanceSettings:", error);
+    throw error;
+  }
+};
+
+// Update attendance settings
+export const updateAttendanceSettings = async (id: string, settings: Partial<AttendanceSettings>): Promise<AttendanceSettings> => {
+  try {
+    // Create a copy of settings to avoid modifying the input object
+    const settingsToUpdate = { ...settings };
+    
+    // Map employeeid to employee_id if it exists
+    if (settingsToUpdate.employeeid && !settingsToUpdate.employee_id) {
+      settingsToUpdate.employee_id = settingsToUpdate.employeeid;
+    }
+    
+    // Remove properties that shouldn't be sent to the database
+    delete settingsToUpdate.employeeid;
+    delete settingsToUpdate.id; 
+    delete settingsToUpdate.attendancesettingid;
+
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .update(settingsToUpdate)
+      .eq('attendancesettingid', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating attendance settings:", error);
+      throw error;
+    }
+
+    return {
+      id: String(data.attendancesettingid),
+      attendancesettingid: String(data.attendancesettingid),
+      employeeid: String(data.employee_id),
+      employee_id: String(data.employee_id),
+      customerid: String(data.customerid),
+      workstarttime: data.workstarttime,
+      latethreshold: data.latethreshold,
+      geofencingenabled: data.geofencingenabled,
+      photoverificationenabled: data.photoverificationenabled
+    };
+  } catch (error) {
+    console.error("Error in updateAttendanceSettings:", error);
     throw error;
   }
 };
@@ -128,6 +182,47 @@ export const deleteAttendanceSettings = async (settingId: string): Promise<void>
     }
   } catch (error) {
     console.error("Error in deleteAttendanceSettings:", error);
+    throw error;
+  }
+};
+
+// Upsert attendance settings
+export const upsertAttendanceSettings = async (settings: AttendanceSettings): Promise<AttendanceSettings> => {
+  try {
+    // Format settings to match database schema
+    const settingsToUpsert = {
+      ...settings,
+      employee_id: settings.employee_id || settings.employeeid
+    };
+    
+    // Remove properties that shouldn't be sent to the database
+    delete settingsToUpsert.employeeid;
+    delete settingsToUpsert.id;
+    
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .upsert(settingsToUpsert)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error upserting attendance settings:", error);
+      throw error;
+    }
+
+    return {
+      id: String(data.attendancesettingid),
+      attendancesettingid: String(data.attendancesettingid),
+      employeeid: String(data.employee_id),
+      employee_id: String(data.employee_id),
+      customerid: String(data.customerid),
+      workstarttime: data.workstarttime,
+      latethreshold: data.latethreshold,
+      geofencingenabled: data.geofencingenabled,
+      photoverificationenabled: data.photoverificationenabled
+    };
+  } catch (error) {
+    console.error("Error in upsertAttendanceSettings:", error);
     throw error;
   }
 };

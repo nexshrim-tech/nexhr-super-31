@@ -7,10 +7,10 @@ export interface AttendanceRecord {
   customerid: string;
   checkintimestamp?: string;
   checkouttimestamp?: string;
-  checkintime?: string;
-  checkouttime?: string;
-  date?: string;
-  workhours?: string;
+  checkintime?: string; // Display-friendly format
+  checkouttime?: string; // Display-friendly format
+  date?: string; // Date for the attendance record
+  workhours?: string; // Calculated work hours
   selfieimagepath?: string;
   status?: string;
   notes?: string;
@@ -18,7 +18,7 @@ export interface AttendanceRecord {
     firstname?: string;
     lastname?: string;
     jobtitle?: string;
-  };
+  } | null;
 }
 
 /**
@@ -51,6 +51,18 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     }
 
     return (data || []).map(record => {
+      // Transform the data with calculated fields
+      const checkInTime = record.checkintimestamp ? 
+        format(new Date(record.checkintimestamp), 'HH:mm') : undefined;
+      
+      const checkOutTime = record.checkouttimestamp ? 
+        format(new Date(record.checkouttimestamp), 'HH:mm') : undefined;
+      
+      const workHours = calculateWorkHours(
+        record.checkintimestamp, 
+        record.checkouttimestamp
+      );
+      
       // Transform the data to include formatted dates and calculated work hours
       const transformedRecord: AttendanceRecord = {
         employeeid: String(record.employeeid),
@@ -58,22 +70,21 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
         checkintimestamp: record.checkintimestamp,
         checkouttimestamp: record.checkouttimestamp,
         date: date, // Add the requested date
-        checkintime: record.checkintimestamp ? format(new Date(record.checkintimestamp), 'HH:mm') : undefined,
-        checkouttime: record.checkouttimestamp ? format(new Date(record.checkouttimestamp), 'HH:mm') : undefined,
+        checkintime: checkInTime,
+        checkouttime: checkOutTime,
         selfieimagepath: record.selfieimagepath,
         status: record.status,
         notes: '',
-        workhours: calculateWorkHours(record.checkintimestamp, record.checkouttimestamp),
+        workhours: workHours,
+        // Handle employee data safely with null checks
+        employee: record.employee && typeof record.employee === 'object' 
+          ? {
+              firstname: record.employee?.firstname || '',
+              lastname: record.employee?.lastname || '',
+              jobtitle: record.employee?.jobtitle || ''
+            }
+          : null
       };
-      
-      // Handle employee data safely
-      if (record.employee && typeof record.employee === 'object') {
-        transformedRecord.employee = {
-          firstname: record.employee.firstname,
-          lastname: record.employee.lastname,
-          jobtitle: record.employee.jobtitle
-        };
-      }
       
       return transformedRecord;
     });
@@ -119,10 +130,11 @@ export const updateAttendanceRecord = async (
     checkouttime?: string;
     date?: string;
     notes?: string;
+    customerid?: string;
   }
 ): Promise<AttendanceRecord | null> => {
   try {
-    const { date, checkintime, checkouttime, ...otherData } = data;
+    const { date, checkintime, checkouttime, customerid, ...otherData } = data;
     
     // Convert time strings to timestamps if provided
     let checkintimestamp: string | undefined;
@@ -150,13 +162,15 @@ export const updateAttendanceRecord = async (
     
     if (existingData && existingData.length > 0) {
       // Update existing record
+      const updateObject: any = { ...otherData };
+      
+      // Only add fields that are provided
+      if (checkintimestamp) updateObject.checkintimestamp = checkintimestamp;
+      if (checkouttimestamp) updateObject.checkouttimestamp = checkouttimestamp;
+      
       const { data: updateData, error: updateError } = await supabase
         .from('attendance')
-        .update({
-          ...otherData,
-          ...(checkintimestamp && { checkintimestamp }),
-          ...(checkouttimestamp && { checkouttimestamp })
-        })
+        .update(updateObject)
         .eq('employeeid', employeeId)
         .select('*')
         .single();
@@ -175,15 +189,26 @@ export const updateAttendanceRecord = async (
         date: date
       } : null;
     } else {
+      // We need a customerid for new records
+      if (!customerid) {
+        console.error('Customer ID is required for creating new attendance records');
+        throw new Error('Customer ID is required for creating new attendance records');
+      }
+      
       // Create new record
+      const insertObject: any = {
+        employeeid: employeeId,
+        customerid: customerid
+      };
+      
+      // Only add fields that are provided
+      if (checkintimestamp) insertObject.checkintimestamp = checkintimestamp;
+      if (checkouttimestamp) insertObject.checkouttimestamp = checkouttimestamp;
+      if (otherData.status) insertObject.status = otherData.status;
+      
       const { data: insertData, error: insertError } = await supabase
         .from('attendance')
-        .insert({
-          employeeid: employeeId,
-          ...(checkintimestamp && { checkintimestamp }),
-          ...(checkouttimestamp && { checkouttimestamp }),
-          ...otherData
-        })
+        .insert(insertObject)
         .select('*')
         .single();
       
@@ -198,7 +223,8 @@ export const updateAttendanceRecord = async (
         customerid: String(insertData.customerid),
         checkintime: checkintime,
         checkouttime: checkouttime,
-        date: date
+        date: date,
+        notes: otherData.notes
       } : null;
     }
   } catch (error) {

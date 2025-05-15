@@ -68,8 +68,8 @@ const EmployeeLocation = () => {
         latitude: Number(item.latitude),
         longitude: Number(item.longitude),
         timestamp: item.timestamp,
-        customerid: String(item.customerid),
-        // Handle the employee field safely, whether it returns data or an error
+        customerid: item.customerid ? String(item.customerid) : undefined,
+        // Handle the employee field safely with null checks
         employee: item.employee && typeof item.employee === 'object' 
           ? {
               firstname: item.employee?.firstname || '',
@@ -128,8 +128,8 @@ const EmployeeLocation = () => {
                   latitude: Number(data.latitude),
                   longitude: Number(data.longitude),
                   timestamp: data.timestamp,
-                  customerid: String(data.customerid),
-                  // Handle potential error or missing data
+                  customerid: data.customerid ? String(data.customerid) : undefined,
+                  // Handle potential error or missing data with proper null checks
                   employee: data.employee && typeof data.employee === 'object'
                     ? {
                         firstname: data.employee?.firstname || '',
@@ -156,6 +156,7 @@ const EmployeeLocation = () => {
                   }
                 });
                 
+                // Get employee name or use fallback
                 const employeeName = newLocation.employee?.firstname || 'Employee';
                 toast({
                   description: `${employeeName} location updated`

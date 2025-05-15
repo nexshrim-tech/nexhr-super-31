@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExpenseHistoryTable from './ExpenseHistoryTable';
@@ -210,3 +209,30 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
 };
 
 export default ExpenseHistoryTab;
+
+export const updateExpense = async (expenseId: string, status: string, notes?: string) => {
+  try {
+    // Convert expenseId to the correct type for the database operation
+    const numericExpenseId = parseInt(expenseId);
+    
+    if (isNaN(numericExpenseId)) {
+      throw new Error('Invalid expense ID');
+    }
+    
+    const { data, error } = await supabase
+      .from('expenses')
+      .update({ status, notes })
+      .eq('expenseid', numericExpenseId)
+      .select()
+      .single();
+      
+    if (error) {
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error updating expense:', error);
+    throw error;
+  }
+};

@@ -1,5 +1,5 @@
 
-import { toast as sonnerToast, type ToastT } from "sonner";
+import { toast as sonnerToast, type Toast } from "sonner";
 
 type ToastProps = {
   title?: string;
@@ -18,7 +18,7 @@ const useToast = () => {
       ? { backgroundColor: "#fee2e2", color: "#dc2626", borderColor: "#f87171" } 
       : {};
 
-    return sonnerToast(title || description, {
+    return sonnerToast(title || description || "", {
       description: title ? description : undefined,
       style,
       ...props,
@@ -32,12 +32,12 @@ const useToast = () => {
 export { useToast };
 
 // Export a simplified toast function that can be imported directly
-export const toast = (props: ToastProps): ToastT => {
+export const toast = (props: ToastProps): Toast => {
   const style = props.variant === "destructive" 
     ? { backgroundColor: "#fee2e2", color: "#dc2626", borderColor: "#f87171" } 
     : {};
 
-  return sonnerToast(props.title || props.description, {
+  return sonnerToast(props.title || props.description || "", {
     description: props.title ? props.description : undefined,
     style,
     ...props,
