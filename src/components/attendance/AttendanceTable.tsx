@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -34,7 +33,7 @@ const AttendanceTable = ({
     queryFn: () => getAttendanceForDate(formattedDate)
   });
 
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<AttendanceRecord>>({});
   const [localRecords, setLocalRecords] = useState<AttendanceRecord[]>([]);
 

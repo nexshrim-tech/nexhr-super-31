@@ -10,6 +10,7 @@ interface EmployeeLocation {
   latitude: number;
   longitude: number;
   timestamp: string;
+  trackid?: string;
   employee?: {
     firstname?: string;
     lastname?: string;

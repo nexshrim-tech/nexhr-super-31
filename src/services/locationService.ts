@@ -2,9 +2,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface EmployeeLocation {
-  trackid?: number;
-  employeeid: number;
-  customerid: number;
+  trackid?: string;
+  employeeid: string;
+  customerid: string;
   latitude: number;
   longitude: number;
   timestamp?: string;
@@ -27,7 +27,23 @@ export const getEmployeeLocations = async (): Promise<EmployeeLocation[]> => {
       throw error;
     }
 
-    return data || [];
+    // Convert all IDs to strings to ensure type consistency
+    return (data || []).map(item => ({
+      trackid: String(item.trackid),
+      employeeid: String(item.employeeid),
+      customerid: String(item.customerid),
+      latitude: Number(item.latitude),
+      longitude: Number(item.longitude),
+      timestamp: item.timestamp,
+      // Handle the case where employee might be an error object
+      employee: typeof item.employee === 'object' && item.employee 
+        ? {
+            firstname: item.employee.firstname,
+            lastname: item.employee.lastname,
+            jobtitle: item.employee.jobtitle
+          }
+        : undefined
+    }));
   } catch (error) {
     console.error('Error in getEmployeeLocations:', error);
     throw error;
@@ -35,8 +51,8 @@ export const getEmployeeLocations = async (): Promise<EmployeeLocation[]> => {
 };
 
 export const updateEmployeeLocation = async (
-  employeeId: number, 
-  customerId: number, 
+  employeeId: string, 
+  customerId: string, 
   latitude: number, 
   longitude: number
 ): Promise<EmployeeLocation> => {
@@ -60,7 +76,22 @@ export const updateEmployeeLocation = async (
       throw error;
     }
 
-    return data;
+    // Convert IDs to strings
+    return {
+      trackid: String(data.trackid),
+      employeeid: String(data.employeeid),
+      customerid: String(data.customerid),
+      latitude: Number(data.latitude),
+      longitude: Number(data.longitude),
+      timestamp: data.timestamp,
+      employee: typeof data.employee === 'object' && data.employee 
+        ? {
+            firstname: data.employee.firstname,
+            lastname: data.employee.lastname,
+            jobtitle: data.employee.jobtitle
+          }
+        : undefined
+    };
   } catch (error) {
     console.error('Error in updateEmployeeLocation:', error);
     throw error;

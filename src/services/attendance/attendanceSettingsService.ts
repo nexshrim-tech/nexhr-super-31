@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface AttendanceSettings {
   attendancesettingid?: string;
-  employee_id: string;
+  employee_id: string; // Match the database column name
   customerid: string;
   workstarttime?: string;
   latethreshold?: string;
@@ -23,7 +23,6 @@ export const getAttendanceSettings = async (employeeId: string): Promise<Attenda
       throw error;
     }
     
-    // No need for conversion as we've aligned our interface with the DB schema
     return data as AttendanceSettings[];
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);

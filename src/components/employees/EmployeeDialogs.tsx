@@ -1,12 +1,11 @@
 
 import React from 'react';
-import { Employee } from "@/services/employeeService";
 import DocumentUpdateDialog from "./DocumentUpdateDialog";
 import EmployeeEditDialog from "./EmployeeEditDialog";
 import PayslipDialog from "./PayslipDialog";
 import PasswordChangeDialog from "./PasswordChangeDialog";
 import OfficialDocumentsDialog from "./OfficialDocumentsDialog";
-import { supabase } from "@/integrations/supabase/client";
+import { Employee } from "@/types/employee";
 
 interface EmployeeDialogsProps {
   documentEditDialog: 'aadhar' | 'pan' | null;

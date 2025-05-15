@@ -22,7 +22,7 @@ interface EmployeeLocation {
   latitude: number;
   longitude: number;
   timestamp: string;
-  trackid?: string;  // Adding trackid as optional to match the type coming from Supabase
+  trackid?: string;
   employee?: {
     firstname?: string;
     lastname?: string;
@@ -60,14 +60,25 @@ const EmployeeLocation = () => {
         throw error;
       }
       
-      // Ensure type safety by mapping the results
+      // Map to the correct type with string IDs
       return (data || []).map(item => ({
-        trackid: item.trackid,
-        employeeid: item.employeeid,
+        trackid: String(item.trackid),
+        employeeid: String(item.employeeid),
         latitude: Number(item.latitude),
         longitude: Number(item.longitude),
         timestamp: item.timestamp,
-        employee: item.employee || undefined
+        // Handle the employee field correctly, whether it returns data or an error
+        employee: typeof item.employee === 'object' && item.employee 
+          ? {
+              firstname: item.employee.firstname,
+              lastname: item.employee.lastname,
+              jobtitle: item.employee.jobtitle
+            }
+          : {
+              firstname: '',
+              lastname: '',
+              jobtitle: ''
+            }
       })) as EmployeeLocation[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -114,12 +125,23 @@ const EmployeeLocation = () => {
                 
               if (data) {
                 const newLocation: EmployeeLocation = {
-                  trackid: data.trackid,
-                  employeeid: data.employeeid,
+                  trackid: String(data.trackid),
+                  employeeid: String(data.employeeid),
                   latitude: Number(data.latitude),
                   longitude: Number(data.longitude),
                   timestamp: data.timestamp,
-                  employee: data.employee
+                  // Handle potential error or missing data
+                  employee: typeof data.employee === 'object' && data.employee 
+                    ? {
+                        firstname: data.employee.firstname,
+                        lastname: data.employee.lastname,
+                        jobtitle: data.employee.jobtitle
+                      }
+                    : {
+                        firstname: '',
+                        lastname: '',
+                        jobtitle: ''
+                      }
                 };
                 
                 // Update the locations state
@@ -139,7 +161,8 @@ const EmployeeLocation = () => {
                   }
                 });
                 
-                toast.info(`${data.employee?.firstname || 'Employee'} location updated`);
+                const employeeName = newLocation.employee?.firstname || 'Employee';
+                toast.info(`${employeeName} location updated`);
               }
             }
           }
