@@ -33,8 +33,7 @@ export const getEmployees = async (): Promise<Employee[]> => {
     return (data || []).map(emp => {
       // Convert to the expected shape if needed
       const employeeData: EmployeeDB = {
-        ...emp,
-        customerid: emp.customerid ? String(emp.customerid) : undefined
+        ...emp
       };
       return mapEmployeeDBToEmployee(employeeData);
     });
@@ -44,12 +43,12 @@ export const getEmployees = async (): Promise<Employee[]> => {
   }
 };
 
-export const getEmployeeById = async (id: number): Promise<Employee | null> => {
+export const getEmployeeById = async (id: string): Promise<Employee | null> => {
   try {
     // Check if this is an admin-added expense (id might be null or 0)
-    if (!id || id === 0) {
+    if (!id) {
       return {
-        employeeid: 0,
+        employeeid: '0',
         firstname: 'Admin',
         lastname: 'User',
         email: '',
@@ -79,11 +78,7 @@ export const getEmployeeById = async (id: number): Promise<Employee | null> => {
 
     if (!data) return null;
     
-    // Convert customerid to string if it exists
-    const employeeData: EmployeeDB = {
-      ...data,
-      customerid: data.customerid ? String(data.customerid) : undefined
-    };
+    const employeeData: EmployeeDB = { ...data };
     
     return mapEmployeeDBToEmployee(employeeData);
   } catch (error) {
@@ -127,11 +122,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
 
     if (!data) throw new Error('No data returned from insert operation');
     
-    // Convert customerid to string if it exists
-    const employeeData: EmployeeDB = {
-      ...data,
-      customerid: data.customerid ? String(data.customerid) : undefined
-    };
+    const employeeData: EmployeeDB = { ...data };
     
     return mapEmployeeDBToEmployee(employeeData);
   } catch (error) {
@@ -140,7 +131,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
   }
 };
 
-export const updateEmployee = async (id: number, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
+export const updateEmployee = async (id: string, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
   try {
     console.log('Updating employee with data:', employee);
     
@@ -163,11 +154,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
 
     if (!data) throw new Error('No data returned from update operation');
     
-    // Convert customerid to string if it exists
-    const employeeData: EmployeeDB = {
-      ...data,
-      customerid: data.customerid ? String(data.customerid) : undefined
-    };
+    const employeeData: EmployeeDB = { ...data };
     
     return mapEmployeeDBToEmployee(employeeData);
   } catch (error) {
@@ -176,7 +163,7 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
   }
 };
 
-export const deleteEmployee = async (id: number): Promise<void> => {
+export const deleteEmployee = async (id: string): Promise<void> => {
   try {
     // Completely delete the employee record from the database
     const { error } = await supabase

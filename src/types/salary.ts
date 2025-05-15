@@ -18,7 +18,7 @@ export interface SalaryDeductions {
 }
 
 export interface EmployeeSalary {
-  id: number;
+  id: string;
   employee: { name: string; avatar: string };
   position: string;
   department: string;
@@ -44,9 +44,9 @@ export interface SalaryData {
 }
 
 export interface SalaryRecord {
-  salaryid: number;
-  employeeid: number;
-  customerid: number;
+  salaryid: string;
+  employeeid: string;
+  customerid: string;
   basicsalary: number;
   hra: number;
   conveyanceallowance: number;
@@ -62,9 +62,9 @@ export interface SalaryRecord {
 }
 
 export interface PayslipDBRecord {
-  payslipid: number;
-  employeeid: number;
-  customerid: number;
+  payslipid: string;
+  employeeid: string;
+  customerid: string;
   year: number;
   month: number;
   amount: number;

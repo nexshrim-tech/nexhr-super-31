@@ -6,7 +6,7 @@ import { Skeleton } from './ui/skeleton';
 
 // Define the employee location interface
 interface EmployeeLocation {
-  employeeid: number;
+  employeeid: string;
   latitude: number;
   longitude: number;
   timestamp: string;
@@ -25,7 +25,7 @@ interface LocationMapComponentProps {
 const LocationMapComponent = ({ employeeLocations, isLoading }: LocationMapComponentProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const markers = useRef<{[key: number]: mapboxgl.Marker}>({});
+  const markers = useRef<{[key: string]: mapboxgl.Marker}>({});
   const [mapInitialized, setMapInitialized] = useState(false);
 
   // Initialize map
@@ -106,7 +106,7 @@ const LocationMapComponent = ({ employeeLocations, isLoading }: LocationMapCompo
     
     // Remove markers for employees no longer in the list
     Object.keys(markers.current).forEach(id => {
-      const employeeId = Number(id);
+      const employeeId = id;
       if (!employeeLocations.find(loc => loc.employeeid === employeeId)) {
         markers.current[employeeId].remove();
         delete markers.current[employeeId];
@@ -130,13 +130,18 @@ const LocationMapComponent = ({ employeeLocations, isLoading }: LocationMapCompo
   };
 
   // Helper function to generate consistent colors based on employee ID
-  const getRandomColor = (id: number) => {
+  const getRandomColor = (id: string) => {
+    // Create a numeric hash from the string id
+    const hash = id.split('').reduce((acc, char) => {
+      return acc + char.charCodeAt(0);
+    }, 0);
+    
     const colors = [
       '#4285F4', '#EA4335', '#FBBC05', '#34A853', // Google colors
       '#1DA1F2', '#8A2BE2', '#FF6347', '#20B2AA', // Twitter blue, etc
       '#FF4500', '#32CD32', '#9370DB', '#FF8C00', // Reddit orange, etc
     ];
-    return colors[id % colors.length];
+    return colors[hash % colors.length];
   };
 
   if (isLoading) {

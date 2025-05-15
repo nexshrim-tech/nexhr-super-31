@@ -1,9 +1,10 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 export interface AttendanceRecord {
-  employeeid: number;
-  customerid: number;
+  employeeid: string;
+  customerid: string;
   checkintimestamp: string | null;
   checkouttimestamp: string | null;
   status: string;
@@ -76,7 +77,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
     );
     
     // For employees without attendance, mark them as absent
-    const absentEmployees = employees
+    const absentEmployees = (employees || [])
       .filter(emp => !employeesWithAttendance.has(emp.employeeid))
       .map(emp => ({
         employeeid: emp.employeeid,
@@ -96,7 +97,7 @@ export const getAttendanceForDate = async (date: string): Promise<AttendanceReco
       }));
     
     // Combine the actual attendance with absent records
-    return [...formattedAttendanceData, ...absentEmployees];
+    return [...formattedAttendanceData, ...absentEmployees] as AttendanceRecord[];
   } catch (error) {
     console.error('Error in getAttendanceForDate:', error);
     throw error;
@@ -122,7 +123,7 @@ export const setupAttendanceSubscription = () => {
     .subscribe();
 };
 
-export const updateAttendanceRecord = async (employeeId: number, updateData: AttendanceUpdateData): Promise<AttendanceRecord> => {
+export const updateAttendanceRecord = async (employeeId: string, updateData: AttendanceUpdateData): Promise<AttendanceRecord> => {
   try {
     // Prepare the update data
     const dataToUpdate: any = {};
@@ -235,7 +236,7 @@ export const updateAttendanceRecord = async (employeeId: number, updateData: Att
         checkouttime: updateData.checkouttime || '',
         workhours: '-',
         notes: updateData.notes
-      };
+      } as AttendanceRecord;
     }
 
     // Format the data to match the expected format in the UI

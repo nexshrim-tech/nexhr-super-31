@@ -21,7 +21,7 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   monthlysalary: emp.monthlysalary || 0,
   employmentstatus: emp.employmentstatus as 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation' || 'Active',
   employmenttype: emp.employmenttype || '',
-  phonenumber: emp.phonenumber ? emp.phonenumber.toString() : '',
+  phonenumber: emp.phonenumber || '',
   bloodgroup: emp.bloodgroup || '',
   fathersname: emp.fathersname || '',
   maritalstatus: emp.maritalstatus || '',
@@ -74,19 +74,8 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
     dbEmployee.monthlysalary = 0; // Default to 0
   }
   
-  // Handle phonenumber conversion for the database (expects numeric)
-  if (employee.phonenumber !== undefined) {
-    if (typeof employee.phonenumber === 'string' && employee.phonenumber.trim() !== '') {
-      // Remove non-numeric characters before parsing
-      const cleanedNumber = employee.phonenumber.replace(/\D/g, '');
-      const parsedPhone = cleanedNumber ? parseInt(cleanedNumber, 10) : null;
-      dbEmployee.phonenumber = !isNaN(parsedPhone as number) ? parsedPhone : null;
-    } else if (typeof employee.phonenumber === 'number') {
-      dbEmployee.phonenumber = employee.phonenumber;
-    } else {
-      dbEmployee.phonenumber = null;
-    }
-  }
+  // Handle phonenumber as string in database
+  dbEmployee.phonenumber = employee.phonenumber || '';
 
   return dbEmployee;
 };

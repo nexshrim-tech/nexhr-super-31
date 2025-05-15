@@ -18,11 +18,11 @@ import {
 import LocationMapComponent from "./LocationMapComponent";
 
 interface EmployeeLocation {
-  employeeid: number;
+  employeeid: string;
   latitude: number;
   longitude: number;
   timestamp: string;
-  trackid?: number;  // Adding trackid as optional to match the type coming from Supabase
+  trackid?: string;  // Adding trackid as optional to match the type coming from Supabase
   employee?: {
     firstname?: string;
     lastname?: string;
@@ -40,7 +40,19 @@ const EmployeeLocation = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('track')
-        .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+        .select(`
+          trackid,
+          employeeid,
+          latitude,
+          longitude,
+          timestamp,
+          customerid,
+          employee:employeeid (
+            firstname,
+            lastname,
+            jobtitle
+          )
+        `)
         .order('timestamp', { ascending: false });
         
       if (error) {
@@ -48,7 +60,15 @@ const EmployeeLocation = () => {
         throw error;
       }
       
-      return (data || []) as EmployeeLocation[];
+      // Ensure type safety by mapping the results
+      return (data || []).map(item => ({
+        trackid: item.trackid,
+        employeeid: item.employeeid,
+        latitude: Number(item.latitude),
+        longitude: Number(item.longitude),
+        timestamp: item.timestamp,
+        employee: item.employee || undefined
+      })) as EmployeeLocation[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -76,25 +96,46 @@ const EmployeeLocation = () => {
               // Fetch the latest data including the employee details
               const { data } = await supabase
                 .from('track')
-                .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+                .select(`
+                  trackid,
+                  employeeid,
+                  latitude,
+                  longitude,
+                  timestamp,
+                  customerid,
+                  employee:employeeid (
+                    firstname,
+                    lastname,
+                    jobtitle
+                  )
+                `)
                 .eq('trackid', payload.new.trackid)
                 .single();
                 
               if (data) {
+                const newLocation: EmployeeLocation = {
+                  trackid: data.trackid,
+                  employeeid: data.employeeid,
+                  latitude: Number(data.latitude),
+                  longitude: Number(data.longitude),
+                  timestamp: data.timestamp,
+                  employee: data.employee
+                };
+                
                 // Update the locations state
                 setEmployeeLocations(prevLocations => {
                   const existingIndex = prevLocations.findIndex(
-                    loc => loc.employeeid === data.employeeid
+                    loc => loc.employeeid === newLocation.employeeid
                   );
                   
                   if (existingIndex >= 0) {
                     // Update existing employee location
                     const updatedLocations = [...prevLocations];
-                    updatedLocations[existingIndex] = data as EmployeeLocation;
+                    updatedLocations[existingIndex] = newLocation;
                     return updatedLocations;
                   } else {
                     // Add new employee location
-                    return [...prevLocations, data as EmployeeLocation];
+                    return [...prevLocations, newLocation];
                   }
                 });
                 
@@ -114,7 +155,6 @@ const EmployeeLocation = () => {
   const toggleLiveTracking = () => {
     setIsLive(!isLive);
     
-    // Fix: Use the correct toast API syntax
     toast(isLive 
       ? "You have stopped tracking employee locations in real-time." 
       : "You are now tracking employee locations in real-time."
@@ -122,7 +162,6 @@ const EmployeeLocation = () => {
   };
 
   const handleExportMap = () => {
-    // Fix: Use the correct toast API syntax
     toast("The current map view has been exported.");
   };
 
@@ -156,7 +195,6 @@ const EmployeeLocation = () => {
                 Export Map
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                // Fix: Use the correct toast API syntax
                 toast("Location filter has been applied.");
               }} className="cursor-pointer">
                 <Filter className="h-4 w-4 mr-2" />
