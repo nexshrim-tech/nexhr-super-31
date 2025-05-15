@@ -12,7 +12,7 @@ export interface EmployeeLocation {
     firstname?: string;
     lastname?: string;
     jobtitle?: string;
-  };
+  } | null;
 }
 
 export const getEmployeeLocations = async (): Promise<EmployeeLocation[]> => {
@@ -38,11 +38,11 @@ export const getEmployeeLocations = async (): Promise<EmployeeLocation[]> => {
       // Handle the case where employee might be an error object
       employee: typeof item.employee === 'object' && item.employee 
         ? {
-            firstname: item.employee.firstname,
-            lastname: item.employee.lastname,
-            jobtitle: item.employee.jobtitle
+            firstname: item.employee?.firstname || '',
+            lastname: item.employee?.lastname || '',
+            jobtitle: item.employee?.jobtitle || ''
           }
-        : undefined
+        : null
     }));
   } catch (error) {
     console.error('Error in getEmployeeLocations:', error);
@@ -86,11 +86,11 @@ export const updateEmployeeLocation = async (
       timestamp: data.timestamp,
       employee: typeof data.employee === 'object' && data.employee 
         ? {
-            firstname: data.employee.firstname,
-            lastname: data.employee.lastname,
-            jobtitle: data.employee.jobtitle
+            firstname: data.employee?.firstname || '',
+            lastname: data.employee?.lastname || '',
+            jobtitle: data.employee?.jobtitle || ''
           }
-        : undefined
+        : null
     };
   } catch (error) {
     console.error('Error in updateEmployeeLocation:', error);

@@ -2,105 +2,132 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceSettings {
-  id?: string;
   attendancesettingid?: string;
-  employee_id: string;  // Changed from employeeid to match DB schema
-  customerid: string;
+  employeeid?: string;
+  employee_id?: string;
+  customerid?: string;
   workstarttime?: string;
   latethreshold?: string;
   geofencingenabled?: boolean;
   photoverificationenabled?: boolean;
 }
 
-/**
- * Fetches attendance settings for an employee
- */
-export const getAttendanceSettings = async (employeeId: string): Promise<AttendanceSettings[] | null> => {
+// Get all attendance settings
+export const getAttendanceSettings = async (): Promise<AttendanceSettings[]> => {
   try {
     const { data, error } = await supabase
       .from('attendancesettings')
-      .select('*')
-      .eq('employee_id', employeeId);
-      
+      .select('*');
+
     if (error) {
       console.error("Error fetching attendance settings:", error);
       throw error;
     }
-    
-    return data as AttendanceSettings[];
+
+    // Map database fields to interface
+    return (data || []).map(item => ({
+      attendancesettingid: String(item.attendancesettingid),
+      employeeid: String(item.employee_id), // Map to employeeid for backward compatibility
+      employee_id: String(item.employee_id),
+      customerid: String(item.customerid),
+      workstarttime: item.workstarttime,
+      latethreshold: item.latethreshold,
+      geofencingenabled: item.geofencingenabled,
+      photoverificationenabled: item.photoverificationenabled
+    }));
   } catch (error) {
     console.error("Error in getAttendanceSettings:", error);
-    return null;
-  }
-};
-
-/**
- * Updates attendance settings
- */
-export const updateAttendanceSettings = async (id: string, settings: Partial<AttendanceSettings>): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('attendancesettings')
-      .update(settings)
-      .eq('attendancesettingid', id);
-      
-    if (error) {
-      console.error("Error updating attendance settings:", error);
-      throw error;
-    }
-  } catch (error) {
-    console.error("Error in updateAttendanceSettings:", error);
     throw error;
   }
 };
 
-/**
- * Gets attendance settings by ID
- */
-export const getAttendanceSettingById = async (id: string): Promise<AttendanceSettings | null> => {
+// Get attendance settings for a specific employee
+export const getEmployeeAttendanceSettings = async (employeeId: string): Promise<AttendanceSettings | null> => {
   try {
     const { data, error } = await supabase
       .from('attendancesettings')
       .select('*')
-      .eq('attendancesettingid', id)
+      .eq('employee_id', employeeId)
       .single();
-      
-    if (error) {
-      console.error("Error fetching attendance setting by ID:", error);
-      throw error;
-    }
-    
-    return data as AttendanceSettings;
-  } catch (error) {
-    console.error("Error in getAttendanceSettingById:", error);
-    return null;
-  }
-};
 
-/**
- * Creates new attendance settings
- */
-export const createAttendanceSettings = async (settings: Omit<AttendanceSettings, 'attendancesettingid' | 'id'>): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('attendancesettings')
-      .insert({
-        employee_id: settings.employee_id,
-        customerid: settings.customerid,
-        workstarttime: settings.workstarttime,
-        latethreshold: settings.latethreshold,
-        geofencingenabled: settings.geofencingenabled,
-        photoverificationenabled: settings.photoverificationenabled
-      });
-      
     if (error) {
-      console.error("Error creating attendance settings:", error);
+      // If settings don't exist for this employee, return null instead of throwing
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      console.error("Error fetching employee attendance settings:", error);
       throw error;
     }
+
+    return {
+      attendancesettingid: String(data.attendancesettingid),
+      employeeid: String(data.employee_id), // Map to employeeid for backward compatibility
+      employee_id: String(data.employee_id),
+      customerid: String(data.customerid),
+      workstarttime: data.workstarttime,
+      latethreshold: data.latethreshold,
+      geofencingenabled: data.geofencingenabled,
+      photoverificationenabled: data.photoverificationenabled
+    };
   } catch (error) {
-    console.error("Error in createAttendanceSettings:", error);
+    console.error("Error in getEmployeeAttendanceSettings:", error);
     throw error;
   }
 };
 
-export * from './attendanceService';
+// Create or update attendance settings
+export const upsertAttendanceSettings = async (settings: AttendanceSettings): Promise<AttendanceSettings> => {
+  try {
+    // Make sure to map employeeid to employee_id if it exists
+    const settingsToUpsert = {
+      ...settings,
+      employee_id: settings.employee_id || settings.employeeid
+    };
+    
+    // Remove employeeid to prevent Supabase from trying to insert it
+    delete settingsToUpsert.employeeid;
+    
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .upsert(settingsToUpsert)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error upserting attendance settings:", error);
+      throw error;
+    }
+
+    return {
+      attendancesettingid: String(data.attendancesettingid),
+      employeeid: String(data.employee_id), // Map to employeeid for backward compatibility
+      employee_id: String(data.employee_id),
+      customerid: String(data.customerid),
+      workstarttime: data.workstarttime,
+      latethreshold: data.latethreshold,
+      geofencingenabled: data.geofencingenabled,
+      photoverificationenabled: data.photoverificationenabled
+    };
+  } catch (error) {
+    console.error("Error in upsertAttendanceSettings:", error);
+    throw error;
+  }
+};
+
+// Delete attendance settings
+export const deleteAttendanceSettings = async (settingId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('attendancesettings')
+      .delete()
+      .eq('attendancesettingid', settingId);
+
+    if (error) {
+      console.error("Error deleting attendance settings:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error in deleteAttendanceSettings:", error);
+    throw error;
+  }
+};

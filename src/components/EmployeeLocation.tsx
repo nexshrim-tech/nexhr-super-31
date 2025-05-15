@@ -6,7 +6,7 @@ import { Download, Filter, MapPin, Settings, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -23,11 +23,12 @@ interface EmployeeLocation {
   longitude: number;
   timestamp: string;
   trackid?: string;
+  customerid?: string;
   employee?: {
     firstname?: string;
     lastname?: string;
     jobtitle?: string;
-  };
+  } | null;
 }
 
 const EmployeeLocation = () => {
@@ -67,18 +68,15 @@ const EmployeeLocation = () => {
         latitude: Number(item.latitude),
         longitude: Number(item.longitude),
         timestamp: item.timestamp,
+        customerid: String(item.customerid),
         // Handle the employee field safely, whether it returns data or an error
         employee: item.employee && typeof item.employee === 'object' 
           ? {
-              firstname: item.employee.firstname,
-              lastname: item.employee.lastname,
-              jobtitle: item.employee.jobtitle
+              firstname: item.employee?.firstname || '',
+              lastname: item.employee?.lastname || '',
+              jobtitle: item.employee?.jobtitle || ''
             }
-          : {
-              firstname: '',
-              lastname: '',
-              jobtitle: ''
-            }
+          : null
       })) as EmployeeLocation[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -130,18 +128,15 @@ const EmployeeLocation = () => {
                   latitude: Number(data.latitude),
                   longitude: Number(data.longitude),
                   timestamp: data.timestamp,
+                  customerid: String(data.customerid),
                   // Handle potential error or missing data
                   employee: data.employee && typeof data.employee === 'object'
                     ? {
-                        firstname: data.employee.firstname,
-                        lastname: data.employee.lastname,
-                        jobtitle: data.employee.jobtitle
+                        firstname: data.employee?.firstname || '',
+                        lastname: data.employee?.lastname || '',
+                        jobtitle: data.employee?.jobtitle || ''
                       }
-                    : {
-                        firstname: '',
-                        lastname: '',
-                        jobtitle: ''
-                      }
+                    : null
                 };
                 
                 // Update the locations state
@@ -163,7 +158,6 @@ const EmployeeLocation = () => {
                 
                 const employeeName = newLocation.employee?.firstname || 'Employee';
                 toast({
-                  title: "Location Updated",
                   description: `${employeeName} location updated`
                 });
               }
@@ -182,7 +176,6 @@ const EmployeeLocation = () => {
     setIsLive(!isLive);
     
     toast({
-      title: isLive ? "Tracking Stopped" : "Tracking Started",
       description: isLive 
         ? "You have stopped tracking employee locations in real-time." 
         : "You are now tracking employee locations in real-time."
@@ -191,7 +184,6 @@ const EmployeeLocation = () => {
 
   const handleExportMap = () => {
     toast({
-      title: "Map Exported",
       description: "The current map view has been exported."
     });
   };
@@ -227,7 +219,6 @@ const EmployeeLocation = () => {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
                 toast({
-                  title: "Filter Applied",
                   description: "Location filter has been applied."
                 });
               }} className="cursor-pointer">
