@@ -1,5 +1,5 @@
 
-// Correctly exporting from hooks directory
+// Correctly importing from hooks directory
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "@/hooks/use-toast";
 

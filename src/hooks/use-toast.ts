@@ -84,6 +84,10 @@ export const useToast = () => {
 
 // Export the toast function directly for convenience
 export const toast = (props: ToastProps) => {
-  const { toast } = useToast();
-  toast(props);
+  const context = useContext(ToastContext);
+  if (!context) {
+    console.error("Toast was called outside of ToastContextProvider");
+    return;
+  }
+  context.toast(props);
 };

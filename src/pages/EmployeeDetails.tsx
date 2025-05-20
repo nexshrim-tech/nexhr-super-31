@@ -8,7 +8,11 @@ import { EmployeeWorkTab } from "@/components/employees/tabs/EmployeeWorkTab";
 import { EmployeePersonalTab } from "@/components/employees/tabs/EmployeePersonalTab";
 import { EmployeeBankTab } from "@/components/employees/tabs/EmployeeBankTab";
 import { EmployeeDocumentsTab } from "@/components/employees/tabs/EmployeeDocumentsTab";
-import { updateAttendanceSetting, createAttendanceSetting, getAttendanceSettings } from "@/services/attendance/attendanceSettingsService";
+import { 
+  getAttendanceSettings, 
+  updateAttendanceSetting as updateAttendanceSettings,
+  createAttendanceSetting as createAttendanceSettings
+} from "@/services/attendance/attendanceSettingsService";
 
 const EmployeeDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,9 +47,9 @@ const EmployeeDetails = () => {
       const existingSettings = await getAttendanceSettings(id);
 
       if (existingSettings) {
-        await updateAttendanceSetting(existingSettings.attendancesettingid, settings);
+        await updateAttendanceSettings(existingSettings.attendancesettingid, settings);
       } else {
-        await createAttendanceSetting({
+        await createAttendanceSettings({
           employee_id: id,
           customerid: employee.customerid,
           ...settings,
