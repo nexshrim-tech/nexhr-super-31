@@ -283,7 +283,7 @@ const Salary = () => {
       const { data: existingPayslip, error: checkError } = await supabase
         .from('payslip')
         .select('payslipid')
-        .eq('employeeid', selectedSalaryData.id)
+        .eq('employeeid', selectedSalaryData.id.toString())
         .eq('year', year)
         .eq('month', month);
         
@@ -318,7 +318,7 @@ const Salary = () => {
         result = await supabase
           .from('payslip')
           .insert({
-            employeeid: selectedSalaryData.id,
+            employeeid: selectedSalaryData.id.toString(),
             year: year,
             month: month,
             amount: netAmount,
@@ -381,7 +381,7 @@ const Salary = () => {
       const { data: existingSalary, error: checkError } = await supabase
         .from('salary')
         .select('salaryid')
-        .eq('employeeid', selectedSalaryData.id)
+        .eq('employeeid', selectedSalaryData.id.toString())
         .single();
 
       if (checkError && checkError.code !== 'PGRST116') {
@@ -415,13 +415,13 @@ const Salary = () => {
             loandeduction: deductions.loanDeduction,
             otherdeduction: deductions.otherDeductions
           })
-          .eq('employeeid', selectedSalaryData.id);
+          .eq('employeeid', selectedSalaryData.id.toString());
       } else {
         // Insert new salary record
         result = await supabase
           .from('salary')
           .insert({
-            employeeid: selectedSalaryData.id,
+            employeeid: selectedSalaryData.id.toString(),
             basicsalary: allowances.basicSalary,
             hra: allowances.hra,
             conveyanceallowance: allowances.conveyanceAllowance,

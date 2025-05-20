@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -198,8 +197,9 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
       const updatedSalaries = [];
 
       for (const employee of employeeData || []) {
-        // Find the salary data for this employee
-        let salary = salaryData?.find(s => s.employeeid === employee.employeeid);
+        // Find the salary data for this employee - convert ID to string for comparison
+        const empIdStr = employee.employeeid.toString();
+        let salary = salaryData?.find(s => s.employeeid.toString() === empIdStr);
         
         // If employee has monthlysalary but no salary record or monthlysalary doesn't match, sync it
         if (employee.monthlysalary && (!salary || (salary.monthlysalary !== employee.monthlysalary))) {
@@ -214,7 +214,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
             const salaryComponents = calculateSalaryComponents(baseSalary);
             
             // Get customerid from employee record - required field for salary table
-            const customerid = employee.customerid || 0;
+            const customerid = employee.customerid || "";
             
             // Create a new salary object with all required fields explicitly set
             // Using partial type to handle the fact that salaryid will be auto-generated
@@ -269,7 +269,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
         if (salary) {
           // Check if employee has a payslip for current month
           const hasCurrentPayslip = payslipData?.some(
-            p => p.employeeid === employee.employeeid && 
+            p => p.employeeid.toString() === employee.employeeid.toString() && 
                  p.year === currentYear && 
                  p.month === currentMonth
           );
@@ -369,7 +369,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
       const { data, error } = await supabase
         .from('payslip')
         .select('*')
-        .eq('employeeid', employee.id)
+        .eq('employeeid', employee.id.toString())
         .order('year', { ascending: false })
         .order('month', { ascending: false });
 

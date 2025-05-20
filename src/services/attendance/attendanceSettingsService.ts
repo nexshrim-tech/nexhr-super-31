@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceSettings {
@@ -30,17 +29,19 @@ export const getAttendanceSettings = async (employeeId?: string): Promise<Attend
     }
 
     // Map database fields to interface
-    return (data || []).map(item => ({
-      id: String(item.attendancesettingid),
-      attendancesettingid: String(item.attendancesettingid),
-      employeeid: String(item.employee_id), // Map to employeeid for backward compatibility
-      employee_id: String(item.employee_id),
-      customerid: String(item.customerid),
-      workstarttime: item.workstarttime,
-      latethreshold: item.latethreshold,
-      geofencingenabled: item.geofencingenabled,
-      photoverificationenabled: item.photoverificationenabled
+    const settings = data.map(item => ({
+      id: item.attendancesettingid,
+      attendancesettingid: item.attendancesettingid,
+      employeeid: item.employeeid || '',
+      employee_id: item.employee_id,
+      customerid: item.customerid,
+      workstarttime: item.workstarttime || '09:00:00',
+      latethreshold: String(item.latethreshold || '00:15:00'), // Convert to string
+      geofencingenabled: item.geofencingenabled || false,
+      photoverificationenabled: item.photoverificationenabled || false,
     }));
+
+    return settings;
   } catch (error) {
     console.error("Error in getAttendanceSettings:", error);
     throw error;
@@ -88,34 +89,34 @@ export const createAttendanceSettings = async (settings: Omit<AttendanceSettings
     // Format settings to match database schema
     const settingsToInsert = {
       employee_id: settings.employee_id || settings.employeeid,
-      customerid: settings.customerid,
-      workstarttime: settings.workstarttime,
-      latethreshold: settings.latethreshold,
-      geofencingenabled: settings.geofencingenabled,
-      photoverificationenabled: settings.photoverificationenabled
+      customerid: settings.customerid, // Ensure this is required
+      workstarttime: settings.workstarttime || '09:00:00',
+      latethreshold: settings.latethreshold || '00:15:00', // Ensure string format
+      geofencingenabled: settings.geofencingenabled || false,
+      photoverificationenabled: settings.photoverificationenabled || false
     };
     
-    const { data, error } = await supabase
+    const { data: newSettings, error: createError } = await supabase
       .from('attendancesettings')
       .insert(settingsToInsert)
       .select()
       .single();
 
-    if (error) {
-      console.error("Error creating attendance settings:", error);
-      throw error;
+    if (createError) {
+      console.error("Error creating attendance settings:", createError);
+      throw createError;
     }
 
     return {
-      id: String(data.attendancesettingid),
-      attendancesettingid: String(data.attendancesettingid),
-      employeeid: String(data.employee_id),
-      employee_id: String(data.employee_id),
-      customerid: String(data.customerid),
-      workstarttime: data.workstarttime,
-      latethreshold: data.latethreshold,
-      geofencingenabled: data.geofencingenabled,
-      photoverificationenabled: data.photoverificationenabled
+      id: String(newSettings.attendancesettingid),
+      attendancesettingid: String(newSettings.attendancesettingid),
+      employeeid: String(newSettings.employee_id),
+      employee_id: String(newSettings.employee_id),
+      customerid: String(newSettings.customerid),
+      workstarttime: newSettings.workstarttime,
+      latethreshold: newSettings.latethreshold,
+      geofencingenabled: newSettings.geofencingenabled,
+      photoverificationenabled: newSettings.photoverificationenabled
     };
   } catch (error) {
     console.error("Error in createAttendanceSettings:", error);
