@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import SidebarNav from '@/components/SidebarNav';
 import { Calendar } from '@/components/ui/calendar';
@@ -32,27 +33,8 @@ import { Plus, Edit, Trash2, Search, FileText } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/services/customerService';
-
-// Define interfaces for Expense and Category
-interface Expense {
-  id: string;
-  date: string;
-  description: string;
-  category: string;
-  amount: number;
-  employeeid?: string;
-  customerid?: string;
-  submittedby?: string;
-  submissiondate?: string;
-  status?: string;
-  billpath?: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  description?: string;
-}
+import { Expense } from '@/types/expense';
+import { Category } from '@/types/category';
 
 const Expenses = () => {
   const [date, setDate] = useState<DateRange | undefined>(undefined);
@@ -82,7 +64,7 @@ const Expenses = () => {
       const { data: expensesData, error: expensesError } = await supabase
         .from('expense')
         .select('*')
-        .order('date', { ascending: false });
+        .order('submissiondate', { ascending: false });
 
       if (expensesError) {
         console.error("Error fetching expenses:", expensesError);
@@ -190,15 +172,14 @@ const Expenses = () => {
     try {
       const { data, error } = await supabase
         .from('expense')
-        .insert([{
+        .insert({
           description: newExpense.description,
           category: newExpense.category,
           amount: newExpense.amount,
           submissiondate: newExpense.date,
-          // Convert ids to strings
-          employeeid: String(newExpense.employeeid || ''),
-          customerid: String(newExpense.customerid || '')
-        }])
+          employeeid: newExpense.employeeid || '',
+          customerid: newExpense.customerid || ''
+        })
         .select()
         .single();
 
@@ -337,14 +318,11 @@ const Expenses = () => {
   const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   // Fix for the reducer that's causing TS errors by using a proper typed approach
-  const categoryCounts = filteredExpenses.reduce((acc: Record<string, number>, expense) => {
+  const categoryCounts: Record<string, number> = {};
+  filteredExpenses.forEach(expense => {
     const category = expense.category || 'Uncategorized';
-    acc[category] = (acc[category] || 0) + 1;
-    return acc;
-  }, {});
-
-  // Convert to record for typesafety
-  const totalByCategory: Record<string, number> = categoryCounts;
+    categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+  });
 
   const hasExpenses = expenses.length > 0;
 
@@ -539,6 +517,7 @@ interface ExpenseFormProps {
 }
 
 const ExpenseForm: React.FC<ExpenseFormProps> = ({ expense, categories, onCreate, onUpdate, onClose }) => {
+  const { toast } = useToast();
   const [date, setDate] = useState<Date | undefined>(expense ? new Date(expense.date) : undefined);
   const [description, setDescription] = useState(expense ? expense.description : '');
   const [category, setCategory] = useState(expense ? expense.category : categories.length > 0 ? categories[0].name : '');

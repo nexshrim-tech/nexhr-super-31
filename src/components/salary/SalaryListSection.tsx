@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -56,7 +57,7 @@ const calculateSalaryComponents = (baseSalary: number) => {
     specialallowance: specialAllowance,
     otherallowance: 0,
     incometax: incomeTax,
-    pf: pf,
+    pf: pf, 
     professionaltax: professionalTax,
     esiemployee: esi,
     loandeduction: 0,
