@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import SidebarNav from '@/components/SidebarNav';
 import { Calendar } from '@/components/ui/calendar';
@@ -78,7 +77,7 @@ const Expenses = () => {
 
       // Convert and map data to the Expense interface
       const mappedExpenses: Expense[] = (expensesData || []).map(exp => ({
-        id: String(exp.expenseid),
+        expenseid: String(exp.expenseid),
         date: exp.submissiondate || new Date().toISOString(),
         description: exp.description || '',
         category: exp.category || '',
@@ -87,7 +86,7 @@ const Expenses = () => {
         customerid: String(exp.customerid || ''),
         submittedby: String(exp.submittedby || ''),
         submissiondate: exp.submissiondate,
-        status: exp.status,
+        status: exp.status || '',
         billpath: exp.billpath
       }));
 
@@ -168,17 +167,17 @@ const Expenses = () => {
     setExpenseToEdit(null);
   };
 
-  const handleCreateExpense = async (newExpense: Omit<Expense, 'id'>) => {
+  const handleCreateExpense = async (newExpense: Partial<Expense>) => {
     try {
       const { data, error } = await supabase
         .from('expense')
         .insert({
-          description: newExpense.description,
-          category: newExpense.category,
-          amount: newExpense.amount,
-          submissiondate: newExpense.date,
-          employeeid: newExpense.employeeid || '',
-          customerid: newExpense.customerid || ''
+          description: newExpense.description || '',
+          category: newExpense.category || '',
+          amount: newExpense.amount || 0,
+          submissiondate: newExpense.date || new Date().toISOString(),
+          employeeid: parseInt(String(newExpense.employeeid || '0')),
+          customerid: parseInt(String(newExpense.customerid || '0'))
         })
         .select()
         .single();
@@ -195,13 +194,16 @@ const Expenses = () => {
 
       // Convert the returned data to match our Expense interface
       const createdExpense: Expense = {
-        id: String(data.expenseid),
+        expenseid: String(data.expenseid),
         date: data.submissiondate || new Date().toISOString(),
         description: data.description || '',
         category: data.category || '',
         amount: Number(data.amount) || 0,
         employeeid: String(data.employeeid || ''),
-        customerid: String(data.customerid || '')
+        customerid: String(data.customerid || ''),
+        submittedby: String(data.submittedby || ''),
+        submissiondate: data.submissiondate || '',
+        status: data.status || ''
       };
 
       setExpenses([...expenses, createdExpense]);
@@ -230,7 +232,7 @@ const Expenses = () => {
           amount: updatedExpense.amount,
           submissiondate: updatedExpense.date
         })
-        .eq('expenseid', updatedExpense.id)
+        .eq('expenseid', updatedExpense.expenseid)
         .select()
         .single();
 
@@ -246,16 +248,19 @@ const Expenses = () => {
 
       // Convert the returned data to match our Expense interface
       const updatedExpenseData: Expense = {
-        id: String(data.expenseid),
+        expenseid: String(data.expenseid),
         date: data.submissiondate || new Date().toISOString(),
         description: data.description || '',
         category: data.category || '',
         amount: Number(data.amount) || 0,
         employeeid: String(data.employeeid || ''),
-        customerid: String(data.customerid || '')
+        customerid: String(data.customerid || ''),
+        submittedby: String(data.submittedby || ''),
+        submissiondate: data.submissiondate || '',
+        status: data.status || ''
       };
 
-      setExpenses(expenses.map(exp => exp.id === updatedExpense.id ? updatedExpenseData : exp));
+      setExpenses(expenses.map(exp => exp.expenseid === updatedExpense.expenseid ? updatedExpenseData : exp));
       toast({
         title: "Success",
         description: "Expense updated successfully!",
@@ -271,12 +276,12 @@ const Expenses = () => {
     }
   };
 
-  const handleDeleteExpense = async (id: string) => {
+  const handleDeleteExpense = async (expenseid: string) => {
     try {
       const { error } = await supabase
         .from('expense')
         .delete()
-        .eq('expenseid', id);
+        .eq('expenseid', parseInt(expenseid));
 
       if (error) {
         console.error("Error deleting expense:", error);
@@ -288,7 +293,7 @@ const Expenses = () => {
         return;
       }
 
-      setExpenses(expenses.filter(exp => exp.id !== id));
+      setExpenses(expenses.filter(exp => exp.expenseid !== expenseid));
       toast({
         title: "Success",
         description: "Expense deleted successfully!",
@@ -450,7 +455,7 @@ const Expenses = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredExpenses.map(expense => (
-                        <TableRow key={expense.id}>
+                        <TableRow key={expense.expenseid}>
                           <TableCell>{format(new Date(expense.date), 'PPP')}</TableCell>
                           <TableCell>{expense.description}</TableCell>
                           <TableCell>{expense.category}</TableCell>
@@ -460,7 +465,7 @@ const Expenses = () => {
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDeleteExpense(expense.id)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteExpense(expense.expenseid)}>
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
                             </Button>
@@ -511,7 +516,7 @@ const Expenses = () => {
 interface ExpenseFormProps {
   expense?: Expense | null;
   categories: Category[];
-  onCreate?: (expense: Omit<Expense, 'id'>) => void;
+  onCreate?: (expense: Partial<Expense>) => void;
   onUpdate?: (expense: Expense) => void;
   onClose: () => void;
 }

@@ -10,6 +10,8 @@ export interface Expense {
   category: string;
   status: string;
   billpath?: string;
+  // Adding date field to match usage in Expenses.tsx
+  date: string;
 }
 
 export interface ExpenseCategory {

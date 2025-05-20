@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AttendanceSettings {
@@ -247,6 +246,74 @@ export const createOrUpdateAttendanceSetting = async (settings: Partial<Attendan
     }
   } catch (error) {
     console.error('Error in createOrUpdateAttendanceSetting:', error);
+    throw error;
+  }
+};
+
+export const updateAttendanceSettings = async (settings: {
+  employee_id: string;
+  id?: string;
+  attendancesettingid?: string;
+  employeeid?: string;
+  customerid?: string;
+  workstarttime?: string;
+  latethreshold?: string;
+  geofencingenabled?: boolean;
+  photoverificationenabled?: boolean;
+}) => {
+  try {
+    // Make sure customerid is properly set if missing
+    const settingsWithCustomerId = {
+      ...settings,
+      customerid: settings.customerid || ''
+    };
+    
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .update({
+        workstarttime: settingsWithCustomerId.workstarttime,
+        latethreshold: settingsWithCustomerId.latethreshold,
+        geofencingenabled: settingsWithCustomerId.geofencingenabled,
+        photoverificationenabled: settingsWithCustomerId.photoverificationenabled
+      })
+      .eq('employee_id', settingsWithCustomerId.employee_id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating attendance settings:', error);
+    throw error;
+  }
+};
+
+export const createAttendanceSettings = async (settings: {
+  employee_id: string;
+  customerid: string;
+  workstarttime?: string;
+  latethreshold?: string;
+  geofencingenabled?: boolean;
+  photoverificationenabled?: boolean;
+}) => {
+  try {
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .insert({
+        employee_id: settings.employee_id,
+        customerid: settings.customerid,
+        workstarttime: settings.workstarttime || '09:00',
+        latethreshold: settings.latethreshold || '00:15:00',
+        geofencingenabled: settings.geofencingenabled !== undefined ? settings.geofencingenabled : true,
+        photoverificationenabled: settings.photoverificationenabled !== undefined ? settings.photoverificationenabled : false
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating attendance settings:', error);
     throw error;
   }
 };

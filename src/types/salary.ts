@@ -10,22 +10,8 @@ export interface EmployeeSalary {
   salary: number;
   lastIncrement: string;
   status: 'Paid' | 'Pending';
-  allowances: {
-    basicSalary: number;
-    hra: number;
-    conveyanceAllowance: number;
-    medicalAllowance: number;
-    specialAllowance: number;
-    otherAllowances: number;
-  };
-  deductions: {
-    incomeTax: number;
-    providentFund: number;
-    professionalTax: number;
-    esi: number;
-    loanDeduction: number;
-    otherDeductions: number;
-  };
+  allowances: SalaryAllowances;
+  deductions: SalaryDeductions;
 }
 
 export interface PayslipRecord {

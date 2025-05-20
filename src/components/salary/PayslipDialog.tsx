@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -50,7 +51,7 @@ const PayslipDialog: React.FC<PayslipDialogProps> = ({
       const { data, error } = await supabase
         .from('payslip')
         .insert({
-          employeeid: employeeData.id, // Correctly pass as string
+          employeeid: parseInt(employeeData.id) || 0, // Convert string to number
           year: year,
           month: month,
           amount: netSalary,

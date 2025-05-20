@@ -157,7 +157,9 @@ const Salary = () => {
           const salary = salaryData.find(sal => String(sal.employeeid) === String(emp.employeeid));
           
           // Check if employee has a payslip for current month - ensure string comparison
-          const hasCurrentPayslip = payslipData?.some(p => String(p.employeeid) === String(emp.employeeid));
+          const hasCurrentPayslip = payslipData?.some(p => 
+            parseInt(String(p.employeeid)) === parseInt(String(emp.employeeid))
+          );
           
           // Calculate total salary components
           const totalAllowances = (salary?.basicsalary || 0) + 
@@ -283,7 +285,7 @@ const Salary = () => {
       const { data: existingPayslip, error: checkError } = await supabase
         .from('payslip')
         .select('payslipid')
-        .eq('employeeid', selectedSalaryData.id)
+        .eq('employeeid', parseInt(selectedSalaryData.id))
         .eq('year', year)
         .eq('month', month);
         
@@ -318,7 +320,7 @@ const Salary = () => {
         result = await supabase
           .from('payslip')
           .insert({
-            employeeid: selectedSalaryData.id,
+            employeeid: parseInt(selectedSalaryData.id),
             year: year,
             month: month,
             amount: netAmount,
@@ -381,7 +383,7 @@ const Salary = () => {
       const { data: existingSalary, error: checkError } = await supabase
         .from('salary')
         .select('salaryid')
-        .eq('employeeid', selectedSalaryData.id)
+        .eq('employeeid', parseInt(selectedSalaryData.id))
         .single();
 
       if (checkError && checkError.code !== 'PGRST116') {
@@ -415,13 +417,13 @@ const Salary = () => {
             loandeduction: deductions.loanDeduction,
             otherdeduction: deductions.otherDeductions
           })
-          .eq('employeeid', selectedSalaryData.id);
+          .eq('employeeid', parseInt(selectedSalaryData.id));
       } else {
         // Insert new salary record
         result = await supabase
           .from('salary')
           .insert({
-            employeeid: selectedSalaryData.id,
+            employeeid: parseInt(selectedSalaryData.id),
             basicsalary: allowances.basicSalary,
             hra: allowances.hra,
             conveyanceallowance: allowances.conveyanceAllowance,
