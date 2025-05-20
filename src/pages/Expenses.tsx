@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -124,10 +123,10 @@ const Expenses = () => {
             
             if (expense.submittedby) {
               try {
-                const employee = await getEmployeeById(expense.submittedby);
-                if (employee) {
-                  submitterName = `${employee.firstname} ${employee.lastname}`;
-                  avatarText = `${employee.firstname.charAt(0)}${employee.lastname.charAt(0)}`.toUpperCase();
+                const employeeDetails = await getEmployeeById(String(expense.submittedby));
+                if (employeeDetails) {
+                  submitterName = `${employeeDetails.firstname} ${employeeDetails.lastname}`;
+                  avatarText = `${employeeDetails.firstname.charAt(0)}${employeeDetails.lastname.charAt(0)}`.toUpperCase();
                 }
               } catch (err) {
                 console.error('Error fetching employee details:', err);
@@ -853,7 +852,7 @@ const Expenses = () => {
                       // Show FileImage icon as fallback
                       const parent = e.currentTarget.parentElement;
                       if (parent) {
-                        parent.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-gray-400"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path></svg>';
+                        parent.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-gray-400"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.3775 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path></svg>';
                       }
                     }}
                   />
@@ -942,7 +941,7 @@ const Expenses = () => {
       const otherTotal = Object.entries(categoryData)
         .sort((a, b) => b[1] - a[1])
         .slice(5)
-        .reduce((sum, [_, amount]) => sum + amount, 0);
+        .reduce((sum, [amount]) => sum + amount, 0);
       
       sortedCategories.push(["Other", otherTotal]);
     }

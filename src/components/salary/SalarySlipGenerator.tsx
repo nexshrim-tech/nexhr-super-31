@@ -1,9 +1,4 @@
 
-// Fix the issue with payslipId not existing on EmployeeSalary
-// First, locate the exact issue in the file
-// The error is:
-// src/components/salary/SalarySlipGenerator.tsx(38,67): error TS2339: Property 'payslipId' does not exist on type 'EmployeeSalary'.
-
 import React from "react";
 import { format } from "date-fns";
 import { EmployeeSalary } from "@/types/salary";
@@ -30,7 +25,7 @@ const SalarySlipGenerator: React.FC<SalarySlipGeneratorProps> = ({
   const netSalary = totalAllowances - totalDeductions;
 
   const handleDownload = () => {
-    // Generate a filename using employee name and date instead of payslipId
+    // Generate a filename using employee name and date
     const filename = `salary_slip_${employeeData.employee.name.replace(/\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.txt`;
     
     const content = `

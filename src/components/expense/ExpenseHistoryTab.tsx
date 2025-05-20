@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExpenseHistoryTable from './ExpenseHistoryTable';
@@ -68,6 +67,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             
             if (expense.submittedby) {
               try {
+                // Convert to string for compatibility with the updated employeeid type
                 const employee = await getEmployeeById(String(expense.submittedby));
                 if (employee) {
                   submitterName = `${employee.firstname} ${employee.lastname}`;

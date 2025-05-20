@@ -59,7 +59,7 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: true
             referencedRelation: "employee"
-            referencedColumns: ["customerid"]
+            referencedColumns: ["employeeid"]
           },
         ]
       }
