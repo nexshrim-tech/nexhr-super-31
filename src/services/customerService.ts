@@ -39,11 +39,12 @@ export const createCustomer = async (customerData: {
   companysize?: string;
 }): Promise<Customer | null> => {
   try {
+    // The important change: customerData.customerid should be the auth user id
     const { data, error } = await supabase
       .from('customer')
       .insert([
         {
-          customerid: customerData.customerid,
+          customerid: customerData.customerid, // This should match the auth user ID
           name: customerData.name,
           email: customerData.email,
           phonenumber: customerData.phonenumber || '',

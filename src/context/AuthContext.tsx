@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []); // Make sure to include navigate in deps if it's used inside useEffect
+  }, []); 
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -159,32 +159,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('Sign up successful:', data);
       
-      // If there's no trigger, manually create a customer record as a fallback
+      // Wait a moment to ensure auth user is fully created before proceeding
       if (data.user) {
         try {
-          const customerData = {
-            customerid: data.user.id, // Use auth user id as customerid
-            name: metadata.company_name || metadata.full_name || '',
-            email: email,
-            phonenumber: metadata.phone_number || '',
-            companysize: metadata.company_size || '',
-          };
-          
-          console.log("Creating customer record as fallback:", customerData);
-          
           // Check if a customer record already exists
           const existingCustomer = await getCurrentCustomer(data.user);
           
+          // Only create customer if none exists
           if (!existingCustomer) {
-            // Only create if it doesn't exist
-            await createCustomer(customerData);
+            console.log("Creating new customer record");
+            await createCustomer({
+              // Important: Use auth.user.id as customerid to align with constraint
+              customerid: data.user.id,
+              name: metadata.company_name || metadata.full_name || '',
+              email: email,
+              phonenumber: metadata.phone_number || '',
+              companysize: metadata.company_size || '',
+            });
+          } else {
+            console.log("Customer record already exists:", existingCustomer.customerid);
           }
           
           setCustomerId(data.user.id);
         } catch (customerError) {
           console.error("Error creating customer record:", customerError);
           // We don't want to fail the signup if this fails
-          // The trigger should handle this anyway
         }
       }
       
