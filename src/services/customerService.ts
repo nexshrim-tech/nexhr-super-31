@@ -4,6 +4,7 @@ import { User } from '@supabase/supabase-js';
 
 export interface Customer {
   customerid: string;
+  customerauthid: string;
   name: string | null;
   email: string | null;
   phonenumber: string | null;
@@ -39,12 +40,13 @@ export const createCustomer = async (customerData: {
   companysize?: string;
 }): Promise<Customer | null> => {
   try {
-    // The important change: customerData.customerid should be the auth user id
+    // Set the customerauthid to the same value as customerid to satisfy the foreign key constraint
     const { data, error } = await supabase
       .from('customer')
       .insert([
         {
-          customerid: customerData.customerid, // This should match the auth user ID
+          customerid: customerData.customerid, 
+          customerauthid: customerData.customerid, // Also set the customerauthid field
           name: customerData.name,
           email: customerData.email,
           phonenumber: customerData.phonenumber || '',
@@ -69,7 +71,7 @@ export const createCustomer = async (customerData: {
 
 export const updateCustomer = async (
   customerId: string,
-  updates: Partial<Omit<Customer, 'customerid'>>
+  updates: Partial<Omit<Customer, 'customerid' | 'customerauthid'>>
 ): Promise<Customer | null> => {
   try {
     const { data, error } = await supabase
