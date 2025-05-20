@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExpenseHistoryTable from './ExpenseHistoryTable';
@@ -67,7 +68,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             
             if (expense.submittedby) {
               try {
-                const employee = await getEmployeeById(expense.submittedby);
+                const employee = await getEmployeeById(String(expense.submittedby));
                 if (employee) {
                   submitterName = `${employee.firstname} ${employee.lastname}`;
                   avatarText = `${employee.firstname.charAt(0)}${employee.lastname.charAt(0)}`.toUpperCase();
@@ -220,7 +221,7 @@ export const updateExpense = async (expenseId: string, status: string, notes?: s
     }
     
     const { data, error } = await supabase
-      .from('expenses')
+      .from('expense')
       .update({ status, notes })
       .eq('expenseid', numericExpenseId)
       .select()
