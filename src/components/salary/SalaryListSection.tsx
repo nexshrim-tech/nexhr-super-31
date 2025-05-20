@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -198,7 +197,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
       const updatedSalaries = [];
 
       for (const employee of employeeData || []) {
-        // Find the salary data for this employee - convert ID to string for comparison
+        // Find the salary data for this employee - properly handle string/string comparison
         const empIdStr = String(employee.employeeid);
         let salary = salaryData?.find(s => String(s.employeeid) === empIdStr);
         
@@ -268,11 +267,11 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
         
         // Only include employees who have salary data
         if (salary) {
-          // Check if employee has a payslip for current month
+          // Check if employee has a payslip for current month - ensure string comparison
           const hasCurrentPayslip = payslipData?.some(
             p => String(p.employeeid) === String(employee.employeeid) && 
-                 p.year === currentYear && 
-                 p.month === currentMonth
+                p.year === currentYear && 
+                p.month === currentMonth
           );
 
           mappedEmployees.push({
@@ -370,7 +369,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
       const { data, error } = await supabase
         .from('payslip')
         .select('*')
-        .eq('employeeid', String(employee.id))
+        .eq('employeeid', employee.id)  // Pass as string
         .order('year', { ascending: false })
         .order('month', { ascending: false });
 

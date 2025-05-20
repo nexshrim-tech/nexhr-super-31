@@ -34,7 +34,6 @@ const PayslipDialog: React.FC<PayslipDialogProps> = ({
     const fetchPayslips = async () => {
       setLoading(true);
       try {
-        // Handle string employeeId for new data structure
         const { data, error } = await supabase
           .from('payslip')
           .select('*')

@@ -49,7 +49,7 @@ const EmployeeDialogs: React.FC<EmployeeDialogsProps> = ({
         isOpen={documentEditDialog !== null}
         onClose={onCloseDocumentDialog}
         onUpload={onDocumentUpload}
-        employeeId={employee?.employeeid || ""} // Using string type for employee ID
+        employeeId={employee?.employeeid || ""}
       />
 
       <EmployeeEditDialog

@@ -35,3 +35,29 @@ export interface PayslipRecord {
   amount: number;
   date: string;
 }
+
+// Define SalaryData type for trends
+export interface SalaryData {
+  month: string;
+  amount: number;
+}
+
+// Define SalaryAllowances type
+export interface SalaryAllowances {
+  basicSalary: number;
+  hra: number;
+  conveyanceAllowance: number;
+  medicalAllowance: number;
+  specialAllowance: number;
+  otherAllowances: number;
+}
+
+// Define SalaryDeductions type
+export interface SalaryDeductions {
+  incomeTax: number;
+  providentFund: number;
+  professionalTax: number;
+  esi: number;
+  loanDeduction: number;
+  otherDeductions: number;
+}

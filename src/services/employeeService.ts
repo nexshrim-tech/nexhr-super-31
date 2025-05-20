@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Employee, EmployeeDB } from '@/types/employee';
 import { mapEmployeeDBToEmployee, mapEmployeeToDBFormat } from '@/utils/employeeMappers';
@@ -33,7 +32,9 @@ export const getEmployees = async (): Promise<Employee[]> => {
     return (data || []).map(emp => {
       // Convert to the expected shape if needed
       const employeeData: EmployeeDB = {
-        ...emp
+        ...emp,
+        // Ensure phonenumber is string
+        phonenumber: emp.phonenumber ? String(emp.phonenumber) : undefined
       };
       return mapEmployeeDBToEmployee(employeeData);
     });
@@ -78,7 +79,11 @@ export const getEmployeeById = async (id: string): Promise<Employee | null> => {
 
     if (!data) return null;
     
-    const employeeData: EmployeeDB = { ...data };
+    const employeeData: EmployeeDB = { 
+      ...data,
+      // Ensure phonenumber is string
+      phonenumber: data.phonenumber ? String(data.phonenumber) : undefined
+    };
     
     return mapEmployeeDBToEmployee(employeeData);
   } catch (error) {
@@ -122,7 +127,11 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
 
     if (!data) throw new Error('No data returned from insert operation');
     
-    const employeeData: EmployeeDB = { ...data };
+    const employeeData: EmployeeDB = { 
+      ...data,
+      // Ensure phonenumber is string
+      phonenumber: data.phonenumber ? String(data.phonenumber) : undefined
+    };
     
     return mapEmployeeDBToEmployee(employeeData);
   } catch (error) {
@@ -154,7 +163,11 @@ export const updateEmployee = async (id: string, employee: Omit<Partial<Employee
 
     if (!data) throw new Error('No data returned from update operation');
     
-    const employeeData: EmployeeDB = { ...data };
+    const employeeData: EmployeeDB = { 
+      ...data,
+      // Ensure phonenumber is string
+      phonenumber: data.phonenumber ? String(data.phonenumber) : undefined
+    };
     
     return mapEmployeeDBToEmployee(employeeData);
   } catch (error) {

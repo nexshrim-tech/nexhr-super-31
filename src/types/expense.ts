@@ -1,14 +1,29 @@
 
 export interface Expense {
-  id: string;
-  date: string;
+  expenseid: string;
+  employeeid: string;
+  customerid: string;
+  amount: number;
+  submittedby: string;
+  submissiondate: string;
   description: string;
   category: string;
-  amount: number;
-  employeeid?: string;
-  customerid?: string;
-  submittedby?: string;
-  submissiondate?: string;
-  status?: string;
+  status: string;
   billpath?: string;
+}
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  budget?: number;
+  spent?: number;
+  color?: string;
+}
+
+export interface ExpenseSummary {
+  totalAmount: number;
+  byCategory: Record<string, number>;
+  byMonth: Record<string, number>;
+  byStatus: Record<string, number>;
+  topExpenses: Expense[];
 }
