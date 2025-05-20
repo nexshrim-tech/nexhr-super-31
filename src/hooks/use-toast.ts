@@ -1,6 +1,16 @@
 
-// Re-export from components/ui/toast
-import { useToast as useToastUI, type ToastActionElement } from "@/components/ui/toast";
+import {
+  type ToastActionElement,
+  ToastProvider,
+  ToastViewport,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  ToastClose,
+  ToastAction,
+} from "@/components/ui/toast";
+import { createContext, useContext, useState, useCallback } from "react";
+import React from "react";
 
 export type ToastProps = {
   title?: string;
@@ -9,6 +19,71 @@ export type ToastProps = {
   variant?: "default" | "destructive";
 };
 
-export const useToast = useToastUI;
+const ToastContext = createContext<{
+  toast: (props: ToastProps) => void;
+  dismissToast: () => void;
+}>({
+  toast: () => {},
+  dismissToast: () => {},
+});
 
-export const toast = useToastUI().toast;
+export const ToastContextProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [toastProps, setToastProps] = useState<ToastProps>({});
+
+  const toast = useCallback((props: ToastProps) => {
+    setToastProps(props);
+    setOpen(true);
+  }, []);
+
+  const dismissToast = useCallback(() => {
+    setOpen(false);
+  }, []);
+
+  return (
+    <ToastContext.Provider value={{ toast, dismissToast }}>
+      {children}
+      <ToastProvider>
+        <Toast open={open} onOpenChange={setOpen}>
+          {toastProps.title && <ToastTitle>{toastProps.title}</ToastTitle>}
+          {toastProps.description && (
+            <ToastDescription>{toastProps.description}</ToastDescription>
+          )}
+          {toastProps.action && (
+            <ToastAction
+              altText="Action"
+              onClick={(e) => {
+                e.preventDefault();
+                if (toastProps.action) {
+                  toastProps.action.altText;
+                }
+              }}
+            >
+              {toastProps.action}
+            </ToastAction>
+          )}
+          <ToastClose />
+        </Toast>
+        <ToastViewport />
+      </ToastProvider>
+    </ToastContext.Provider>
+  );
+};
+
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error("useToast must be used within a ToastContextProvider");
+  }
+  return context;
+};
+
+// Export the toast function directly for convenience
+export const toast = (props: ToastProps) => {
+  const { toast } = useToast();
+  toast(props);
+};

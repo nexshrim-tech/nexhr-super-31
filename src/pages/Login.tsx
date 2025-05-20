@@ -15,6 +15,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
+      console.log("User is authenticated, redirecting to homepage");
       navigate('/');
     }
   }, [user, navigate]);

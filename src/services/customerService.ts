@@ -3,114 +3,89 @@ import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 
 export interface Customer {
-  customerid: string;  // Using string for UUID
+  customerid: string;
   name: string | null;
-  address?: string;
-  contactemail?: string;
-  contactperson?: string;
-  accountcreationdate?: string;
-  subscriptionplan?: string | null;
-  subscriptionstatus?: string;
-  subscriptionenddate?: string;
   email: string | null;
-  password?: string | null;
   phonenumber: string | null;
   companysize: string | null;
   planid: number | null;
 }
 
-export const getCurrentCustomer = async (user: User | null): Promise<Customer | null> => {
-  if (!user) return null;
-  
+export const getCurrentCustomer = async (user: User): Promise<Customer | null> => {
   try {
-    console.log("Fetching customer data for user:", user.id);
-    
-    // Get customer data using user.id
-    const { data: customer, error } = await supabase
+    const { data, error } = await supabase
       .from('customer')
       .select('*')
       .eq('customerid', user.id)
       .single();
-    
+
     if (error) {
       console.error('Error fetching customer:', error);
       return null;
     }
-    
-    console.log("Retrieved customer data:", customer);
-    return customer;
+
+    return data as Customer;
   } catch (error) {
     console.error('Error in getCurrentCustomer:', error);
     return null;
   }
 };
 
-export const createCustomer = async (data: Partial<Customer>): Promise<Customer | null> => {
+export const createCustomer = async (customerData: {
+  customerid: string;
+  name: string;
+  email: string;
+  phonenumber?: string;
+  companysize?: string;
+}): Promise<Customer | null> => {
   try {
-    console.log("Creating customer with data:", data);
-    
-    // Ensure the data contains a customerid
-    if (!data.customerid) {
-      throw new Error("Customer ID is required");
-    }
-    
-    const { data: customer, error } = await supabase
+    const { data, error } = await supabase
       .from('customer')
-      .insert([data])
+      .insert([
+        {
+          customerid: customerData.customerid,
+          name: customerData.name,
+          email: customerData.email,
+          phonenumber: customerData.phonenumber || '',
+          companysize: customerData.companysize || '',
+          planid: 1 // Default free plan
+        }
+      ])
       .select()
       .single();
-    
+
     if (error) {
       console.error('Error creating customer:', error);
-      throw error;
+      return null;
     }
-    
-    console.log("Created customer:", customer);
-    return customer;
+
+    return data as Customer;
   } catch (error) {
     console.error('Error in createCustomer:', error);
-    throw error;
+    return null;
   }
 };
 
-export const getSubscriptionPlan = async (customerId: string): Promise<string | null> => {
+export const updateCustomer = async (
+  customerId: string,
+  updates: Partial<Omit<Customer, 'customerid'>>
+): Promise<Customer | null> => {
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('customer')
-      .select('planid')
+      .update(updates)
       .eq('customerid', customerId)
+      .select()
       .single();
-    
-    if (data && 'planid' in data) {
-      const planId = data.planid;
-      if (planId === 1) return "None";
-      if (planId === 2) return "Basic";
-      if (planId === 3) return "Premium";
-      return String(planId);
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error in getSubscriptionPlan:', error);
-    return null;
-  }
-};
 
-export const updateSubscriptionPlan = async (customerId: string, plan: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('customer')
-      .update({ 
-        planid: plan === "None" ? 1 : plan === "Basic" ? 2 : 3
-      })
-      .eq('customerid', customerId);
-    
     if (error) {
-      console.error('Error updating subscription plan:', error);
-      throw error;
+      console.error('Error updating customer:', error);
+      return null;
     }
+
+    return data as Customer;
   } catch (error) {
-    console.error('Error in updateSubscriptionPlan:', error);
-    throw error;
+    console.error('Error in updateCustomer:', error);
+    return null;
   }
 };

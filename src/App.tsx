@@ -2,6 +2,7 @@
 import { Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ToastContextProvider } from "@/hooks/use-toast";
 import Index from "@/pages/Index";
 import Assets from "@/pages/Assets";
 import Attendance from "@/pages/Attendance";
@@ -87,12 +88,14 @@ function AppRoutes() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <SubscriptionProvider>
-          <AppRoutes />
-          <Toaster />
-        </SubscriptionProvider>
-      </AuthProvider>
+      <ToastContextProvider>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <AppRoutes />
+            <Toaster />
+          </SubscriptionProvider>
+        </AuthProvider>
+      </ToastContextProvider>
     </QueryClientProvider>
   );
 }

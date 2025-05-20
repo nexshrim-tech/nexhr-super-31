@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Lock, User, Building2, Phone, AlertCircle } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 
@@ -28,7 +27,6 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   
-  const { toast } = useToast();
   const { signUp } = useAuth();
 
   const validatePassword = () => {
@@ -86,6 +84,10 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
         await signUp(email, password, userData);
         
         resetForm();
+        toast({
+          title: "Sign up successful",
+          description: "You can now sign in with your new account.",
+        });
         onToggleForm();
       } else {
         toast({

@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { getCurrentCustomer, createCustomer } from '@/services/customerService';
 
 interface AuthContextType {
@@ -32,7 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [customerId, setCustomerId] = useState<string | null>(null);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   // Get user's customerid
@@ -53,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // First set up auth state listener to avoid missing auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
@@ -61,8 +61,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (event === 'SIGNED_IN' && session?.user) {
           console.log("User signed in:", session.user.email);
-          // Fetch the customer ID after sign in
-          fetchCustomerId(session.user);
+          // Fetch the customer ID after sign in using setTimeout to avoid auth deadlock
+          setTimeout(() => {
+            fetchCustomerId(session.user!);
+          }, 0);
+          
           toast({
             title: "Signed in successfully",
             description: "Welcome back!",
@@ -78,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Initial session check
+    // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session check:", session?.user?.id);
       setSession(session);
@@ -97,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [toast]);
+  }, []); // Make sure to include navigate in deps if it's used inside useEffect
 
   const signIn = async (email: string, password: string) => {
     try {
