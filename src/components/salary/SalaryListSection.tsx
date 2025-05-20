@@ -198,8 +198,8 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
 
       for (const employee of employeeData || []) {
         // Find the salary data for this employee - convert ID to string for comparison
-        const empIdStr = employee.employeeid.toString();
-        let salary = salaryData?.find(s => s.employeeid.toString() === empIdStr);
+        const empIdStr = String(employee.employeeid);
+        let salary = salaryData?.find(s => String(s.employeeid) === empIdStr);
         
         // If employee has monthlysalary but no salary record or monthlysalary doesn't match, sync it
         if (employee.monthlysalary && (!salary || (salary.monthlysalary !== employee.monthlysalary))) {
@@ -269,7 +269,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
         if (salary) {
           // Check if employee has a payslip for current month
           const hasCurrentPayslip = payslipData?.some(
-            p => p.employeeid.toString() === employee.employeeid.toString() && 
+            p => String(p.employeeid) === String(employee.employeeid) && 
                  p.year === currentYear && 
                  p.month === currentMonth
           );
@@ -369,7 +369,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
       const { data, error } = await supabase
         .from('payslip')
         .select('*')
-        .eq('employeeid', employee.id.toString())
+        .eq('employeeid', String(employee.id))
         .order('year', { ascending: false })
         .order('month', { ascending: false });
 

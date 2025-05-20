@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AttendanceSettings {
@@ -28,11 +29,11 @@ export const getAttendanceSettings = async (employeeId?: string): Promise<Attend
       throw error;
     }
 
-    // Map database fields to interface
+    // Map database fields to interface, ensuring the correct types
     const settings = data.map(item => ({
       id: item.attendancesettingid,
       attendancesettingid: item.attendancesettingid,
-      employeeid: item.employeeid || '',
+      employeeid: item.employee_id || '', // Use employee_id field for consistency
       employee_id: item.employee_id,
       customerid: item.customerid,
       workstarttime: item.workstarttime || '09:00:00',
@@ -73,7 +74,7 @@ export const getEmployeeAttendanceSettings = async (employeeId: string): Promise
       employee_id: String(data.employee_id),
       customerid: String(data.customerid),
       workstarttime: data.workstarttime,
-      latethreshold: data.latethreshold,
+      latethreshold: String(data.latethreshold), // Ensure string type
       geofencingenabled: data.geofencingenabled,
       photoverificationenabled: data.photoverificationenabled
     };
@@ -86,10 +87,10 @@ export const getEmployeeAttendanceSettings = async (employeeId: string): Promise
 // Create attendance settings
 export const createAttendanceSettings = async (settings: Omit<AttendanceSettings, "attendancesettingid">): Promise<AttendanceSettings> => {
   try {
-    // Format settings to match database schema
+    // Format settings to match database schema with correct types
     const settingsToInsert = {
       employee_id: settings.employee_id || settings.employeeid,
-      customerid: settings.customerid, // Ensure this is required
+      customerid: settings.customerid || '', // Provide default value
       workstarttime: settings.workstarttime || '09:00:00',
       latethreshold: settings.latethreshold || '00:15:00', // Ensure string format
       geofencingenabled: settings.geofencingenabled || false,
@@ -114,7 +115,7 @@ export const createAttendanceSettings = async (settings: Omit<AttendanceSettings
       employee_id: String(newSettings.employee_id),
       customerid: String(newSettings.customerid),
       workstarttime: newSettings.workstarttime,
-      latethreshold: newSettings.latethreshold,
+      latethreshold: String(newSettings.latethreshold), // Ensure string type
       geofencingenabled: newSettings.geofencingenabled,
       photoverificationenabled: newSettings.photoverificationenabled
     };
@@ -159,7 +160,7 @@ export const updateAttendanceSettings = async (id: string, settings: Partial<Att
       employee_id: String(data.employee_id),
       customerid: String(data.customerid),
       workstarttime: data.workstarttime,
-      latethreshold: data.latethreshold,
+      latethreshold: String(data.latethreshold), // Ensure string type
       geofencingenabled: data.geofencingenabled,
       photoverificationenabled: data.photoverificationenabled
     };
@@ -190,15 +191,25 @@ export const deleteAttendanceSettings = async (settingId: string): Promise<void>
 // Upsert attendance settings
 export const upsertAttendanceSettings = async (settings: AttendanceSettings): Promise<AttendanceSettings> => {
   try {
+    // Ensure all required fields are present and of the correct type
+    if (!settings.customerid || !settings.employee_id) {
+      throw new Error("Customer ID and Employee ID are required for upsert operation");
+    }
+    
     // Format settings to match database schema
     const settingsToUpsert = {
-      ...settings,
-      employee_id: settings.employee_id || settings.employeeid
+      attendancesettingid: settings.attendancesettingid,
+      employee_id: settings.employee_id || settings.employeeid,
+      customerid: settings.customerid,
+      workstarttime: settings.workstarttime || '09:00:00',
+      latethreshold: settings.latethreshold || '00:15:00',
+      geofencingenabled: settings.geofencingenabled ?? false,
+      photoverificationenabled: settings.photoverificationenabled ?? false
     };
     
     // Remove properties that shouldn't be sent to the database
-    delete settingsToUpsert.employeeid;
-    delete settingsToUpsert.id;
+    delete (settingsToUpsert as any).employeeid;
+    delete (settingsToUpsert as any).id;
     
     const { data, error } = await supabase
       .from('attendancesettings')
@@ -218,7 +229,7 @@ export const upsertAttendanceSettings = async (settings: AttendanceSettings): Pr
       employee_id: String(data.employee_id),
       customerid: String(data.customerid),
       workstarttime: data.workstarttime,
-      latethreshold: data.latethreshold,
+      latethreshold: String(data.latethreshold), // Ensure string type
       geofencingenabled: data.geofencingenabled,
       photoverificationenabled: data.photoverificationenabled
     };

@@ -31,9 +31,28 @@ import {
 import { Plus, Edit, Trash2, Search, FileText } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
-import { Expense } from '@/types/expense';
-import { Category } from '@/types/category';
 import { Customer } from '@/services/customerService';
+
+// Define interfaces for Expense and Category
+interface Expense {
+  id: string;
+  date: string;
+  description: string;
+  category: string;
+  amount: number;
+  employeeid?: string;
+  customerid?: string;
+  submittedby?: string;
+  submissiondate?: string;
+  status?: string;
+  billpath?: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+}
 
 const Expenses = () => {
   const [date, setDate] = useState<DateRange | undefined>(undefined);
@@ -75,7 +94,22 @@ const Expenses = () => {
         return;
       }
 
-      setExpenses(expensesData || []);
+      // Convert and map data to the Expense interface
+      const mappedExpenses: Expense[] = (expensesData || []).map(exp => ({
+        id: String(exp.expenseid),
+        date: exp.submissiondate || new Date().toISOString(),
+        description: exp.description || '',
+        category: exp.category || '',
+        amount: Number(exp.amount) || 0,
+        employeeid: String(exp.employeeid || ''),
+        customerid: String(exp.customerid || ''),
+        submittedby: String(exp.submittedby || ''),
+        submissiondate: exp.submissiondate,
+        status: exp.status,
+        billpath: exp.billpath
+      }));
+
+      setExpenses(mappedExpenses);
     } catch (error) {
       console.error("Error processing expenses:", error);
       toast({
@@ -90,22 +124,27 @@ const Expenses = () => {
 
   const fetchCategories = async () => {
     try {
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('category')
-        .select('*')
-        .order('name');
-
-      if (categoriesError) {
-        console.error("Error fetching categories:", categoriesError);
-        toast({
-          title: "Error",
-          description: "Failed to fetch categories: " + categoriesError.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setCategories(categoriesData || []);
+      // Since there's no category table in the database schema, 
+      // we'll create some default categories or extract unique categories from expenses
+      const uniqueCategories = [...new Set(expenses.map(exp => exp.category))].filter(Boolean);
+      
+      const defaultCategories: Category[] = [
+        { id: '1', name: 'Food' },
+        { id: '2', name: 'Transportation' },
+        { id: '3', name: 'Office Supplies' },
+        { id: '4', name: 'Utilities' },
+        { id: '5', name: 'Others' }
+      ];
+      
+      // Combine default categories with any unique categories from expenses
+      const allCategories = [
+        ...defaultCategories,
+        ...uniqueCategories
+          .filter(cat => !defaultCategories.some(dc => dc.name === cat))
+          .map((cat, index) => ({ id: `custom-${index}`, name: cat }))
+      ];
+      
+      setCategories(allCategories);
     } catch (error) {
       console.error("Error processing categories:", error);
       toast({
@@ -151,7 +190,15 @@ const Expenses = () => {
     try {
       const { data, error } = await supabase
         .from('expense')
-        .insert([newExpense])
+        .insert([{
+          description: newExpense.description,
+          category: newExpense.category,
+          amount: newExpense.amount,
+          submissiondate: newExpense.date,
+          // Convert ids to strings
+          employeeid: String(newExpense.employeeid || ''),
+          customerid: String(newExpense.customerid || '')
+        }])
         .select()
         .single();
 
@@ -165,7 +212,18 @@ const Expenses = () => {
         return;
       }
 
-      setExpenses([...expenses, data]);
+      // Convert the returned data to match our Expense interface
+      const createdExpense: Expense = {
+        id: String(data.expenseid),
+        date: data.submissiondate || new Date().toISOString(),
+        description: data.description || '',
+        category: data.category || '',
+        amount: Number(data.amount) || 0,
+        employeeid: String(data.employeeid || ''),
+        customerid: String(data.customerid || '')
+      };
+
+      setExpenses([...expenses, createdExpense]);
       toast({
         title: "Success",
         description: "Expense created successfully!",
@@ -185,8 +243,13 @@ const Expenses = () => {
     try {
       const { data, error } = await supabase
         .from('expense')
-        .update(updatedExpense)
-        .eq('id', updatedExpense.id)
+        .update({
+          description: updatedExpense.description,
+          category: updatedExpense.category,
+          amount: updatedExpense.amount,
+          submissiondate: updatedExpense.date
+        })
+        .eq('expenseid', updatedExpense.id)
         .select()
         .single();
 
@@ -200,7 +263,18 @@ const Expenses = () => {
         return;
       }
 
-      setExpenses(expenses.map(exp => exp.id === updatedExpense.id ? data : exp));
+      // Convert the returned data to match our Expense interface
+      const updatedExpenseData: Expense = {
+        id: String(data.expenseid),
+        date: data.submissiondate || new Date().toISOString(),
+        description: data.description || '',
+        category: data.category || '',
+        amount: Number(data.amount) || 0,
+        employeeid: String(data.employeeid || ''),
+        customerid: String(data.customerid || '')
+      };
+
+      setExpenses(expenses.map(exp => exp.id === updatedExpense.id ? updatedExpenseData : exp));
       toast({
         title: "Success",
         description: "Expense updated successfully!",
@@ -221,7 +295,7 @@ const Expenses = () => {
       const { error } = await supabase
         .from('expense')
         .delete()
-        .eq('id', id);
+        .eq('expenseid', id);
 
       if (error) {
         console.error("Error deleting expense:", error);
@@ -262,17 +336,15 @@ const Expenses = () => {
 
   const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
+  // Fix for the reducer that's causing TS errors by using a proper typed approach
   const categoryCounts = filteredExpenses.reduce((acc: Record<string, number>, expense) => {
-    acc[expense.category] = (acc[expense.category] || 0) + 1;
+    const category = expense.category || 'Uncategorized';
+    acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {});
 
-  // Fix for the reducer that's causing TS errors
-  // Convert entries to tuple before reducing them
-  const totalByCategory = Object.entries(categoryCounts).reduce((acc, [category, count]) => {
-    acc[category] = count;
-    return acc;
-  }, {} as Record<string, number>);
+  // Convert to record for typesafety
+  const totalByCategory: Record<string, number> = categoryCounts;
 
   const hasExpenses = expenses.length > 0;
 
