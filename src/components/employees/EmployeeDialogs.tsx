@@ -55,7 +55,7 @@ const EmployeeDialogs: React.FC<EmployeeDialogsProps> = ({
       <EmployeeEditDialog
         isOpen={editDialogOpen}
         onOpenChange={setEditDialogOpen}
-        employee={adaptedEmployee || undefined}
+        employee={adaptedEmployee}
         onSave={onEditSave}
       />
 
@@ -68,7 +68,7 @@ const EmployeeDialogs: React.FC<EmployeeDialogsProps> = ({
       <PasswordChangeDialog
         isOpen={isPasswordDialogOpen}
         onOpenChange={setIsPasswordDialogOpen}
-        employee={adaptedEmployee || undefined}
+        employee={adaptedEmployee}
       />
 
       <OfficialDocumentsDialog 

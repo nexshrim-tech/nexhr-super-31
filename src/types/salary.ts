@@ -1,11 +1,11 @@
 
 export interface SalaryAllowances {
-  basic: number;
-  hra: number;
-  transport: number;
-  medical: number;
-  special: number;
-  other: number;
+  basic?: number;
+  hra?: number;
+  transport?: number;
+  medical?: number;
+  special?: number;
+  other?: number;
   basicSalary?: number;
   conveyanceAllowance?: number;
   medicalAllowance?: number;
@@ -14,11 +14,11 @@ export interface SalaryAllowances {
 }
 
 export interface SalaryDeductions {
-  pf: number;
-  esi: number;
-  tax: number;
-  loan: number;
-  other: number;
+  pf?: number;
+  esi?: number;
+  tax?: number;
+  loan?: number;
+  other?: number;
   incomeTax?: number;
   providentFund?: number;
   professionalTax?: number;
@@ -36,7 +36,7 @@ export interface EmployeeSalary {
   department: string;
   salary: number;
   lastIncrement: string;
-  status: 'Paid' | 'Pending';
+  status: 'Paid' | 'Pending' | string;
   allowances: SalaryAllowances;
   deductions: SalaryDeductions;
   customerId?: string;
