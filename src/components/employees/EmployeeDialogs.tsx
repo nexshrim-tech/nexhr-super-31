@@ -74,7 +74,7 @@ const EmployeeDialogs: React.FC<EmployeeDialogsProps> = ({
       <OfficialDocumentsDialog 
         isOpen={showOfficialDocsDialog}
         onClose={() => setShowOfficialDocsDialog(false)}
-        employeeName={employee?.firstname ? `${employee.firstname} ${employee.lastname}` : ''}
+        employeeName={employee?.firstname && employee?.lastname ? `${employee.firstname} ${employee.lastname}` : ''}
       />
     </>
   );
