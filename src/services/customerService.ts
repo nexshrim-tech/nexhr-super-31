@@ -12,12 +12,21 @@ export interface Customer {
   planid: number | null;
 }
 
+export interface Profile {
+  id: string;
+  role: 'customer' | 'employee';
+  full_name: string | null;
+  email: string | null;
+  customer_id: string | null;
+  created_at: string;
+}
+
 export const getCurrentCustomer = async (user: User): Promise<Customer | null> => {
   try {
     const { data, error } = await supabase
       .from('customer')
       .select('*')
-      .eq('customerid', user.id)
+      .eq('customerauthid', user.id)
       .single();
 
     if (error) {
@@ -28,6 +37,26 @@ export const getCurrentCustomer = async (user: User): Promise<Customer | null> =
     return data as Customer;
   } catch (error) {
     console.error('Error in getCurrentCustomer:', error);
+    return null;
+  }
+};
+
+export const getUserProfile = async (userId: string): Promise<Profile | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+
+    return data as Profile;
+  } catch (error) {
+    console.error('Error in getUserProfile:', error);
     return null;
   }
 };
@@ -153,4 +182,34 @@ export const updateSubscriptionPlan = async (customerId: string, planName: strin
     console.error('Error in updateSubscriptionPlan:', error);
     return false;
   }
+};
+
+// Get the user role
+export const getUserRole = async (userId: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_user_role');
+
+    if (error) {
+      console.error('Error getting user role:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in getUserRole:', error);
+    return null;
+  }
+};
+
+// Check if user is a customer
+export const isCustomer = async (): Promise<boolean> => {
+  const role = await getUserRole(supabase.auth.getUser().then(user => user.data.user?.id || ''));
+  return role === 'customer';
+};
+
+// Check if user is an employee
+export const isEmployee = async (): Promise<boolean> => {
+  const role = await getUserRole(supabase.auth.getUser().then(user => user.data.user?.id || ''));
+  return role === 'employee';
 };

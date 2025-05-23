@@ -19,6 +19,7 @@ import Logout from "@/pages/Logout";
 import Meetings from "@/pages/Meetings";
 import Messenger from "@/pages/Messenger";
 import NotFound from "@/pages/NotFound";
+import Unauthorized from "@/pages/Unauthorized";
 import Posts from "@/pages/Posts";
 import ProjectManagement from "@/pages/ProjectManagement";
 import Salary from "@/pages/Salary";
@@ -57,28 +58,40 @@ function AppRoutes() {
     <>
       <SubscriptionModalWrapper />
       <Routes>
-        <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
+        {/* Public routes */}
         <Route path="/landing" element={<Landing />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/add-employee" element={<RequireAuth><AddEmployee /></RequireAuth>} />
-        <Route path="/employee/:id" element={<RequireAuth><EmployeeDetails /></RequireAuth>} />
-        <Route path="/all-employees" element={<RequireAuth><AllEmployees /></RequireAuth>} />
-        <Route path="/assets" element={<RequireAuth><Assets /></RequireAuth>} />
-        <Route path="/attendance" element={<RequireAuth><Attendance /></RequireAuth>} />
-        <Route path="/department" element={<RequireAuth><Department /></RequireAuth>} />
-        <Route path="/document-generator" element={<RequireAuth><DocumentGenerator /></RequireAuth>} />
-        <Route path="/expenses" element={<RequireAuth><Expenses /></RequireAuth>} />
-        <Route path="/help-desk" element={<RequireAuth><HelpDesk /></RequireAuth>} />
-        <Route path="/leave-management" element={<RequireAuth><LeaveManagement /></RequireAuth>} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        
+        {/* Customer & Employee routes */}
+        <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/meetings" element={<RequireAuth><Meetings /></RequireAuth>} />
         <Route path="/messenger" element={<RequireAuth><Messenger /></RequireAuth>} />
         <Route path="/posts" element={<RequireAuth><Posts /></RequireAuth>} />
-        <Route path="/project-management" element={<RequireAuth><ProjectManagement /></RequireAuth>} />
+        <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+        
+        {/* Customer-only routes */}
+        <Route path="/add-employee" element={<RequireAuth allowedRoles={['customer']}><AddEmployee /></RequireAuth>} />
+        <Route path="/all-employees" element={<RequireAuth allowedRoles={['customer']}><AllEmployees /></RequireAuth>} />
+        <Route path="/department" element={<RequireAuth allowedRoles={['customer']}><Department /></RequireAuth>} />
+        
+        {/* Customer routes with subscription features */}
+        <Route path="/document-generator" element={<RequireAuth allowedRoles={['customer']}><DocumentGenerator /></RequireAuth>} />
+        <Route path="/expenses" element={<RequireAuth allowedRoles={['customer']}><Expenses /></RequireAuth>} />
+        <Route path="/help-desk" element={<RequireAuth allowedRoles={['customer']}><HelpDesk /></RequireAuth>} />
+        <Route path="/project-management" element={<RequireAuth allowedRoles={['customer']}><ProjectManagement /></RequireAuth>} />
+        
+        {/* Shared routes (with different permissions) */}
+        <Route path="/employee/:id" element={<RequireAuth><EmployeeDetails /></RequireAuth>} />
+        <Route path="/assets" element={<RequireAuth><Assets /></RequireAuth>} />
+        <Route path="/attendance" element={<RequireAuth><Attendance /></RequireAuth>} />
+        <Route path="/leave-management" element={<RequireAuth><LeaveManagement /></RequireAuth>} />
+        <Route path="/meetings" element={<RequireAuth><Meetings /></RequireAuth>} />
         <Route path="/salary" element={<RequireAuth><Salary /></RequireAuth>} />
         <Route path="/tasks-reminders" element={<RequireAuth><TasksReminders /></RequireAuth>} />
         <Route path="/track" element={<RequireAuth><Track /></RequireAuth>} />
-        <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+        
+        {/* Catch-all route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

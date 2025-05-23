@@ -10,15 +10,27 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 
 const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [signUpRole, setSignUpRole] = useState<'customer' | 'employee'>('customer');
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
 
   useEffect(() => {
     if (user) {
-      console.log("User is authenticated, redirecting to homepage");
-      navigate('/');
+      // Redirect based on role
+      if (userRole === 'customer') {
+        console.log("Customer is authenticated, redirecting to customer dashboard");
+        navigate('/');
+      } else if (userRole === 'employee') {
+        console.log("Employee is authenticated, redirecting to employee dashboard");
+        // For now, we redirect employees to the same dashboard
+        // In a real app, you might have a separate employee dashboard
+        navigate('/');
+      } else {
+        console.log("User is authenticated but role is unknown, redirecting to homepage");
+        navigate('/');
+      }
     }
-  }, [user, navigate]);
+  }, [user, userRole, navigate]);
 
   const toggleForm = () => {
     setIsSignUp(!isSignUp);
@@ -64,7 +76,31 @@ const Login = () => {
           </CardHeader>
           <CardContent>
             {isSignUp ? (
-              <SignUpForm onToggleForm={toggleForm} />
+              <div>
+                <div className="mb-6 flex justify-center">
+                  <div className="inline-flex rounded-lg border p-1">
+                    <Button
+                      variant={signUpRole === 'customer' ? 'default' : 'outline'}
+                      className={`rounded-md px-3 py-1 text-sm ${
+                        signUpRole === 'customer' ? 'bg-primary text-primary-foreground' : ''
+                      }`}
+                      onClick={() => setSignUpRole('customer')}
+                    >
+                      Customer
+                    </Button>
+                    <Button
+                      variant={signUpRole === 'employee' ? 'default' : 'outline'}
+                      className={`rounded-md px-3 py-1 text-sm ${
+                        signUpRole === 'employee' ? 'bg-primary text-primary-foreground' : ''
+                      }`}
+                      onClick={() => setSignUpRole('employee')}
+                    >
+                      Employee
+                    </Button>
+                  </div>
+                </div>
+                <SignUpForm onToggleForm={toggleForm} role={signUpRole} />
+              </div>
             ) : (
               <LoginForm onToggleForm={toggleForm} />
             )}

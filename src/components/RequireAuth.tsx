@@ -5,10 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 
 interface RequireAuthProps {
   children: React.ReactNode;
+  allowedRoles?: string[];
 }
 
-const RequireAuth = ({ children }: RequireAuthProps) => {
-  const { user, isLoading } = useAuth();
+const RequireAuth = ({ children, allowedRoles }: RequireAuthProps) => {
+  const { user, isLoading, userRole } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -26,6 +27,14 @@ const RequireAuth = ({ children }: RequireAuthProps) => {
   if (!user) {
     // Redirect to login page if not authenticated
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Check if user has one of the allowed roles (if specified)
+  if (allowedRoles && allowedRoles.length > 0 && userRole) {
+    if (!allowedRoles.includes(userRole)) {
+      // If role is specified but user doesn't have it, redirect to unauthorized page
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return <>{children}</>;

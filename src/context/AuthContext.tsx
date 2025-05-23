@@ -4,13 +4,21 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
-import { getCurrentCustomer, createCustomer } from '@/services/customerService';
+import { 
+  getCurrentCustomer, 
+  createCustomer, 
+  getUserProfile, 
+  getUserRole,
+  Profile
+} from '@/services/customerService';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
   customerId: string | null;
+  userRole: string | null;
+  userProfile: Profile | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
   signOut: () => Promise<void>;
@@ -32,22 +40,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const navigate = useNavigate();
 
-  // Get user's customerid
-  const fetchCustomerId = async (user: User) => {
+  // Get user's customerid and role
+  const fetchUserData = async (user: User) => {
     try {
-      const customer = await getCurrentCustomer(user);
-      if (customer) {
-        console.log("Found customer record with ID:", customer.customerid);
-        setCustomerId(customer.customerid);
-      } else {
-        console.log("No customer record found for user");
-        setCustomerId(null);
+      // Fetch user's profile (role information)
+      const profile = await getUserProfile(user.id);
+      setUserProfile(profile);
+      
+      if (profile) {
+        setUserRole(profile.role);
+        
+        // If user is a customer, fetch customer ID
+        if (profile.role === 'customer') {
+          const customer = await getCurrentCustomer(user);
+          if (customer) {
+            console.log("Found customer record with ID:", customer.customerid);
+            setCustomerId(customer.customerid);
+          } else {
+            console.log("No customer record found for user");
+            setCustomerId(null);
+          }
+        } else if (profile.role === 'employee') {
+          // For employees, set customer ID from profile
+          setCustomerId(profile.customer_id);
+        }
       }
     } catch (error) {
-      console.error("Error fetching customer ID:", error);
+      console.error("Error fetching user data:", error);
       setCustomerId(null);
+      setUserRole(null);
     }
   };
 
@@ -61,9 +86,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (event === 'SIGNED_IN' && session?.user) {
           console.log("User signed in:", session.user.email);
-          // Fetch the customer ID after sign in using setTimeout to avoid auth deadlock
+          // Fetch the user data after sign in using setTimeout to avoid auth deadlock
           setTimeout(() => {
-            fetchCustomerId(session.user!);
+            fetchUserData(session.user!);
           }, 0);
           
           toast({
@@ -73,6 +98,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (event === 'SIGNED_OUT') {
           console.log("User signed out");
           setCustomerId(null);
+          setUserRole(null);
+          setUserProfile(null);
           toast({
             title: "Signed out successfully",
             description: "You have been signed out.",
@@ -88,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchCustomerId(session.user);
+        fetchUserData(session.user);
       }
       
       setIsLoading(false);
@@ -130,13 +157,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       console.log('Signing up with metadata:', metadata);
       
+      // Determine the role based on metadata
+      const role = metadata.role || (metadata.company_name ? 'customer' : 'employee');
+      console.log(`Determined role: ${role}`);
+      
       // First, create the user in Supabase Auth
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
           data: {
-            role: metadata.role || (metadata.company_name ? 'admin' : 'employee'),
+            role,
             full_name: metadata.full_name || '',
             company_name: metadata.company_name,
             company_size: metadata.company_size,
@@ -160,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Sign up successful:', data);
       
       // Wait a moment to ensure auth user is fully created before proceeding
-      if (data.user) {
+      if (data.user && role === 'customer') {
         try {
           // Check if a customer record already exists
           const existingCustomer = await getCurrentCustomer(data.user);
@@ -214,6 +245,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
       setCustomerId(null);
+      setUserRole(null);
+      setUserProfile(null);
       navigate('/login');
     } catch (error: any) {
       console.error('Error signing out:', error.message);
@@ -232,6 +265,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     isLoading,
     customerId,
+    userRole,
+    userProfile,
     signIn,
     signUp,
     signOut
