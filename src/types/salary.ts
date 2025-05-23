@@ -18,7 +18,7 @@ export interface SalaryDeductions {
 }
 
 export interface EmployeeSalary {
-  id: number;
+  id: string; // Changed from number to string to match UUID
   employee: { name: string; avatar: string };
   position: string;
   department: string;
@@ -44,9 +44,9 @@ export interface SalaryData {
 }
 
 export interface SalaryRecord {
-  salaryid: number;
-  employeeid: number;
-  customerid: number;
+  salaryid: string; // Changed to string
+  employeeid: string; // Changed to string
+  customerid: string; // Changed to string
   basicsalary: number;
   hra: number;
   conveyanceallowance: number;
@@ -62,11 +62,10 @@ export interface SalaryRecord {
 }
 
 export interface PayslipDBRecord {
-  payslipid: number;
-  employeeid: number;
-  customerid: number;
-  year: number;
-  month: number;
+  payslip_id: string; // Match exact database column name
+  employeeid: string;
+  customerid: string;
   amount: number;
+  payslipdate: string;
   generatedtimestamp: string;
 }

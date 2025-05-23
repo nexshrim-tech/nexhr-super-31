@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/ui/layout";
 import { Sparkles } from "lucide-react";
@@ -84,9 +83,17 @@ const TasksReminders = () => {
 
   const handleCreateTask = async (taskData: Omit<Task, 'tasklistid'>) => {
     try {
+      // Generate a unique ID for the task
+      const taskWithId = {
+        ...taskData,
+        tasklistid: crypto.randomUUID(),
+        customerid: taskData.customerid || 'default-customer-id',
+        employeeid: taskData.employeeid || 'default-employee-id',
+      };
+
       const { data, error } = await supabase
         .from('tasklist')
-        .insert(taskData)
+        .insert(taskWithId)
         .select()
         .single();
 

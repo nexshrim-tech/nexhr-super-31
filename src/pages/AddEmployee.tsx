@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,7 @@ const AddEmployee = () => {
     firstname: "",
     lastname: "",
     email: "",
-    phonenumber: "",
+    phonenumber: undefined,
     jobtitle: "",
     department: "",
     employmentstatus: "Active",
@@ -40,7 +39,8 @@ const AddEmployee = () => {
     nationality: "",
     worklocation: "",
     leavebalance: 0,
-    employeepassword: ""
+    employeepassword: "",
+    customerid: "" // Initialize as required field
   });
 
   const handleInputChange = (field: keyof Employee, value: string | number) => {
@@ -66,8 +66,9 @@ const AddEmployee = () => {
     
     try {
       // Convert phonenumber from string to number if it's a string
-      const employeeData = {
+      const employeeData: Omit<Employee, 'employeeid'> = {
         ...formData,
+        customerid: formData.customerid || 'default-customer', // Ensure customerid is provided
         phonenumber: typeof formData.phonenumber === 'string' && formData.phonenumber 
           ? parseInt(formData.phonenumber.replace(/\D/g, '')) 
           : formData.phonenumber,

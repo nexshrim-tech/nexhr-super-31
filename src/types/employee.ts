@@ -1,6 +1,7 @@
+
 export interface Employee {
-  employeeid: string; // Changed from number to string (UUID)
-  customerid: string;
+  employeeid: string;
+  customerid: string; // Required field
   employeeauthid?: string;
   firstname?: string;
   lastname?: string;

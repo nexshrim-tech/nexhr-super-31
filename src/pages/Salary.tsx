@@ -94,7 +94,6 @@ const Salary = () => {
       });
 
     return () => {
-      // Clean up subscription
       supabase.removeChannel(salaryChannel);
     };
   }, []);
@@ -134,24 +133,22 @@ const Salary = () => {
         return;
       }
 
-      // Get current year and month for payslip status
+      // Get current date for payslip status
       const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
+      const currentDateStr = format(now, 'yyyy-MM-dd');
       
       // Fetch payslips for status determination
       const { data: payslipData, error: payslipError } = await supabase
         .from('payslip')
         .select('*')
-        .eq('year', currentYear)
-        .eq('month', currentMonth);
+        .gte('payslipdate', currentDateStr);
       
       if (payslipError) {
         console.error("Error fetching payslip data:", payslipError);
       }
 
       // Map employee data with salary information
-      const employeesWithSalary = employeeData
+      const employeesWithSalary: EmployeeSalary[] = employeeData
         .filter(emp => salaryData.some(sal => sal.employeeid === emp.employeeid))
         .map(emp => {
           const salary = salaryData.find(sal => sal.employeeid === emp.employeeid);
@@ -168,7 +165,7 @@ const Salary = () => {
                                  (salary?.otherallowance || 0);
           
           return {
-            id: emp.employeeid,
+            id: emp.employeeid, // This is already a string
             employee: {
               name: `${emp.firstname || ''} ${emp.lastname || ''}`.trim(),
               avatar: emp.firstname ? emp.firstname[0] + (emp.lastname ? emp.lastname[0] : '') : 'EA'
@@ -213,46 +210,31 @@ const Salary = () => {
 
   const fetchSalaryTrends = async () => {
     try {
-      // Get current year and previous months
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
-      
-      // Calculate months for salary trends (current month and previous 7 months)
-      const months = [];
-      for (let i = 7; i >= 0; i--) {
-        let month = currentMonth - i;
-        let year = currentYear;
-        
-        if (month <= 0) {
-          month += 12;
-          year -= 1;
-        }
-        
-        months.push({ month, year });
+      // Get payslip data aggregated by month
+      const { data, error } = await supabase
+        .from('payslip')
+        .select('amount, payslipdate')
+        .order('payslipdate', { ascending: false })
+        .limit(8);
+
+      if (error) {
+        console.error('Error fetching payslip data:', error);
+        return;
       }
 
-      // Fetch payslip data aggregated by month
-      const trends: SalaryData[] = [];
-      
-      for (const { month, year } of months) {
-        const { data, error } = await supabase
-          .from('payslip')
-          .select('amount')
-          .eq('month', month)
-          .eq('year', year);
-
-        if (error) {
-          console.error('Error fetching payslip data:', error);
-          continue;
+      // Process data into monthly trends
+      const monthlyData: { [key: string]: number } = {};
+      data.forEach(record => {
+        if (record.payslipdate) {
+          const month = format(new Date(record.payslipdate), 'MMM');
+          monthlyData[month] = (monthlyData[month] || 0) + (record.amount || 0);
         }
+      });
 
-        const totalAmount = data.reduce((sum, record) => sum + (record.amount || 0), 0);
-        trends.push({
-          month: getMonthName(month).substring(0, 3),
-          amount: totalAmount
-        });
-      }
+      const trends: SalaryData[] = Object.entries(monthlyData).map(([month, amount]) => ({
+        month,
+        amount
+      }));
 
       setSalaryData(trends);
     } catch (error) {
@@ -260,32 +242,24 @@ const Salary = () => {
     }
   };
 
-  const getMonthName = (month: number) => {
-    const monthNames = ["January", "February", "March", "April", "May", "June",
-                        "July", "August", "September", "October", "November", "December"];
-    return monthNames[month - 1] || "";
-  };
-
   const handleGeneratePayslip = async () => {
     if (!selectedSalaryData) return;
     
     try {
       const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
       
       // Calculate total amount (sum of allowances - deductions)
       const totalAllowances = Object.values(selectedSalaryData.allowances).reduce((sum, value) => sum + value, 0);
       const totalDeductions = Object.values(selectedSalaryData.deductions).reduce((sum, value) => sum + value, 0);
       const netAmount = totalAllowances - totalDeductions;
       
-      // Check if a payslip already exists for this month/year/employee
+      // Check if a payslip already exists for this employee today
+      const today = format(now, 'yyyy-MM-dd');
       const { data: existingPayslip, error: checkError } = await supabase
         .from('payslip')
-        .select('payslipid')
+        .select('payslip_id')
         .eq('employeeid', selectedSalaryData.id)
-        .eq('year', year)
-        .eq('month', month);
+        .gte('payslipdate', today);
         
       if (checkError) {
         console.error('Error checking for existing payslip:', checkError);
@@ -307,7 +281,7 @@ const Salary = () => {
             amount: netAmount,
             generatedtimestamp: now.toISOString()
           })
-          .eq('payslipid', existingPayslip[0].payslipid);
+          .eq('payslip_id', existingPayslip[0].payslip_id);
           
         toast({
           title: "Success",
@@ -318,10 +292,11 @@ const Salary = () => {
         result = await supabase
           .from('payslip')
           .insert({
+            payslip_id: crypto.randomUUID(),
             employeeid: selectedSalaryData.id,
-            year: year,
-            month: month,
+            customerid: 'default-customer-id',
             amount: netAmount,
+            payslipdate: now.toISOString(),
             generatedtimestamp: now.toISOString()
           });
           
@@ -421,7 +396,9 @@ const Salary = () => {
         result = await supabase
           .from('salary')
           .insert({
+            salaryid: crypto.randomUUID(),
             employeeid: selectedSalaryData.id,
+            customerid: 'default-customer-id',
             basicsalary: allowances.basicSalary,
             hra: allowances.hra,
             conveyanceallowance: allowances.conveyanceAllowance,

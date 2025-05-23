@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ import {
 import LocationMapComponent from "./LocationMapComponent";
 
 interface EmployeeLocation {
-  employeeid: string;
+  employeeid: string; // Changed to string to match database
   latitude: number;
   longitude: number;
   timestamp: string;
@@ -40,7 +39,7 @@ const EmployeeLocation = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('track')
-        .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+        .select('*, employee:employee!track_employeeid_fkey(firstname, lastname, jobtitle)')
         .order('timestamp', { ascending: false });
         
       if (error) {
@@ -84,7 +83,7 @@ const EmployeeLocation = () => {
               // Fetch the latest data including the employee details
               const { data } = await supabase
                 .from('track')
-                .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+                .select('*, employee:employee!track_employeeid_fkey(firstname, lastname, jobtitle)')
                 .eq('track_id', payload.new.track_id)
                 .single();
                 
