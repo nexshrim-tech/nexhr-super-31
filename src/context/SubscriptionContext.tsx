@@ -21,6 +21,11 @@ interface SubscriptionContextType {
   error: Error | null;
   refreshSubscription: () => Promise<void>;
   updatePlan: (planId: number) => Promise<boolean>;
+  showSubscriptionModal: boolean;
+  setShowSubscriptionModal: (show: boolean) => void;
+  plan: string;
+  setPlan: (plan: string) => void;
+  features: string[];
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -29,6 +34,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [subscription, setSubscription] = useState<SubscriptionPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [plan, setPlan] = useState<string>("None");
+  const [features, setFeatures] = useState<string[]>([]);
 
   const fetchSubscription = async () => {
     try {
@@ -80,6 +88,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         };
         
         setSubscription(subscriptionData);
+        setPlan(planData.planname || "None");
+        setFeatures(planData.featurelist ? planData.featurelist.split(',') : []);
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -131,7 +141,12 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         isLoading,
         error,
         refreshSubscription: fetchSubscription,
-        updatePlan
+        updatePlan,
+        showSubscriptionModal,
+        setShowSubscriptionModal,
+        plan,
+        setPlan,
+        features
       }}
     >
       {children}

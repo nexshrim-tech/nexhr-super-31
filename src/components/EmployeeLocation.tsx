@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,20 +17,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import LocationMapComponent from "./LocationMapComponent";
 import { EmployeeLocation } from "@/types/location";
-
-// Define the correct type for EmployeeLocationData
-export interface EmployeeLocationData {
-  employeeid: string;
-  latitude: number;
-  longitude: number;
-  timestamp: string;
-  track_id: string;
-  employee?: {
-    firstname?: string;
-    lastname?: string;
-    jobtitle?: string;
-  };
-}
 
 const EmployeeLocationComponent = () => {
   const [isLive, setIsLive] = useState(false);

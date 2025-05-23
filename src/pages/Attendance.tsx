@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/ui/layout";
 import { AttendanceRecord } from "@/types/attendance";
@@ -6,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { getEmployees } from "@/services/employeeService";
 import { supabase } from "@/integrations/supabase/client";
 
-// Create attendance record update function that doesn't expect notes
+// Create attendance record update function
 const updateAttendanceRecord = async (record: Partial<AttendanceRecord>) => {
   try {
-    // Implementation for updating attendance record
     if (!record.employeeid || !record.customerid) {
       throw new Error("Employee ID and Customer ID are required");
     }
@@ -22,7 +22,6 @@ const updateAttendanceRecord = async (record: Partial<AttendanceRecord>) => {
         checkouttime: record.checkouttime,
         checkouttimestamp: record.checkouttimestamp,
         checkintimestamp: record.checkintimestamp,
-        // Don't include notes here
       })
       .eq('employeeid', record.employeeid)
       .eq('date', record.date);
@@ -36,36 +35,42 @@ const updateAttendanceRecord = async (record: Partial<AttendanceRecord>) => {
   }
 };
 
-// This is a partial implementation that keeps the original file mostly intact
-// but fixes the specific errors related to 'notes'
 const AttendancePage = () => {
-  // ...existing code
   const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
-  // ...rest of state
+  const { toast } = useToast();
   
   const handleEditAttendance = (record: AttendanceRecord) => {
     setEditingRecord({
       ...record
-      // Remove notes property reference
     });
-    // ...existing code
   };
   
   const handleSaveEditedRecord = (updatedRecord: Partial<AttendanceRecord>) => {
-    // Make API call to update attendance record
     updateAttendanceRecord(updatedRecord)
       .then(() => {
-        // Handle success
-        // ...existing code
+        toast({
+          title: "Success",
+          description: "Attendance record updated successfully",
+        });
+        setEditingRecord(null);
       })
       .catch(error => {
-        // Handle error
-        // ...existing code
+        toast({
+          title: "Error",
+          description: "Failed to update attendance record",
+          variant: "destructive",
+        });
       });
   };
   
-  // Return component JSX
-  return <div>Attendance Component</div>;
+  return (
+    <Layout>
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-6">Attendance Management</h1>
+        {/* Add your attendance components here */}
+      </div>
+    </Layout>
+  );
 };
 
 export default AttendancePage;

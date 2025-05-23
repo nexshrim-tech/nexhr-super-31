@@ -1,21 +1,19 @@
 
 export interface AttendanceRecord {
+  attendanceid?: string;
   employeeid: string;
   customerid: string;
-  checkintimestamp?: string;
-  checkouttimestamp?: string;
-  selfieimagepath?: string;
-  status?: string;
   date?: string;
   checkintime?: string;
   checkouttime?: string;
-  workhours?: string;
+  checkintimestamp?: string;
+  checkouttimestamp?: string;
+  status?: string;
+  selfieimagepath?: string;
   employee?: {
     firstname?: string;
     lastname?: string;
-    email?: string;
     jobtitle?: string;
-    department?: string;
   };
 }
 
@@ -23,25 +21,23 @@ export interface AttendanceSettings {
   attendancesettingid: string;
   customerid: string;
   employee_id: string;
-  photoverificationenabled?: boolean;
-  geofencingenabled?: boolean;
   workstarttime?: string;
   latethreshold?: string;
+  geofencingenabled?: boolean;
+  photoverificationenabled?: boolean;
 }
 
-export interface AttendanceStats {
-  totalEmployees: number;
-  presentToday: number;
-  absentToday: number;
-  lateToday: number;
-  onTimePercentage: number;
+export interface AttendanceLocationData {
+  coordinates: number[];
+  radius?: number;
+  name?: string;
 }
 
 export interface AttendanceFilters {
-  dateRange?: {
-    from?: Date;
-    to?: Date;
+  dateRange: {
+    from: Date | undefined;
+    to: Date | undefined;
   };
-  status?: string;
-  employee?: string;
+  employeeId: string;
+  status: string;
 }
