@@ -6,6 +6,12 @@ export interface SalaryAllowances {
   medical: number;
   special: number;
   other: number;
+  // Additional fields to match component usage
+  basicSalary?: number;
+  conveyanceAllowance?: number;
+  medicalAllowance?: number;
+  specialAllowance?: number;
+  otherAllowances?: number;
 }
 
 export interface SalaryDeductions {
@@ -14,6 +20,12 @@ export interface SalaryDeductions {
   tax: number;
   loan: number;
   other: number;
+  // Additional fields to match component usage
+  incomeTax?: number;
+  providentFund?: number;
+  professionalTax?: number;
+  loanDeduction?: number;
+  otherDeductions?: number;
 }
 
 export interface EmployeeSalary {
@@ -29,6 +41,7 @@ export interface EmployeeSalary {
   status: 'Paid' | 'Pending';
   allowances: SalaryAllowances;
   deductions: SalaryDeductions;
+  customerId?: string;
 }
 
 export interface PayslipData {
@@ -43,4 +56,21 @@ export interface PayslipData {
   grossSalary: number;
   netSalary: number;
   generatedDate: string;
+}
+
+export interface PayslipRecord {
+  id: string;
+  employeeName: string;
+  month: string;
+  year: number;
+  amount: number;
+  status: string;
+  generatedDate: string;
+}
+
+export interface SalaryData {
+  month: string;
+  totalSalary: number;
+  totalAllowances: number;
+  totalDeductions: number;
 }

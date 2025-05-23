@@ -28,6 +28,7 @@ const EmployeeDetails = () => {
   const [documentEditDialog, setDocumentEditDialog] = useState<'aadhar' | 'pan' | null>(null);
   const [adaptedEmployee, setAdaptedEmployee] = useState<Employee | null>(null);
   const [payslips, setPayslips] = useState<any[]>([]);
+  const [geofencingEnabled, setGeofencingEnabled] = useState(false);
 
   useEffect(() => {
     const fetchEmployeeDetails = async () => {
@@ -54,6 +55,7 @@ const EmployeeDetails = () => {
           ...data,
           phonenumber: data.phonenumber ? String(data.phonenumber) : undefined,
           postalcode: data.zipcode,
+          employmentstatus: data.employmentstatus as 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation' || 'Active',
         };
 
         setEmployee(employeeData);
@@ -97,39 +99,17 @@ const EmployeeDetails = () => {
     setDocumentEditDialog(null);
   };
 
-  // Prepare data for tab components
-  const workTabProps = employee ? {
-    department: employee.department || '',
-    role: employee.jobtitle || '',
-    employeeId: employee.employeeid,
-    joining: employee.joiningdate || '',
-    employmenttype: employee.employmenttype
-  } : null;
+  const handleGeofencingToggle = (checked: boolean) => {
+    setGeofencingEnabled(checked);
+  };
 
-  const personalTabProps = employee ? {
-    name: `${employee.firstname} ${employee.lastname}`,
-    dob: employee.dateofbirth || '',
-    email: employee.email,
-    gender: employee.gender || '',
-    phone: employee.phonenumber || '',
-    address: employee.address || '',
-    fatherName: employee.fathersname || '',
-    city: employee.city,
-    state: employee.state,
-    country: employee.country,
-    postalcode: employee.postalcode,
-    bloodGroup: employee.bloodgroup,
-    hasDisability: employee.disabilitystatus === 'Yes'
-  } : null;
+  const handleDownload = (type: string) => {
+    console.log(`Downloading ${type} document`);
+  };
 
-  const bankTabProps = employee ? {
-    employeeId: employee.employeeid
-  } : null;
-
-  const documentsTabProps = employee ? {
-    employeeId: employee.employeeid,
-    onOpenDocumentDialog: handleOpenDocumentDialog
-  } : null;
+  const handleEditDocument = (type: 'aadhar' | 'pan') => {
+    handleOpenDocumentDialog(type);
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -164,19 +144,52 @@ const EmployeeDetails = () => {
                 </TabsList>
                 
                 <TabsContent value="work">
-                  {workTabProps && <EmployeeWorkTab {...workTabProps} />}
+                  <EmployeeWorkTab 
+                    employee={{
+                      department: employee.department || '',
+                      role: employee.jobtitle || '',
+                      employeeId: employee.employeeid,
+                      joining: employee.joiningdate || '',
+                      employmenttype: employee.employmenttype || ''
+                    }}
+                    geofencingEnabled={geofencingEnabled}
+                    onGeofencingToggle={handleGeofencingToggle}
+                    isEditMode={false}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="personal">
-                  {personalTabProps && <EmployeePersonalTab {...personalTabProps} />}
+                  <EmployeePersonalTab 
+                    employee={{
+                      name: `${employee.firstname} ${employee.lastname}`,
+                      dob: employee.dateofbirth || '',
+                      email: employee.email,
+                      gender: employee.gender || '',
+                      phone: employee.phonenumber || '',
+                      address: employee.address || '',
+                      fatherName: employee.fathersname || '',
+                      city: employee.city || '',
+                      state: employee.state || '',
+                      country: employee.country || '',
+                      postalcode: employee.postalcode || '',
+                      bloodGroup: employee.bloodgroup || '',
+                      hasDisability: employee.disabilitystatus === 'Yes'
+                    }}
+                    isEditMode={false}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="bank">
-                  {bankTabProps && <EmployeeBankTab {...bankTabProps} />}
+                  <EmployeeBankTab 
+                    employeeId={employee.employeeid}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="documents">
-                  {documentsTabProps && <EmployeeDocumentsTab {...documentsTabProps} />}
+                  <EmployeeDocumentsTab 
+                    employeeId={employee.employeeid}
+                    onOpenDocumentDialog={handleOpenDocumentDialog}
+                  />
                 </TabsContent>
               </Tabs>
 
