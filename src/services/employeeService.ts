@@ -62,9 +62,10 @@ export const createEmployee = async (employee: Omit<Employee, 'employeeid'> & { 
     // Make sure customerid is included in the DB employee object
     dbEmployee.customerid = employee.customerid;
     
+    // Use an array format for the insert method as required by Supabase
     const { data, error } = await supabase
       .from('employee')
-      .insert(dbEmployee)
+      .insert([dbEmployee])
       .select()
       .single();
 
