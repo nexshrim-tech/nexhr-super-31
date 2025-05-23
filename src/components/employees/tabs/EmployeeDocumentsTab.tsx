@@ -9,12 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 interface EmployeeDocumentsTabProps {
   onDownload: (documentType: string, documentUrl?: string) => void;
   onEditDocument: (type: 'aadhar' | 'pan') => void;
-  employeeId?: string; // Changed from number to string
-  documentPaths?: {
-    aadhar?: string;
-    pan?: string;
-    profile?: string;
-  };
+  employeeId?: string;
+  documentPaths?: Record<string, string> | any; // JSONB format
 }
 
 const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({ 
@@ -24,6 +20,9 @@ const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
   documentPaths
 }) => {
   const { toast } = useToast();
+
+  // Handle JSONB format document paths
+  const documents = documentPaths && typeof documentPaths === 'object' ? documentPaths : {};
 
   const handleDownload = async (documentType: string, documentUrl?: string) => {
     if (!documentUrl) {
@@ -42,12 +41,12 @@ const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
         throw new Error("Invalid file path");
       }
       
-      // Get the folder path
+      // Get the folder path based on document type
       const folderPath = documentType.toLowerCase() === 'aadhar card' 
-        ? `${employeeId}/aadhar/`
+        ? `${employeeId}/mandatory/`
         : documentType.toLowerCase() === 'pan card'
-          ? `${employeeId}/pan/`
-          : '';
+          ? `${employeeId}/mandatory/`
+          : `${employeeId}/additional/`;
       
       // Download the file
       const { data, error } = await supabase.storage
@@ -89,7 +88,7 @@ const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleDownload('Aadhar Card', documentPaths?.aadhar)}
+              onClick={() => handleDownload('Aadhar Card', documents.aadhar)}
             >
               <Download className="h-4 w-4 mr-2" />
               Download
@@ -110,7 +109,7 @@ const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleDownload('Pan Card', documentPaths?.pan)}
+              onClick={() => handleDownload('Pan Card', documents.pan)}
             >
               <Download className="h-4 w-4 mr-2" />
               Download
@@ -126,12 +125,44 @@ const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
           </div>
         </div>
       </div>
-      {documentPaths?.profile && (
+
+      {/* Display additional documents if any */}
+      {Object.keys(documents).length > 2 && (
+        <div className="mt-6">
+          <Label className="text-lg font-medium">Additional Documents</Label>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            {Object.entries(documents).map(([key, url]) => {
+              if (key === 'aadhar' || key === 'pan') return null;
+              const documentName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              
+              return (
+                <div key={key}>
+                  <Label>{documentName}</Label>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(documentName, url as string)}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Display profile photo if available */}
+      {documents.profile && (
         <div className="mt-4">
+          <Label>Profile Photo</Label>
           <img 
-            src={documentPaths.profile} 
+            src={documents.profile} 
             alt="Profile Photo" 
-            className="h-32 w-32 rounded-full object-cover border-2 border-gray-200" 
+            className="h-32 w-32 rounded-full object-cover border-2 border-gray-200 mt-2" 
           />
         </div>
       )}

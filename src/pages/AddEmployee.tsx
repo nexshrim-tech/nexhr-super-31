@@ -40,6 +40,7 @@ const AddEmployee = () => {
   };
 
   const handleDocumentsChange = (documents: Record<string, string>) => {
+    // Store documents as JSONB object
     handleInputChange('documentpath', documents);
   };
 
@@ -64,6 +65,8 @@ const AddEmployee = () => {
       }
       
       console.log('Creating employee with data:', employeeData);
+      console.log('Document paths (JSONB):', employeeData.documentpath);
+      console.log('Profile photo path:', employeeData.profilepicturepath);
       
       const employeeToCreate = {
         ...employeeData,
