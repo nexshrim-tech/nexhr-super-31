@@ -10,9 +10,8 @@ import { Employee, createEmployee } from "@/services/employeeService";
 import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
 import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
 import EmployeeBankTab from "@/components/employees/tabs/EmployeeBankTab";
-import EmployeeDocumentsTab from "@/components/employees/tabs/EmployeeDocumentsTab";
 import ProfilePhotoUpload from "@/components/employees/ProfilePhotoUpload";
-import DocumentDropZone from "@/components/employees/DocumentDropZone";
+import DocumentUploadForm from "@/components/employees/DocumentUploadForm";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { adaptToUIFormat } from "@/components/employees/EmployeeAdapter";
 
@@ -40,20 +39,23 @@ const AddEmployee = () => {
     handleInputChange('profilepicturepath', photoUrl);
   };
 
-  const handleDocumentsUpload = (documents: any[]) => {
-    // Store documents in the documentpath field as JSON
-    const documentPaths = documents.reduce((acc, doc) => {
-      if (doc.documentType) {
-        acc[doc.documentType] = doc.url;
-      }
-      return acc;
-    }, {});
-    
-    handleInputChange('documentpath', documentPaths);
+  const handleDocumentsChange = (documents: Record<string, string>) => {
+    handleInputChange('documentpath', documents);
   };
 
   const handleSubmit = async () => {
     try {
+      // Validate mandatory documents
+      const documents = employeeData.documentpath as Record<string, string> || {};
+      if (!documents.aadhar || !documents.pan) {
+        toast({
+          title: "Error",
+          description: "Aadhar Card and PAN Card are mandatory documents.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setIsLoading(true);
       
       // Ensure we have the required customerid
@@ -197,9 +199,9 @@ const AddEmployee = () => {
               <TabsContent value="documents">
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-medium mb-4">Upload Documents</h3>
-                    <DocumentDropZone
-                      onDocumentsUpload={handleDocumentsUpload}
+                    <h3 className="text-lg font-medium mb-4">Employee Documents</h3>
+                    <DocumentUploadForm
+                      onDocumentsChange={handleDocumentsChange}
                       employeeId="temp-employee"
                     />
                   </div>
