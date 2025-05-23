@@ -1,25 +1,38 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
+// Define our user role type to match the database enum
+export type UserRole = 'admin' | 'customer' | 'employee';
+
+// Define our profile type
+export interface UserProfile {
+  id: string;
+  full_name: string | null;
+  role: UserRole;
+  customer_id?: string;
+  employee_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  profile: UserProfile | null;
   isLoading: boolean;
+  isAdmin: boolean;
+  isCustomer: boolean;
+  isEmployee: boolean;
+  customerId?: string;
+  employeeId?: string;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
   signOut: () => Promise<void>;
-}
-
-interface UserMetadata {
-  role: string;
-  full_name: string;
-  company_name?: string;
-  company_size?: string;
-  phone_number?: string;
-  company_address?: string;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,46 +40,100 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Helper function to fetch user profile
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+
+      return data as UserProfile;
+    } catch (error) {
+      console.error('Exception fetching user profile:', error);
+      return null;
+    }
+  };
+
+  // Refresh the user profile data
+  const refreshProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const userProfile = await fetchUserProfile(user.id);
+      setProfile(userProfile);
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    }
+  };
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event, session?.user?.id);
+    const setupAuth = async () => {
+      try {
+        setIsLoading(true);
+
+        // Set up auth state listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            console.log("Auth state changed:", event, session?.user?.id);
+            setSession(session);
+            setUser(session?.user ?? null);
+            
+            if (event === 'SIGNED_IN' && session?.user) {
+              console.log("User signed in:", session.user.email);
+              
+              // Fetch user profile with setTimeout to avoid potential deadlocks
+              setTimeout(async () => {
+                const userProfile = await fetchUserProfile(session.user.id);
+                setProfile(userProfile);
+                
+                toast({
+                  title: "Signed in successfully",
+                  description: `Welcome back, ${userProfile?.full_name || session.user.email}!`,
+                });
+              }, 0);
+            } else if (event === 'SIGNED_OUT') {
+              console.log("User signed out");
+              setProfile(null);
+              
+              toast({
+                title: "Signed out successfully",
+                description: "You have been signed out.",
+              });
+            }
+          }
+        );
+
+        // THEN check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (event === 'SIGNED_IN') {
-          console.log("User signed in:", session?.user?.email);
-          toast({
-            title: "Signed in successfully",
-            description: "Welcome back!",
-          });
-        } else if (event === 'SIGNED_OUT') {
-          console.log("User signed out");
-          toast({
-            title: "Signed out successfully",
-            description: "You have been signed out.",
-          });
+        if (session?.user) {
+          const userProfile = await fetchUserProfile(session.user.id);
+          setProfile(userProfile);
         }
+
+        return () => {
+          subscription.unsubscribe();
+        };
+      } finally {
+        setIsLoading(false);
       }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session check:", session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    }).catch(error => {
-      console.error("Error fetching initial session:", error);
-      setIsLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
     };
+
+    setupAuth();
   }, [toast]);
 
   const signIn = async (email: string, password: string) => {
@@ -102,7 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
         options: {
           data: {
-            role: metadata.role || (metadata.company_name ? 'admin' : 'employee'),
+            role: metadata.role || 'employee',
             full_name: metadata.full_name || '',
             company_name: metadata.company_name,
             company_size: metadata.company_size,
@@ -150,6 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         throw error;
       }
+      setProfile(null);
       navigate('/login');
     } catch (error: any) {
       console.error('Error signing out:', error.message);
@@ -163,13 +231,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Role-based helper properties
+  const isAdmin = profile?.role === 'admin';
+  const isCustomer = profile?.role === 'customer';
+  const isEmployee = profile?.role === 'employee';
+  const customerId = profile?.customer_id;
+  const employeeId = profile?.employee_id;
+
   const value = {
     user,
     session,
+    profile,
     isLoading,
+    isAdmin,
+    isCustomer,
+    isEmployee,
+    customerId,
+    employeeId,
     signIn,
     signUp,
-    signOut
+    signOut,
+    refreshProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

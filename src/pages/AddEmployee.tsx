@@ -14,19 +14,25 @@ import ProfilePhotoUpload from "@/components/employees/ProfilePhotoUpload";
 import DocumentUploadForm from "@/components/employees/DocumentUploadForm";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { adaptToUIFormat } from "@/components/employees/EmployeeAdapter";
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const AddEmployee = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [employeeData, setEmployeeData] = useState<Partial<Employee>>({
-    customerid: 'default-customer-id',
+    customerid: profile?.customer_id || 'default-customer-id',
     employmentstatus: 'Active',
     employmenttype: 'Full-time',
     gender: 'Male',
     maritalstatus: 'Single',
     disabilitystatus: 'No Disability',
   });
+  const [employeeEmail, setEmployeeEmail] = useState("");
+  const [employeePassword, setEmployeePassword] = useState("");
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
   const handleInputChange = (field: keyof Employee, value: any) => {
     setEmployeeData(prev => ({
@@ -44,6 +50,59 @@ const AddEmployee = () => {
     handleInputChange('documentpath', documents);
   };
 
+  // Register employee in auth system and link to employee record
+  const registerEmployeeUser = async (email: string, password: string, employeeId: string) => {
+    if (!email || !password) {
+      return null;
+    }
+    
+    try {
+      setIsCreatingAccount(true);
+      
+      // Call the register_employee function
+      const { data, error } = await supabase.rpc('register_employee', {
+        p_email: email,
+        p_password: password,
+        p_employee_id: employeeId
+      });
+      
+      if (error) {
+        console.error('Error registering employee:', error);
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error in registerEmployeeUser:', error);
+      throw error;
+    } finally {
+      setIsCreatingAccount(false);
+    }
+  };
+
+  // Link employee to existing auth user
+  const linkEmployeeToProfile = async (employeeId: string) => {
+    try {
+      // Update profiles table to link employee_id with auth user
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          employee_id: employeeId,
+          customer_id: profile?.customer_id
+        })
+        .eq('id', employeeData.employeeauthid)
+        .is('employee_id', null);
+      
+      if (error) {
+        console.error('Error linking employee to profile:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in linkEmployeeToProfile:', error);
+      throw error;
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       // Validate mandatory documents
@@ -59,9 +118,9 @@ const AddEmployee = () => {
 
       setIsLoading(true);
       
-      // Ensure we have the required customerid
-      if (!employeeData.customerid) {
-        employeeData.customerid = 'default-customer-id';
+      // Ensure we have the customerid from the logged-in user's profile
+      if (profile?.customer_id) {
+        employeeData.customerid = profile.customer_id;
       }
       
       console.log('Creating employee with data:', employeeData);
@@ -70,10 +129,43 @@ const AddEmployee = () => {
       
       const employeeToCreate = {
         ...employeeData,
-        customerid: employeeData.customerid
+        customerid: employeeData.customerid || profile?.customer_id
       } as Employee & { customerid: string };
 
       const newEmployee = await createEmployee(employeeToCreate);
+      
+      // If employee auth credentials are provided, register them
+      if (employeeEmail && employeePassword && newEmployee?.employeeid) {
+        try {
+          await registerEmployeeUser(employeeEmail, employeePassword, newEmployee.employeeid);
+          toast({
+            title: "Employee account created",
+            description: `User account for ${employeeEmail} has been created successfully.`,
+          });
+        } catch (error: any) {
+          toast({
+            title: "Warning",
+            description: `Employee record created but failed to register user account: ${error.message}`,
+            variant: "destructive",
+          });
+        }
+      }
+      // If existing auth ID is provided, link it to the employee record
+      else if (employeeData.employeeauthid && newEmployee?.employeeid) {
+        try {
+          await linkEmployeeToProfile(newEmployee.employeeid);
+          toast({
+            title: "Success",
+            description: "Employee has been linked to existing user account.",
+          });
+        } catch (error: any) {
+          toast({
+            title: "Warning",
+            description: `Employee record created but failed to link to user account: ${error.message}`,
+            variant: "destructive",
+          });
+        }
+      }
       
       toast({
         title: "Success",
@@ -142,6 +234,44 @@ const AddEmployee = () => {
                 currentPhoto={employeeData.profilepicturepath}
                 employeeName={`${employeeData.firstname || ''} ${employeeData.lastname || ''}`.trim() || 'New Employee'}
               />
+            </div>
+
+            {/* Auth Details (New Section) */}
+            <div className="mb-6 pb-6 border-b">
+              <h3 className="text-lg font-medium mb-4">Authentication Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="employeeEmail">Employee Email</Label>
+                  <Input
+                    id="employeeEmail"
+                    type="email"
+                    value={employeeEmail}
+                    onChange={(e) => setEmployeeEmail(e.target.value)}
+                    placeholder="Employee login email"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email address for employee to login
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="employeePassword">Employee Password</Label>
+                  <Input
+                    id="employeePassword"
+                    type="password"
+                    value={employeePassword}
+                    onChange={(e) => setEmployeePassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Initial password for employee (they can change it later)
+                  </p>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-sm text-amber-600">
+                    <strong>Note:</strong> Leave these fields empty if you don't want to create a login account for this employee.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <Tabs defaultValue="personal" className="space-y-6">
@@ -216,15 +346,15 @@ const AddEmployee = () => {
               <Button 
                 variant="outline" 
                 onClick={handleGoBack}
-                disabled={isLoading}
+                disabled={isLoading || isCreatingAccount}
               >
                 Cancel
               </Button>
               <Button 
                 onClick={handleSubmit}
-                disabled={isLoading}
+                disabled={isLoading || isCreatingAccount}
               >
-                {isLoading ? 'Creating...' : 'Create Employee'}
+                {isLoading || isCreatingAccount ? 'Creating...' : 'Create Employee'}
               </Button>
             </div>
           </CardContent>

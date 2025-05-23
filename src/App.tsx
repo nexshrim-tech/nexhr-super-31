@@ -1,4 +1,3 @@
-
 import { Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -30,6 +29,7 @@ import { SubscriptionProvider } from "./context/SubscriptionContext";
 import SubscriptionModal from "./components/SubscriptionModal";
 import { useSubscription } from "./context/SubscriptionContext";
 import RequireAuth from "./components/RequireAuth";
+import Unauthorized from "@/pages/Unauthorized";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -78,6 +78,7 @@ function AppRoutes() {
         <Route path="/tasks-reminders" element={<RequireAuth><TasksReminders /></RequireAuth>} />
         <Route path="/track" element={<RequireAuth><Track /></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

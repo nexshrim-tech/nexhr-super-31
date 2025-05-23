@@ -126,5 +126,26 @@ export const deleteEmployee = async (id: string): Promise<void> => {
   }
 };
 
+export const registerEmployeeUser = async (email: string, password: string, employeeId: string): Promise<string | null> => {
+  try {
+    // Call the register_employee function
+    const { data, error } = await supabase.rpc('register_employee', {
+      p_email: email,
+      p_password: password,
+      p_employee_id: employeeId
+    });
+    
+    if (error) {
+      console.error('Error registering employee:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in registerEmployeeUser:', error);
+    throw error;
+  }
+};
+
 // Export addEmployee as an alias for createEmployee
 export const addEmployee = createEmployee;

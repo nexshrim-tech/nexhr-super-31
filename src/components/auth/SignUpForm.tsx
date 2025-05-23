@@ -72,7 +72,8 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
       if (email && password && name) {
         const userData: Record<string, any> = {
           full_name: name,
-          role: activeTab === 'company' ? 'admin' : 'employee'
+          // Set role based on the active tab
+          role: activeTab === 'company' ? 'customer' : 'employee'
         };
         
         if (activeTab === 'company') {
