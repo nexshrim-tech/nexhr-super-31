@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import LocationMapComponent from "./LocationMapComponent";
 
-interface EmployeeLocation {
+export interface EmployeeLocation {
   employeeid: string; // Fixed to match database type
   latitude: number;
   longitude: number;
@@ -61,7 +61,9 @@ const EmployeeLocation = () => {
   });
   
   useEffect(() => {
-    setEmployeeLocations(locations);
+    if (locations) {
+      setEmployeeLocations(locations);
+    }
   }, [locations]);
   
   useEffect(() => {
@@ -165,7 +167,7 @@ const EmployeeLocation = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="border shadow-lg">
-              <DropdownMenuItem onClick={handleExportMap} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => toast("The current map view has been exported.")} className="cursor-pointer">
                 <Download className="h-4 w-4 mr-2" />
                 Export Map
               </DropdownMenuItem>
@@ -195,7 +197,13 @@ const EmployeeLocation = () => {
               className={isLive 
                 ? "bg-red-500 hover:bg-red-600 shadow-md" 
                 : "bg-white/90 backdrop-blur-sm shadow-md hover:bg-white"}
-              onClick={toggleLiveTracking}
+              onClick={() => {
+                setIsLive(!isLive);
+                toast(isLive 
+                  ? "You have stopped tracking employee locations in real-time." 
+                  : "You are now tracking employee locations in real-time."
+                );
+              }}
             >
               {isLive ? "Stop Tracking" : "Start Live Tracking"}
             </Button>

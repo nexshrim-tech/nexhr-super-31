@@ -1,6 +1,6 @@
 
 export interface AttendanceRecord {
-  employeeid: string; // Changed to match database type
+  employeeid: string; // Changed from number to string to match database type
   customerid: string;
   checkintimestamp?: string;
   checkouttimestamp?: string;
@@ -19,7 +19,7 @@ export interface AttendanceRecord {
 
 export interface AttendanceSettings {
   attendancesettingid?: string;
-  employee_id: string;
+  employee_id: string; // Match database column name
   customerid: string;
   workstarttime?: string;
   latethreshold?: string;

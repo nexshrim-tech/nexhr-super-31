@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from "@/components/ui/layout";
@@ -5,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Employee, createEmployee } from "@/services/employeeService";
-import { EmployeePersonalTab } from "@/components/employees/tabs/EmployeePersonalTab";
-import { EmployeeWorkTab } from "@/components/employees/tabs/EmployeeWorkTab";
-import { EmployeeBankTab } from "@/components/employees/tabs/EmployeeBankTab";
-import { EmployeeDocumentsTab } from "@/components/employees/tabs/EmployeeDocumentsTab";
+import { Employee } from "@/services/employeeService";
+import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
+import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
+import EmployeeBankTab from "@/components/employees/tabs/EmployeeBankTab";
+import EmployeeDocumentsTab from "@/components/employees/tabs/EmployeeDocumentsTab";
 import { ArrowLeft, UserPlus } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 
 const AddEmployee = () => {
   const navigate = useNavigate();
@@ -32,6 +34,24 @@ const AddEmployee = () => {
     }));
   };
 
+  const createEmployee = async (employeeData: Omit<Employee, 'employeeid'>) => {
+    const { data, error } = await supabase
+      .from('employee')
+      .insert({
+        ...employeeData,
+        customerid: employeeData.customerid || 'default-customer-id',
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error creating employee:', error);
+      throw error;
+    }
+    
+    return data;
+  };
+
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
@@ -43,7 +63,7 @@ const AddEmployee = () => {
         phonenumber: employeeData.phonenumber ? Number(employeeData.phonenumber) : 0,
         monthlysalary: employeeData.monthlysalary ? Number(employeeData.monthlysalary) : 0,
         leavebalance: employeeData.leavebalance ? Number(employeeData.leavebalance) : 0,
-      } as Omit<Employee, 'employeeid'>;
+      } as Employee;
 
       console.log('Creating employee with data:', employeeToCreate);
       

@@ -1,15 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-
-export interface AttendanceSettings {
-  attendancesettingid?: string;
-  employee_id: string; // Match database column name
-  customerid: string;
-  workstarttime?: string;
-  latethreshold?: string;
-  geofencingenabled?: boolean;
-  photoverificationenabled?: boolean;
-}
+import { AttendanceSettings } from '@/types/attendance';
 
 export const getAttendanceSettings = async (employeeId: string): Promise<AttendanceSettings[] | null> => {
   try {
@@ -27,9 +18,9 @@ export const getAttendanceSettings = async (employeeId: string): Promise<Attenda
     const typedData = data?.map(item => ({
       ...item,
       latethreshold: item.latethreshold ? String(item.latethreshold) : undefined
-    }));
+    })) as AttendanceSettings[];
     
-    return typedData as AttendanceSettings[];
+    return typedData;
   } catch (error) {
     console.error('Error in getAttendanceSettings:', error);
     throw error;
@@ -63,6 +54,11 @@ export const updateAttendanceSettings = async (id: string, settings: Partial<Att
 
 export const createAttendanceSettings = async (settings: Omit<AttendanceSettings, 'attendancesettingid'>): Promise<AttendanceSettings> => {
   try {
+    // Make sure settings has the required fields
+    if (!settings.employee_id || !settings.customerid) {
+      throw new Error('Missing required fields for attendance settings');
+    }
+    
     const { data, error } = await supabase
       .from('attendancesettings')
       .insert(settings)

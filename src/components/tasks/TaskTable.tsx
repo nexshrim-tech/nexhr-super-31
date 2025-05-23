@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Edit, Trash2, Calendar, User } from "lucide-react";
 import { format } from "date-fns";
 
-interface Task {
+export interface Task {
   tasklistid: string;
   tasktitle: string;
   description: string;
@@ -21,7 +21,7 @@ interface Task {
   customerid: string;
 }
 
-interface TaskTableProps {
+export interface TaskTableProps {
   tasks: Task[];
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
