@@ -11,6 +11,8 @@ import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab
 import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
 import EmployeeBankTab from "@/components/employees/tabs/EmployeeBankTab";
 import EmployeeDocumentsTab from "@/components/employees/tabs/EmployeeDocumentsTab";
+import ProfilePhotoUpload from "@/components/employees/ProfilePhotoUpload";
+import DocumentDropZone from "@/components/employees/DocumentDropZone";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { adaptToUIFormat } from "@/components/employees/EmployeeAdapter";
 
@@ -32,6 +34,22 @@ const AddEmployee = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleProfilePhotoUpload = (photoUrl: string) => {
+    handleInputChange('profilepicturepath', photoUrl);
+  };
+
+  const handleDocumentsUpload = (documents: any[]) => {
+    // Store documents in the documentpath field as JSON
+    const documentPaths = documents.reduce((acc, doc) => {
+      if (doc.documentType) {
+        acc[doc.documentType] = doc.url;
+      }
+      return acc;
+    }, {});
+    
+    handleInputChange('documentpath', documentPaths);
   };
 
   const handleSubmit = async () => {
@@ -111,6 +129,16 @@ const AddEmployee = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Profile Photo Section */}
+            <div className="mb-6 pb-6 border-b">
+              <h3 className="text-lg font-medium mb-4">Profile Photo</h3>
+              <ProfilePhotoUpload
+                onPhotoUpload={handleProfilePhotoUpload}
+                currentPhoto={employeeData.profilepicturepath}
+                employeeName={`${employeeData.firstname || ''} ${employeeData.lastname || ''}`.trim() || 'New Employee'}
+              />
+            </div>
+
             <Tabs defaultValue="personal" className="space-y-6">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="personal">Personal Info</TabsTrigger>
@@ -167,10 +195,15 @@ const AddEmployee = () => {
               </TabsContent>
 
               <TabsContent value="documents">
-                <EmployeeDocumentsTab 
-                  onDownload={() => {}}
-                  onEditDocument={() => {}}
-                />
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Upload Documents</h3>
+                    <DocumentDropZone
+                      onDocumentsUpload={handleDocumentsUpload}
+                      employeeId="temp-employee"
+                    />
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
 
