@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import LocationMapComponent from "./LocationMapComponent";
 
-export interface EmployeeLocation {
+export interface EmployeeLocationData {
   employeeid: string;
   latitude: number;
   longitude: number;
@@ -32,7 +32,7 @@ export interface EmployeeLocation {
 
 const EmployeeLocation = () => {
   const [isLive, setIsLive] = useState(false);
-  const [employeeLocations, setEmployeeLocations] = useState<EmployeeLocation[]>([]);
+  const [employeeLocations, setEmployeeLocations] = useState<EmployeeLocationData[]>([]);
   const isMobile = useIsMobile();
   
   const { data: locations = [], isLoading, error } = useQuery({
@@ -55,7 +55,7 @@ const EmployeeLocation = () => {
         timestamp: item.timestamp || '',
         track_id: item.track_id,
         employee: item.employee || undefined
-      })) as EmployeeLocation[];
+      })) as EmployeeLocationData[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -87,7 +87,7 @@ const EmployeeLocation = () => {
                 .single();
                 
               if (data) {
-                const transformedData: EmployeeLocation = {
+                const transformedData: EmployeeLocationData = {
                   employeeid: data.employeeid,
                   latitude: data.coordinates?.[0] || 0,
                   longitude: data.coordinates?.[1] || 0,

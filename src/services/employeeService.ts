@@ -1,24 +1,57 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Employee } from '@/types/employee';
-import { mapEmployeeDBToEmployee, mapEmployeeToDBFormat } from '@/utils/employeeMappers';
+
+export interface Employee {
+  employeeid: string;
+  customerid: string;
+  employeeauthid?: string;
+  firstname?: string;
+  lastname?: string;
+  email?: string;
+  phonenumber?: number;
+  jobtitle?: string;
+  department?: string;
+  employmentstatus?: string;
+  employmenttype?: string;
+  dateofbirth?: string;
+  joiningdate?: string;
+  nationality?: string;
+  gender?: string;
+  maritalstatus?: string;
+  fathersname?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zipcode?: string;
+  bloodgroup?: string;
+  disabilitystatus?: string;
+  worklocation?: string;
+  monthlysalary?: number;
+  leavebalance?: number;
+  profilepicturepath?: string;
+  documentpath?: any;
+  employeepassword?: string;
+}
 
 export const getEmployees = async (customerId?: string): Promise<Employee[]> => {
   try {
-    let query = supabase.from('employee').select();
+    let query = supabase
+      .from('employee')
+      .select('*');
     
     if (customerId) {
       query = query.eq('customerid', customerId);
     }
     
-    const { data, error } = await query.order('employeeid');
+    const { data, error } = await query.order('firstname');
 
     if (error) {
       console.error('Error fetching employees:', error);
       throw error;
     }
 
-    return (data || []).map(mapEmployeeDBToEmployee);
+    return (data || []) as Employee[];
   } catch (error) {
     console.error('Error in getEmployees:', error);
     throw error;
@@ -27,29 +60,9 @@ export const getEmployees = async (customerId?: string): Promise<Employee[]> => 
 
 export const getEmployeeById = async (id: string): Promise<Employee | null> => {
   try {
-    // Handle special case for admin users
-    if (!id || id === '0' || id === 'admin') {
-      return {
-        employeeid: '0',
-        customerid: '',
-        firstname: 'Admin',
-        lastname: 'User',
-        email: '',
-        address: '',
-        city: '',
-        state: '',
-        country: '',
-        postalcode: '',
-        jobtitle: '',
-        department: '',
-        employmentstatus: 'Active',
-        gender: '',
-      };
-    }
-
     const { data, error } = await supabase
       .from('employee')
-      .select()
+      .select('*')
       .eq('employeeid', id)
       .single();
 
@@ -58,67 +71,38 @@ export const getEmployeeById = async (id: string): Promise<Employee | null> => {
       throw error;
     }
 
-    return data ? mapEmployeeDBToEmployee(data) : null;
+    return data as Employee;
   } catch (error) {
     console.error('Error in getEmployeeById:', error);
     throw error;
   }
 };
 
-export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promise<Employee> => {
+export const createEmployee = async (employee: Omit<Employee, 'employeeid'> & { customerid: string }): Promise<Employee> => {
   try {
-    console.log('Adding employee with data:', employee);
-    
-    if (!employee.firstname || !employee.lastname || !employee.email) {
-      throw new Error('Employee must have firstname, lastname, and email');
-    }
-    
-    const dbEmployee = mapEmployeeToDBFormat(employee);
-    console.log('Formatted employee data for database:', dbEmployee);
-    
-    if (!dbEmployee.customerid) {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        const { data: customerData } = await supabase
-          .from('customer')
-          .select('customerid')
-          .eq('customerauthid', userData.user.id)
-          .single();
-
-        if (customerData?.customerid) {
-          dbEmployee.customerid = customerData.customerid;
-        }
-      }
-    }
-    
     const { data, error } = await supabase
       .from('employee')
-      .insert(dbEmployee)
+      .insert(employee)
       .select()
       .single();
 
     if (error) {
-      console.error('Error adding employee:', error);
+      console.error('Error creating employee:', error);
       throw error;
     }
 
-    return mapEmployeeDBToEmployee(data);
+    return data as Employee;
   } catch (error) {
-    console.error('Error in addEmployee:', error);
+    console.error('Error in createEmployee:', error);
     throw error;
   }
 };
 
-export const updateEmployee = async (id: string, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
+export const updateEmployee = async (id: string, updates: Partial<Employee>): Promise<Employee> => {
   try {
-    console.log('Updating employee with data:', employee);
-    
-    const dbEmployee = mapEmployeeToDBFormat(employee);
-    console.log('Formatted employee data for database update:', dbEmployee);
-    
     const { data, error } = await supabase
       .from('employee')
-      .update(dbEmployee)
+      .update(updates)
       .eq('employeeid', id)
       .select()
       .single();
@@ -128,7 +112,7 @@ export const updateEmployee = async (id: string, employee: Omit<Partial<Employee
       throw error;
     }
 
-    return mapEmployeeDBToEmployee(data);
+    return data as Employee;
   } catch (error) {
     console.error('Error in updateEmployee:', error);
     throw error;
@@ -146,12 +130,10 @@ export const deleteEmployee = async (id: string): Promise<void> => {
       console.error('Error deleting employee:', error);
       throw error;
     }
-    
-    console.log(`Employee with ID ${id} has been permanently deleted`);
   } catch (error) {
     console.error('Error in deleteEmployee:', error);
     throw error;
   }
 };
 
-export type { Employee } from '@/types/employee';
+export type { Employee };

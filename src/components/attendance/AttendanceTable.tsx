@@ -34,7 +34,7 @@ const AttendanceTable = ({
     queryFn: () => getAttendanceForDate(formattedDate)
   });
 
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<AttendanceRecord>>({});
   const [localRecords, setLocalRecords] = useState<AttendanceRecord[]>([]);
 
@@ -113,7 +113,6 @@ const AttendanceTable = ({
       checkintime: record.checkintime || formatTimeForInput(record.checkintimestamp),
       checkouttime: record.checkouttime || formatTimeForInput(record.checkouttimestamp),
       status: record.status || '',
-      notes: record.notes || '',
       customerid: record.customerid
     });
   };
@@ -137,8 +136,7 @@ const AttendanceTable = ({
           status: updatedRecord.status,
           checkintime: updatedRecord.checkintime,
           checkouttime: updatedRecord.checkouttime,
-          date: updatedRecord.date || formattedDate,
-          notes: updatedRecord.notes
+          date: updatedRecord.date || formattedDate
         }
       );
       
