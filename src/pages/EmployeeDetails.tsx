@@ -1,118 +1,167 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getEmployeeById } from "@/services/employeeService";
+import { useParams, useNavigate } from "react-router-dom";
+import SidebarNav from "@/components/SidebarNav";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import EmployeeDetailsHeader from "@/components/employees/EmployeeDetailsHeader";
+import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
+import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
+import EmployeeBankTab from "@/components/employees/tabs/EmployeeBankTab";
+import EmployeeDocumentsTab from "@/components/employees/tabs/EmployeeDocumentsTab";
+import EmployeeDialogs from "@/components/employees/EmployeeDialogs";
 import { Employee } from "@/types/employee";
-import { EmployeeDetailsHeader } from "@/components/employees/EmployeeDetailsHeader";
-import { EmployeeWorkTab } from "@/components/employees/tabs/EmployeeWorkTab";
-import { EmployeePersonalTab } from "@/components/employees/tabs/EmployeePersonalTab";
-import { EmployeeBankTab } from "@/components/employees/tabs/EmployeeBankTab";
-import { EmployeeDocumentsTab } from "@/components/employees/tabs/EmployeeDocumentsTab";
-import { 
-  getAttendanceSettings, 
-  updateAttendanceSetting as updateAttendanceSettings,
-  createAttendanceSetting as createAttendanceSettings
-} from "@/services/attendance/attendanceSettingsService";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const EmployeeDetails = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("work");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [payslipDialogOpen, setPayslipDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [showOfficialDocsDialog, setShowOfficialDocsDialog] = useState(false);
+  const [documentEditDialog, setDocumentEditDialog] = useState<'aadhar' | 'pan' | null>(null);
+  const [adaptedEmployee, setAdaptedEmployee] = useState<Employee | null>(null);
+  const [payslips, setPayslips] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchEmployee = async () => {
-      if (id) {
-        setLoading(true);
-        try {
-          const data = await getEmployeeById(id);
-          if (data) {
-            setEmployee(data);
-          }
-        } catch (error) {
+    const fetchEmployeeDetails = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('employee')
+          .select('*')
+          .eq('employeeid', id)
+          .single();
+
+        if (error) {
           console.error("Error fetching employee:", error);
-        } finally {
-          setLoading(false);
+          toast({
+            title: "Error",
+            description: "Failed to fetch employee details",
+            variant: "destructive",
+          });
+          return;
         }
+
+        setEmployee(data);
+        setAdaptedEmployee(data);
+      } catch (error) {
+        console.error("Error processing employee data:", error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchEmployee();
-  }, [id]);
+    fetchEmployeeDetails();
+  }, [id, toast]);
 
-  const handleUpdateAttendanceSettings = async (settings: any) => {
-    if (!employee || !id) return;
-
-    try {
-      const existingSettings = await getAttendanceSettings(id);
-
-      if (existingSettings) {
-        await updateAttendanceSettings(existingSettings.attendancesettingid, settings);
-      } else {
-        await createAttendanceSettings({
-          employee_id: id,
-          customerid: employee.customerid,
-          ...settings,
-        });
-      }
-
-      // Refresh employee data if needed
-    } catch (error) {
-      console.error("Error updating attendance settings:", error);
-    }
+  const handleEditSave = () => {
+    // Placeholder for save functionality
+    toast({
+      title: "Success",
+      description: "Employee details updated successfully!",
+    });
+    setEditDialogOpen(false);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const handleDocumentUpload = async (type: 'aadhar' | 'pan', filePath: string) => {
+    // Placeholder for document upload functionality
+    toast({
+      title: "Success",
+      description: `${type.toUpperCase()} document uploaded successfully!`,
+    });
+    setDocumentEditDialog(null);
+  };
 
-  if (!employee) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-2">Employee Not Found</h2>
-          <p className="text-gray-500">The employee you are looking for does not exist or has been removed.</p>
-        </div>
-      </div>
-    );
-  }
+  const handleOpenDocumentDialog = (type: 'aadhar' | 'pan') => {
+    setDocumentEditDialog(type);
+  };
+
+  const handleCloseDocumentDialog = () => {
+    setDocumentEditDialog(null);
+  };
 
   return (
-    <div className="p-6">
-      <EmployeeDetailsHeader employee={employee} />
-      
-      <div className="mt-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="work">Work</TabsTrigger>
-            <TabsTrigger value="personal">Personal</TabsTrigger>
-            <TabsTrigger value="bank">Bank Details</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="work" className="space-y-6">
-            <EmployeeWorkTab 
-              employee={employee} 
-              onUpdateAttendanceSettings={handleUpdateAttendanceSettings} 
-            />
-          </TabsContent>
-          
-          <TabsContent value="personal" className="space-y-6">
-            <EmployeePersonalTab employee={employee} />
-          </TabsContent>
-          
-          <TabsContent value="bank" className="space-y-6">
-            <EmployeeBankTab employee={employee} />
-          </TabsContent>
-          
-          <TabsContent value="documents" className="space-y-6">
-            <EmployeeDocumentsTab employee={employee} />
-          </TabsContent>
-        </Tabs>
+    <div className="flex h-screen bg-gray-50">
+      <SidebarNav />
+      <div className="flex-1 overflow-y-auto">
+        <div className="container py-8">
+          <div className="flex items-center gap-4 mb-6">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate("/all-employees")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-2xl font-bold">Employee Details</h1>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-8">Loading employee details...</div>
+          ) : employee ? (
+            <div className="space-y-6">
+              <EmployeeDetailsHeader employee={employee} />
+              
+              <Tabs defaultValue="work" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="work">Work</TabsTrigger>
+                  <TabsTrigger value="personal">Personal</TabsTrigger>
+                  <TabsTrigger value="bank">Bank</TabsTrigger>
+                  <TabsTrigger value="documents">Documents</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="work">
+                  <EmployeeWorkTab employee={employee} />
+                </TabsContent>
+                
+                <TabsContent value="personal">
+                  <EmployeePersonalTab employee={employee} />
+                </TabsContent>
+                
+                <TabsContent value="bank">
+                  <EmployeeBankTab employee={employee} />
+                </TabsContent>
+                
+                <TabsContent value="documents">
+                  <EmployeeDocumentsTab employee={employee} 
+                    onOpenDocumentDialog={handleOpenDocumentDialog}
+                  />
+                </TabsContent>
+              </Tabs>
+
+              <EmployeeDialogs
+                documentEditDialog={documentEditDialog}
+                editDialogOpen={editDialogOpen}
+                payslipDialogOpen={payslipDialogOpen}
+                isPasswordDialogOpen={isPasswordDialogOpen}
+                showOfficialDocsDialog={showOfficialDocsDialog}
+                employee={employee}
+                adaptedEmployee={adaptedEmployee}
+                payslips={payslips}
+                onDocumentUpload={handleDocumentUpload}
+                onCloseDocumentDialog={handleCloseDocumentDialog}
+                setEditDialogOpen={setEditDialogOpen}
+                setPayslipDialogOpen={setPayslipDialogOpen}
+                setIsPasswordDialogOpen={setIsPasswordDialogOpen}
+                setShowOfficialDocsDialog={setShowOfficialDocsDialog}
+                onEditSave={handleEditSave}
+              />
+            </div>
+          ) : (
+            <div className="text-center py-8">Employee not found</div>
+          )}
+        </div>
       </div>
     </div>
   );

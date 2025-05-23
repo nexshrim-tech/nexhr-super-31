@@ -51,11 +51,12 @@ const PayslipDialog: React.FC<PayslipDialogProps> = ({
       const { data, error } = await supabase
         .from('payslip')
         .insert({
-          employeeid: parseInt(employeeData.id) || 0, // Convert string to number
-          year: year,
-          month: month,
+          employeeid: String(employeeData.id), // Convert to string as per schema
+          customerid: String(employeeData.customerId || ''), // Convert to string
+          payslip_id: crypto.randomUUID(), // Generate UUID
           amount: netSalary,
-          generatedtimestamp: now.toISOString()
+          generatedtimestamp: now.toISOString(),
+          payslipdate: now.toISOString()
         })
         .select();
       

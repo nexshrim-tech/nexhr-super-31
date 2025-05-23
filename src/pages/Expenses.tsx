@@ -84,7 +84,6 @@ const Expenses = () => {
         amount: Number(exp.amount) || 0,
         employeeid: String(exp.employeeid || ''),
         customerid: String(exp.customerid || ''),
-        submittedby: String(exp.submittedby || ''),
         submissiondate: exp.submissiondate,
         status: exp.status || '',
         billpath: exp.billpath
@@ -176,8 +175,8 @@ const Expenses = () => {
           category: newExpense.category || '',
           amount: newExpense.amount || 0,
           submissiondate: newExpense.date || new Date().toISOString(),
-          employeeid: parseInt(String(newExpense.employeeid || '0')),
-          customerid: parseInt(String(newExpense.customerid || '0'))
+          employeeid: String(newExpense.employeeid || ''), // Keep as string
+          customerid: parseInt(String(newExpense.customerid || '0')) || null // Convert to number if needed
         })
         .select()
         .single();
@@ -201,7 +200,6 @@ const Expenses = () => {
         amount: Number(data.amount) || 0,
         employeeid: String(data.employeeid || ''),
         customerid: String(data.customerid || ''),
-        submittedby: String(data.submittedby || ''),
         submissiondate: data.submissiondate || '',
         status: data.status || ''
       };
@@ -255,7 +253,6 @@ const Expenses = () => {
         amount: Number(data.amount) || 0,
         employeeid: String(data.employeeid || ''),
         customerid: String(data.customerid || ''),
-        submittedby: String(data.submittedby || ''),
         submissiondate: data.submissiondate || '',
         status: data.status || ''
       };
@@ -281,7 +278,7 @@ const Expenses = () => {
       const { error } = await supabase
         .from('expense')
         .delete()
-        .eq('expenseid', parseInt(expenseid));
+        .eq('expenseid', expenseid); // Keep as string
 
       if (error) {
         console.error("Error deleting expense:", error);

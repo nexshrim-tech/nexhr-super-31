@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ExpenseHistoryTable from './ExpenseHistoryTable';
@@ -40,7 +41,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
     const fetchExpenses = async () => {
       setLoading(true);
       try {
-        // Use simplified query that doesn't try to join employee table
+        // Use simplified query that matches the actual schema
         const { data, error } = await supabase
           .from('expense')
           .select(`
@@ -50,7 +51,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             amount,
             submissiondate,
             status,
-            submittedby,
+            employeeid,
             billpath
           `);
 
@@ -61,14 +62,14 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
         if (data) {
           // Transform the data to match the ExpenseItem interface
           const formattedDataPromises = data.map(async (expense) => {
-            // Get employee name if submittedby is present
-            let submitterName = `Employee #${String(expense.submittedby)}`;
+            // Get employee name if employeeid is present
+            let submitterName = `Employee #${String(expense.employeeid)}`;
             let avatarText = 'UN';
             
-            if (expense.submittedby) {
+            if (expense.employeeid) {
               try {
                 // Convert to string for compatibility with the updated employeeid type
-                const employee = await getEmployeeById(String(expense.submittedby));
+                const employee = await getEmployeeById(String(expense.employeeid));
                 if (employee) {
                   submitterName = `${employee.firstname} ${employee.lastname}`;
                   avatarText = `${employee.firstname.charAt(0)}${employee.lastname.charAt(0)}`.toUpperCase();
@@ -214,16 +215,10 @@ export default ExpenseHistoryTab;
 export const updateExpense = async (expenseId: string, status: string, notes?: string) => {
   try {
     // Convert expenseId to the correct type for the database operation
-    const numericExpenseId = parseInt(expenseId);
-    
-    if (isNaN(numericExpenseId)) {
-      throw new Error('Invalid expense ID');
-    }
-    
     const { data, error } = await supabase
       .from('expense')
       .update({ status, notes })
-      .eq('expenseid', numericExpenseId)
+      .eq('expenseid', expenseId)
       .select()
       .single();
       
