@@ -51,21 +51,22 @@ export const getEmployeeById = async (id: string): Promise<Employee | null> => {
 
 export const createEmployee = async (employee: Omit<Employee, 'employeeid'> & { customerid: string }): Promise<Employee> => {
   try {
-    // Convert the employee data to DB format
-    const dbEmployee = mapEmployeeToDBFormat(employee);
-    
     // Ensure customerid is present
     if (!employee.customerid) {
       throw new Error('Customer ID is required');
     }
     
-    // Make sure customerid is included in the DB employee object
+    // Convert the employee data to DB format
+    const dbEmployee = mapEmployeeToDBFormat(employee);
+    
+    // Explicitly ensure customerid is included in the DB employee object
     dbEmployee.customerid = employee.customerid;
     
-    // Use an array format for the insert method as required by Supabase
+    console.log('About to insert employee data:', dbEmployee);
+    
     const { data, error } = await supabase
       .from('employee')
-      .insert([dbEmployee])
+      .insert(dbEmployee)
       .select()
       .single();
 

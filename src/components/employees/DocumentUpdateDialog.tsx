@@ -18,7 +18,7 @@ interface DocumentUpdateDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onUpload: (type: 'aadhar' | 'pan', filePath: string) => void;
-  employeeId?: number;
+  employeeId?: string; // Changed from number to string
 }
 
 const DocumentUpdateDialog: React.FC<DocumentUpdateDialogProps> = ({

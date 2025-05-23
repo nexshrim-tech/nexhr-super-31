@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 interface EmployeeDocumentsTabProps {
   onDownload: (documentType: string, documentUrl?: string) => void;
   onEditDocument: (type: 'aadhar' | 'pan') => void;
-  employeeId?: number;
+  employeeId?: string; // Changed from number to string
   documentPaths?: {
     aadhar?: string;
     pan?: string;
