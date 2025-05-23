@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,7 +48,7 @@ const ProfileSettings = () => {
     try {
       if (profile?.id) {
         // Update the profiles table using RPC function
-        const { error } = await supabase.rpc('update_user_profile', {
+        const { error } = await supabase.rpc('update_user_profile' as any, {
           user_id: profile.id,
           new_full_name: formData.fullName
         });

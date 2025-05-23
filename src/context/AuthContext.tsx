@@ -45,18 +45,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Helper function to fetch user profile using raw SQL approach
+  // Helper function to fetch user profile using RPC function
   const fetchUserProfile = async (userId: string) => {
     try {
       // Use RPC function call to get profile data safely
-      const { data, error } = await supabase.rpc('get_user_profile', { user_id: userId });
+      const { data, error } = await supabase.rpc('get_user_profile' as any, { user_id: userId });
 
       if (error) {
         console.error('Error fetching user profile:', error);
         return null;
       }
 
-      return data ? (data as UserProfile) : null;
+      // Handle the response properly - the RPC function returns a single row
+      if (data && Array.isArray(data) && data.length > 0) {
+        return data[0] as UserProfile;
+      } else if (data && !Array.isArray(data)) {
+        return data as UserProfile;
+      }
+      
+      return null;
     } catch (error) {
       console.error('Exception fetching user profile:', error);
       return null;
