@@ -54,6 +54,11 @@ export const createEmployee = async (employee: Omit<Employee, 'employeeid'> & { 
     // Convert the employee data to DB format
     const dbEmployee = mapEmployeeToDBFormat(employee);
     
+    // Ensure customerid is present
+    if (!dbEmployee.customerid) {
+      throw new Error('Customer ID is required');
+    }
+    
     const { data, error } = await supabase
       .from('employee')
       .insert(dbEmployee)
