@@ -1,38 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-
-export interface Employee {
-  employeeid: string;
-  customerid: string;
-  employeeauthid?: string;
-  firstname?: string;
-  lastname?: string;
-  email?: string;
-  phonenumber?: number;
-  jobtitle?: string;
-  department?: string;
-  employmentstatus?: string;
-  employmenttype?: string;
-  dateofbirth?: string;
-  joiningdate?: string;
-  nationality?: string;
-  gender?: string;
-  maritalstatus?: string;
-  fathersname?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  zipcode?: string;
-  bloodgroup?: string;
-  disabilitystatus?: string;
-  worklocation?: string;
-  monthlysalary?: number;
-  leavebalance?: number;
-  profilepicturepath?: string;
-  documentpath?: any;
-  employeepassword?: string;
-}
+import { Employee } from '@/types/employee';
 
 export const getEmployees = async (customerId?: string): Promise<Employee[]> => {
   try {
@@ -80,9 +48,15 @@ export const getEmployeeById = async (id: string): Promise<Employee | null> => {
 
 export const createEmployee = async (employee: Omit<Employee, 'employeeid'> & { customerid: string }): Promise<Employee> => {
   try {
+    // Ensure customerid is included
+    const employeeData = {
+      ...employee,
+      customerid: employee.customerid
+    };
+
     const { data, error } = await supabase
       .from('employee')
-      .insert(employee)
+      .insert(employeeData)
       .select()
       .single();
 
@@ -136,4 +110,5 @@ export const deleteEmployee = async (id: string): Promise<void> => {
   }
 };
 
-export type { Employee };
+// Export addEmployee as an alias for createEmployee
+export const addEmployee = createEmployee;

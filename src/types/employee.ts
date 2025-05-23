@@ -6,7 +6,7 @@ export interface Employee {
   firstname?: string;
   lastname?: string;
   email?: string;
-  phonenumber?: number; // Keep as number to match database
+  phonenumber?: string; // Changed from number to string for consistency
   jobtitle?: string;
   department?: string;
   joiningdate?: string;

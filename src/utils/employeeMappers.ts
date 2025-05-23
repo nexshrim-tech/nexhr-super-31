@@ -1,3 +1,4 @@
+
 import { Employee, EmployeeDB } from "@/types/employee";
 
 export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
@@ -74,7 +75,7 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
   }
   
   // Handle phonenumber conversion for the database (expects numeric)
-  if (employee.phonenumber !== undefined) {
+  if (employee.phonenumber !== undefined && employee.phonenumber !== null) {
     if (typeof employee.phonenumber === 'string' && employee.phonenumber.trim() !== '') {
       // Remove non-numeric characters before parsing
       const cleanedNumber = employee.phonenumber.replace(/\D/g, '');

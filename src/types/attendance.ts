@@ -16,13 +16,3 @@ export interface AttendanceRecord {
     jobtitle?: string;
   };
 }
-
-export interface AttendanceSettings {
-  attendancesettingid?: string;
-  employee_id: string;
-  customerid: string;
-  workstarttime?: string;
-  latethreshold?: string;
-  geofencingenabled?: boolean;
-  photoverificationenabled?: boolean;
-}
