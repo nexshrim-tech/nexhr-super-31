@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import LocationMapComponent from "./LocationMapComponent";
 
+// Define the correct type for EmployeeLocationData
 export interface EmployeeLocationData {
   employeeid: string;
   latitude: number;
@@ -191,13 +191,7 @@ const EmployeeLocation = () => {
               className={isLive 
                 ? "bg-red-500 hover:bg-red-600 shadow-md" 
                 : "bg-white/90 backdrop-blur-sm shadow-md hover:bg-white"}
-              onClick={() => {
-                setIsLive(!isLive);
-                toast(isLive 
-                  ? "You have stopped tracking employee locations in real-time." 
-                  : "You are now tracking employee locations in real-time."
-                );
-              }}
+              onClick={toggleLiveTracking}
             >
               {isLive ? "Stop Tracking" : "Start Live Tracking"}
             </Button>

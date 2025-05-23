@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Employee } from "@/services/employeeService";
+import { Employee } from "@/types/employee";
 import DocumentUpdateDialog from "./DocumentUpdateDialog";
 import EmployeeEditDialog from "./EmployeeEditDialog";
 import PayslipDialog from "./PayslipDialog";

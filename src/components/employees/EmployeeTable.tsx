@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Employee } from "@/services/employeeService";
+import { Employee } from "@/types/employee";
 import {
   Table,
   TableBody,

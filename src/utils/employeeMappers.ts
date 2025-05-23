@@ -19,7 +19,7 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   country: emp.country || '',
   postalcode: emp.zipcode || '',
   monthlysalary: emp.monthlysalary || 0,
-  employmentstatus: emp.employmentstatus as 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation' || 'Active',
+  employmentstatus: emp.employmentstatus || '',
   employmenttype: emp.employmenttype || '',
   phonenumber: emp.phonenumber ? emp.phonenumber.toString() : '',
   bloodgroup: emp.bloodgroup || '',
@@ -37,41 +37,38 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
   const dbEmployee: Record<string, any> = {};
   
   // Map all fields explicitly with appropriate default values
-  // This ensures all fields are included in the database operation
-  dbEmployee.firstname = employee.firstname || '';
-  dbEmployee.lastname = employee.lastname || '';
-  dbEmployee.email = employee.email || '';
-  dbEmployee.jobtitle = employee.jobtitle || '';
-  dbEmployee.department = employee.department || '';
-  dbEmployee.joiningdate = employee.joiningdate || null;
-  dbEmployee.profilepicturepath = employee.profilepicturepath || '';
-  dbEmployee.customerid = employee.customerid || null;
-  dbEmployee.address = employee.address || '';
-  dbEmployee.gender = employee.gender || '';
-  dbEmployee.dateofbirth = employee.dateofbirth || null;
-  dbEmployee.city = employee.city || '';
-  dbEmployee.state = employee.state || '';
-  dbEmployee.country = employee.country || '';
-  dbEmployee.zipcode = employee.postalcode || '';
-  dbEmployee.employmentstatus = employee.employmentstatus || 'Active';
-  dbEmployee.employmenttype = employee.employmenttype || '';
-  dbEmployee.bloodgroup = employee.bloodgroup || '';
-  dbEmployee.fathersname = employee.fathersname || '';
-  dbEmployee.maritalstatus = employee.maritalstatus || '';
-  dbEmployee.disabilitystatus = employee.disabilitystatus || '';
-  dbEmployee.nationality = employee.nationality || '';
-  dbEmployee.worklocation = employee.worklocation || '';
-  dbEmployee.leavebalance = employee.leavebalance !== undefined ? employee.leavebalance : 0;
-  dbEmployee.employeepassword = employee.employeepassword || '';
-  dbEmployee.documentpath = employee.documentpath || '';
+  if (employee.firstname !== undefined) dbEmployee.firstname = employee.firstname;
+  if (employee.lastname !== undefined) dbEmployee.lastname = employee.lastname;
+  if (employee.email !== undefined) dbEmployee.email = employee.email;
+  if (employee.jobtitle !== undefined) dbEmployee.jobtitle = employee.jobtitle;
+  if (employee.department !== undefined) dbEmployee.department = employee.department;
+  if (employee.joiningdate !== undefined) dbEmployee.joiningdate = employee.joiningdate;
+  if (employee.profilepicturepath !== undefined) dbEmployee.profilepicturepath = employee.profilepicturepath;
+  if (employee.customerid !== undefined) dbEmployee.customerid = employee.customerid;
+  if (employee.address !== undefined) dbEmployee.address = employee.address;
+  if (employee.gender !== undefined) dbEmployee.gender = employee.gender;
+  if (employee.dateofbirth !== undefined) dbEmployee.dateofbirth = employee.dateofbirth;
+  if (employee.city !== undefined) dbEmployee.city = employee.city;
+  if (employee.state !== undefined) dbEmployee.state = employee.state;
+  if (employee.country !== undefined) dbEmployee.country = employee.country;
+  if (employee.postalcode !== undefined) dbEmployee.zipcode = employee.postalcode; // Map postalcode to zipcode
+  if (employee.employmentstatus !== undefined) dbEmployee.employmentstatus = employee.employmentstatus;
+  if (employee.employmenttype !== undefined) dbEmployee.employmenttype = employee.employmenttype;
+  if (employee.bloodgroup !== undefined) dbEmployee.bloodgroup = employee.bloodgroup;
+  if (employee.fathersname !== undefined) dbEmployee.fathersname = employee.fathersname;
+  if (employee.maritalstatus !== undefined) dbEmployee.maritalstatus = employee.maritalstatus;
+  if (employee.disabilitystatus !== undefined) dbEmployee.disabilitystatus = employee.disabilitystatus;
+  if (employee.nationality !== undefined) dbEmployee.nationality = employee.nationality;
+  if (employee.worklocation !== undefined) dbEmployee.worklocation = employee.worklocation;
+  if (employee.leavebalance !== undefined) dbEmployee.leavebalance = employee.leavebalance;
+  if (employee.employeepassword !== undefined) dbEmployee.employeepassword = employee.employeepassword;
+  if (employee.documentpath !== undefined) dbEmployee.documentpath = employee.documentpath;
   
-  // Handle numeric values explicitly
+  // Handle monthlysalary
   if (employee.monthlysalary !== undefined) {
     dbEmployee.monthlysalary = typeof employee.monthlysalary === 'string' 
       ? parseFloat(employee.monthlysalary) 
       : employee.monthlysalary;
-  } else {
-    dbEmployee.monthlysalary = 0; // Default to 0
   }
   
   // Handle phonenumber conversion for the database (expects numeric)

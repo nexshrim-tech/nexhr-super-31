@@ -6,11 +6,11 @@ export interface Employee {
   firstname?: string;
   lastname?: string;
   email?: string;
-  phonenumber?: string; // Changed from number to string for consistency
+  phonenumber?: string; // String type to match how we use it in the UI
   jobtitle?: string;
   department?: string;
   joiningdate?: string;
-  employmentstatus?: 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation';
+  employmentstatus?: string; // Changed from union type to string to match DB
   employmenttype?: string;
   gender?: string;
   dateofbirth?: string;
@@ -39,7 +39,7 @@ export interface EmployeeDB {
   firstname?: string;
   lastname?: string;
   email?: string;
-  phonenumber?: number;
+  phonenumber?: number; // Number type in DB
   jobtitle?: string;
   department?: string;
   joiningdate?: string;
@@ -51,7 +51,7 @@ export interface EmployeeDB {
   city?: string;
   state?: string;
   country?: string;
-  zipcode?: string;
+  zipcode?: string; // Different name in DB
   profilepicturepath?: string;
   monthlysalary?: number;
   bloodgroup?: string;

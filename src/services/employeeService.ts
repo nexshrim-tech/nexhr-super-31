@@ -1,6 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Employee } from '@/types/employee';
+import { Employee, EmployeeDB } from '@/types/employee';
+import { mapEmployeeDBToEmployee, mapEmployeeToDBFormat } from '@/utils/employeeMappers';
+
+export type { Employee };
 
 export const getEmployees = async (customerId?: string): Promise<Employee[]> => {
   try {
@@ -19,7 +22,7 @@ export const getEmployees = async (customerId?: string): Promise<Employee[]> => 
       throw error;
     }
 
-    return (data || []) as Employee[];
+    return (data || []).map(emp => mapEmployeeDBToEmployee(emp as EmployeeDB)) as Employee[];
   } catch (error) {
     console.error('Error in getEmployees:', error);
     throw error;
@@ -39,7 +42,7 @@ export const getEmployeeById = async (id: string): Promise<Employee | null> => {
       throw error;
     }
 
-    return data as Employee;
+    return data ? mapEmployeeDBToEmployee(data as EmployeeDB) : null;
   } catch (error) {
     console.error('Error in getEmployeeById:', error);
     throw error;
@@ -48,15 +51,12 @@ export const getEmployeeById = async (id: string): Promise<Employee | null> => {
 
 export const createEmployee = async (employee: Omit<Employee, 'employeeid'> & { customerid: string }): Promise<Employee> => {
   try {
-    // Ensure customerid is included
-    const employeeData = {
-      ...employee,
-      customerid: employee.customerid
-    };
-
+    // Convert the employee data to DB format
+    const dbEmployee = mapEmployeeToDBFormat(employee);
+    
     const { data, error } = await supabase
       .from('employee')
-      .insert(employeeData)
+      .insert(dbEmployee)
       .select()
       .single();
 
@@ -65,7 +65,7 @@ export const createEmployee = async (employee: Omit<Employee, 'employeeid'> & { 
       throw error;
     }
 
-    return data as Employee;
+    return mapEmployeeDBToEmployee(data as EmployeeDB);
   } catch (error) {
     console.error('Error in createEmployee:', error);
     throw error;
@@ -74,9 +74,12 @@ export const createEmployee = async (employee: Omit<Employee, 'employeeid'> & { 
 
 export const updateEmployee = async (id: string, updates: Partial<Employee>): Promise<Employee> => {
   try {
+    // Convert the updates to DB format
+    const dbUpdates = mapEmployeeToDBFormat(updates);
+    
     const { data, error } = await supabase
       .from('employee')
-      .update(updates)
+      .update(dbUpdates)
       .eq('employeeid', id)
       .select()
       .single();
@@ -86,7 +89,7 @@ export const updateEmployee = async (id: string, updates: Partial<Employee>): Pr
       throw error;
     }
 
-    return data as Employee;
+    return mapEmployeeDBToEmployee(data as EmployeeDB);
   } catch (error) {
     console.error('Error in updateEmployee:', error);
     throw error;

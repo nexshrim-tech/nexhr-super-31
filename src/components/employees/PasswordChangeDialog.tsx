@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
-import { Employee } from "@/services/employeeService";
+import { Employee } from "@/types/employee";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, Check } from "lucide-react";
+import { toast } from "sonner";
 
 interface PasswordChangeDialogProps {
   isOpen: boolean;

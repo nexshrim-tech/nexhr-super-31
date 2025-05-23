@@ -33,7 +33,9 @@ const EmployeeDetails = () => {
       try {
         setLoading(true);
         const employeeData = await getEmployeeById(id);
-        setEmployee(employeeData);
+        if (employeeData) {
+          setEmployee(employeeData);
+        }
       } catch (error) {
         console.error("Error fetching employee:", error);
         toast({
@@ -41,7 +43,7 @@ const EmployeeDetails = () => {
           description: "Failed to fetch employee details",
           variant: "destructive",
         });
-        navigate("/employees");
+        navigate("/all-employees");
       } finally {
         setLoading(false);
       }
@@ -54,8 +56,16 @@ const EmployeeDetails = () => {
     setEditDialogOpen(false);
     // Refresh employee data
     if (id) {
-      getEmployeeById(id).then(setEmployee);
+      getEmployeeById(id).then(employeeData => {
+        if (employeeData) {
+          setEmployee(employeeData);
+        }
+      });
     }
+  };
+
+  const handleGoBack = () => {
+    navigate("/all-employees");
   };
 
   const handleDocumentUpload = (type: 'aadhar' | 'pan', filePath: string) => {
@@ -101,7 +111,7 @@ const EmployeeDetails = () => {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => navigate("/employees")}
+                onClick={handleGoBack}
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
