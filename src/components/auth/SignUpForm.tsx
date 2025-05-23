@@ -1,231 +1,315 @@
 
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AtSign, Lock, User, Building2, Phone } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Mail, Lock, User, Building2, Phone, AlertCircle } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
-
-const customerSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  companyName: z.string().min(2, { message: "Company name must be at least 2 characters" }),
-  companySize: z.string().optional(),
-  phoneNumber: z.string().optional(),
-});
-
-const employeeSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  customerEmail: z.string().email({ message: "Please enter a valid customer email address" }).optional(),
-});
 
 interface SignUpFormProps {
   onToggleForm: () => void;
-  role: 'customer' | 'employee';
 }
 
-export const SignUpForm = ({ onToggleForm, role }: SignUpFormProps) => {
-  const { signUp } = useAuth();
+export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [companySize, setCompanySize] = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
+  const [activeTab, setActiveTab] = useState<"personal" | "company">("personal");
+  const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const schema = role === 'customer' ? customerSchema : employeeSchema;
   
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      email: "",
-      password: "",
-      fullName: "",
-      companyName: "",
-      companySize: "",
-      phoneNumber: "",
-      customerEmail: "",
-    },
-  });
+  const { toast } = useToast();
+  const { signUp } = useAuth();
 
-  const onSubmit = async (data: any) => {
+  const validatePassword = () => {
+    if (password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return false;
+    }
+    setPasswordError("");
+    return true;
+  };
+
+  const resetForm = () => {
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setName("");
+    setCompanyName("");
+    setPhoneNumber("");
+    setCompanySize("");
+    setCompanyAddress("");
+    setPasswordError("");
+    setError("");
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    
+    if (!validatePassword()) {
+      toast({
+        title: "Password mismatch",
+        description: "Please ensure both passwords match",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
     try {
-      setIsLoading(true);
-      setError("");
-
-      if (role === 'customer') {
-        await signUp(data.email, data.password, {
-          role: 'customer',
-          full_name: data.fullName,
-          company_name: data.companyName,
-          company_size: data.companySize,
-          phone_number: data.phoneNumber,
-        });
+      if (email && password && name) {
+        const userData: Record<string, any> = {
+          full_name: name,
+          role: activeTab === 'company' ? 'admin' : 'employee'
+        };
         
-        // Set flag for new user to show subscription plan selection
-        localStorage.setItem("new-user", "true");
+        if (activeTab === 'company') {
+          userData.company_name = companyName;
+          userData.company_size = companySize;
+          userData.phone_number = phoneNumber;
+          userData.company_address = companyAddress;
+        }
+        
+        console.log("About to sign up with user data:", userData);
+        await signUp(email, password, userData);
+        
+        resetForm();
+        onToggleForm();
       } else {
-        // For employee signup
-        await signUp(data.email, data.password, {
-          role: 'employee',
-          full_name: data.fullName,
-          customer_email: data.customerEmail,
+        toast({
+          title: "Sign up failed",
+          description: "Please fill in all required fields",
+          variant: "destructive",
         });
       }
     } catch (error: any) {
-      setError(error.message);
+      console.error("Signup error:", error);
+      setError(error.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSignUp} className="space-y-4">
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md mb-4">
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-md p-3">
+          <div className="flex items-center text-sm text-red-600">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            {error}
+          </div>
         </div>
       )}
-
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <div className="relative">
-          <AtSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="email"
-            placeholder="you@example.com"
-            className="pl-10"
-            {...register("email")}
-          />
-        </div>
-        {errors.email && (
-          <p className="text-sm text-red-500">{errors.email.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            className="pl-10"
-            {...register("password")}
-          />
-        </div>
-        {errors.password && (
-          <p className="text-sm text-red-500">{errors.password.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="fullName">Full Name</Label>
-        <div className="relative">
-          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="fullName"
-            placeholder="John Doe"
-            className="pl-10"
-            {...register("fullName")}
-          />
-        </div>
-        {errors.fullName && (
-          <p className="text-sm text-red-500">{errors.fullName.message}</p>
-        )}
-      </div>
-
-      {role === 'customer' ? (
-        <>
+      
+      <Tabs 
+        value={activeTab} 
+        onValueChange={(v) => setActiveTab(v as "personal" | "company")}
+        className="w-full"
+      >
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="personal" className="text-sm">
+            <User className="h-4 w-4 mr-2" />
+            Personal Account
+          </TabsTrigger>
+          <TabsTrigger value="company" className="text-sm">
+            <Building2 className="h-4 w-4 mr-2" />
+            Company Account
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="personal" className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="companyName">Company Name</Label>
-            <div className="relative">
-              <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="companyName"
-                placeholder="ABC Corporation"
-                className="pl-10"
-                {...register("companyName")}
-              />
-            </div>
-            {errors.companyName && (
-              <p className="text-sm text-red-500">{errors.companyName.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="companySize">Company Size</Label>
-            <select
-              id="companySize"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              {...register("companySize")}
-            >
-              <option value="">Select company size</option>
-              <option value="1-10">1-10 employees</option>
-              <option value="11-50">11-50 employees</option>
-              <option value="51-200">51-200 employees</option>
-              <option value="201-500">201-500 employees</option>
-              <option value="501+">501+ employees</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phoneNumber">Phone Number</Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="phoneNumber"
-                placeholder="+1 (555) 123-4567"
-                className="pl-10"
-                {...register("phoneNumber")}
-              />
-            </div>
-          </div>
-        </>
-      ) : (
-        // Employee specific fields
-        <div className="space-y-2">
-          <Label htmlFor="customerEmail">Customer Email</Label>
-          <div className="relative">
-            <AtSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Label htmlFor="name" className="flex items-center">
+              <User className="h-4 w-4 mr-2 text-gray-500" />
+              Full Name <span className="text-red-500 ml-1">*</span>
+            </Label>
             <Input
-              id="customerEmail"
-              placeholder="customer@example.com"
-              className="pl-10"
-              {...register("customerEmail")}
+              id="name"
+              type="text"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Enter the email of the customer/company you belong to
-          </p>
-          {errors.customerEmail && (
-            <p className="text-sm text-red-500">{errors.customerEmail.message}</p>
-          )}
-        </div>
-      )}
+        </TabsContent>
+        
+        <TabsContent value="company" className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="flex items-center">
+              <User className="h-4 w-4 mr-2 text-gray-500" />
+              Full Name <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="companyName" className="flex items-center">
+              <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+              Company Name <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <Input
+              id="companyName"
+              type="text"
+              placeholder="Acme Inc."
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              required={activeTab === 'company'}
+              className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber" className="flex items-center">
+              <Phone className="h-4 w-4 mr-2 text-gray-500" />
+              Phone Number
+            </Label>
+            <Input
+              id="phoneNumber"
+              type="tel"
+              placeholder="+1 (555) 123-4567"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="companySize" className="flex items-center">
+              <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+              Company Size
+            </Label>
+            <Select value={companySize} onValueChange={setCompanySize}>
+              <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
+                <SelectValue placeholder="Select company size" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1-10">1-10 employees</SelectItem>
+                <SelectItem value="11-50">11-50 employees</SelectItem>
+                <SelectItem value="51-200">51-200 employees</SelectItem>
+                <SelectItem value="201-500">201-500 employees</SelectItem>
+                <SelectItem value="501+">501+ employees</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="companyAddress" className="flex items-center">
+              <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+              Company Address
+            </Label>
+            <Textarea
+              id="companyAddress"
+              placeholder="123 Business St, Suite 101, City, State, ZIP"
+              value={companyAddress}
+              onChange={(e) => setCompanyAddress(e.target.value)}
+              className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent resize-none h-20"
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
 
-      <Button
-        type="submit"
-        className="w-full bg-gradient-to-r from-nexhr-primary to-purple-600 hover:from-nexhr-primary/90 hover:to-purple-700"
+      <div className="space-y-2">
+        <Label htmlFor="email" className="flex items-center">
+          <Mail className="h-4 w-4 mr-2 text-gray-500" />
+          Email <span className="text-red-500 ml-1">*</span>
+        </Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="example@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="password" className="flex items-center">
+          <Lock className="h-4 w-4 mr-2 text-gray-500" />
+          Password <span className="text-red-500 ml-1">*</span>
+        </Label>
+        <Input
+          id="password"
+          type="password"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label 
+          htmlFor="confirmPassword" 
+          className={`flex items-center ${passwordError ? "text-red-500" : ""}`}
+        >
+          <Lock className={`h-4 w-4 mr-2 ${passwordError ? "text-red-500" : "text-gray-500"}`} />
+          Confirm Password <span className="text-red-500 ml-1">*</span>
+        </Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          placeholder="••••••••"
+          value={confirmPassword}
+          onChange={(e) => {
+            setConfirmPassword(e.target.value);
+            if (password && e.target.value) {
+              validatePassword();
+            }
+          }}
+          required
+          className={`transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent ${
+            passwordError ? "border-red-500 focus:ring-red-500" : ""
+          }`}
+        />
+        {passwordError && (
+          <div className="flex items-center text-xs text-red-500 mt-1">
+            <AlertCircle className="h-3 w-3 mr-1" />
+            {passwordError}
+          </div>
+        )}
+      </div>
+
+      <Button 
+        type="submit" 
+        className="w-full group transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
         disabled={isLoading}
       >
-        {isLoading ? "Creating Account..." : "Create Account"}
+        {isLoading ? "Processing..." : "Create Account"}
       </Button>
 
-      <div className="text-center mt-4">
+      <div className="text-center">
         <p className="text-sm text-gray-600">
           Already have an account?{" "}
           <button
-            type="button"
             onClick={onToggleForm}
-            className="text-nexhr-primary hover:underline font-medium"
+            className="text-nexhr-primary hover:underline transition-all duration-300 font-medium"
+            disabled={isLoading}
+            type="button"
           >
             Sign in
           </button>

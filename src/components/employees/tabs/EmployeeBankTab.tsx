@@ -1,80 +1,28 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-
-interface BankDetails {
-  bankName: string;
-  branchName: string;
-  accountNumber: string;
-  ifscCode: string;
-}
 
 interface EmployeeBankTabProps {
-  employeeId: string;
-  isEditMode?: boolean;
+  bankDetails: {
+    bankName: string;
+    branchName: string;
+    accountNumber: string;
+    ifscCode: string;
+  };
+  isEditMode: boolean;
   onBankDetailsChange?: (field: string, value: string) => void;
 }
 
 const EmployeeBankTab: React.FC<EmployeeBankTabProps> = ({ 
-  employeeId,
-  isEditMode = false,
+  bankDetails, 
+  isEditMode,
   onBankDetailsChange 
 }) => {
-  const [bankDetails, setBankDetails] = useState<BankDetails>({
-    bankName: '',
-    branchName: '',
-    accountNumber: '',
-    ifscCode: ''
-  });
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchBankDetails = async () => {
-      if (!employeeId) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('employeebankdetails')
-          .select('*')
-          .eq('employeeid', employeeId)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching bank details:', error);
-          return;
-        }
-
-        if (data) {
-          setBankDetails({
-            bankName: data.bankname || '',
-            branchName: data.branchname || '',
-            accountNumber: data.accountnumber || '',
-            ifscCode: data.ifsccode || ''
-          });
-        }
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBankDetails();
-  }, [employeeId]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setBankDetails(prev => ({ ...prev, [name]: value }));
     onBankDetailsChange && onBankDetailsChange(name, value);
   };
-
-  if (loading) {
-    return <div>Loading bank details...</div>;
-  }
 
   return (
     <div className="space-y-4">
@@ -89,7 +37,7 @@ const EmployeeBankTab: React.FC<EmployeeBankTabProps> = ({
               className="mt-1"
             />
           ) : (
-            <p className="text-sm font-medium">{bankDetails.bankName || 'Not specified'}</p>
+            <p className="text-sm font-medium">{bankDetails.bankName}</p>
           )}
         </div>
         <div>
@@ -102,7 +50,7 @@ const EmployeeBankTab: React.FC<EmployeeBankTabProps> = ({
               className="mt-1"
             />
           ) : (
-            <p className="text-sm font-medium">{bankDetails.branchName || 'Not specified'}</p>
+            <p className="text-sm font-medium">{bankDetails.branchName}</p>
           )}
         </div>
         <div>
@@ -115,7 +63,7 @@ const EmployeeBankTab: React.FC<EmployeeBankTabProps> = ({
               className="mt-1"
             />
           ) : (
-            <p className="text-sm font-medium">{bankDetails.accountNumber || 'Not specified'}</p>
+            <p className="text-sm font-medium">{bankDetails.accountNumber}</p>
           )}
         </div>
         <div>
@@ -128,7 +76,7 @@ const EmployeeBankTab: React.FC<EmployeeBankTabProps> = ({
               className="mt-1"
             />
           ) : (
-            <p className="text-sm font-medium">{bankDetails.ifscCode || 'Not specified'}</p>
+            <p className="text-sm font-medium">{bankDetails.ifscCode}</p>
           )}
         </div>
       </div>

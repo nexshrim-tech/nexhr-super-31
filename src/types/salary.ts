@@ -1,77 +1,72 @@
 
 export interface SalaryAllowances {
-  basic?: number;
-  hra?: number;
-  transport?: number;
-  medical?: number;
-  special?: number;
-  other?: number;
-  basicSalary?: number;
-  conveyanceAllowance?: number;
-  medicalAllowance?: number;
-  specialAllowance?: number;
-  otherAllowances?: number;
+  basicSalary: number;
+  hra: number;
+  conveyanceAllowance: number;
+  medicalAllowance: number;
+  specialAllowance: number;
+  otherAllowances: number;
 }
 
 export interface SalaryDeductions {
-  pf?: number;
-  esi?: number;
-  tax?: number;
-  loan?: number;
-  other?: number;
-  incomeTax?: number;
-  providentFund?: number;
-  professionalTax?: number;
-  loanDeduction?: number;
-  otherDeductions?: number;
+  incomeTax: number;
+  providentFund: number;
+  professionalTax: number;
+  loanDeduction: number;
+  otherDeductions: number;
+  esi: number;
 }
 
 export interface EmployeeSalary {
-  id: string;
-  employee: {
-    name: string;
-    avatar: string;
-  };
+  id: number;
+  employee: { name: string; avatar: string };
   position: string;
   department: string;
   salary: number;
   lastIncrement: string;
-  status: 'Paid' | 'Pending' | string;
+  status: string;
   allowances: SalaryAllowances;
   deductions: SalaryDeductions;
-  customerId?: string;
-}
-
-export interface PayslipData {
-  id: string;
-  employeeName: string;
-  employeeId: string;
-  month: string;
-  year: number;
-  basicSalary: number;
-  allowances: SalaryAllowances;
-  deductions: SalaryDeductions;
-  grossSalary: number;
-  netSalary: number;
-  generatedDate: string;
+  payslipId?: string;
 }
 
 export interface PayslipRecord {
   id: string;
-  employeeName: string;
-  month: string;
-  year: number;
+  employee: string;
+  period: string;
   amount: number;
-  status: string;
-  generatedDate: string;
-  employee?: string;
-  period?: string;
-  date?: string;
+  date: string;
 }
 
 export interface SalaryData {
   month: string;
-  totalSalary: number;
-  totalAllowances: number;
-  totalDeductions: number;
+  amount: number;
+}
+
+export interface SalaryRecord {
+  salaryid: number;
+  employeeid: number;
+  customerid: number;
+  basicsalary: number;
+  hra: number;
+  conveyanceallowance: number;
+  medicalallowance: number;
+  specialallowance: number;
+  otherallowance: number;
+  incometax: number;
+  pf: number;
+  professionaltax: number;
+  esiemployee: number;
+  loandeduction: number;
+  otherdeduction: number;
+}
+
+export interface PayslipDBRecord {
+  payslipid: number;
+  employeeid: number;
+  customerid: number;
+  year: number;
+  month: number;
+  amount: number;
+  generatedtimestamp: string;
 }

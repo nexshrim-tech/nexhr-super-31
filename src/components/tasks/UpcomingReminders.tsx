@@ -1,201 +1,153 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import React, { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Calendar, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { Bell } from "lucide-react";
+import TaskCard from "./TaskCard";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { format, isAfter, isBefore, addDays } from 'date-fns';
 
 interface Task {
-  tasklistid: string;
-  tasktitle: string;
-  description: string;
-  deadline: string;
-  priority: string;
+  id: string | number;
+  title: string;
+  due_date?: string;
+  dueDate?: string;
   status: string;
-  assignedto: string;
+  priority: string;
+  assigned_to?: string | { name: string; avatar: string };
+  assignedTo?: { name: string; avatar: string } | string;
 }
 
-const UpcomingReminders = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+// Helper function to convert tracklist item to Task format
+const convertTracklistToTask = (tracklistItem: any): Task => {
+  return {
+    id: tracklistItem.tracklistid || tracklistItem.id,
+    title: tracklistItem.tasktitle || tracklistItem.title,
+    due_date: tracklistItem.deadline,
+    dueDate: tracklistItem.deadline || tracklistItem.dueDate,
+    status: tracklistItem.status,
+    priority: tracklistItem.priority,
+    assigned_to: tracklistItem.assignedto,
+    assignedTo: tracklistItem.assignedto || tracklistItem.assignedTo
+  };
+};
+
+interface UpcomingRemindersProps {
+  tasks?: Task[];
+}
+
+const UpcomingReminders: React.FC<UpcomingRemindersProps> = ({ tasks = [] }) => {
+  const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
 
   useEffect(() => {
-    const fetchUpcomingTasks = async () => {
-      try {
-        setLoading(true);
+    // Find upcoming tasks from provided tasks or fetch from database
+    if (tasks && tasks.length > 0) {
+      const upcoming = tasks
+        .filter(task => {
+          const dueDate = task.due_date || task.dueDate;
+          if (!dueDate) return false;
+          
+          const today = new Date();
+          const taskDate = new Date(dueDate);
+          const diffTime = taskDate.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          return diffDays >= 0 && diffDays <= 7; // Next 7 days
+        })
+        .sort((a, b) => {
+          const dateA = new Date(a.due_date || a.dueDate || "");
+          const dateB = new Date(b.due_date || b.dueDate || "");
+          return dateA.getTime() - dateB.getTime();
+        })
+        .slice(0, 3); // Get top 3
         
-        // Get tasks that are due in the next 7 days
-        const sevenDaysFromNow = addDays(new Date(), 7);
-        
-        const { data, error } = await supabase
-          .from('tasklist') // Changed from 'tracklist' to 'tasklist' to match schema
-          .select('*')
-          .neq('status', 'completed')
-          .lte('deadline', sevenDaysFromNow.toISOString())
-          .order('deadline', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching tasks:', error);
-          toast({
-            title: "Error",
-            description: "Failed to fetch upcoming tasks",
-            variant: "destructive",
-          });
-          return;
+      setUpcomingTasks(upcoming);
+    } else {
+      const fetchUpcomingTasks = async () => {
+        try {
+          const { data: authData } = await supabase.auth.getUser();
+          if (authData?.user) {
+            const today = new Date();
+            const nextWeek = new Date();
+            nextWeek.setDate(today.getDate() + 7);
+            
+            // Use tracklist table and ensure we only get the current user's data
+            // Convert UUID to string for comparison since we can't convert it to number
+            const { data: upcomingData, error } = await supabase
+              .from('tracklist')
+              .select('*')
+              .gte('deadline', today.toISOString().split('T')[0])
+              .lte('deadline', nextWeek.toISOString().split('T')[0])
+              .eq('customerid', authData.user.id) // Use UUID directly as string
+              .order('deadline', { ascending: true })
+              .limit(3);
+              
+            if (error) {
+              console.error("Error fetching upcoming tasks:", error);
+              return;
+            }
+              
+            if (upcomingData) {
+              // Convert tracklist items to Task format
+              const formattedTasks = upcomingData.map(convertTracklistToTask);
+              setUpcomingTasks(formattedTasks);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching upcoming tasks:", error);
         }
-
-        setTasks(data || []);
-      } catch (error) {
-        console.error('Error fetching upcoming tasks:', error);
-        toast({
-          title: "Error",
-          description: "An unexpected error occurred",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUpcomingTasks();
-
-    // Set up real-time subscription for task updates
-    const subscription = supabase
-      .channel('task-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tasklist'
-      }, () => {
-        fetchUpcomingTasks();
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [toast]);
-
-  const handleMarkComplete = async (taskId: string) => {
-    try {
-      const { error } = await supabase
-        .from('tasklist')
-        .update({ status: 'completed' })
-        .eq('tasklistid', taskId);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: "Task marked as completed",
-      });
-    } catch (error) {
-      console.error('Error updating task:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update task",
-        variant: "destructive",
-      });
+      };
+      
+      fetchUpcomingTasks();
     }
-  };
+  }, [tasks]);
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority?.toLowerCase()) {
-      case 'high':
-        return 'bg-red-100 text-red-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const getSubtitle = (task: Task) => {
+    const dueDate = task.due_date || task.dueDate;
+    if (!dueDate) return "";
+    
+    const today = new Date();
+    const taskDate = new Date(dueDate);
+    const diffTime = taskDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Due today";
+    if (diffDays === 1) return "Due tomorrow";
+    if (diffDays > 1) return `Due in ${diffDays} days`;
+    return "";
   };
-
-  const isOverdue = (deadline: string) => {
-    return isBefore(new Date(deadline), new Date());
-  };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Upcoming Reminders
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-500">Loading upcoming tasks...</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
+    <Card className="shadow-md hover:shadow-lg transition-all duration-300 border-t-4 border-t-orange-500">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center text-lg font-semibold text-gray-900">
+          <Bell className="h-5 w-5 mr-2 text-orange-500" />
           Upcoming Reminders
+          <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 px-2">
+            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        {tasks.length === 0 ? (
-          <p className="text-gray-500">No upcoming tasks or reminders.</p>
+      <CardContent className="space-y-4">
+        {upcomingTasks.length > 0 ? (
+          upcomingTasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              title={task.title}
+              subtitle={getSubtitle(task)}
+              badge={task.priority}
+              badgeColor={
+                task.priority === "High"
+                  ? "bg-red-100 text-red-800 border border-red-200"
+                  : task.priority === "Medium"
+                  ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                  : "bg-green-100 text-green-800 border border-green-200"
+              }
+              dueText=""
+            />
+          ))
         ) : (
-          <div className="space-y-3">
-            {tasks.map((task) => (
-              <div
-                key={task.tasklistid}
-                className={`p-3 border rounded-lg ${
-                  isOverdue(task.deadline) ? 'border-red-200 bg-red-50' : 'border-gray-200'
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-medium text-sm">{task.tasktitle}</h4>
-                    {task.description && (
-                      <p className="text-xs text-gray-600 mt-1">{task.description}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(task.deadline), 'MMM dd, yyyy')}
-                      </div>
-                      {isOverdue(task.deadline) && (
-                        <div className="flex items-center gap-1 text-xs text-red-600">
-                          <AlertCircle className="h-3 w-3" />
-                          Overdue
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={`text-xs ${getPriorityColor(task.priority)}`}>
-                      {task.priority}
-                    </Badge>
-                    {task.status !== 'completed' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleMarkComplete(task.tasklistid)}
-                        className="text-xs px-2 py-1 h-auto"
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Complete
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="text-center py-6 text-gray-500">
+            No upcoming tasks for the next week
           </div>
         )}
       </CardContent>

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Lock } from 'lucide-react';
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 
 interface LoginFormProps {
@@ -17,6 +17,7 @@ export const LoginForm = ({ onToggleForm }: LoginFormProps) => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   const { signIn } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -25,13 +26,8 @@ export const LoginForm = ({ onToggleForm }: LoginFormProps) => {
     
     try {
       await signIn(email, password);
-      toast({
-        title: "Login successful",
-        description: "You have been signed in successfully."
-      });
     } catch (error) {
       console.error("Login error:", error);
-      // Note: Toast is already shown in AuthContext on error
     } finally {
       setIsLoading(false);
     }

@@ -1,637 +1,976 @@
-import React, { useState, useEffect } from 'react';
-import SidebarNav from '@/components/SidebarNav';
-import { Calendar } from '@/components/ui/calendar';
-import { DateRange } from 'react-day-picker';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+import React, { useState, useEffect } from "react";
+import SidebarNav from "@/components/SidebarNav";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
   TableCell,
-  TableCaption,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Plus, Edit, Trash2, Search, FileText } from 'lucide-react';
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Download, FileImage, FileText, Plus, Upload, IndianRupee, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from '@/integrations/supabase/client';
-import { Customer } from '@/services/customerService';
-import { Expense } from '@/types/expense';
-import { Category } from '@/types/category';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogClose 
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import ExpenseHistoryTab, { ExpenseItem } from "@/components/expense/ExpenseHistoryTab";
+import ExpenseAdvancedAnalytics from "@/components/expense/ExpenseAdvancedAnalytics";
+import { 
+  ResponsiveContainer, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip 
+} from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import * as FileSaver from 'file-saver';
+import * as XLSX from 'xlsx';
+import { getEmployeeById } from "@/services/employeeService";
+
+const expensesData = [
+  { name: "Jan", amount: 12000 },
+  { name: "Feb", amount: 15000 },
+  { name: "Mar", amount: 14000 },
+  { name: "Apr", amount: 18000 },
+  { name: "May", amount: 16000 },
+  { name: "Jun", amount: 19000 },
+  { name: "Jul", amount: 21000 },
+  { name: "Aug", amount: 18000 },
+];
+
+const expenseCategories = [
+  "Office Expenses",
+  "Meals & Entertainment",
+  "Software",
+  "Travel",
+  "Equipment",
+  "Marketing",
+  "Training",
+  "Utilities",
+  "Rent",
+  "Miscellaneous"
+];
 
 const Expenses = () => {
-  const [date, setDate] = useState<DateRange | undefined>(undefined);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [activeTab, setActiveTab] = useState("all");
+  const [showAddExpenseDialog, setShowAddExpenseDialog] = useState(false);
+  const [showExpenseAttachment, setShowExpenseAttachment] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseItem | null>(null);
+  const [activeMainTab, setActiveMainTab] = useState("current");
   const [loading, setLoading] = useState(true);
+  const [totalStats, setTotalStats] = useState({
+    total: 0,
+    pending: 0,
+    pendingCount: 0,
+    monthlyTotal: 0,
+    monthlyChange: 0
+  });
+  
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      await fetchExpenses();
-      await fetchCategories();
+    const fetchExpenses = async () => {
+      setLoading(true);
+      try {
+        // Use simplified query that doesn't try to join employee table
+        const { data, error } = await supabase
+          .from('expense')
+          .select(`
+            expenseid,
+            description,
+            category,
+            amount,
+            submissiondate,
+            status,
+            submittedby,
+            billpath
+          `);
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          // Transform the data to match the ExpenseItem interface
+          const formattedDataPromises = data.map(async (expense) => {
+            // Get employee name if submittedby is present
+            let submitterName = `Employee #${String(expense.submittedby)}`;
+            let avatarText = 'UN';
+            
+            if (expense.submittedby) {
+              try {
+                const employee = await getEmployeeById(expense.submittedby);
+                if (employee) {
+                  submitterName = `${employee.firstname} ${employee.lastname}`;
+                  avatarText = `${employee.firstname.charAt(0)}${employee.lastname.charAt(0)}`.toUpperCase();
+                }
+              } catch (err) {
+                console.error('Error fetching employee details:', err);
+              }
+            }
+            
+            return {
+              id: expense.expenseid,
+              description: expense.description || '',
+              category: expense.category || 'Uncategorized',
+              amount: expense.amount || 0,
+              submittedBy: { 
+                name: submitterName,
+                avatar: avatarText
+              },
+              date: expense.submissiondate ? new Date(expense.submissiondate).toISOString().split('T')[0] : '',
+              status: expense.status || 'Pending',
+              expenseid: expense.expenseid,
+              billpath: expense.billpath
+            };
+          });
+          
+          const formattedData = await Promise.all(formattedDataPromises);
+          
+          setExpenses(formattedData);
+          
+          // Calculate statistics
+          const total = formattedData.reduce((sum, exp) => sum + exp.amount, 0);
+          const pendingExpenses = formattedData.filter(exp => exp.status === 'Pending');
+          const pendingTotal = pendingExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+          
+          // Calculate current month expenses
+          const now = new Date();
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
+          const currentMonthExpenses = formattedData.filter(exp => {
+            const expDate = new Date(exp.date);
+            return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
+          });
+          const currentMonthTotal = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+          
+          // Calculate previous month for comparison
+          const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+          const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+          const lastMonthExpenses = formattedData.filter(exp => {
+            const expDate = new Date(exp.date);
+            return expDate.getMonth() === lastMonth && expDate.getFullYear() === lastMonthYear;
+          });
+          const lastMonthTotal = lastMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+          
+          // Calculate percent change
+          const percentChange = lastMonthTotal > 0 
+            ? ((currentMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 
+            : 0;
+            
+          setTotalStats({
+            total,
+            pending: pendingTotal,
+            pendingCount: pendingExpenses.length,
+            monthlyTotal: currentMonthTotal,
+            monthlyChange: percentChange
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching expenses:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch expense data',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchInitialData();
-  }, []);
+    fetchExpenses();
+    
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('expense-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'expense'
+      }, () => {
+        // Refetch data when expenses change
+        fetchExpenses();
+      })
+      .subscribe();
+      
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [toast]);
 
-  const fetchExpenses = async () => {
-    setLoading(true);
+  const handleExport = () => {
+    if (expenses.length === 0) {
+      toast({
+        title: "No Data",
+        description: "There are no expenses to export.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Format data for export
+    const exportData = expenses.map(expense => ({
+      Description: expense.description,
+      Category: expense.category,
+      Amount: expense.amount,
+      Status: expense.status,
+      Date: expense.date,
+      SubmittedBy: expense.submittedBy.name
+    }));
+    
+    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
+    const fileExtension = '.xlsx';
+    const fileName = `expense_report_${new Date().toISOString().split('T')[0]}`;
+    
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = { Sheets: { 'Expenses': ws }, SheetNames: ['Expenses'] };
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], {type: fileType});
+    FileSaver.saveAs(data, fileName + fileExtension);
+    
+    toast({
+      title: "Exporting Data",
+      description: "Your expense data has been exported as Excel file.",
+    });
+  };
+
+  const handleAddExpense = async (formData: any) => {
     try {
-      const { data: expensesData, error: expensesError } = await supabase
-        .from('expense')
-        .select('*')
-        .order('submissiondate', { ascending: false });
-
-      if (expensesError) {
-        console.error("Error fetching expenses:", expensesError);
-        toast({
-          title: "Error",
-          description: "Failed to fetch expenses: " + expensesError.message,
-          variant: "destructive",
-        });
-        return;
+      // First check if we have any valid employees in the system
+      const { data: employeeData, error: employeeError } = await supabase
+        .from('employee')
+        .select('employeeid')
+        .limit(1);
+        
+      if (employeeError) {
+        throw new Error('Error checking for employees');
       }
-
-      // Convert and map data to the Expense interface
-      const mappedExpenses: Expense[] = (expensesData || []).map(exp => ({
-        expenseid: String(exp.expenseid),
-        date: exp.submissiondate || new Date().toISOString(),
-        description: exp.description || '',
-        category: exp.category || '',
-        amount: Number(exp.amount) || 0,
-        employeeid: String(exp.employeeid || ''),
-        customerid: String(exp.customerid || ''),
-        submissiondate: exp.submissiondate,
-        status: exp.status || '',
-        billpath: exp.billpath
-      }));
-
-      setExpenses(mappedExpenses);
-    } catch (error) {
-      console.error("Error processing expenses:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while processing expenses",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      // Since there's no category table in the database schema, 
-      // we'll create some default categories or extract unique categories from expenses
-      const uniqueCategories = [...new Set(expenses.map(exp => exp.category))].filter(Boolean);
       
-      const defaultCategories: Category[] = [
-        { id: '1', name: 'Food' },
-        { id: '2', name: 'Transportation' },
-        { id: '3', name: 'Office Supplies' },
-        { id: '4', name: 'Utilities' },
-        { id: '5', name: 'Others' }
-      ];
+      // Set submittedby to 0 to indicate it was added from the platform by an admin
+      const submittedBy = 0; // Use 0 to indicate platform admin
       
-      // Combine default categories with any unique categories from expenses
-      const allCategories = [
-        ...defaultCategories,
-        ...uniqueCategories
-          .filter(cat => !defaultCategories.some(dc => dc.name === cat))
-          .map((cat, index) => ({ id: `custom-${index}`, name: cat }))
-      ];
+      let billPath = null;
       
-      setCategories(allCategories);
-    } catch (error) {
-      console.error("Error processing categories:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while processing categories",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDateChange = (newDate: DateRange | undefined) => {
-    setDate(newDate);
-  };
-
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-  };
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const handleOpenDialog = () => {
-    setIsDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setExpenseToEdit(null);
-  };
-
-  const handleOpenEditDialog = (expense: Expense) => {
-    setExpenseToEdit(expense);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleCloseEditDialog = () => {
-    setIsEditDialogOpen(false);
-    setExpenseToEdit(null);
-  };
-
-  const handleCreateExpense = async (newExpense: Partial<Expense>) => {
-    try {
+      // If there's a receipt file, upload it to storage with improved folder structure
+      if (formData.receipt && formData.receipt.size > 0) {
+        const fileExt = formData.receipt.name.split('.').pop();
+        
+        // Get company name for folder structure - using a default if not available
+        const { data: companyData } = await supabase
+          .from('customer')
+          .select('name')
+          .limit(1);
+        
+        const companyName = companyData && companyData.length > 0 && companyData[0].name 
+          ? companyData[0].name.replace(/\s+/g, '_').toLowerCase() 
+          : 'default_company';
+        
+        // Create date-based folder structure: company/year/month/day
+        const now = new Date();
+        const year = now.getFullYear().toString();
+        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+        const day = now.getDate().toString().padStart(2, '0');
+        
+        // Create folder path: company/YYYY/MM/DD/timestamp-randomstring.ext
+        const folderPath = `${companyName}/${year}/${month}/${day}`;
+        const fileName = `${folderPath}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        
+        const { data: fileData, error: uploadError } = await supabase.storage
+          .from('expense-bills')
+          .upload(fileName, formData.receipt);
+          
+        if (uploadError) {
+          throw uploadError;
+        }
+        
+        // Get the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('expense-bills')
+          .getPublicUrl(fileName);
+          
+        billPath = publicUrl;
+      }
+      
+      const newExpense = {
+        description: formData.description,
+        category: formData.category,
+        amount: parseFloat(formData.amount),
+        submittedby: submittedBy, // Use 0 to indicate platform admin
+        submissiondate: new Date().toISOString(),
+        status: "Pending",
+        billpath: billPath
+      };
+      
       const { data, error } = await supabase
         .from('expense')
-        .insert({
-          description: newExpense.description || '',
-          category: newExpense.category || '',
-          amount: newExpense.amount || 0,
-          submissiondate: newExpense.date || new Date().toISOString(),
-          employeeid: String(newExpense.employeeid || ''), // Keep as string
-          customerid: parseInt(String(newExpense.customerid || '0')) || null // Convert to number if needed
-        })
-        .select()
-        .single();
-
+        .insert(newExpense)
+        .select();
+        
       if (error) {
-        console.error("Error creating expense:", error);
-        toast({
-          title: "Error",
-          description: "Failed to create expense: " + error.message,
-          variant: "destructive",
-        });
-        return;
+        throw error;
       }
-
-      // Convert the returned data to match our Expense interface
-      const createdExpense: Expense = {
-        expenseid: String(data.expenseid),
-        date: data.submissiondate || new Date().toISOString(),
-        description: data.description || '',
-        category: data.category || '',
-        amount: Number(data.amount) || 0,
-        employeeid: String(data.employeeid || ''),
-        customerid: String(data.customerid || ''),
-        submissiondate: data.submissiondate || '',
-        status: data.status || ''
-      };
-
-      setExpenses([...expenses, createdExpense]);
+      
+      setShowAddExpenseDialog(false);
       toast({
-        title: "Success",
-        description: "Expense created successfully!",
+        title: "Expense Added",
+        description: "Your expense has been submitted for approval.",
       });
-      handleCloseDialog();
     } catch (error) {
-      console.error("Error creating expense:", error);
+      console.error('Error adding expense:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred while creating the expense",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to add the expense. Make sure employee records exist in the system.',
+        variant: 'destructive',
       });
     }
   };
 
-  const handleUpdateExpense = async (updatedExpense: Expense) => {
-    try {
-      const { data, error } = await supabase
-        .from('expense')
-        .update({
-          description: updatedExpense.description,
-          category: updatedExpense.category,
-          amount: updatedExpense.amount,
-          submissiondate: updatedExpense.date
-        })
-        .eq('expenseid', updatedExpense.expenseid)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error updating expense:", error);
-        toast({
-          title: "Error",
-          description: "Failed to update expense: " + error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Convert the returned data to match our Expense interface
-      const updatedExpenseData: Expense = {
-        expenseid: String(data.expenseid),
-        date: data.submissiondate || new Date().toISOString(),
-        description: data.description || '',
-        category: data.category || '',
-        amount: Number(data.amount) || 0,
-        employeeid: String(data.employeeid || ''),
-        customerid: String(data.customerid || ''),
-        submissiondate: data.submissiondate || '',
-        status: data.status || ''
-      };
-
-      setExpenses(expenses.map(exp => exp.expenseid === updatedExpense.expenseid ? updatedExpenseData : exp));
-      toast({
-        title: "Success",
-        description: "Expense updated successfully!",
-      });
-      handleCloseEditDialog();
-    } catch (error) {
-      console.error("Error updating expense:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while updating the expense",
-        variant: "destructive",
-      });
-    }
+  const handleViewExpense = (expense: ExpenseItem) => {
+    setSelectedExpense(expense);
+    setShowExpenseAttachment(true);
   };
 
-  const handleDeleteExpense = async (expenseid: string) => {
+  const handleApproveExpense = async (id: number) => {
     try {
       const { error } = await supabase
         .from('expense')
-        .delete()
-        .eq('expenseid', expenseid); // Keep as string
-
+        .update({ status: 'Approved' })
+        .eq('expenseid', id);
+        
       if (error) {
-        console.error("Error deleting expense:", error);
-        toast({
-          title: "Error",
-          description: "Failed to delete expense: " + error.message,
-          variant: "destructive",
-        });
-        return;
+        throw error;
       }
-
-      setExpenses(expenses.filter(exp => exp.expenseid !== expenseid));
+      
       toast({
-        title: "Success",
-        description: "Expense deleted successfully!",
+        title: "Expense Approved",
+        description: "The expense has been approved successfully.",
       });
     } catch (error) {
-      console.error("Error deleting expense:", error);
+      console.error('Error approving expense:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred while deleting the expense",
+        title: 'Error',
+        description: 'Failed to approve the expense',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRejectExpense = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('expense')
+        .update({ status: 'Rejected' })
+        .eq('expenseid', id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Expense Rejected",
+        description: "The expense has been rejected.",
+      });
+    } catch (error) {
+      console.error('Error rejecting expense:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reject the expense',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDownloadReceipt = async (billpath: string | undefined) => {
+    if (!billpath) {
+      toast({
+        title: "No Receipt",
+        description: "There is no receipt attached to this expense.",
         variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // Extract file name from the public URL, handling the new folder structure
+      const urlParts = billpath.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      
+      // Parse folder path from the URL
+      const folderStructure = urlParts.slice(-5).join('/');
+      
+      if (!fileName) {
+        throw new Error("Invalid file path");
+      }
+      
+      // Download the file
+      const { data, error } = await supabase.storage
+        .from('expense-bills')
+        .download(folderStructure);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Create a download link
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Receipt Downloaded",
+        description: "The receipt has been downloaded to your device.",
+      });
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to download the receipt',
+        variant: 'destructive',
       });
     }
   };
 
   const filteredExpenses = expenses.filter(expense => {
-    const matchesDate = !date?.from ||
-      (new Date(expense.date) >= date.from &&
-        (!date.to || new Date(expense.date) <= date.to));
-
-    const matchesCategory = selectedCategory === 'All' || expense.category === selectedCategory;
-
-    const matchesSearchTerm = expense.description.toLowerCase().includes(searchTerm.toLowerCase());
-
-    return matchesDate && matchesCategory && matchesSearchTerm;
+    if (activeTab === "all") return true;
+    return expense.status.toLowerCase() === activeTab.toLowerCase();
   });
-
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-
-  // Fix for the reducer that's causing TS errors by using a proper typed approach
-  const categoryCounts: Record<string, number> = {};
-  filteredExpenses.forEach(expense => {
-    const category = expense.category || 'Uncategorized';
-    categoryCounts[category] = (categoryCounts[category] || 0) + 1;
-  });
-
-  const hasExpenses = expenses.length > 0;
 
   return (
     <div className="flex h-full bg-gray-50">
       <SidebarNav />
-      <div className="flex-1 overflow-y-auto">
-        <div className="container py-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">Expense Tracking</h1>
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-2xl font-semibold">Expenses</h1>
+              <p className="text-gray-500">Track and manage company expenses</p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                className="flex items-center gap-2" 
+                onClick={() => setShowAddExpenseDialog(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Add Expense
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </div>
           </div>
 
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Filter Expenses</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-3">
-              <div>
-                <Label>Date Range</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      {date?.from ? (
-                        date.to ? (
-                          `${format(date.from, "PPP")} - ${format(date.to, "PPP")}`
-                        ) : (
-                          format(date.from, "PPP")
-                        )
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="range"
-                      defaultMonth={date?.from}
-                      selected={date}
-                      onSelect={handleDateChange}
-                      disabled={{ before: new Date('2020-01-01') }}
-                      numberOfMonths={2}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <Label>Category</Label>
-                <Select onValueChange={handleCategoryChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Categories</SelectItem>
-                    {categories.map(category => (
-                      <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Search</Label>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input
-                    type="search"
-                    placeholder="Search expenses..."
-                    className="pl-8"
-                    value={searchTerm}
-                    onChange={handleSearchChange}
-                  />
+          <div className="grid md:grid-cols-3 gap-6 mb-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Total Expenses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold flex items-center">
+                  <IndianRupee className="h-5 w-5 mr-1" />
+                  {loading ? "..." : totalStats.total.toFixed(2)}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Expense List</h2>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button onClick={handleOpenDialog}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Expense
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Add New Expense</DialogTitle>
-                  <DialogDescription>
-                    Create a new expense record.
-                  </DialogDescription>
-                </DialogHeader>
-                <ExpenseForm
-                  categories={categories}
-                  onCreate={handleCreateExpense}
-                  onClose={handleCloseDialog}
-                />
-              </DialogContent>
-            </Dialog>
+                <p className="text-sm text-gray-500">Year to Date</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Pending Approval</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold flex items-center">
+                  <IndianRupee className="h-5 w-5 mr-1" />
+                  {loading ? "..." : totalStats.pending.toFixed(2)}
+                </div>
+                <p className="text-sm text-gray-500">
+                  {loading ? "..." : totalStats.pendingCount} expense{totalStats.pendingCount !== 1 ? "s" : ""}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">This Month</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-semibold flex items-center">
+                  <IndianRupee className="h-5 w-5 mr-1" />
+                  {loading ? "..." : totalStats.monthlyTotal.toFixed(2)}
+                </div>
+                <p className="text-sm text-gray-500">
+                  {!loading && (
+                    <span className={totalStats.monthlyChange >= 0 ? "text-green-600" : "text-red-600"}>
+                      {totalStats.monthlyChange >= 0 ? "↑" : "↓"} {Math.abs(totalStats.monthlyChange).toFixed(1)}%
+                    </span>
+                  )}
+                  {!loading && " vs last month"}
+                </p>
+              </CardContent>
+            </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Expenses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="text-center py-4">Loading expenses...</div>
-              ) : hasExpenses ? (
-                <div className="overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredExpenses.map(expense => (
-                        <TableRow key={expense.expenseid}>
-                          <TableCell>{format(new Date(expense.date), 'PPP')}</TableCell>
-                          <TableCell>{expense.description}</TableCell>
-                          <TableCell>{expense.category}</TableCell>
-                          <TableCell>₹{expense.amount.toFixed(2)}</TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditDialog(expense)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDeleteExpense(expense.expenseid)}>
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow>
-                        <TableCell colSpan={3}>Total</TableCell>
-                        <TableCell>₹{totalExpenses.toFixed(2)}</TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center p-8 text-gray-500">
-                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                  <h3 className="text-lg font-medium mb-1">No expenses found</h3>
-                  <p>Add new expenses to start tracking your spending.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Edit Expense</DialogTitle>
-                <DialogDescription>
-                  Update the details of the selected expense.
-                </DialogDescription>
-              </DialogHeader>
-              <ExpenseForm
-                expense={expenseToEdit}
-                categories={categories}
-                onUpdate={handleUpdateExpense}
-                onClose={handleCloseEditDialog}
+          <Tabs defaultValue="current" className="mb-6" onValueChange={setActiveMainTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="current">Current Expenses</TabsTrigger>
+              <TabsTrigger value="history">Expense History</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced Analytics</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="current">
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">Recent Expenses</CardTitle>
+                    <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+                      <TabsList>
+                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger value="pending">Pending</TabsTrigger>
+                        <TabsTrigger value="approved">Approved</TabsTrigger>
+                        <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="rounded-md border p-8 flex justify-center">
+                      <div className="flex flex-col items-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <p className="mt-2 text-sm text-gray-500">Loading expenses...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Submitted By</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredExpenses.length > 0 ? (
+                            filteredExpenses.map((expense) => (
+                              <TableRow key={expense.id}>
+                                <TableCell className="font-medium">{expense.description}</TableCell>
+                                <TableCell>{expense.category}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center">
+                                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                    {expense.amount.toFixed(2)}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src="" alt={expense.submittedBy.name} />
+                                      <AvatarFallback>{expense.submittedBy.avatar}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm">{expense.submittedBy.name}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{expense.date}</TableCell>
+                                <TableCell>
+                                  <Badge
+                                    className={`${
+                                      expense.status === "Approved"
+                                        ? "bg-green-100 text-green-800"
+                                        : expense.status === "Pending"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-red-100 text-red-800"
+                                    }`}
+                                  >
+                                    {expense.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => handleViewExpense(expense)}
+                                    >
+                                      <Eye className="h-4 w-4 mr-1" />
+                                      View
+                                    </Button>
+                                    {expense.status === "Pending" && (
+                                      <>
+                                        <Button 
+                                          variant="success" 
+                                          size="sm"
+                                          onClick={() => handleApproveExpense(expense.id)}
+                                        >
+                                          Approve
+                                        </Button>
+                                        <Button 
+                                          variant="danger" 
+                                          size="sm"
+                                          onClick={() => handleRejectExpense(expense.id)}
+                                        >
+                                          Reject
+                                        </Button>
+                                      </>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                                No expense history found.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="history">
+              <ExpenseHistoryTab
+                onViewExpense={handleViewExpense}
               />
-            </DialogContent>
-          </Dialog>
+            </TabsContent>
+            
+            <TabsContent value="analytics">
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Monthly Expenses</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={getMonthlyExpenseData()}
+                          margin={{
+                            top: 5,
+                            right: 20,
+                            left: 20,
+                            bottom: 5,
+                          }}
+                        >
+                          <CartesianGrid vertical={false} stroke="#f5f5f5" />
+                          <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tickFormatter={(value) => `₹${value}`}
+                          />
+                          <Tooltip formatter={(value) => [`₹${value}`, 'Amount']} />
+                          <Line
+                            type="monotone"
+                            dataKey="amount"
+                            stroke="#3944BC"
+                            fill="#3944BC"
+                            strokeWidth={3}
+                            dot={false}
+                            activeDot={{ r: 8 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Expenses by Category</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {getCategoryBreakdown()}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="advanced">
+              <ExpenseAdvancedAnalytics expenses={expenses} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
-    </div>
-  );
-};
 
-interface ExpenseFormProps {
-  expense?: Expense | null;
-  categories: Category[];
-  onCreate?: (expense: Partial<Expense>) => void;
-  onUpdate?: (expense: Expense) => void;
-  onClose: () => void;
-}
+      <Dialog open={showAddExpenseDialog} onOpenChange={setShowAddExpenseDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Expense</DialogTitle>
+            <DialogDescription>
+              Enter the details of your expense for reimbursement.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const data = {
+              description: formData.get('description') as string,
+              category: formData.get('category') as string,
+              amount: formData.get('amount') as string,
+              receipt: formData.get('receipt') as File,
+            };
+            handleAddExpense(data);
+          }}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <Input
+                  id="description"
+                  name="description"
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="category" className="text-right">
+                  Category
+                </Label>
+                <div className="col-span-3">
+                  <Select name="category" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {expenseCategories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="amount" className="text-right">
+                  Amount (₹)
+                </Label>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="receipt" className="text-right">
+                  Receipt
+                </Label>
+                <Input
+                  id="receipt"
+                  name="receipt"
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit">Submit Expense</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ expense, categories, onCreate, onUpdate, onClose }) => {
-  const { toast } = useToast();
-  const [date, setDate] = useState<Date | undefined>(expense ? new Date(expense.date) : undefined);
-  const [description, setDescription] = useState(expense ? expense.description : '');
-  const [category, setCategory] = useState(expense ? expense.category : categories.length > 0 ? categories[0].name : '');
-  const [amount, setAmount] = useState(expense ? expense.amount.toString() : '');
-
-  const handleSubmit = () => {
-    if (!date || !description || !category || !amount) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount)) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid amount.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newExpense = {
-      date: date.toISOString(),
-      description,
-      category,
-      amount: parsedAmount,
-    };
-
-    if (expense && onUpdate) {
-      onUpdate({ ...expense, ...newExpense });
-    } else if (onCreate) {
-      onCreate(newExpense);
-    }
-
-    onClose();
-  };
-
-  return (
-    <div className="grid gap-4">
-      <div>
-        <Label htmlFor="date">Date</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                !date && "text-muted-foreground"
-              )}
+      <Dialog open={showExpenseAttachment} onOpenChange={setShowExpenseAttachment}>
+        <DialogContent className="sm:max-w-[625px]">
+          <DialogHeader>
+            <DialogTitle>Expense Receipt</DialogTitle>
+            <DialogDescription>
+              {selectedExpense?.description} - 
+              <span className="flex items-center inline-flex">
+                <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
+                {selectedExpense?.amount.toFixed(2)}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center p-4 bg-gray-100 rounded-md min-h-[300px] items-center">
+            {selectedExpense?.billpath ? (
+              <div className="flex flex-col items-center">
+                {selectedExpense.billpath.toLowerCase().endsWith('.pdf') ? (
+                  <FileText className="h-24 w-24 text-gray-400" />
+                ) : (
+                  <img 
+                    src={selectedExpense.billpath} 
+                    alt="Receipt" 
+                    className="max-h-[300px] max-w-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = ""; // Placeholder for error
+                      e.currentTarget.alt = "Failed to load image";
+                      // Show FileImage icon as fallback
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        parent.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-gray-400"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path></svg>';
+                      }
+                    }}
+                  />
+                )}
+                <p className="mt-2 text-sm text-gray-500">
+                  {selectedExpense.billpath.toLowerCase().endsWith('.pdf') ? "PDF Document" : "Receipt Image"}
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <FileText className="h-24 w-24 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-500">No receipt available</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => handleDownloadReceipt(selectedExpense?.billpath)}
+              disabled={!selectedExpense?.billpath}
             >
-              {date ? (
-                format(date, "PPP")
-              ) : (
-                <span>Pick a date</span>
-              )}
+              <Download className="mr-2 h-4 w-4" />
+              Download
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              defaultMonth={date}
-              selected={date}
-              onSelect={setDate}
-              disabled={{ before: new Date('2020-01-01') }}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Input
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
-      <div>
-        <Label htmlFor="category">Category</Label>
-        <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map(cat => (
-              <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label htmlFor="amount">Amount</Label>
-        <Input
-          id="amount"
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button type="submit" onClick={handleSubmit}>
-          {expense ? 'Update Expense' : 'Create Expense'}
-        </Button>
-      </div>
+            <DialogClose asChild>
+              <Button>Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+
+  // Helper function to get monthly expense data for LineChart
+  function getMonthlyExpenseData() {
+    const monthlyData: Record<string, number> = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const today = new Date();
+    
+    // Initialize with zero values
+    for (let i = 6; i >= 0; i--) {
+      const month = new Date(today);
+      month.setMonth(today.getMonth() - i);
+      const monthKey = months[month.getMonth()];
+      monthlyData[monthKey] = 0;
+    }
+    
+    // Fill with actual data
+    expenses.forEach(expense => {
+      if (expense.status === "Approved") {
+        const date = new Date(expense.date);
+        const monthKey = months[date.getMonth()];
+        
+        // Only count last 6 months
+        const monthsAgo = (today.getFullYear() - date.getFullYear()) * 12 + today.getMonth() - date.getMonth();
+        if (monthsAgo >= 0 && monthsAgo <= 6) {
+          monthlyData[monthKey] = (monthlyData[monthKey] || 0) + expense.amount;
+        }
+      }
+    });
+    
+    // Convert to array format for recharts
+    return Object.entries(monthlyData).map(([name, amount]) => ({ name, amount }));
+  }
+
+  // Helper function to generate category breakdown for the UI
+  function getCategoryBreakdown() {
+    const categoryData: Record<string, number> = {};
+    let total = 0;
+    
+    // Calculate totals by category
+    expenses.forEach(expense => {
+      if (expense.status === "Approved") {
+        categoryData[expense.category] = (categoryData[expense.category] || 0) + expense.amount;
+        total += expense.amount;
+      }
+    });
+    
+    // Sort categories by amount
+    const sortedCategories = Object.entries(categoryData)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5); // Get top 5
+    
+    // Calculate "Other" category if needed
+    if (Object.keys(categoryData).length > 5) {
+      const otherTotal = Object.entries(categoryData)
+        .sort((a, b) => b[1] - a[1])
+        .slice(5)
+        .reduce((sum, [_, amount]) => sum + amount, 0);
+      
+      sortedCategories.push(["Other", otherTotal]);
+    }
+    
+    // Colors for categories
+    const colors = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF0000'];
+    
+    // Generate UI elements
+    return sortedCategories.map(([category, amount], index) => {
+      const percentage = total > 0 ? Math.round((amount / total) * 100) : 0;
+      
+      return (
+        <div key={category} className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
+            <div>{category}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="font-medium flex items-center">
+              <IndianRupee className="h-3.5 w-3.5 mr-0.5" />
+              {amount.toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-500">{percentage}%</div>
+          </div>
+        </div>
+      );
+    });
+  }
 };
 
 export default Expenses;

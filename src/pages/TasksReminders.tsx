@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import SidebarNav from "@/components/SidebarNav";
 import { Button } from "@/components/ui/button";
@@ -122,10 +123,11 @@ const TasksReminders = () => {
   const fetchTasks = async (uid: string) => {
     setLoading(true);
     try {
-      // With RLS enabled, supabase will only return data for the current user
+      // Use the UUID directly as customerid (as a string)
       const { data: tracklistData, error: tracklistError } = await supabase
         .from('tracklist')
-        .select('*');
+        .select('*')
+        .eq('customerid', uid);
       
       if (tracklistError) {
         console.error('Error fetching tasks from tracklist:', tracklistError);
@@ -267,14 +269,13 @@ const TasksReminders = () => {
         const { error } = await supabase
           .from('tracklist')
           .update(taskData)
-          .eq('tracklistid', currentTask.tracklistid);
+          .eq('tracklistid', currentTask.tracklistid)
+          .eq('customerid', userId); // Use UUID directly as string
           
         if (error) throw error;
         
         // Refresh tasks
-        if (userId) {
-          fetchTasks(userId);
-        }
+        fetchTasks(userId);
       } else {
         // Handle local sample data
         setTasks(prevTasks => 
@@ -321,11 +322,12 @@ const TasksReminders = () => {
         status: newTask.status,
         priority: newTask.priority,
         assignedto: newTask.assignedTo ? Number(newTask.assignedTo) : null,
+        customerid: userId, // Use UUID directly as string
         comments: "[]",
         resources: "[]"
       };
       
-      // With RLS enabled, supabase will automatically set the customerid to the authenticated user's ID
+      // Insert task data
       const { data, error } = await supabase
         .from('tracklist')
         .insert(taskData)
@@ -404,14 +406,13 @@ const TasksReminders = () => {
           .update({ 
             comments: JSON.stringify(updatedComments) 
           })
-          .eq('tracklistid', currentTask.tracklistid);
+          .eq('tracklistid', currentTask.tracklistid)
+          .eq('customerid', userId); // Use UUID directly as string
           
         if (error) throw error;
         
         // Refresh the task
-        if (userId) {
-          fetchTasks(userId);
-        }
+        fetchTasks(userId);
       } else {
         // Handle local sample data
         const newCommentObj = {
@@ -498,14 +499,13 @@ const TasksReminders = () => {
           .update({ 
             resources: JSON.stringify(updatedResources) 
           })
-          .eq('tracklistid', currentTask.tracklistid);
+          .eq('tracklistid', currentTask.tracklistid)
+          .eq('customerid', userId); // Use UUID directly as string
           
         if (error) throw error;
         
         // Refresh the task
-        if (userId) {
-          fetchTasks(userId);
-        }
+        fetchTasks(userId);
       } else {
         // Handle local sample data
         const newResourceObj = {

@@ -1,144 +1,205 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download, Filter, MapPin, Settings, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import LocationMapComponent from "./LocationMapComponent";
 
-interface Location {
-  id?: string;
+interface EmployeeLocation {
+  employeeid: number;
   latitude: number;
   longitude: number;
   timestamp: string;
-  employee: {
-    id: string;
-    name: string;
-    job: string;
-    avatar?: string;
-  } | null;
+  trackid?: number;  // Adding trackid as optional to match the type coming from Supabase
+  employee?: {
+    firstname?: string;
+    lastname?: string;
+    jobtitle?: string;
+  };
 }
 
-interface EmployeeLocationProps {
-  locations?: Location[];
-}
-
-const EmployeeLocation = ({ locations = [] }: EmployeeLocationProps) => {
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-
-  // Group locations by employee
-  const employeeLocations = locations.reduce((acc, location) => {
-    if (!location.employee) return acc;
-    
-    const employeeId = location.employee.id;
-    if (!acc[employeeId]) {
-      acc[employeeId] = {
-        employee: location.employee,
-        lastLocation: location,
-        history: [location],
-      };
-    } else {
-      acc[employeeId].history.push(location);
-      // Update last location if this one is newer
-      if (new Date(location.timestamp) > new Date(acc[employeeId].lastLocation.timestamp)) {
-        acc[employeeId].lastLocation = location;
+const EmployeeLocation = () => {
+  const [isLive, setIsLive] = useState(false);
+  const [employeeLocations, setEmployeeLocations] = useState<EmployeeLocation[]>([]);
+  const isMobile = useIsMobile();
+  
+  const { data: locations = [], isLoading, error } = useQuery({
+    queryKey: ['employee-locations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('track')
+        .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+        .order('timestamp', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching location data:', error);
+        throw error;
       }
+      
+      return (data || []) as EmployeeLocation[];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  useEffect(() => {
+    setEmployeeLocations(locations);
+  }, [locations]);
+  
+  useEffect(() => {
+    if (isLive) {
+      // Set up real-time listener for location changes
+      const channel = supabase
+        .channel('track-changes')
+        .on('postgres_changes', 
+          {
+            event: '*',
+            schema: 'public',
+            table: 'track'
+          },
+          async (payload) => {
+            console.log('Track data changed:', payload);
+            
+            // Type safety check for payload.new and trackid
+            if (payload.new && typeof payload.new === 'object' && 'trackid' in payload.new) {
+              // Fetch the latest data including the employee details
+              const { data } = await supabase
+                .from('track')
+                .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+                .eq('trackid', payload.new.trackid)
+                .single();
+                
+              if (data) {
+                // Update the locations state
+                setEmployeeLocations(prevLocations => {
+                  const existingIndex = prevLocations.findIndex(
+                    loc => loc.employeeid === data.employeeid
+                  );
+                  
+                  if (existingIndex >= 0) {
+                    // Update existing employee location
+                    const updatedLocations = [...prevLocations];
+                    updatedLocations[existingIndex] = data as EmployeeLocation;
+                    return updatedLocations;
+                  } else {
+                    // Add new employee location
+                    return [...prevLocations, data as EmployeeLocation];
+                  }
+                });
+                
+                toast.info(`${data.employee?.firstname || 'Employee'} location updated`);
+              }
+            }
+          }
+        )
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
-    return acc;
-  }, {} as Record<string, { employee: Location['employee']; lastLocation: Location; history: Location[] }>);
+  }, [isLive]);
+  
+  const toggleLiveTracking = () => {
+    setIsLive(!isLive);
+    
+    // Fix: Use the correct toast API syntax
+    toast(isLive 
+      ? "You have stopped tracking employee locations in real-time." 
+      : "You are now tracking employee locations in real-time."
+    );
+  };
 
-  const handleLocationClick = (location: Location) => {
-    setSelectedLocation(location);
+  const handleExportMap = () => {
+    // Fix: Use the correct toast API syntax
+    toast("The current map view has been exported.");
   };
 
   return (
-    <div className="space-y-4">
-      <Card className="shadow-md border-t-4 border-indigo-400">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Employee Locations</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {Object.values(employeeLocations).length > 0 ? (
-              Object.values(employeeLocations).map(({ employee, lastLocation }) => (
-                <div
-                  key={employee?.id || 'unknown'}
-                  className="flex items-center gap-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handleLocationClick(lastLocation)}
-                >
-                  <Avatar className="h-10 w-10 border">
-                    <AvatarImage src={employee?.avatar} />
-                    <AvatarFallback className="bg-indigo-100 text-indigo-600">
-                      {employee?.name ? employee.name.charAt(0).toUpperCase() : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{employee?.name || 'Unknown Employee'}</p>
-                    <p className="text-sm text-gray-500 truncate">{employee?.job || 'No position'}</p>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="outline" className="text-xs">
-                      {lastLocation.timestamp
-                        ? format(new Date(lastLocation.timestamp), 'h:mm a')
-                        : 'Unknown time'}
-                    </Badge>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {lastLocation.timestamp
-                        ? format(new Date(lastLocation.timestamp), 'MMM d')
-                        : 'Unknown date'}
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-6 text-gray-500">No employee location data available</div>
-            )}
+    <Card className="overflow-hidden shadow-md border-t-2 border-t-nexhr-primary">
+      <CardHeader className="pb-3 bg-gradient-to-r from-gray-50 to-gray-100">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="bg-green-100 p-2 rounded-full">
+              <MapPin className="h-4 w-4 text-green-600" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-medium">Employee Location</CardTitle>
+              {isLive && (
+                <Badge variant="outline" className="bg-red-50 text-red-600 hover:bg-red-50 flex items-center gap-1.5 mt-1">
+                  <span className="animate-pulse inline-block h-2 w-2 rounded-full bg-red-500"></span>
+                  Live Tracking
+                </Badge>
+              )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {selectedLocation && (
-        <Card className="shadow-md border-t-4 border-green-400">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex justify-between">
-              <span>Location Details</span>
-              <Badge variant="outline">{format(new Date(selectedLocation.timestamp), 'PPp')}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4 mb-4">
-              <Avatar className="h-16 w-16 border">
-                <AvatarImage src={selectedLocation.employee?.avatar} />
-                <AvatarFallback className="bg-green-100 text-green-600 text-lg">
-                  {selectedLocation.employee?.name ? selectedLocation.employee.name.charAt(0).toUpperCase() : 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="text-lg font-semibold">{selectedLocation.employee?.name || 'Unknown Employee'}</h3>
-                <p className="text-gray-500">{selectedLocation.employee?.job || 'No position'}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="border rounded-lg p-3">
-                <div className="text-sm text-gray-500">Latitude</div>
-                <div className="font-mono">{selectedLocation.latitude.toFixed(6)}</div>
-              </div>
-              <div className="border rounded-lg p-3">
-                <div className="text-sm text-gray-500">Longitude</div>
-                <div className="font-mono">{selectedLocation.longitude.toFixed(6)}</div>
-              </div>
-            </div>
-
-            <div className="mt-4 border rounded-lg overflow-hidden h-[200px] bg-gray-100 flex items-center justify-center">
-              <div className="text-center text-gray-500">
-                <div className="text-2xl">📍</div>
-                <p className="mt-2">Map view would display here</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="border shadow-lg">
+              <DropdownMenuItem onClick={handleExportMap} className="cursor-pointer">
+                <Download className="h-4 w-4 mr-2" />
+                Export Map
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                // Fix: Use the correct toast API syntax
+                toast("Location filter has been applied.");
+              }} className="cursor-pointer">
+                <Filter className="h-4 w-4 mr-2" />
+                Filter View
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="h-[280px] relative overflow-hidden">
+          <LocationMapComponent 
+            employeeLocations={employeeLocations}
+            isLoading={isLoading}
+          />
+          
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent h-20 pointer-events-none"></div>
+          
+          <div className="absolute bottom-3 left-3 right-3 flex justify-between">
+            <Button 
+              size="sm" 
+              variant={isLive ? "default" : "outline"}
+              className={isLive 
+                ? "bg-red-500 hover:bg-red-600 shadow-md" 
+                : "bg-white/90 backdrop-blur-sm shadow-md hover:bg-white"}
+              onClick={toggleLiveTracking}
+            >
+              {isLive ? "Stop Tracking" : "Start Live Tracking"}
+            </Button>
+            
+            <Link to="/track">
+              <Button 
+                size="sm" 
+                className="flex items-center gap-1.5 bg-primary/90 backdrop-blur-sm shadow-md hover:bg-primary"
+              >
+                <Users className="h-3.5 w-3.5" />
+                {isMobile ? "View All" : "View All Employees"}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

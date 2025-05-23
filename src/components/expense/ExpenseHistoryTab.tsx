@@ -41,7 +41,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
     const fetchExpenses = async () => {
       setLoading(true);
       try {
-        // Use simplified query that matches the actual schema
+        // Use simplified query that doesn't try to join employee table
         const { data, error } = await supabase
           .from('expense')
           .select(`
@@ -51,7 +51,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             amount,
             submissiondate,
             status,
-            employeeid,
+            submittedby,
             billpath
           `);
 
@@ -62,14 +62,13 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
         if (data) {
           // Transform the data to match the ExpenseItem interface
           const formattedDataPromises = data.map(async (expense) => {
-            // Get employee name if employeeid is present
-            let submitterName = `Employee #${String(expense.employeeid)}`;
+            // Get employee name if submittedby is present
+            let submitterName = `Employee #${String(expense.submittedby)}`;
             let avatarText = 'UN';
             
-            if (expense.employeeid) {
+            if (expense.submittedby) {
               try {
-                // Convert to string for compatibility with the updated employeeid type
-                const employee = await getEmployeeById(String(expense.employeeid));
+                const employee = await getEmployeeById(expense.submittedby);
                 if (employee) {
                   submitterName = `${employee.firstname} ${employee.lastname}`;
                   avatarText = `${employee.firstname.charAt(0)}${employee.lastname.charAt(0)}`.toUpperCase();
@@ -211,24 +210,3 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
 };
 
 export default ExpenseHistoryTab;
-
-export const updateExpense = async (expenseId: string, status: string, notes?: string) => {
-  try {
-    // Convert expenseId to the correct type for the database operation
-    const { data, error } = await supabase
-      .from('expense')
-      .update({ status, notes })
-      .eq('expenseid', expenseId)
-      .select()
-      .single();
-      
-    if (error) {
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Error updating expense:', error);
-    throw error;
-  }
-};

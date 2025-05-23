@@ -1,67 +1,48 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Employee, EmployeeDB } from '@/types/employee';
+import { Employee } from '@/types/employee';
 import { mapEmployeeDBToEmployee, mapEmployeeToDBFormat } from '@/utils/employeeMappers';
 
-export const getEmployees = async (): Promise<Employee[]> => {
+export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
   try {
-    console.log('Fetching employees with auth user...');
-    // Get the current auth user to make sure we're authenticated
-    const { data: authData } = await supabase.auth.getUser();
-    console.log('Auth user:', authData?.user?.email || 'Not authenticated');
+    let query = supabase.from('employee').select();
     
-    if (!authData?.user) {
-      console.error('No authenticated user found');
-      return [];
+    if (customerId) {
+      query = query.eq('customerid', customerId);
     }
     
-    // With RLS enabled, we don't need to filter by customerid explicitly
-    // It will be handled by the RLS policies that we've set up
-    const { data, error } = await supabase
-      .from('employee')
-      .select()
-      .order('employeeid');
+    const { data, error } = await query.order('employeeid');
 
     if (error) {
       console.error('Error fetching employees:', error);
       throw error;
     }
 
-    console.log(`Fetched ${data?.length || 0} employees`);
-    
-    // Handle type conversion explicitly to avoid TypeScript errors
-    return (data || []).map(emp => {
-      // Convert to the expected shape if needed
-      const employeeData: EmployeeDB = {
-        ...emp,
-        // Ensure phonenumber is string
-        phonenumber: emp.phonenumber ? String(emp.phonenumber) : undefined
-      };
-      return mapEmployeeDBToEmployee(employeeData);
-    });
+    return (data || []).map(mapEmployeeDBToEmployee);
   } catch (error) {
     console.error('Error in getEmployees:', error);
     throw error;
   }
 };
 
-export const getEmployeeById = async (id: string): Promise<Employee | null> => {
+export const getEmployeeById = async (id: number): Promise<Employee | null> => {
   try {
     // Check if this is an admin-added expense (id might be null or 0)
-    if (!id) {
+    if (!id || id === 0) {
       return {
-        employeeid: '0',
+        employeeid: 0,
         firstname: 'Admin',
         lastname: 'User',
         email: '',
+        // Include other required fields with default values
         address: '',
         city: '',
         state: '',
         country: '',
-        postalcode: '',
-        phonenumber: '',
+        postalcode: '', // Fixed: Changed 'zipcode' to 'postalcode' to match Employee interface
+        phonenumber: '', // Fixed: Using empty string instead of number
         jobtitle: '',
         department: '',
-        employmentstatus: 'Active',
+        employmentstatus: 'Active', // Fixed: Using a valid employmentstatus value
         gender: '',
       };
     }
@@ -77,15 +58,7 @@ export const getEmployeeById = async (id: string): Promise<Employee | null> => {
       throw error;
     }
 
-    if (!data) return null;
-    
-    const employeeData: EmployeeDB = { 
-      ...data,
-      // Ensure phonenumber is string
-      phonenumber: data.phonenumber ? String(data.phonenumber) : undefined
-    };
-    
-    return mapEmployeeDBToEmployee(employeeData);
+    return data ? mapEmployeeDBToEmployee(data) : null;
   } catch (error) {
     console.error('Error in getEmployeeById:', error);
     throw error;
@@ -102,16 +75,22 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
     
     // Convert the employee data to database format
     const dbEmployee = mapEmployeeToDBFormat(employee);
+    console.log('Formatted employee data for database:', dbEmployee);
     
-    // Get the current auth user's ID to use as the customerid
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) {
-      throw new Error('You must be logged in to add an employee');
+    if (!dbEmployee.customerid) {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        const { data: customerData } = await supabase
+          .from('customer')
+          .select('customerid')
+          .eq('customerid', userData.user.id)
+          .single();
+
+        if (customerData?.customerid) {
+          dbEmployee.customerid = customerData.customerid;
+        }
+      }
     }
-    
-    // Important: Set customerid as the authenticated user's ID (UUID)
-    dbEmployee.customerid = userData.user.id;
-    console.log('Setting customerid to auth user ID:', userData.user.id);
     
     // Make sure all fields are included in the insert operation
     const { data, error } = await supabase
@@ -125,22 +104,14 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw error;
     }
 
-    if (!data) throw new Error('No data returned from insert operation');
-    
-    const employeeData: EmployeeDB = { 
-      ...data,
-      // Ensure phonenumber is string
-      phonenumber: data.phonenumber ? String(data.phonenumber) : undefined
-    };
-    
-    return mapEmployeeDBToEmployee(employeeData);
+    return mapEmployeeDBToEmployee(data);
   } catch (error) {
     console.error('Error in addEmployee:', error);
     throw error;
   }
 };
 
-export const updateEmployee = async (id: string, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
+export const updateEmployee = async (id: number, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
   try {
     console.log('Updating employee with data:', employee);
     
@@ -161,22 +132,14 @@ export const updateEmployee = async (id: string, employee: Omit<Partial<Employee
       throw error;
     }
 
-    if (!data) throw new Error('No data returned from update operation');
-    
-    const employeeData: EmployeeDB = { 
-      ...data,
-      // Ensure phonenumber is string
-      phonenumber: data.phonenumber ? String(data.phonenumber) : undefined
-    };
-    
-    return mapEmployeeDBToEmployee(employeeData);
+    return mapEmployeeDBToEmployee(data);
   } catch (error) {
     console.error('Error in updateEmployee:', error);
     throw error;
   }
 };
 
-export const deleteEmployee = async (id: string): Promise<void> => {
+export const deleteEmployee = async (id: number): Promise<void> => {
   try {
     // Completely delete the employee record from the database
     const { error } = await supabase

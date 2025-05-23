@@ -7,10 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface EmployeeDocumentsTabProps {
-  employeeId: string;
-  onOpenDocumentDialog: (type: 'aadhar' | 'pan') => void;
-  onDownload?: (documentType: string, documentUrl?: string) => void;
-  onEditDocument?: (type: 'aadhar' | 'pan') => void;
+  onDownload: (documentType: string, documentUrl?: string) => void;
+  onEditDocument: (type: 'aadhar' | 'pan') => void;
+  employeeId?: number;
   documentPaths?: {
     aadhar?: string;
     pan?: string;
@@ -19,10 +18,9 @@ interface EmployeeDocumentsTabProps {
 }
 
 const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({ 
-  employeeId,
-  onOpenDocumentDialog,
   onDownload, 
   onEditDocument,
+  employeeId,
   documentPaths
 }) => {
   const { toast } = useToast();
@@ -38,17 +36,20 @@ const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
     }
     
     try {
+      // Extract file name from the public URL
       const fileName = documentUrl.split('/').pop();
       if (!fileName) {
         throw new Error("Invalid file path");
       }
       
+      // Get the folder path
       const folderPath = documentType.toLowerCase() === 'aadhar card' 
         ? `${employeeId}/aadhar/`
         : documentType.toLowerCase() === 'pan card'
           ? `${employeeId}/pan/`
           : '';
       
+      // Download the file
       const { data, error } = await supabase.storage
         .from('employee-documents')
         .download(`${folderPath}${fileName}`);
@@ -57,6 +58,7 @@ const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
         throw error;
       }
       
+      // Create a download link
       const url = URL.createObjectURL(data);
       const link = document.createElement('a');
       link.href = url;
@@ -73,9 +75,8 @@ const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
     } catch (error) {
       console.error(`Error downloading ${documentType}:`, error);
       
-      if (onDownload) {
-        onDownload(documentType, documentUrl);
-      }
+      // Call the original onDownload function as fallback
+      onDownload(documentType, documentUrl);
     }
   };
 
@@ -96,7 +97,7 @@ const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onOpenDocumentDialog('aadhar')}
+              onClick={() => onEditDocument('aadhar')}
             >
               <Upload className="h-4 w-4 mr-2" />
               Update
@@ -117,7 +118,7 @@ const EmployeeDocumentsTab: React.FC<EmployeeDocumentsTabProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onOpenDocumentDialog('pan')}
+              onClick={() => onEditDocument('pan')}
             >
               <Upload className="h-4 w-4 mr-2" />
               Update

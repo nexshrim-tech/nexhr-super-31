@@ -23,25 +23,13 @@ interface SubscriptionContextType {
     helpDesk: boolean;
     projectManagement: boolean;
     advancedAnalytics: boolean;
-    maxEmployees: number;
   };
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-const getMaxEmployees = (plan: SubscriptionPlan): number => {
-  switch (plan) {
-    case "None": return 1;
-    case "Starter": return 5;
-    case "Professional": return 20;
-    case "Business": return 50;
-    case "Enterprise": return 999; // unlimited for practical purposes
-    default: return 1;
-  }
-};
-
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, customerId: authCustomerId, userRole } = useAuth();
+  const { user } = useAuth();
   const [plan, setPlan] = useState<SubscriptionPlan>("None");
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
@@ -59,24 +47,20 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     helpDesk: ["Business", "Enterprise"].includes(plan),
     projectManagement: ["Business", "Enterprise"].includes(plan),
     advancedAnalytics: ["Enterprise"].includes(plan),
-    maxEmployees: getMaxEmployees(plan),
   };
   
   useEffect(() => {
-    // Only fetch subscription data if the user is authenticated and is a customer
-    // or if they're an employee (need to know what features they have access to)
     const fetchSubscription = async () => {
-      if (user && (userRole === 'customer' || (userRole === 'employee' && authCustomerId))) {
+      if (user) {
         try {
-          const effectiveCustomerId = userRole === 'customer' ? user.id : authCustomerId;
-          
-          if (effectiveCustomerId) {
-            setCustomerId(effectiveCustomerId);
-            const planName = await getSubscriptionPlan(effectiveCustomerId);
+          const customer = await getCurrentCustomer(user);
+          if (customer) {
+            setCustomerId(customer.customerid);
+            const planName = await getSubscriptionPlan(customer.customerid);
             setPlan(planName as SubscriptionPlan || "None");
             
-            // Show subscription modal for new users with no plan - only for customers
-            if (planName === "None" && userRole === 'customer') {
+            // Show subscription modal for new users with no plan
+            if (planName === "None") {
               const isNewUser = localStorage.getItem("new-user") === "true";
               if (isNewUser) {
                 // Show the modal after a delay on first load for new users
@@ -96,13 +80,12 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
     
     fetchSubscription();
-  }, [user, authCustomerId, userRole]);
+  }, [user]);
   
   const handleSetPlan = async (newPlan: SubscriptionPlan) => {
     setPlan(newPlan);
     
-    // Only customers can update subscription plans
-    if (user && userRole === 'customer' && customerId) {
+    if (user && customerId) {
       try {
         await updateSubscriptionPlan(customerId, newPlan);
       } catch (error) {

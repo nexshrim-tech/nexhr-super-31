@@ -150,16 +150,14 @@ const Salary = () => {
         console.error("Error fetching payslip data:", payslipError);
       }
 
-      // Map employee data with salary information - use string for ID comparison
+      // Map employee data with salary information
       const employeesWithSalary = employeeData
-        .filter(emp => salaryData.some(sal => String(sal.employeeid) === String(emp.employeeid)))
+        .filter(emp => salaryData.some(sal => sal.employeeid === emp.employeeid))
         .map(emp => {
-          const salary = salaryData.find(sal => String(sal.employeeid) === String(emp.employeeid));
+          const salary = salaryData.find(sal => sal.employeeid === emp.employeeid);
           
-          // Check if employee has a payslip for current month - ensure string comparison
-          const hasCurrentPayslip = payslipData?.some(p => 
-            parseInt(String(p.employeeid)) === parseInt(String(emp.employeeid))
-          );
+          // Check if employee has a payslip for current month
+          const hasCurrentPayslip = payslipData?.some(p => p.employeeid === emp.employeeid);
           
           // Calculate total salary components
           const totalAllowances = (salary?.basicsalary || 0) + 
@@ -281,11 +279,11 @@ const Salary = () => {
       const totalDeductions = Object.values(selectedSalaryData.deductions).reduce((sum, value) => sum + value, 0);
       const netAmount = totalAllowances - totalDeductions;
       
-      // Check if a payslip already exists for this month/year/employee - fix string comparison
+      // Check if a payslip already exists for this month/year/employee
       const { data: existingPayslip, error: checkError } = await supabase
         .from('payslip')
         .select('payslipid')
-        .eq('employeeid', parseInt(selectedSalaryData.id))
+        .eq('employeeid', selectedSalaryData.id)
         .eq('year', year)
         .eq('month', month);
         
@@ -316,11 +314,11 @@ const Salary = () => {
           description: `Payslip updated for ${selectedSalaryData.employee.name}`,
         });
       } else {
-        // Insert new payslip record - fix string conversion
+        // Insert new payslip record
         result = await supabase
           .from('payslip')
           .insert({
-            employeeid: parseInt(selectedSalaryData.id),
+            employeeid: selectedSalaryData.id,
             year: year,
             month: month,
             amount: netAmount,
@@ -379,11 +377,11 @@ const Salary = () => {
     if (!selectedSalaryData) return;
 
     try {
-      // Check if salary record exists - fix string comparison
+      // Check if salary record exists
       const { data: existingSalary, error: checkError } = await supabase
         .from('salary')
         .select('salaryid')
-        .eq('employeeid', parseInt(selectedSalaryData.id))
+        .eq('employeeid', selectedSalaryData.id)
         .single();
 
       if (checkError && checkError.code !== 'PGRST116') {
@@ -400,7 +398,7 @@ const Salary = () => {
       let result;
       
       if (existingSalary) {
-        // Update existing salary - fix string handling
+        // Update existing salary
         result = await supabase
           .from('salary')
           .update({
@@ -417,13 +415,13 @@ const Salary = () => {
             loandeduction: deductions.loanDeduction,
             otherdeduction: deductions.otherDeductions
           })
-          .eq('employeeid', parseInt(selectedSalaryData.id));
+          .eq('employeeid', selectedSalaryData.id);
       } else {
         // Insert new salary record
         result = await supabase
           .from('salary')
           .insert({
-            employeeid: parseInt(selectedSalaryData.id),
+            employeeid: selectedSalaryData.id,
             basicsalary: allowances.basicSalary,
             hra: allowances.hra,
             conveyanceallowance: allowances.conveyanceAllowance,

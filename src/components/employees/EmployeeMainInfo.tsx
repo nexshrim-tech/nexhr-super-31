@@ -18,7 +18,6 @@ interface EmployeeMainInfoProps {
   onCheckboxChange?: (field: string, checked: boolean) => void;
   onDownload: (type: string) => void;
   onEditDocument: (type: 'aadhar' | 'pan') => void;
-  onOpenDocumentDialog: (type: 'aadhar' | 'pan') => void;
 }
 
 const EmployeeMainInfo: React.FC<EmployeeMainInfoProps> = ({
@@ -31,8 +30,7 @@ const EmployeeMainInfo: React.FC<EmployeeMainInfoProps> = ({
   onBankDetailsChange,
   onCheckboxChange,
   onDownload,
-  onEditDocument,
-  onOpenDocumentDialog
+  onEditDocument
 }) => {
   return (
     <Card className="lg:col-span-2">
@@ -58,11 +56,9 @@ const EmployeeMainInfo: React.FC<EmployeeMainInfoProps> = ({
           <TabsContent value="work">
             <EmployeeWorkTab 
               employee={{
-                department: employee.department || '',
-                role: employee.jobtitle || '',
-                employeeId: employee.employeeid || '',
-                joining: employee.joiningdate || '',
-                employmenttype: employee.employmenttype || '',
+                ...employee,
+                education: employee.education,
+                employeeType: employee.employeeType,
               }}
               geofencingEnabled={geofencingEnabled}
               onGeofencingToggle={onGeofencingToggle}
@@ -74,23 +70,16 @@ const EmployeeMainInfo: React.FC<EmployeeMainInfoProps> = ({
 
           <TabsContent value="bank">
             <EmployeeBankTab 
-              employeeId={employee.employeeid || ''}
+              bankDetails={employee.bankDetails} 
               isEditMode={isEditMode}
               onBankDetailsChange={onBankDetailsChange}
             />
           </TabsContent>
 
           <TabsContent value="documents">
-            <EmployeeDocumentsTab
-              employeeId={employee.employeeid || ''}
-              onOpenDocumentDialog={onOpenDocumentDialog}
+            <EmployeeDocumentsTab 
               onDownload={onDownload}
               onEditDocument={onEditDocument}
-              documentPaths={{
-                aadhar: employee.documentpath,
-                pan: employee.documentpath,
-                profile: employee.profilepicturepath
-              }}
             />
           </TabsContent>
         </Tabs>

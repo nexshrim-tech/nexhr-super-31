@@ -1,6 +1,6 @@
 
 export interface Employee {
-  employeeid: string;
+  employeeid: number;
   firstname: string;
   lastname: string;
   email: string;
@@ -8,7 +8,7 @@ export interface Employee {
   department?: string;
   joiningdate?: string | null;
   profilepicturepath?: string;
-  customerid?: string;
+  customerid?: string | number;
   phonenumber?: string;
   address?: string;
   monthlysalary?: number;
@@ -32,7 +32,7 @@ export interface Employee {
 }
 
 export interface EmployeeDB {
-  employeeid: string;
+  employeeid: number;
   firstname: string;
   lastname: string;
   email: string;
@@ -40,7 +40,7 @@ export interface EmployeeDB {
   department?: string;
   joiningdate?: string | null;
   profilepicturepath?: string;
-  customerid?: string;
+  customerid?: string | number;
   address?: string;
   gender?: string;
   dateofbirth?: string | null;
@@ -53,7 +53,7 @@ export interface EmployeeDB {
   documentpath?: string;
   employmentstatus?: string;
   employmenttype?: string;
-  phonenumber?: string;
+  phonenumber?: number;
   bloodgroup?: string;
   fathersname?: string;
   maritalstatus?: string;

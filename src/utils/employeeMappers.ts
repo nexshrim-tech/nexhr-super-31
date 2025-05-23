@@ -10,7 +10,7 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   department: emp.department || '',
   joiningdate: emp.joiningdate || null,
   profilepicturepath: emp.profilepicturepath || '',
-  customerid: emp.customerid, // Already handles UUID as string
+  customerid: emp.customerid,
   address: emp.address || '',
   gender: emp.gender || '',
   dateofbirth: emp.dateofbirth || null,
@@ -21,7 +21,7 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   monthlysalary: emp.monthlysalary || 0,
   employmentstatus: emp.employmentstatus as 'Active' | 'Inactive' | 'On Leave' | 'Terminated' | 'Probation' || 'Active',
   employmenttype: emp.employmenttype || '',
-  phonenumber: emp.phonenumber || '',
+  phonenumber: emp.phonenumber ? emp.phonenumber.toString() : '',
   bloodgroup: emp.bloodgroup || '',
   fathersname: emp.fathersname || '',
   maritalstatus: emp.maritalstatus || '',
@@ -37,6 +37,7 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
   const dbEmployee: Record<string, any> = {};
   
   // Map all fields explicitly with appropriate default values
+  // This ensures all fields are included in the database operation
   dbEmployee.firstname = employee.firstname || '';
   dbEmployee.lastname = employee.lastname || '';
   dbEmployee.email = employee.email || '';
@@ -44,7 +45,7 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
   dbEmployee.department = employee.department || '';
   dbEmployee.joiningdate = employee.joiningdate || null;
   dbEmployee.profilepicturepath = employee.profilepicturepath || '';
-  dbEmployee.customerid = employee.customerid || null; // Handles UUID as string
+  dbEmployee.customerid = employee.customerid || null;
   dbEmployee.address = employee.address || '';
   dbEmployee.gender = employee.gender || '';
   dbEmployee.dateofbirth = employee.dateofbirth || null;
@@ -60,6 +61,9 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
   dbEmployee.disabilitystatus = employee.disabilitystatus || '';
   dbEmployee.nationality = employee.nationality || '';
   dbEmployee.worklocation = employee.worklocation || '';
+  dbEmployee.leavebalance = employee.leavebalance !== undefined ? employee.leavebalance : 0;
+  dbEmployee.employeepassword = employee.employeepassword || '';
+  dbEmployee.documentpath = employee.documentpath || '';
   
   // Handle numeric values explicitly
   if (employee.monthlysalary !== undefined) {
@@ -70,18 +74,19 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
     dbEmployee.monthlysalary = 0; // Default to 0
   }
   
-  if (employee.leavebalance !== undefined) {
-    dbEmployee.leavebalance = typeof employee.leavebalance === 'string'
-      ? parseFloat(employee.leavebalance)
-      : employee.leavebalance;
-  } else {
-    dbEmployee.leavebalance = 0;
+  // Handle phonenumber conversion for the database (expects numeric)
+  if (employee.phonenumber !== undefined) {
+    if (typeof employee.phonenumber === 'string' && employee.phonenumber.trim() !== '') {
+      // Remove non-numeric characters before parsing
+      const cleanedNumber = employee.phonenumber.replace(/\D/g, '');
+      const parsedPhone = cleanedNumber ? parseInt(cleanedNumber, 10) : null;
+      dbEmployee.phonenumber = !isNaN(parsedPhone as number) ? parsedPhone : null;
+    } else if (typeof employee.phonenumber === 'number') {
+      dbEmployee.phonenumber = employee.phonenumber;
+    } else {
+      dbEmployee.phonenumber = null;
+    }
   }
-  
-  // Handle phonenumber as string in database
-  dbEmployee.phonenumber = employee.phonenumber || '';
-  dbEmployee.employeepassword = employee.employeepassword || '';
-  dbEmployee.documentpath = employee.documentpath || '';
 
   return dbEmployee;
 };

@@ -1,8 +1,14 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Department } from '@/types/department';
 
-export const getDepartments = async (customerId?: string): Promise<Department[]> => {
+export interface Department {
+  departmentid: number;
+  name: string;
+  description?: string;
+  customerid?: number;
+}
+
+export const getDepartments = async (customerId?: number): Promise<Department[]> => {
   try {
     let query = supabase
       .from('department')
@@ -32,7 +38,7 @@ export const getDepartments = async (customerId?: string): Promise<Department[]>
   }
 };
 
-export const getDepartmentById = async (id: string): Promise<Department | null> => {
+export const getDepartmentById = async (id: number): Promise<Department | null> => {
   try {
     const { data, error } = await supabase
       .from('department')
@@ -93,7 +99,7 @@ export const addDepartment = async (department: Omit<Department, 'departmentid'>
   }
 };
 
-export const updateDepartment = async (id: string, department: Omit<Partial<Department>, 'departmentid'>): Promise<Department> => {
+export const updateDepartment = async (id: number, department: Omit<Partial<Department>, 'departmentid'>): Promise<Department> => {
   try {
     // Map interface fields to database fields
     const dbDepartment: Record<string, any> = {};
@@ -125,7 +131,7 @@ export const updateDepartment = async (id: string, department: Omit<Partial<Depa
   }
 };
 
-export const deleteDepartment = async (id: string): Promise<void> => {
+export const deleteDepartment = async (id: number): Promise<void> => {
   try {
     const { error } = await supabase
       .from('department')

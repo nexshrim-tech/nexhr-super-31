@@ -47,16 +47,15 @@ const PayslipDialog: React.FC<PayslipDialogProps> = ({
       const year = now.getFullYear();
       const month = now.getMonth() + 1;
       
-      // Insert new payslip record with proper type conversion
+      // Insert new payslip record
       const { data, error } = await supabase
         .from('payslip')
         .insert({
-          employeeid: String(employeeData.id), // Convert to string as per schema
-          customerid: String(employeeData.customerId || ''), // Convert to string
-          payslip_id: crypto.randomUUID(), // Generate UUID
+          employeeid: employeeData.id,
+          year: year,
+          month: month,
           amount: netSalary,
-          generatedtimestamp: now.toISOString(),
-          payslipdate: now.toISOString()
+          generatedtimestamp: now.toISOString()
         })
         .select();
       

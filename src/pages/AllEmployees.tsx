@@ -6,7 +6,6 @@ import { Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getEmployees, Employee } from "@/services/employeeService";
-import { useAuth } from "@/context/AuthContext";
 import EmployeeEditDialog from "@/components/employees/EmployeeEditDialog";
 import EmployeeFilters from "@/components/employees/EmployeeFilters";
 import EmployeeListHeader from "@/components/employees/EmployeeListHeader";
@@ -26,12 +25,11 @@ const AllEmployees = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { user, customerId } = useAuth();
 
   const loadEmployees = async () => {
     setIsLoading(true);
     try {
-      console.log('Fetching employees for customer ID:', customerId);
+      console.log('Fetching employees...');
       const data = await getEmployees();
       console.log('Employees loaded:', data);
       setEmployees(data);
@@ -48,20 +46,16 @@ const AllEmployees = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      loadEmployees();
-    } else {
-      navigate('/login');
-    }
-  }, [user, navigate]);
+    loadEmployees();
+  }, []);
 
   // Listen for route changes to refresh data when navigating to this page
   useEffect(() => {
-    if (location.pathname === '/all-employees' && user) {
+    if (location.pathname === '/all-employees') {
       console.log('Employee directory page loaded, refreshing employee list...');
       loadEmployees();
     }
-  }, [location.pathname, user]);
+  }, [location.pathname]);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearch = 
@@ -95,10 +89,6 @@ const AllEmployees = () => {
     loadEmployees(); // Reload the employee list to get the latest data from the server
     setIsEditDialogOpen(false);
   };
-
-  if (!user) {
-    return null; // Don't render anything until authentication check is complete
-  }
 
   return (
     <Layout>
@@ -137,19 +127,13 @@ const AllEmployees = () => {
           </CardHeader>
           
           <CardContent className="p-0">
-            {employees.length === 0 && !isLoading ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">No employees found. Add your first employee to get started.</p>
-              </div>
-            ) : (
-              <EmployeeTable 
-                employees={filteredEmployees}
-                onViewEmployee={handleViewEmployee}
-                onEditEmployee={handleEditEmployee}
-                onPasswordChange={handlePasswordChange}
-                isLoading={isLoading}
-              />
-            )}
+            <EmployeeTable 
+              employees={filteredEmployees}
+              onViewEmployee={handleViewEmployee}
+              onEditEmployee={handleEditEmployee}
+              onPasswordChange={handlePasswordChange}
+              isLoading={isLoading}
+            />
             
             <div className="p-4">
               <EmployeePagination 

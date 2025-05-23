@@ -1,11 +1,12 @@
 
 import React from 'react';
+import { Employee } from "@/services/employeeService";
 import DocumentUpdateDialog from "./DocumentUpdateDialog";
 import EmployeeEditDialog from "./EmployeeEditDialog";
 import PayslipDialog from "./PayslipDialog";
 import PasswordChangeDialog from "./PasswordChangeDialog";
 import OfficialDocumentsDialog from "./OfficialDocumentsDialog";
-import { Employee } from "@/types/employee";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EmployeeDialogsProps {
   documentEditDialog: 'aadhar' | 'pan' | null;
@@ -49,13 +50,13 @@ const EmployeeDialogs: React.FC<EmployeeDialogsProps> = ({
         isOpen={documentEditDialog !== null}
         onClose={onCloseDocumentDialog}
         onUpload={onDocumentUpload}
-        employeeId={employee?.employeeid || ""}
+        employeeId={employee?.employeeid}
       />
 
       <EmployeeEditDialog
         isOpen={editDialogOpen}
         onOpenChange={setEditDialogOpen}
-        employee={adaptedEmployee}
+        employee={adaptedEmployee || undefined}
         onSave={onEditSave}
       />
 
@@ -68,7 +69,7 @@ const EmployeeDialogs: React.FC<EmployeeDialogsProps> = ({
       <PasswordChangeDialog
         isOpen={isPasswordDialogOpen}
         onOpenChange={setIsPasswordDialogOpen}
-        employee={adaptedEmployee}
+        employee={adaptedEmployee || undefined}
       />
 
       <OfficialDocumentsDialog 

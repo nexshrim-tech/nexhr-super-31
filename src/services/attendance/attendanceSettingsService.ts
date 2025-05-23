@@ -1,66 +1,90 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 
-// Type definition for attendance settings
 export interface AttendanceSettings {
-  attendancesettingid: string;
-  employee_id: string;
-  customerid: string;
+  id?: number;
+  attendancesettingid?: number;
+  employeeid: number;
+  customerid?: number;
   workstarttime?: string;
-  latethreshold?: string;
+  latethreshold?: string; // Changed from unknown to string
   geofencingenabled?: boolean;
   photoverificationenabled?: boolean;
 }
 
-export async function getAttendanceSettings(employeeId: string): Promise<AttendanceSettings | null> {
-  const { data, error } = await supabase
-    .from('attendancesettings')
-    .select('*')
-    .eq('employee_id', employeeId)
-    .single();
-
-  if (error) {
-    console.error('Error fetching attendance settings:', error);
-    return null;
+export const getAttendanceSettings = async (employeeId: number): Promise<AttendanceSettings[] | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .select('*')
+      .eq('employeeid', employeeId);
+    
+    if (error) {
+      console.error('Error fetching attendance settings:', error);
+      throw error;
+    }
+    
+    // Convert the latethreshold to string to match our interface
+    const typedData = data?.map(item => ({
+      ...item,
+      latethreshold: item.latethreshold ? String(item.latethreshold) : undefined
+    }));
+    
+    return typedData as AttendanceSettings[];
+  } catch (error) {
+    console.error('Error in getAttendanceSettings:', error);
+    throw error;
   }
+};
 
-  return data as AttendanceSettings;
-}
-
-export async function updateAttendanceSetting(
-  attendanceSettingId: string,
-  updates: Partial<Omit<AttendanceSettings, 'attendancesettingid' | 'employee_id' | 'customerid'>>
-): Promise<AttendanceSettings | null> {
-  const { data, error } = await supabase
-    .from('attendancesettings')
-    .update(updates)
-    .eq('attendancesettingid', attendanceSettingId)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error updating attendance setting:', error);
-    return null;
+export const updateAttendanceSettings = async (id: number, settings: Partial<AttendanceSettings>): Promise<AttendanceSettings> => {
+  try {
+    // Remove the attendancesettingid if it exists in settings to avoid type error
+    const { attendancesettingid, ...updateData } = settings;
+    
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .update(updateData)
+      .eq('attendancesettingid', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating attendance settings:', error);
+      throw error;
+    }
+    
+    // Convert the latethreshold to string
+    return {
+      ...data,
+      latethreshold: data.latethreshold ? String(data.latethreshold) : undefined
+    } as AttendanceSettings;
+  } catch (error) {
+    console.error('Error in updateAttendanceSettings:', error);
+    throw error;
   }
+};
 
-  return data;
-}
-
-export async function createAttendanceSetting(
-  newSetting: Omit<AttendanceSettings, 'attendancesettingid'>
-): Promise<AttendanceSettings | null> {
-  const { data, error } = await supabase
-    .from('attendancesettings')
-    .insert([newSetting])
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error creating attendance setting:', error);
-    return null;
+export const createAttendanceSettings = async (settings: Omit<AttendanceSettings, 'id' | 'attendancesettingid'>): Promise<AttendanceSettings> => {
+  try {
+    const { data, error } = await supabase
+      .from('attendancesettings')
+      .insert(settings)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating attendance settings:', error);
+      throw error;
+    }
+    
+    // Convert the latethreshold to string
+    return {
+      ...data,
+      latethreshold: data.latethreshold ? String(data.latethreshold) : undefined
+    } as AttendanceSettings;
+  } catch (error) {
+    console.error('Error in createAttendanceSettings:', error);
+    throw error;
   }
-
-  return data;
-}
-
-export { updateAttendanceSetting as updateAttendanceSettings, createAttendanceSetting as createAttendanceSettings };
+};
