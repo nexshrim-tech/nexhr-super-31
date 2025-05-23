@@ -1,14 +1,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Department } from '@/types/department';
 
-export interface Department {
-  departmentid: number;
-  name: string;
-  description?: string;
-  customerid?: number;
-}
-
-export const getDepartments = async (customerId?: number): Promise<Department[]> => {
+export const getDepartments = async (customerId?: string): Promise<Department[]> => {
   try {
     let query = supabase
       .from('department')
@@ -18,27 +12,29 @@ export const getDepartments = async (customerId?: number): Promise<Department[]>
       query = query.eq('customerid', customerId);
     }
     
-    const { data, error } = await query.order('departmentname');
+    const { data, error } = await query.order('departmentid');
 
     if (error) {
       console.error('Error fetching departments:', error);
       throw error;
     }
 
-    // Map database fields to interface fields
     return (data || []).map(item => ({
       departmentid: item.departmentid,
-      name: item.departmentname || '',
-      description: item.departmentstatus, // Using status as description
-      customerid: item.customerid
-    }));
+      customerid: item.customerid,
+      departmentname: item.departmentname || undefined,
+      departmentstatus: item.departmentstatus || undefined,
+      managerid: item.managerid,
+      numberofemployees: item.numberofemployees || undefined,
+      annualbudget: item.annualbudget || undefined
+    })) as Department[];
   } catch (error) {
     console.error('Error in getDepartments:', error);
     throw error;
   }
 };
 
-export const getDepartmentById = async (id: number): Promise<Department | null> => {
+export const getDepartmentById = async (id: string): Promise<Department | null> => {
   try {
     const { data, error } = await supabase
       .from('department')
@@ -51,64 +47,72 @@ export const getDepartmentById = async (id: number): Promise<Department | null> 
       throw error;
     }
 
-    if (!data) return null;
-    
-    // Map database fields to interface fields
     return {
       departmentid: data.departmentid,
-      name: data.departmentname || '',
-      description: data.departmentstatus,
-      customerid: data.customerid
-    };
+      customerid: data.customerid,
+      departmentname: data.departmentname || undefined,
+      departmentstatus: data.departmentstatus || undefined,
+      managerid: data.managerid,
+      numberofemployees: data.numberofemployees || undefined,
+      annualbudget: data.annualbudget || undefined
+    } as Department;
   } catch (error) {
     console.error('Error in getDepartmentById:', error);
     throw error;
   }
 };
 
-export const addDepartment = async (department: Omit<Department, 'departmentid'>): Promise<Department> => {
+export const createDepartment = async (department: Omit<Department, 'departmentid'>): Promise<Department> => {
   try {
-    // Map interface fields to database fields
-    const dbDepartment = {
-      departmentname: department.name,
-      departmentstatus: department.description,
-      customerid: department.customerid
-    };
+    if (!department.customerid || !department.managerid) {
+      throw new Error('Customer ID and Manager ID are required');
+    }
     
     const { data, error } = await supabase
       .from('department')
-      .insert([dbDepartment])
+      .insert({
+        customerid: department.customerid,
+        departmentname: department.departmentname,
+        departmentstatus: department.departmentstatus,
+        managerid: department.managerid,
+        numberofemployees: department.numberofemployees,
+        annualbudget: department.annualbudget
+      })
       .select()
       .single();
 
     if (error) {
-      console.error('Error adding department:', error);
+      console.error('Error creating department:', error);
       throw error;
     }
 
-    // Map database response to interface
     return {
       departmentid: data.departmentid,
-      name: data.departmentname || '',
-      description: data.departmentstatus,
-      customerid: data.customerid
-    };
+      customerid: data.customerid,
+      departmentname: data.departmentname || undefined,
+      departmentstatus: data.departmentstatus || undefined,
+      managerid: data.managerid,
+      numberofemployees: data.numberofemployees || undefined,
+      annualbudget: data.annualbudget || undefined
+    } as Department;
   } catch (error) {
-    console.error('Error in addDepartment:', error);
+    console.error('Error in createDepartment:', error);
     throw error;
   }
 };
 
-export const updateDepartment = async (id: number, department: Omit<Partial<Department>, 'departmentid'>): Promise<Department> => {
+export const updateDepartment = async (id: string, updates: Partial<Department>): Promise<Department> => {
   try {
-    // Map interface fields to database fields
-    const dbDepartment: Record<string, any> = {};
-    if ('name' in department) dbDepartment.departmentname = department.name;
-    if ('description' in department) dbDepartment.departmentstatus = department.description;
-    
     const { data, error } = await supabase
       .from('department')
-      .update(dbDepartment)
+      .update({
+        departmentname: updates.departmentname,
+        departmentstatus: updates.departmentstatus,
+        customerid: updates.customerid,
+        managerid: updates.managerid,
+        numberofemployees: updates.numberofemployees,
+        annualbudget: updates.annualbudget
+      })
       .eq('departmentid', id)
       .select()
       .single();
@@ -118,20 +122,22 @@ export const updateDepartment = async (id: number, department: Omit<Partial<Depa
       throw error;
     }
 
-    // Map database response to interface
     return {
       departmentid: data.departmentid,
-      name: data.departmentname || '',
-      description: data.departmentstatus,
-      customerid: data.customerid
-    };
+      customerid: data.customerid,
+      departmentname: data.departmentname || undefined,
+      departmentstatus: data.departmentstatus || undefined,
+      managerid: data.managerid,
+      numberofemployees: data.numberofemployees || undefined,
+      annualbudget: data.annualbudget || undefined
+    } as Department;
   } catch (error) {
     console.error('Error in updateDepartment:', error);
     throw error;
   }
 };
 
-export const deleteDepartment = async (id: number): Promise<void> => {
+export const deleteDepartment = async (id: string): Promise<void> => {
   try {
     const { error } = await supabase
       .from('department')
@@ -147,3 +153,5 @@ export const deleteDepartment = async (id: number): Promise<void> => {
     throw error;
   }
 };
+
+export type { Department };

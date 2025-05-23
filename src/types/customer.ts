@@ -7,5 +7,4 @@ export interface Customer {
   phonenumber?: string;
   planid?: number;
   companysize?: string;
-  // Note: removed password as it's not in the database schema
 }

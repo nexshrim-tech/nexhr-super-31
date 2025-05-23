@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Employee } from "@/services/employeeService";
+import { Employee, addEmployee } from "@/services/employeeService";
 import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
 import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
 import EmployeeBankTab from "@/components/employees/tabs/EmployeeBankTab";
 import EmployeeDocumentsTab from "@/components/employees/tabs/EmployeeDocumentsTab";
 import { ArrowLeft, UserPlus } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
+import { adaptToUIFormat } from "@/components/employees/EmployeeAdapter";
 
 const AddEmployee = () => {
   const navigate = useNavigate();
@@ -34,29 +34,10 @@ const AddEmployee = () => {
     }));
   };
 
-  const createEmployee = async (employeeData: Omit<Employee, 'employeeid'>) => {
-    const { data, error } = await supabase
-      .from('employee')
-      .insert({
-        ...employeeData,
-        customerid: employeeData.customerid || 'default-customer-id',
-      })
-      .select()
-      .single();
-      
-    if (error) {
-      console.error('Error creating employee:', error);
-      throw error;
-    }
-    
-    return data;
-  };
-
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
       
-      // Ensure required fields are present
       const employeeToCreate = {
         ...employeeData,
         customerid: employeeData.customerid || 'default-customer-id',
@@ -67,14 +48,13 @@ const AddEmployee = () => {
 
       console.log('Creating employee with data:', employeeToCreate);
       
-      const newEmployee = await createEmployee(employeeToCreate);
+      const newEmployee = await addEmployee(employeeToCreate);
       
       toast({
         title: "Success",
         description: "Employee has been created successfully.",
       });
       
-      // Navigate to employee details or back to list
       if (newEmployee?.employeeid) {
         navigate(`/employees/${newEmployee.employeeid}`);
       } else {
@@ -91,6 +71,9 @@ const AddEmployee = () => {
       setIsLoading(false);
     }
   };
+
+  // Convert employee data to UI format for compatibility with existing components
+  const uiEmployeeData = adaptToUIFormat(employeeData as Employee);
 
   return (
     <Layout>
@@ -124,30 +107,65 @@ const AddEmployee = () => {
 
               <TabsContent value="personal">
                 <EmployeePersonalTab 
-                  employee={employeeData}
-                  onUpdate={handleInputChange}
+                  employee={uiEmployeeData}
+                  onUpdate={(field, value) => {
+                    // Map UI fields back to Employee interface
+                    if (field === 'name') {
+                      const [firstname, lastname] = value.split(' ');
+                      handleInputChange('firstname', firstname || '');
+                      handleInputChange('lastname', lastname || '');
+                    } else if (field === 'phone') {
+                      handleInputChange('phonenumber', value);
+                    } else if (field === 'dob') {
+                      handleInputChange('dateofbirth', value);
+                    } else if (field === 'fatherName') {
+                      handleInputChange('fathersname', value);
+                    } else {
+                      handleInputChange(field as keyof Employee, value);
+                    }
+                  }}
                   isEditing={true}
                 />
               </TabsContent>
 
               <TabsContent value="work">
                 <EmployeeWorkTab 
-                  employee={employeeData}
-                  onUpdate={handleInputChange}
-                  isEditing={true}
+                  employee={uiEmployeeData}
+                  geofencingEnabled={false}
+                  onGeofencingToggle={() => {}}
+                  isEditMode={true}
+                  onInputChange={(e) => {
+                    const { name, value } = e.target;
+                    if (name === 'role') {
+                      handleInputChange('jobtitle', value);
+                    } else if (name === 'employeeId') {
+                      handleInputChange('employeeid', value);
+                    } else if (name === 'joining') {
+                      handleInputChange('joiningdate', value);
+                    } else {
+                      handleInputChange(name as keyof Employee, value);
+                    }
+                  }}
+                  onSelectChange={(field, value) => {
+                    if (field === 'department') {
+                      handleInputChange('department', value);
+                    } else if (field === 'employmentstatus') {
+                      handleInputChange('employmentstatus', value);
+                    }
+                  }}
                 />
               </TabsContent>
 
               <TabsContent value="bank">
                 <EmployeeBankTab 
-                  employeeId={''}
+                  employeeId=""
                   isEditing={true}
                 />
               </TabsContent>
 
               <TabsContent value="documents">
                 <EmployeeDocumentsTab 
-                  employeeId={''}
+                  employeeId=""
                   isEditing={true}
                 />
               </TabsContent>

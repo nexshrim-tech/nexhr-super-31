@@ -1,6 +1,6 @@
 
 export interface Department {
-  departmentid: string; // Changed to match database type
+  departmentid: string;
   customerid: string;
   departmentname?: string;
   departmentstatus?: string;

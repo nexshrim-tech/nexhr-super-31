@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
 import LocationMapComponent from "./LocationMapComponent";
 
 export interface EmployeeLocation {
-  employeeid: string; // Fixed to match database type
+  employeeid: string;
   latitude: number;
   longitude: number;
   timestamp: string;
@@ -47,7 +48,6 @@ const EmployeeLocation = () => {
         throw error;
       }
       
-      // Transform the data to match EmployeeLocation interface
       return (data || []).map(item => ({
         employeeid: item.employeeid,
         latitude: item.coordinates?.[0] || 0,
@@ -57,7 +57,7 @@ const EmployeeLocation = () => {
         employee: item.employee || undefined
       })) as EmployeeLocation[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
   
   useEffect(() => {
@@ -68,7 +68,6 @@ const EmployeeLocation = () => {
   
   useEffect(() => {
     if (isLive) {
-      // Set up real-time listener for location changes
       const channel = supabase
         .channel('track-changes')
         .on('postgres_changes', 
@@ -80,9 +79,7 @@ const EmployeeLocation = () => {
           async (payload) => {
             console.log('Track data changed:', payload);
             
-            // Type safety check for payload.new and track_id
             if (payload.new && typeof payload.new === 'object' && 'track_id' in payload.new) {
-              // Fetch the latest data including the employee details
               const { data } = await supabase
                 .from('track')
                 .select('*, employee:employee!track_employeeid_fkey(firstname, lastname, jobtitle)')
@@ -99,19 +96,16 @@ const EmployeeLocation = () => {
                   employee: data.employee || undefined
                 };
                 
-                // Update the locations state
                 setEmployeeLocations(prevLocations => {
                   const existingIndex = prevLocations.findIndex(
                     loc => loc.employeeid === transformedData.employeeid
                   );
                   
                   if (existingIndex >= 0) {
-                    // Update existing employee location
                     const updatedLocations = [...prevLocations];
                     updatedLocations[existingIndex] = transformedData;
                     return updatedLocations;
                   } else {
-                    // Add new employee location
                     return [...prevLocations, transformedData];
                   }
                 });

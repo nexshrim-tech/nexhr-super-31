@@ -1,105 +1,134 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
+import { Customer } from '@/types/customer';
 
-export interface Customer {
-  customerid: string;  // Changed from number to string since it's now a UUID
-  name: string | null;
-  address?: string;
-  contactemail?: string;
-  contactperson?: string;
-  accountcreationdate?: string;
-  subscriptionplan?: string | null;
-  subscriptionstatus?: string;
-  subscriptionenddate?: string;
-  email: string | null;
-  password: string | null;
-  phonenumber: string | null;
-  companysize: string | null;
-  planid: number | null;
-}
-
-export const getCurrentCustomer = async (user: User | null): Promise<Customer | null> => {
-  if (!user) return null;
-  
+export const getCustomers = async (): Promise<Customer[]> => {
   try {
-    // Get customer data directly using auth.uid()
-    const { data: customer, error } = await supabase
+    const { data, error } = await supabase
       .from('customer')
       .select('*')
-      .eq('customerid', user.id)
-      .single();
-    
+      .order('customerid');
+
     if (error) {
-      console.error('Error fetching customer:', error);
-      return null;
+      console.error('Error fetching customers:', error);
+      throw error;
     }
-    
-    return customer;
+
+    return (data || []).map(item => ({
+      customerid: item.customerid,
+      customerauthid: item.customerauthid,
+      name: item.name || undefined,
+      email: item.email || undefined,
+      phonenumber: item.phonenumber || undefined,
+      planid: item.planid || undefined,
+      companysize: item.companysize || undefined
+    })) as Customer[];
   } catch (error) {
-    console.error('Error in getCurrentCustomer:', error);
-    return null;
+    console.error('Error in getCustomers:', error);
+    throw error;
   }
 };
 
-export const createCustomer = async (data: Omit<Customer, 'customerid'>): Promise<Customer | null> => {
+export const getCustomerById = async (id: string): Promise<Customer | null> => {
   try {
-    const { data: customer, error } = await supabase
+    const { data, error } = await supabase
       .from('customer')
-      .insert([data])
+      .select('*')
+      .eq('customerid', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching customer by ID:', error);
+      throw error;
+    }
+
+    return {
+      customerid: data.customerid,
+      customerauthid: data.customerauthid,
+      name: data.name || undefined,
+      email: data.email || undefined,
+      phonenumber: data.phonenumber || undefined,
+      planid: data.planid || undefined,
+      companysize: data.companysize || undefined
+    } as Customer;
+  } catch (error) {
+    console.error('Error in getCustomerById:', error);
+    throw error;
+  }
+};
+
+export const createCustomer = async (customer: Omit<Customer, 'customerid'>): Promise<Customer> => {
+  try {
+    const { data, error } = await supabase
+      .from('customer')
+      .insert(customer)
       .select()
       .single();
-    
+
     if (error) {
       console.error('Error creating customer:', error);
       throw error;
     }
-    
-    return customer;
+
+    return {
+      customerid: data.customerid,
+      customerauthid: data.customerauthid,
+      name: data.name || undefined,
+      email: data.email || undefined,
+      phonenumber: data.phonenumber || undefined,
+      planid: data.planid || undefined,
+      companysize: data.companysize || undefined
+    } as Customer;
   } catch (error) {
     console.error('Error in createCustomer:', error);
     throw error;
   }
 };
 
-export const getSubscriptionPlan = async (customerId: string): Promise<string | null> => {
+export const updateCustomer = async (id: string, updates: Partial<Customer>): Promise<Customer> => {
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('customer')
-      .select('planid')
-      .eq('customerid', customerId)
+      .update(updates)
+      .eq('customerid', id)
+      .select()
       .single();
-    
-    if (data && 'planid' in data) {
-      const planId = data.planid;
-      if (planId === 1) return "None";
-      if (planId === 2) return "Basic";
-      if (planId === 3) return "Premium";
-      return String(planId);
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error in getSubscriptionPlan:', error);
-    return null;
-  }
-};
 
-export const updateSubscriptionPlan = async (customerId: string, plan: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('customer')
-      .update({ 
-        planid: plan === "None" ? 1 : plan === "Basic" ? 2 : 3
-      })
-      .eq('customerid', customerId);
-    
     if (error) {
-      console.error('Error updating subscription plan:', error);
+      console.error('Error updating customer:', error);
       throw error;
     }
+
+    return {
+      customerid: data.customerid,
+      customerauthid: data.customerauthid,
+      name: data.name || undefined,
+      email: data.email || undefined,
+      phonenumber: data.phonenumber || undefined,
+      planid: data.planid || undefined,
+      companysize: data.companysize || undefined
+    } as Customer;
   } catch (error) {
-    console.error('Error in updateSubscriptionPlan:', error);
+    console.error('Error in updateCustomer:', error);
     throw error;
   }
 };
+
+export const deleteCustomer = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('customer')
+      .delete()
+      .eq('customerid', id);
+
+    if (error) {
+      console.error('Error deleting customer:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteCustomer:', error);
+    throw error;
+  }
+};
+
+export type { Customer };
