@@ -77,14 +77,12 @@ const AddEmployee = () => {
   // Convert employee data to UI format for compatibility with existing components
   const uiEmployeeData = adaptToUIFormat(employeeData as Employee);
 
-  // Mock data for required props
-  const emptyBankDetails = {
-    accountnumber: '',
-    accounttype: '',
-    bankname: '',
-    branchname: '',
-    customerbankid: '',
-    ifsccode: '',
+  // Bank details with correct property names
+  const bankDetails = {
+    bankName: '',
+    branchName: '',
+    accountNumber: '',
+    ifscCode: '',
   };
 
   return (
@@ -158,9 +156,9 @@ const AddEmployee = () => {
 
               <TabsContent value="bank">
                 <EmployeeBankTab 
-                  bankDetails={emptyBankDetails}
+                  bankDetails={bankDetails}
                   isEditMode={true}
-                  onInputChange={() => {}}
+                  onBankDetailsChange={() => {}}
                 />
               </TabsContent>
 

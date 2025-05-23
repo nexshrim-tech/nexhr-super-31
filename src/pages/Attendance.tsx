@@ -1,10 +1,8 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Layout } from "@/components/ui/layout";
 import { AttendanceRecord } from "@/types/attendance";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { getEmployees } from "@/services/employeeService";
 import { supabase } from "@/integrations/supabase/client";
 
 // Create attendance record update function
@@ -23,8 +21,7 @@ const updateAttendanceRecord = async (record: Partial<AttendanceRecord>) => {
         checkouttimestamp: record.checkouttimestamp,
         checkintimestamp: record.checkintimestamp,
       })
-      .eq('employeeid', record.employeeid)
-      .eq('date', record.date);
+      .eq('employeeid', record.employeeid);
       
     if (error) throw error;
     

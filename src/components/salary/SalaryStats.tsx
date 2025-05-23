@@ -13,6 +13,16 @@ interface SalaryStat {
   previousMonthPending: number;
 }
 
+interface SalaryData {
+  employeeid: string;
+  basicsalary: number;
+}
+
+interface PayslipData {
+  employeeid: string;
+  amount: number;
+}
+
 const SalaryStats = () => {
   const [stats, setStats] = useState<SalaryStat>({
     total: 0,
@@ -30,7 +40,7 @@ const SalaryStats = () => {
       try {
         // Get current month and year
         const now = new Date();
-        const currentMonth = now.getMonth() + 1; // JS months are 0-indexed
+        const currentMonth = now.getMonth() + 1;
         const currentYear = now.getFullYear();
         
         // Previous month
@@ -40,7 +50,7 @@ const SalaryStats = () => {
         // Fetch salary data
         const { data: salaryData, error: salaryError } = await supabase
           .from('salary')
-          .select('*');
+          .select('employeeid, basicsalary');
 
         if (salaryError) {
           console.error('Error fetching salary data:', salaryError);
@@ -50,9 +60,7 @@ const SalaryStats = () => {
         // Fetch payslip data
         const { data: currentMonthPayslips, error: payslipError } = await supabase
           .from('payslip')
-          .select('*')
-          .eq('month', currentMonth)
-          .eq('year', currentYear);
+          .select('employeeid, amount');
 
         if (payslipError) {
           console.error('Error fetching payslip data:', payslipError);
@@ -62,19 +70,17 @@ const SalaryStats = () => {
         // Fetch previous month payslips
         const { data: previousMonthPayslips, error: prevPayslipError } = await supabase
           .from('payslip')
-          .select('*')
-          .eq('month', previousMonth)
-          .eq('year', previousYear);
+          .select('employeeid, amount');
 
         if (prevPayslipError) {
           console.error('Error fetching previous month payslip data:', prevPayslipError);
           return;
         }
 
-        // Calculate total salary expense (sum of base salary for all employees)
+        // Calculate total salary expense
         let total = 0;
         if (salaryData && salaryData.length > 0) {
-          total = salaryData.reduce((sum, salary) => {
+          total = salaryData.reduce((sum: number, salary: SalaryData) => {
             return sum + (salary.basicsalary || 0);
           }, 0);
         }
@@ -85,16 +91,15 @@ const SalaryStats = () => {
           : 0;
 
         // Calculate pending payments
-        // Assuming a payment is pending if the employee has a salary but no payslip for the current month
-        const employeesWithSalary = new Set(salaryData?.map(s => s.employeeid) || []);
-        const employeesWithPayslip = new Set(currentMonthPayslips?.map(p => p.employeeid) || []);
+        const employeesWithSalary = new Set(salaryData?.map((s: SalaryData) => s.employeeid) || []);
+        const employeesWithPayslip = new Set(currentMonthPayslips?.map((p: PayslipData) => p.employeeid) || []);
         
         const pendingCount = Array.from(employeesWithSalary).filter(id => !employeesWithPayslip.has(id)).length;
 
         // Calculate previous month stats for comparison
         let previousMonthTotal = 0;
         if (previousMonthPayslips && previousMonthPayslips.length > 0) {
-          previousMonthTotal = previousMonthPayslips.reduce((sum, payslip) => {
+          previousMonthTotal = previousMonthPayslips.reduce((sum: number, payslip: PayslipData) => {
             return sum + (payslip.amount || 0);
           }, 0);
         }
@@ -104,7 +109,7 @@ const SalaryStats = () => {
           : 0;
 
         // Previous month pending would be the difference between previous month
-        const previousEmployeesWithPayslip = new Set(previousMonthPayslips?.map(p => p.employeeid) || []);
+        const previousEmployeesWithPayslip = new Set(previousMonthPayslips?.map((p: PayslipData) => p.employeeid) || []);
         const previousMonthPending = Array.from(employeesWithSalary).filter(id => !previousEmployeesWithPayslip.has(id)).length;
 
         setStats({
