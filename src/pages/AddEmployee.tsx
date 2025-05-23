@@ -58,9 +58,9 @@ const AddEmployee = () => {
       });
       
       if (newEmployee?.employeeid) {
-        navigate(`/employees/${newEmployee.employeeid}`);
+        navigate(`/employee/${newEmployee.employeeid}`);
       } else {
-        navigate('/employees');
+        navigate('/all-employees');
       }
     } catch (error) {
       console.error('Error creating employee:', error);
@@ -72,6 +72,10 @@ const AddEmployee = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoBack = () => {
+    navigate('/all-employees');
   };
 
   // Convert employee data to UI format for compatibility with existing components
@@ -91,11 +95,11 @@ const AddEmployee = () => {
         <div className="flex items-center gap-4 mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/employees')}
+            onClick={handleGoBack}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Employees
+            Back to Employee Directory
           </Button>
         </div>
 
@@ -173,7 +177,7 @@ const AddEmployee = () => {
             <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
               <Button 
                 variant="outline" 
-                onClick={() => navigate('/employees')}
+                onClick={handleGoBack}
                 disabled={isLoading}
               >
                 Cancel
