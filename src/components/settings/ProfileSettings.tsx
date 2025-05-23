@@ -48,14 +48,11 @@ const ProfileSettings = () => {
     setIsLoading(true);
     try {
       if (profile?.id) {
-        // Update the profiles table
-        const { error } = await supabase
-          .from('profiles')
-          .update({ 
-            full_name: formData.fullName,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', profile.id);
+        // Update the profiles table using RPC function
+        const { error } = await supabase.rpc('update_user_profile', {
+          user_id: profile.id,
+          new_full_name: formData.fullName
+        });
           
         if (error) throw error;
         

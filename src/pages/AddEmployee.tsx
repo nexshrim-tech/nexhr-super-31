@@ -5,6 +5,8 @@ import { Layout } from "@/components/ui/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Employee, createEmployee } from "@/services/employeeService";
 import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
@@ -80,18 +82,15 @@ const AddEmployee = () => {
     }
   };
 
-  // Link employee to existing auth user
+  // Link employee to existing auth user using RPC function
   const linkEmployeeToProfile = async (employeeId: string) => {
     try {
-      // Update profiles table to link employee_id with auth user
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          employee_id: employeeId,
-          customer_id: profile?.customer_id
-        })
-        .eq('id', employeeData.employeeauthid)
-        .is('employee_id', null);
+      // Update profiles table to link employee_id with auth user using RPC
+      const { error } = await supabase.rpc('link_employee_to_profile', {
+        auth_user_id: employeeData.employeeauthid,
+        employee_uuid: employeeId,
+        customer_uuid: profile?.customer_id
+      });
       
       if (error) {
         console.error('Error linking employee to profile:', error);
