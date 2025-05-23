@@ -86,7 +86,7 @@ const AddEmployee = () => {
   const linkEmployeeToProfile = async (employeeId: string) => {
     try {
       // Update profiles table to link employee_id with auth user using RPC
-      const { error } = await supabase.rpc('link_employee_to_profile' as any, {
+      const { error } = await supabase.rpc('link_employee_to_profile', {
         auth_user_id: employeeData.employeeauthid,
         employee_uuid: employeeId,
         customer_uuid: profile?.customer_id

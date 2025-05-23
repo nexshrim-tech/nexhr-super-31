@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProfile = async (userId: string) => {
     try {
       // Use RPC function call to get profile data safely
-      const { data, error } = await supabase.rpc('get_user_profile' as any, { user_id: userId });
+      const { data, error } = await supabase.rpc('get_user_profile', { user_id: userId });
 
       if (error) {
         console.error('Error fetching user profile:', error);

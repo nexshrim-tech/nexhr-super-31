@@ -736,6 +736,51 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          employee_id: string | null
+          full_name: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          employee_id?: string | null
+          full_name?: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          employee_id?: string | null
+          full_name?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["customerid"]
+          },
+          {
+            foreignKeyName: "profiles_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee"
+            referencedColumns: ["employeeid"]
+          },
+        ]
+      }
       projectcomment: {
         Row: {
           commentid: string
@@ -1112,7 +1157,7 @@ export type Database = {
       }
       get_current_customer_id: {
         Args: Record<PropertyKey, never>
-        Returns: number
+        Returns: string
       }
       get_employee_by_auth_id: {
         Args: { auth_id: string }
@@ -1149,13 +1194,41 @@ export type Database = {
           zipcode: string | null
         }[]
       }
+      get_user_profile: {
+        Args: { user_id: string }
+        Returns: {
+          id: string
+          full_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          customer_id: string
+          employee_id: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
       }
+      is_customer: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
+      link_employee_to_profile: {
+        Args: {
+          auth_user_id: string
+          employee_uuid: string
+          customer_uuid: string
+        }
+        Returns: undefined
+      }
       register_employee: {
         Args: { p_email: string; p_password: string; p_employee_id: string }
         Returns: string
+      }
+      update_user_profile: {
+        Args: { user_id: string; new_full_name: string }
+        Returns: undefined
       }
     }
     Enums: {
@@ -1165,7 +1238,7 @@ export type Database = {
         | "On Leave"
         | "Terminated"
         | "Probation"
-      user_role: "admin" | "employee"
+      user_role: "admin" | "employee" | "customer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1288,7 +1361,7 @@ export const Constants = {
         "Terminated",
         "Probation",
       ],
-      user_role: ["admin", "employee"],
+      user_role: ["admin", "employee", "customer"],
     },
   },
 } as const
