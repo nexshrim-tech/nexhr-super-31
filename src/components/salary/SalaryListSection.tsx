@@ -3,11 +3,10 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, History, FileText, Edit } from "lucide-react";
+import { Search } from "lucide-react";
 import { EmployeeSalary, PayslipRecord } from "@/types/salary";
 import EmployeeTable from "./EmployeeTable";
 import EmployeeCard from "./EmployeeCard";
-import { Button } from "@/components/ui/button";
 import { 
   Dialog,
   DialogContent,
@@ -17,7 +16,6 @@ import {
 import PayslipHistory from "./PayslipHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { Database } from "@/integrations/supabase/types";
 
 interface SalaryListSectionProps {
   employees: EmployeeSalary[];
@@ -28,20 +26,17 @@ interface SalaryListSectionProps {
 
 // Utility function to calculate salary components based on base salary
 const calculateSalaryComponents = (baseSalary: number) => {
-  // Standard percentages for salary components
-  const basicSalaryPercentage = 0.45; // 45% of monthly salary as basic
-  const hraPercentage = 0.40;         // 40% of basic as HRA
-  const specialAllowancePercentage = 0.10; // 10% of basic as special allowance
-  const pfPercentage = 0.12;          // 12% of basic salary for PF
-  const incomeTaxPercentage = 0.05;   // 5% of basic salary for income tax
-  const esiPercentage = 0.0075;       // 0.75% of basic salary for ESI
+  const basicSalaryPercentage = 0.45;
+  const hraPercentage = 0.40;
+  const specialAllowancePercentage = 0.10;
+  const pfPercentage = 0.12;
+  const incomeTaxPercentage = 0.05;
+  const esiPercentage = 0.0075;
   
-  // Standard fixed amounts
-  const conveyanceAllowance = 1600;   // Fixed conveyance allowance
-  const medicalAllowance = 1250;      // Fixed medical allowance
-  const professionalTax = 200;        // Fixed professional tax
+  const conveyanceAllowance = 1600;
+  const medicalAllowance = 1250;
+  const professionalTax = 200;
   
-  // Calculate components
   const basicSalary = baseSalary * basicSalaryPercentage;
   const hra = baseSalary * hraPercentage;
   const specialAllowance = baseSalary * specialAllowancePercentage;
@@ -81,12 +76,10 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Improved fetch and subscription logic
   useEffect(() => {
-    // Initial data fetch
     fetchEmployeeSalaries();
 
-    // Set up real-time subscriptions with more specific channels
+    // Set up real-time subscriptions
     const salaryChannel = supabase
       .channel('salary-changes')
       .on(
@@ -138,12 +131,11 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
       .subscribe();
 
     return () => {
-      // Cleanup subscriptions
       supabase.removeChannel(salaryChannel);
       supabase.removeChannel(employeeChannel);
       supabase.removeChannel(payslipChannel);
     };
-  }, [selectedEmployee]); // Added selectedEmployee as dependency
+  }, [selectedEmployee]);
 
   const fetchEmployeeSalaries = async () => {
     try {
@@ -164,7 +156,7 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
         return;
       }
 
-      // Now get all salary data
+      // Get all salary data
       const { data: salaryData, error: salaryError } = await supabase
         .from('salary')
         .select('*');
@@ -203,22 +195,16 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
         
         // If employee has monthlysalary but no salary record or monthlysalary doesn't match, sync it
         if (employee.monthlysalary && (!salary || (salary.monthlysalary !== employee.monthlysalary))) {
-          // Prepare to update or create salary record
           const baseSalary = employee.monthlysalary || 0;
           
           if (!salary) {
-            // Create new salary record
             console.log(`Creating new salary record for employee ${employee.employeeid} with salary ${baseSalary}`);
             
-            // Calculate all salary components based on base salary
             const salaryComponents = calculateSalaryComponents(baseSalary);
+            const customerid = employee.customerid;
             
-            // Get customerid from employee record - required field for salary table
-            const customerid = employee.customerid || 0;
-            
-            // Create a new salary object with all required fields explicitly set
-            // Using partial type to handle the fact that salaryid will be auto-generated
-            const newSalary: Database['public']['Tables']['salary']['Insert'] = {
+            const newSalary = {
+              salaryid: crypto.randomUUID(),
               employeeid: employee.employeeid,
               customerid: customerid,
               basicsalary: salaryComponents.basicsalary,
@@ -237,12 +223,10 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
             };
             
             updatedSalaries.push({ type: 'insert', data: newSalary });
-            salary = newSalary as any; // Cast to any to avoid TypeScript errors
+            salary = newSalary as any;
           } else if (salary.monthlysalary !== employee.monthlysalary) {
-            // Update existing salary record with new monthly salary and recalculate components
             console.log(`Updating salary record for employee ${employee.employeeid} from ${salary.monthlysalary} to ${employee.monthlysalary}`);
             
-            // Calculate updated components based on new base salary
             const updatedComponents = calculateSalaryComponents(baseSalary);
             
             const updateSalary = {
@@ -265,14 +249,14 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
           }
         }
         
-        // Only include employees who have salary data
         if (salary) {
-          // Check if employee has a payslip for current month
-          const hasCurrentPayslip = payslipData?.some(
-            p => p.employeeid === employee.employeeid && 
-                 p.year === currentYear && 
-                 p.month === currentMonth
-          );
+          // Check if employee has a payslip for current month by parsing dates from payslipdate
+          const hasCurrentPayslip = payslipData?.some(p => {
+            if (!p.payslipdate || p.employeeid !== employee.employeeid) return false;
+            const payslipDate = new Date(p.payslipdate);
+            return payslipDate.getFullYear() === currentYear && 
+                   (payslipDate.getMonth() + 1) === currentMonth;
+          });
 
           mappedEmployees.push({
             id: employee.employeeid,
@@ -314,7 +298,6 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
       if (updatedSalaries.length > 0) {
         console.log(`Batch updating ${updatedSalaries.length} salary records`);
         
-        // Process inserts
         const inserts = updatedSalaries.filter(item => item.type === 'insert');
         if (inserts.length > 0) {
           const { error: insertError } = await supabase
@@ -328,7 +311,6 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
           }
         }
         
-        // Process updates (one by one to avoid conflicts)
         const updates = updatedSalaries.filter(item => item.type === 'update');
         for (const update of updates) {
           const { error: updateError } = await supabase
@@ -360,18 +342,16 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
     }
   };
 
-  // Improved history view with real-time data
   const handleViewHistory = async (employee: EmployeeSalary) => {
     setSelectedEmployee(employee);
     
     try {
-      // Fetch payslip history from Supabase with order by year and month
+      // Fetch payslip history from Supabase
       const { data, error } = await supabase
         .from('payslip')
         .select('*')
         .eq('employeeid', employee.id)
-        .order('year', { ascending: false })
-        .order('month', { ascending: false });
+        .order('payslipdate', { ascending: false });
 
       if (error) {
         console.error('Error fetching payslip history:', error);
@@ -384,13 +364,16 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
       }
 
       // Format the payslip records
-      const formattedPayslips = data.map(payslip => ({
-        id: `PS-${payslip.year}-${payslip.month.toString().padStart(2, '0')}`,
-        employee: employee.employee.name,
-        period: `${getMonthName(payslip.month)} ${payslip.year}`,
-        amount: payslip.amount || 0,
-        date: payslip.generatedtimestamp || new Date().toISOString(),
-      }));
+      const formattedPayslips = data.map(payslip => {
+        const date = new Date(payslip.payslipdate || payslip.generatedtimestamp);
+        return {
+          id: payslip.payslip_id,
+          employee: employee.employee.name,
+          period: date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          amount: payslip.amount || 0,
+          date: payslip.generatedtimestamp || new Date().toISOString(),
+        };
+      });
 
       setPayslipHistory(formattedPayslips);
       setOpenHistory(true);
@@ -402,12 +385,6 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
         variant: "destructive",
       });
     }
-  };
-
-  const getMonthName = (month: number) => {
-    const monthNames = ["January", "February", "March", "April", "May", "June",
-                        "July", "August", "September", "October", "November", "December"];
-    return monthNames[month - 1] || "";
   };
 
   const filteredEmployees = employees.filter((emp) =>

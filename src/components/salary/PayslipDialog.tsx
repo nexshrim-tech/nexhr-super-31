@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -44,17 +43,16 @@ const PayslipDialog: React.FC<PayslipDialogProps> = ({
     try {
       setLoading(true);
       const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
       
-      // Insert new payslip record
+      // Insert new payslip record with the correct schema structure
       const { data, error } = await supabase
         .from('payslip')
         .insert({
+          payslip_id: crypto.randomUUID(),
           employeeid: employeeData.id,
-          year: year,
-          month: month,
+          customerid: 'default-customer-id', // You might need to get this from context
           amount: netSalary,
+          payslipdate: now.toISOString(),
           generatedtimestamp: now.toISOString()
         })
         .select();

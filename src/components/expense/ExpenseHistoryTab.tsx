@@ -6,12 +6,10 @@ import ExpenseFilters from './ExpenseFilters';
 import { DateRange } from 'react-day-picker';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/utils/formatters";
-import { IndianRupee } from "lucide-react";
 import { getEmployeeById } from "@/services/employeeService";
 
 export interface ExpenseItem {
-  id: number;
+  id: string;
   description: string;
   category: string;
   amount: number;
@@ -19,7 +17,7 @@ export interface ExpenseItem {
   date: string;
   status: string;
   attachmentType?: string;
-  expenseid?: number;
+  expenseid?: string;
   billpath?: string;
 }
 
@@ -41,7 +39,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
     const fetchExpenses = async () => {
       setLoading(true);
       try {
-        // Use simplified query that doesn't try to join employee table
+        // Query expense table without submittedby field since it doesn't exist in the schema
         const { data, error } = await supabase
           .from('expense')
           .select(`
@@ -51,7 +49,7 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
             amount,
             submissiondate,
             status,
-            submittedby,
+            employeeid,
             billpath
           `);
 
@@ -62,16 +60,16 @@ const ExpenseHistoryTab: React.FC<ExpenseHistoryTabProps> = ({ expenseHistory = 
         if (data) {
           // Transform the data to match the ExpenseItem interface
           const formattedDataPromises = data.map(async (expense) => {
-            // Get employee name if submittedby is present
-            let submitterName = `Employee #${String(expense.submittedby)}`;
+            // Get employee name if employeeid is present
+            let submitterName = `Employee #${String(expense.employeeid)}`;
             let avatarText = 'UN';
             
-            if (expense.submittedby) {
+            if (expense.employeeid) {
               try {
-                const employee = await getEmployeeById(expense.submittedby);
+                const employee = await getEmployeeById(expense.employeeid);
                 if (employee) {
                   submitterName = `${employee.firstname} ${employee.lastname}`;
-                  avatarText = `${employee.firstname.charAt(0)}${employee.lastname.charAt(0)}`.toUpperCase();
+                  avatarText = `${employee.firstname?.charAt(0)}${employee.lastname?.charAt(0)}`.toUpperCase();
                 }
               } catch (err) {
                 console.error('Error fetching employee details:', err);

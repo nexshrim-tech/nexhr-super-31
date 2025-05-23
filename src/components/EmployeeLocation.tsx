@@ -18,11 +18,11 @@ import {
 import LocationMapComponent from "./LocationMapComponent";
 
 interface EmployeeLocation {
-  employeeid: number;
+  employeeid: string;
   latitude: number;
   longitude: number;
   timestamp: string;
-  trackid?: number;  // Adding trackid as optional to match the type coming from Supabase
+  track_id: string;
   employee?: {
     firstname?: string;
     lastname?: string;
@@ -48,7 +48,15 @@ const EmployeeLocation = () => {
         throw error;
       }
       
-      return (data || []) as EmployeeLocation[];
+      // Transform the data to match EmployeeLocation interface
+      return (data || []).map(item => ({
+        employeeid: item.employeeid,
+        latitude: item.coordinates?.[0] || 0,
+        longitude: item.coordinates?.[1] || 0,
+        timestamp: item.timestamp || '',
+        track_id: item.track_id,
+        employee: item.employee || undefined
+      })) as EmployeeLocation[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -71,34 +79,43 @@ const EmployeeLocation = () => {
           async (payload) => {
             console.log('Track data changed:', payload);
             
-            // Type safety check for payload.new and trackid
-            if (payload.new && typeof payload.new === 'object' && 'trackid' in payload.new) {
+            // Type safety check for payload.new and track_id
+            if (payload.new && typeof payload.new === 'object' && 'track_id' in payload.new) {
               // Fetch the latest data including the employee details
               const { data } = await supabase
                 .from('track')
                 .select('*, employee:employeeid(firstname, lastname, jobtitle)')
-                .eq('trackid', payload.new.trackid)
+                .eq('track_id', payload.new.track_id)
                 .single();
                 
               if (data) {
+                const transformedData: EmployeeLocation = {
+                  employeeid: data.employeeid,
+                  latitude: data.coordinates?.[0] || 0,
+                  longitude: data.coordinates?.[1] || 0,
+                  timestamp: data.timestamp || '',
+                  track_id: data.track_id,
+                  employee: data.employee || undefined
+                };
+                
                 // Update the locations state
                 setEmployeeLocations(prevLocations => {
                   const existingIndex = prevLocations.findIndex(
-                    loc => loc.employeeid === data.employeeid
+                    loc => loc.employeeid === transformedData.employeeid
                   );
                   
                   if (existingIndex >= 0) {
                     // Update existing employee location
                     const updatedLocations = [...prevLocations];
-                    updatedLocations[existingIndex] = data as EmployeeLocation;
+                    updatedLocations[existingIndex] = transformedData;
                     return updatedLocations;
                   } else {
                     // Add new employee location
-                    return [...prevLocations, data as EmployeeLocation];
+                    return [...prevLocations, transformedData];
                   }
                 });
                 
-                toast.info(`${data.employee?.firstname || 'Employee'} location updated`);
+                toast(`${data.employee?.firstname || 'Employee'} location updated`);
               }
             }
           }
@@ -114,7 +131,6 @@ const EmployeeLocation = () => {
   const toggleLiveTracking = () => {
     setIsLive(!isLive);
     
-    // Fix: Use the correct toast API syntax
     toast(isLive 
       ? "You have stopped tracking employee locations in real-time." 
       : "You are now tracking employee locations in real-time."
@@ -122,7 +138,6 @@ const EmployeeLocation = () => {
   };
 
   const handleExportMap = () => {
-    // Fix: Use the correct toast API syntax
     toast("The current map view has been exported.");
   };
 
@@ -156,7 +171,6 @@ const EmployeeLocation = () => {
                 Export Map
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                // Fix: Use the correct toast API syntax
                 toast("Location filter has been applied.");
               }} className="cursor-pointer">
                 <Filter className="h-4 w-4 mr-2" />
