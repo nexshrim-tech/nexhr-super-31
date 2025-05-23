@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from "@/components/ui/layout";
@@ -76,6 +77,16 @@ const AddEmployee = () => {
   // Convert employee data to UI format for compatibility with existing components
   const uiEmployeeData = adaptToUIFormat(employeeData as Employee);
 
+  // Mock data for required props
+  const emptyBankDetails = {
+    accountnumber: '',
+    accounttype: '',
+    bankname: '',
+    branchname: '',
+    customerbankid: '',
+    ifsccode: '',
+  };
+
   return (
     <Layout>
       <div className="container mx-auto py-6 px-4">
@@ -109,6 +120,11 @@ const AddEmployee = () => {
               <TabsContent value="personal">
                 <EmployeePersonalTab 
                   employee={uiEmployeeData}
+                  isEditMode={true}
+                  onInputChange={(e) => {
+                    const { name, value } = e.target;
+                    handleInputChange(name as keyof Employee, value);
+                  }}
                 />
               </TabsContent>
 
@@ -141,11 +157,18 @@ const AddEmployee = () => {
               </TabsContent>
 
               <TabsContent value="bank">
-                <EmployeeBankTab />
+                <EmployeeBankTab 
+                  bankDetails={emptyBankDetails}
+                  isEditMode={true}
+                  onInputChange={() => {}}
+                />
               </TabsContent>
 
               <TabsContent value="documents">
-                <EmployeeDocumentsTab />
+                <EmployeeDocumentsTab 
+                  onDownload={() => {}}
+                  onEditDocument={() => {}}
+                />
               </TabsContent>
             </Tabs>
 

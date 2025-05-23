@@ -3,29 +3,13 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Skeleton } from './ui/skeleton';
-
-// Define the employee location interface
-interface EmployeeLocation {
-  employeeid: number;
-  latitude: number;
-  longitude: number;
-  timestamp: string;
-  employee?: {
-    firstname?: string;
-    lastname?: string;
-    jobtitle?: string;
-  };
-}
-
-interface LocationMapComponentProps {
-  employeeLocations: EmployeeLocation[];
-  isLoading: boolean;
-}
+import { EmployeeLocation } from '@/types/location';
+import { LocationMapComponentProps } from './LocationMapComponentInterface';
 
 const LocationMapComponent = ({ employeeLocations, isLoading }: LocationMapComponentProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const markers = useRef<{[key: number]: mapboxgl.Marker}>({});
+  const markers = useRef<{[key: string]: mapboxgl.Marker}>({});
   const [mapInitialized, setMapInitialized] = useState(false);
 
   // Initialize map
@@ -106,10 +90,9 @@ const LocationMapComponent = ({ employeeLocations, isLoading }: LocationMapCompo
     
     // Remove markers for employees no longer in the list
     Object.keys(markers.current).forEach(id => {
-      const employeeId = Number(id);
-      if (!employeeLocations.find(loc => loc.employeeid === employeeId)) {
-        markers.current[employeeId].remove();
-        delete markers.current[employeeId];
+      if (!employeeLocations.find(loc => loc.employeeid === id)) {
+        markers.current[id].remove();
+        delete markers.current[id];
       }
     });
     
@@ -130,13 +113,20 @@ const LocationMapComponent = ({ employeeLocations, isLoading }: LocationMapCompo
   };
 
   // Helper function to generate consistent colors based on employee ID
-  const getRandomColor = (id: number) => {
+  const getRandomColor = (id: string) => {
     const colors = [
       '#4285F4', '#EA4335', '#FBBC05', '#34A853', // Google colors
       '#1DA1F2', '#8A2BE2', '#FF6347', '#20B2AA', // Twitter blue, etc
       '#FF4500', '#32CD32', '#9370DB', '#FF8C00', // Reddit orange, etc
     ];
-    return colors[id % colors.length];
+    
+    // Create a simple hash from the string ID
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
   };
 
   if (isLoading) {
