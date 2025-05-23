@@ -8,7 +8,7 @@ export interface Employee {
   department?: string;
   joiningdate?: string | null;
   profilepicturepath?: string;
-  customerid?: string; // UUID string format
+  customerid?: string;
   phonenumber?: string;
   address?: string;
   monthlysalary?: number;
@@ -40,7 +40,7 @@ export interface EmployeeDB {
   department?: string;
   joiningdate?: string | null;
   profilepicturepath?: string;
-  customerid?: string; // UUID string format
+  customerid?: string;
   address?: string;
   gender?: string;
   dateofbirth?: string | null;
@@ -53,7 +53,7 @@ export interface EmployeeDB {
   documentpath?: string;
   employmentstatus?: string;
   employmenttype?: string;
-  phonenumber?: string; // Changed to string to handle formatting
+  phonenumber?: string;
   bloodgroup?: string;
   fathersname?: string;
   maritalstatus?: string;

@@ -6,7 +6,6 @@ export interface SalaryAllowances {
   medical: number;
   special: number;
   other: number;
-  // Additional fields to match component usage
   basicSalary?: number;
   conveyanceAllowance?: number;
   medicalAllowance?: number;
@@ -20,7 +19,6 @@ export interface SalaryDeductions {
   tax: number;
   loan: number;
   other: number;
-  // Additional fields to match component usage
   incomeTax?: number;
   providentFund?: number;
   professionalTax?: number;
@@ -66,6 +64,9 @@ export interface PayslipRecord {
   amount: number;
   status: string;
   generatedDate: string;
+  employee?: string;
+  period?: string;
+  date?: string;
 }
 
 export interface SalaryData {

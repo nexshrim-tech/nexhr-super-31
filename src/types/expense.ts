@@ -10,7 +10,7 @@ export interface Expense {
   employeeid?: string;
   customerid?: string;
   customer_id?: string;
-  date?: string; // Add this field for compatibility
+  date?: string;
 }
 
 export interface ExpenseItem {
