@@ -1,17 +1,17 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, FileText, Key, CreditCard } from "lucide-react";
+import { ArrowLeft, Edit, FileText, Key, CreditCard, Trash2 } from "lucide-react";
 import SidebarNav from "@/components/SidebarNav";
 import { useToast } from "@/hooks/use-toast";
-import { getEmployeeById } from "@/services/employeeService";
+import { getEmployeeById, deleteEmployee } from "@/services/employeeService";
 import { Employee } from "@/types/employee";
 import { adaptEmployeeData, adaptToUIFormat } from "@/components/employees/EmployeeAdapter";
 import EmployeeInfoCard from "@/components/employees/EmployeeInfoCard";
 import EmployeeTasksSection from "@/components/employees/EmployeeTasksSection";
 import EmployeeAssetsSection from "@/components/employees/EmployeeAssetsSection";
 import EmployeeDialogs from "@/components/employees/EmployeeDialogs";
+import ConfirmDeleteDialog from "@/components/employees/ConfirmDeleteDialog";
 
 const EmployeeDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +25,7 @@ const EmployeeDetails = () => {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [showOfficialDocsDialog, setShowOfficialDocsDialog] = useState(false);
   const [documentEditDialog, setDocumentEditDialog] = useState<'aadhar' | 'pan' | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -74,6 +75,26 @@ const EmployeeDetails = () => {
       description: `${type === 'aadhar' ? 'Aadhar' : 'PAN'} card uploaded successfully`,
     });
     setDocumentEditDialog(null);
+  };
+
+  const handleDeleteEmployee = async () => {
+    if (!id) return;
+    
+    try {
+      await deleteEmployee(id);
+      toast({
+        title: "Success",
+        description: "Employee has been deleted successfully",
+      });
+      navigate("/all-employees");
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete employee. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -152,6 +173,13 @@ const EmployeeDetails = () => {
                 <CreditCard className="h-4 w-4 mr-2" />
                 Documents
               </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
             </div>
           </div>
 
@@ -186,6 +214,13 @@ const EmployeeDetails = () => {
             setIsPasswordDialogOpen={setIsPasswordDialogOpen}
             setShowOfficialDocsDialog={setShowOfficialDocsDialog}
             onEditSave={handleEditSave}
+          />
+
+          <ConfirmDeleteDialog
+            employeeName={`${employee.firstname} ${employee.lastname}`}
+            onConfirmDelete={handleDeleteEmployee}
+            showDeleteDialog={showDeleteDialog}
+            setShowDeleteDialog={setShowDeleteDialog}
           />
         </div>
       </div>
