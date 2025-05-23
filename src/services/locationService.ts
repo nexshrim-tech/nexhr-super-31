@@ -20,7 +20,7 @@ export const saveLocationData = async (locationData: LocationData): Promise<void
 
     const { error } = await supabase
       .from('track')
-      .insert([dataToInsert]);
+      .insert([dataToInsert]); // Wrap in array to satisfy TypeScript
 
     if (error) {
       console.error('Error saving location data:', error);

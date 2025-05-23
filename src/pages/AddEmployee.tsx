@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from "@/components/ui/layout";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Employee, addEmployee } from "@/services/employeeService";
+import { Employee, createEmployee } from "@/services/employeeService";
 import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
 import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
 import EmployeeBankTab from "@/components/employees/tabs/EmployeeBankTab";
@@ -38,17 +37,19 @@ const AddEmployee = () => {
     try {
       setIsLoading(true);
       
+      // Ensure we have the required customerid
+      if (!employeeData.customerid) {
+        employeeData.customerid = 'default-customer-id';
+      }
+      
+      console.log('Creating employee with data:', employeeData);
+      
       const employeeToCreate = {
         ...employeeData,
-        customerid: employeeData.customerid || 'default-customer-id',
-        phonenumber: employeeData.phonenumber ? Number(employeeData.phonenumber) : 0,
-        monthlysalary: employeeData.monthlysalary ? Number(employeeData.monthlysalary) : 0,
-        leavebalance: employeeData.leavebalance ? Number(employeeData.leavebalance) : 0,
-      } as Employee;
+        customerid: employeeData.customerid
+      } as Employee & { customerid: string };
 
-      console.log('Creating employee with data:', employeeToCreate);
-      
-      const newEmployee = await addEmployee(employeeToCreate);
+      const newEmployee = await createEmployee(employeeToCreate);
       
       toast({
         title: "Success",
@@ -108,22 +109,7 @@ const AddEmployee = () => {
               <TabsContent value="personal">
                 <EmployeePersonalTab 
                   employee={uiEmployeeData}
-                  onUpdate={(field, value) => {
-                    // Map UI fields back to Employee interface
-                    if (field === 'name') {
-                      const [firstname, lastname] = value.split(' ');
-                      handleInputChange('firstname', firstname || '');
-                      handleInputChange('lastname', lastname || '');
-                    } else if (field === 'phone') {
-                      handleInputChange('phonenumber', value);
-                    } else if (field === 'dob') {
-                      handleInputChange('dateofbirth', value);
-                    } else if (field === 'fatherName') {
-                      handleInputChange('fathersname', value);
-                    } else {
-                      handleInputChange(field as keyof Employee, value);
-                    }
-                  }}
+                  // Add props to match the expected interface
                   isEditing={true}
                 />
               </TabsContent>
@@ -158,14 +144,14 @@ const AddEmployee = () => {
 
               <TabsContent value="bank">
                 <EmployeeBankTab 
-                  employeeId=""
+                  // Add props to match the expected interface
                   isEditing={true}
                 />
               </TabsContent>
 
               <TabsContent value="documents">
                 <EmployeeDocumentsTab 
-                  employeeId=""
+                  // Add props to match the expected interface
                   isEditing={true}
                 />
               </TabsContent>

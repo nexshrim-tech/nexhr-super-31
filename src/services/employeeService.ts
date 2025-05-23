@@ -61,7 +61,7 @@ export const createEmployee = async (employee: Omit<Employee, 'employeeid'> & { 
     
     const { data, error } = await supabase
       .from('employee')
-      .insert(dbEmployee)
+      .insert([dbEmployee]) // Wrap in array to satisfy TypeScript
       .select()
       .single();
 

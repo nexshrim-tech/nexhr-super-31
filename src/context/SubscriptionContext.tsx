@@ -1,109 +1,137 @@
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { useAuth } from "./AuthContext";
-import { getSubscriptionPlan, updateSubscriptionPlan, getCurrentCustomer } from "../services/customerService";
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
-export type SubscriptionPlan = "None" | "Starter" | "Professional" | "Business" | "Enterprise";
+// Define proper types for subscription plans
+interface Plan {
+  planname: string;
+  price: number;
+  featurelist: string;
+}
+
+interface SubscriptionPlan {
+  planid: number;
+  plan: Plan;
+}
 
 interface SubscriptionContextType {
-  plan: SubscriptionPlan;
-  setPlan: (plan: SubscriptionPlan) => void;
-  isSubscribed: boolean;
-  showSubscriptionModal: boolean;
-  setShowSubscriptionModal: (show: boolean) => void;
-  customerId: string | null;
-  features: {
-    employeeManagement: boolean;
-    attendanceTracking: boolean;
-    leaveManagement: boolean;
-    documentGeneration: boolean;
-    salaryManagement: boolean;
-    assetManagement: boolean;
-    expenseManagement: boolean;
-    helpDesk: boolean;
-    projectManagement: boolean;
-    advancedAnalytics: boolean;
-  };
+  subscription: SubscriptionPlan | null;
+  isLoading: boolean;
+  error: Error | null;
+  refreshSubscription: () => Promise<void>;
+  updatePlan: (planId: number) => Promise<boolean>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  const [plan, setPlan] = useState<SubscriptionPlan>("None");
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [customerId, setCustomerId] = useState<string | null>(null);
-  const isSubscribed = plan !== "None";
-  
-  // Define which features are available for each plan
-  const features = {
-    employeeManagement: isSubscribed,
-    attendanceTracking: isSubscribed,
-    leaveManagement: isSubscribed,
-    documentGeneration: ["Professional", "Business", "Enterprise"].includes(plan),
-    salaryManagement: ["Professional", "Business", "Enterprise"].includes(plan),
-    assetManagement: ["Professional", "Business", "Enterprise"].includes(plan),
-    expenseManagement: ["Business", "Enterprise"].includes(plan),
-    helpDesk: ["Business", "Enterprise"].includes(plan),
-    projectManagement: ["Business", "Enterprise"].includes(plan),
-    advancedAnalytics: ["Enterprise"].includes(plan),
-  };
-  
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      if (user) {
-        try {
-          const customer = await getCurrentCustomer(user);
-          if (customer) {
-            setCustomerId(customer.customerid);
-            const planName = await getSubscriptionPlan(customer.customerid);
-            setPlan(planName as SubscriptionPlan || "None");
-            
-            // Show subscription modal for new users with no plan
-            if (planName === "None") {
-              const isNewUser = localStorage.getItem("new-user") === "true";
-              if (isNewUser) {
-                // Show the modal after a delay on first load for new users
-                const timer = setTimeout(() => {
-                  setShowSubscriptionModal(true);
-                  localStorage.removeItem("new-user");
-                }, 1500);
-                
-                return () => clearTimeout(timer);
-              }
-            }
+  const [subscription, setSubscription] = useState<SubscriptionPlan | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchSubscription = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // First get the current customer
+      const { data: customerData, error: customerError } = await supabase.auth.getUser();
+      
+      if (customerError) throw customerError;
+      
+      if (!customerData.user) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Get customer details from the database
+      const { data: customer, error: customerDbError } = await supabase
+        .from('customer')
+        .select('planid')
+        .eq('customerauthid', customerData.user.id)
+        .single();
+        
+      if (customerDbError) throw customerDbError;
+      
+      if (!customer) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Now get the plan details
+      const { data: planData, error: planError } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('planid', customer.planid)
+        .single();
+        
+      if (planError) throw planError;
+      
+      if (planData) {
+        // Convert to our expected SubscriptionPlan format
+        const subscriptionData: SubscriptionPlan = {
+          planid: planData.planid,
+          plan: {
+            planname: planData.planname,
+            price: planData.price,
+            featurelist: planData.featurelist
           }
-        } catch (error) {
-          console.error("Error fetching subscription:", error);
-        }
+        };
+        
+        setSubscription(subscriptionData);
       }
-    };
-    
-    fetchSubscription();
-  }, [user]);
-  
-  const handleSetPlan = async (newPlan: SubscriptionPlan) => {
-    setPlan(newPlan);
-    
-    if (user && customerId) {
-      try {
-        await updateSubscriptionPlan(customerId, newPlan);
-      } catch (error) {
-        console.error("Error updating subscription plan:", error);
-      }
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+      console.error('Error fetching subscription:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
+
+  const updatePlan = async (planId: number): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      
+      // Get current user
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      if (!userData.user) throw new Error('No authenticated user');
+      
+      // Update the customer's plan in the database
+      const { error: updateError } = await supabase
+        .from('customer')
+        .update({ planid: planId })
+        .eq('customerauthid', userData.user.id);
+        
+      if (updateError) throw updateError;
+      
+      await fetchSubscription(); // Refresh subscription data
+      
+      toast.success('Subscription plan updated successfully');
+      return true;
+    } catch (err) {
+      console.error('Error updating subscription:', err);
+      toast.error('Failed to update subscription plan');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSubscription();
+  }, []);
+
   return (
     <SubscriptionContext.Provider
       value={{
-        plan,
-        setPlan: handleSetPlan,
-        isSubscribed,
-        showSubscriptionModal,
-        setShowSubscriptionModal,
-        customerId,
-        features,
+        subscription,
+        isLoading,
+        error,
+        refreshSubscription: fetchSubscription,
+        updatePlan
       }}
     >
       {children}
@@ -111,10 +139,10 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   );
 };
 
-export const useSubscription = () => {
+export const useSubscription = (): SubscriptionContextType => {
   const context = useContext(SubscriptionContext);
   if (context === undefined) {
-    throw new Error("useSubscription must be used within a SubscriptionProvider");
+    throw new Error('useSubscription must be used within a SubscriptionProvider');
   }
   return context;
 };

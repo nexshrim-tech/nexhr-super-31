@@ -21,7 +21,7 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   monthlysalary: emp.monthlysalary || 0,
   employmentstatus: emp.employmentstatus || '',
   employmenttype: emp.employmenttype || '',
-  phonenumber: emp.phonenumber ? emp.phonenumber.toString() : '',
+  phonenumber: emp.phonenumber ? emp.phonenumber.toString() : '', // Convert number to string
   bloodgroup: emp.bloodgroup || '',
   fathersname: emp.fathersname || '',
   maritalstatus: emp.maritalstatus || '',

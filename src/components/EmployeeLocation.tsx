@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import LocationMapComponent from "./LocationMapComponent";
+import { EmployeeLocation } from "@/types/location";
 
 // Define the correct type for EmployeeLocationData
 export interface EmployeeLocationData {
@@ -30,9 +31,9 @@ export interface EmployeeLocationData {
   };
 }
 
-const EmployeeLocation = () => {
+const EmployeeLocationComponent = () => {
   const [isLive, setIsLive] = useState(false);
-  const [employeeLocations, setEmployeeLocations] = useState<EmployeeLocationData[]>([]);
+  const [employeeLocations, setEmployeeLocations] = useState<EmployeeLocation[]>([]);
   const isMobile = useIsMobile();
   
   const { data: locations = [], isLoading, error } = useQuery({
@@ -55,7 +56,7 @@ const EmployeeLocation = () => {
         timestamp: item.timestamp || '',
         track_id: item.track_id,
         employee: item.employee || undefined
-      })) as EmployeeLocationData[];
+      })) as EmployeeLocation[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -87,7 +88,7 @@ const EmployeeLocation = () => {
                 .single();
                 
               if (data) {
-                const transformedData: EmployeeLocationData = {
+                const transformedData: EmployeeLocation = {
                   employeeid: data.employeeid,
                   latitude: data.coordinates?.[0] || 0,
                   longitude: data.coordinates?.[1] || 0,
@@ -191,7 +192,13 @@ const EmployeeLocation = () => {
               className={isLive 
                 ? "bg-red-500 hover:bg-red-600 shadow-md" 
                 : "bg-white/90 backdrop-blur-sm shadow-md hover:bg-white"}
-              onClick={toggleLiveTracking}
+              onClick={() => {
+                setIsLive(!isLive);
+                toast(isLive 
+                  ? "You have stopped tracking employee locations in real-time." 
+                  : "You are now tracking employee locations in real-time."
+                );
+              }}
             >
               {isLive ? "Stop Tracking" : "Start Live Tracking"}
             </Button>
@@ -212,4 +219,4 @@ const EmployeeLocation = () => {
   );
 };
 
-export default EmployeeLocation;
+export default EmployeeLocationComponent;
