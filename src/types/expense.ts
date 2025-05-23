@@ -1,31 +1,42 @@
 
 export interface Expense {
   expenseid: string;
-  employeeid: string;
-  customerid: string;
-  amount: number;
-  submittedby: string;
-  submissiondate: string;
   description: string;
   category: string;
+  amount: number;
+  submissiondate: string;
   status: string;
   billpath?: string;
-  // Adding date field to match usage in Expenses.tsx
+  employeeid?: string;
+  customerid?: string;
+  customer_id?: string;
+}
+
+export interface ExpenseItem {
+  id: string;
+  description: string;
+  category: string;
+  amount: number;
+  submittedBy: {
+    name: string;
+    avatar: string;
+  };
   date: string;
+  status: string;
+  expenseid: string;
+  billpath?: string;
 }
 
 export interface ExpenseCategory {
-  id: string;
   name: string;
-  budget?: number;
-  spent?: number;
-  color?: string;
+  count: number;
+  amount: number;
 }
 
-export interface ExpenseSummary {
-  totalAmount: number;
-  byCategory: Record<string, number>;
-  byMonth: Record<string, number>;
-  byStatus: Record<string, number>;
-  topExpenses: Expense[];
+export interface ExpenseFormData {
+  description: string;
+  category: string;
+  amount: number;
+  date: string;
+  receipt?: File;
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SidebarNav from "@/components/SidebarNav";
@@ -33,26 +34,10 @@ const AddEmployee = () => {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email,
-        password: "defaultpassword", // Replace with a secure method in production
-        options: {
-          data: {
-            full_name: `${firstName} ${lastName}`,
-            role: 'employee',
-          },
-        },
-      });
-
-      if (authError) {
-        console.error("Authentication error:", authError);
-        toast({
-          title: "Error",
-          description: `Failed to create employee account: ${authError.message}`,
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
+      // Get the current user's customer ID
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        throw new Error('You must be logged in to add an employee');
       }
 
       // Insert employee data into the employee table
@@ -60,12 +45,12 @@ const AddEmployee = () => {
         .from("employee")
         .insert([
           {
-            employeeid: authData.user?.id,
+            customerid: userData.user.id,
             firstname: firstName,
             lastname: lastName,
             email: email,
-            phonenumber: phoneNumber,
-            position: position,
+            phonenumber: parseFloat(phoneNumber) || null,
+            jobtitle: position,
             department: department,
             address: address,
             city: city,
@@ -82,10 +67,6 @@ const AddEmployee = () => {
           description: `Failed to save employee data: ${employeeError.message}`,
           variant: "destructive",
         });
-
-        // Optionally, delete the user from auth.users if employee creation fails
-        await supabase.auth.admin.deleteUser(authData.user!.id);
-
         setLoading(false);
         return;
       }

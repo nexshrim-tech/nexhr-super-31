@@ -1,4 +1,21 @@
 
+export interface SalaryAllowances {
+  basic: number;
+  hra: number;
+  transport: number;
+  medical: number;
+  special: number;
+  other: number;
+}
+
+export interface SalaryDeductions {
+  pf: number;
+  esi: number;
+  tax: number;
+  loan: number;
+  other: number;
+}
+
 export interface EmployeeSalary {
   id: string;
   employee: {
@@ -14,36 +31,16 @@ export interface EmployeeSalary {
   deductions: SalaryDeductions;
 }
 
-export interface PayslipRecord {
+export interface PayslipData {
   id: string;
-  employee: string;
-  period: string;
-  amount: number;
-  date: string;
-}
-
-// Define SalaryData type for trends
-export interface SalaryData {
+  employeeName: string;
+  employeeId: string;
   month: string;
-  amount: number;
-}
-
-// Define SalaryAllowances type
-export interface SalaryAllowances {
+  year: number;
   basicSalary: number;
-  hra: number;
-  conveyanceAllowance: number;
-  medicalAllowance: number;
-  specialAllowance: number;
-  otherAllowances: number;
-}
-
-// Define SalaryDeductions type
-export interface SalaryDeductions {
-  incomeTax: number;
-  providentFund: number;
-  professionalTax: number;
-  esi: number;
-  loanDeduction: number;
-  otherDeductions: number;
+  allowances: SalaryAllowances;
+  deductions: SalaryDeductions;
+  grossSalary: number;
+  netSalary: number;
+  generatedDate: string;
 }

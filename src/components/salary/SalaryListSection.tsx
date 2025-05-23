@@ -15,32 +15,29 @@ const SalaryListSection: React.FC<SalaryListSectionProps> = ({
   onViewLatestPayslip,
   onUpdateSalaryDetails
 }) => {
-  // Update handleGenerateSalarySlip function to convert string IDs to numbers
+  // Convert employee ID to string if needed to match EmployeeSalary type
   const handleGenerateSalarySlip = (employee: EmployeeSalary) => {
-    // Convert string ID to number if needed
-    const employeeWithNumberId = {
+    const employeeWithStringId = {
       ...employee,
-      id: typeof employee.id === 'string' ? parseInt(employee.id) : employee.id
+      id: String(employee.id)
     };
-    onGenerateSalarySlip(employeeWithNumberId);
+    onGenerateSalarySlip(employeeWithStringId);
   };
 
-  // Update handleViewLatestPayslip function similarly
   const handleViewLatestPayslip = (employee: EmployeeSalary) => {
-    const employeeWithNumberId = {
+    const employeeWithStringId = {
       ...employee,
-      id: typeof employee.id === 'string' ? parseInt(employee.id) : employee.id
+      id: String(employee.id)
     };
-    onViewLatestPayslip(employeeWithNumberId);
+    onViewLatestPayslip(employeeWithStringId);
   };
 
-  // Update handleUpdateSalaryDetails function similarly
   const handleUpdateSalaryDetails = (employee: EmployeeSalary) => {
-    const employeeWithNumberId = {
+    const employeeWithStringId = {
       ...employee,
-      id: typeof employee.id === 'string' ? parseInt(employee.id) : employee.id
+      id: String(employee.id)
     };
-    onUpdateSalaryDetails(employeeWithNumberId);
+    onUpdateSalaryDetails(employeeWithStringId);
   };
 
   return (
