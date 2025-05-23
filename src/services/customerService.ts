@@ -92,3 +92,65 @@ export const updateCustomer = async (
     return null;
   }
 };
+
+// Map subscription plan IDs to names
+const planNameMap: Record<number, string> = {
+  1: "None",
+  2: "Starter",
+  3: "Professional",
+  4: "Business",
+  5: "Enterprise"
+};
+
+// Get the subscription plan name by customer ID
+export const getSubscriptionPlan = async (customerId: string): Promise<string> => {
+  try {
+    const { data, error } = await supabase
+      .from('customer')
+      .select('planid')
+      .eq('customerid', customerId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching subscription plan:', error);
+      return "None"; // Default to "None" if there's an error
+    }
+
+    const planId = data?.planid || 1;
+    return planNameMap[planId] || "None";
+  } catch (error) {
+    console.error('Error in getSubscriptionPlan:', error);
+    return "None"; // Default to "None" if there's an exception
+  }
+};
+
+// Update the subscription plan for a customer
+export const updateSubscriptionPlan = async (customerId: string, planName: string): Promise<boolean> => {
+  try {
+    // Find the plan ID that corresponds to the plan name
+    const planEntries = Object.entries(planNameMap);
+    const planEntry = planEntries.find(([_, name]) => name === planName);
+    
+    if (!planEntry) {
+      console.error('Invalid plan name:', planName);
+      return false;
+    }
+    
+    const planId = parseInt(planEntry[0], 10);
+    
+    const { error } = await supabase
+      .from('customer')
+      .update({ planid: planId })
+      .eq('customerid', customerId);
+
+    if (error) {
+      console.error('Error updating subscription plan:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in updateSubscriptionPlan:', error);
+    return false;
+  }
+};
