@@ -10,6 +10,7 @@ export interface AttendanceRecord {
   checkouttimestamp?: string;
   status?: string;
   selfieimagepath?: string;
+  workhours?: string; // Add this property
   employee?: {
     firstname?: string;
     lastname?: string;

@@ -37,7 +37,7 @@ const EmployeeLocationComponent = () => {
       }
       
       return (data || []).map(item => ({
-        employeeid: item.employeeid,
+        employeeid: item.employeeid || '',
         latitude: item.coordinates?.[0] || 0,
         longitude: item.coordinates?.[1] || 0,
         timestamp: item.timestamp || '',
@@ -76,7 +76,7 @@ const EmployeeLocationComponent = () => {
                 
               if (data) {
                 const transformedData: EmployeeLocation = {
-                  employeeid: data.employeeid,
+                  employeeid: data.employeeid || '',
                   latitude: data.coordinates?.[0] || 0,
                   longitude: data.coordinates?.[1] || 0,
                   timestamp: data.timestamp || '',

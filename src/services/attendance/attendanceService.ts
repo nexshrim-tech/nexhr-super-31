@@ -120,7 +120,7 @@ export const setupAttendanceSubscription = () => {
   return supabase.channel('attendance-changes');
 };
 
-export const createAttendanceRecord = async (record: Omit<AttendanceRecord, 'date' | 'checkintime' | 'checkouttime' | 'workhours'>): Promise<AttendanceRecord> => {
+export const createAttendanceRecord = async (record: Omit<AttendanceRecord, 'date' | 'checkintime' | 'checkouttime'>): Promise<AttendanceRecord> => {
   try {
     const { data, error } = await supabase
       .from('attendance')

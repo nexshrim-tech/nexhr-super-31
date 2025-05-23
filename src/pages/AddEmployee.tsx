@@ -109,8 +109,6 @@ const AddEmployee = () => {
               <TabsContent value="personal">
                 <EmployeePersonalTab 
                   employee={uiEmployeeData}
-                  // Add props to match the expected interface
-                  isEditing={true}
                 />
               </TabsContent>
 
@@ -143,17 +141,11 @@ const AddEmployee = () => {
               </TabsContent>
 
               <TabsContent value="bank">
-                <EmployeeBankTab 
-                  // Add props to match the expected interface
-                  isEditing={true}
-                />
+                <EmployeeBankTab />
               </TabsContent>
 
               <TabsContent value="documents">
-                <EmployeeDocumentsTab 
-                  // Add props to match the expected interface
-                  isEditing={true}
-                />
+                <EmployeeDocumentsTab />
               </TabsContent>
             </Tabs>
 
