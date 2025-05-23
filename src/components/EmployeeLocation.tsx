@@ -17,7 +17,7 @@ import {
 import LocationMapComponent from "./LocationMapComponent";
 
 interface EmployeeLocation {
-  employeeid: string; // Changed to string to match database
+  employeeid: string; // Fixed to match database type
   latitude: number;
   longitude: number;
   timestamp: string;

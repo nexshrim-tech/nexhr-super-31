@@ -1,294 +1,157 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Layout } from "@/components/ui/layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import SidebarNav from "@/components/SidebarNav";
-import { addEmployee } from "@/services/employeeService";
-import { Employee } from "@/types/employee";
+import { Employee, createEmployee } from "@/services/employeeService";
+import { EmployeePersonalTab } from "@/components/employees/tabs/EmployeePersonalTab";
+import { EmployeeWorkTab } from "@/components/employees/tabs/EmployeeWorkTab";
+import { EmployeeBankTab } from "@/components/employees/tabs/EmployeeBankTab";
+import { EmployeeDocumentsTab } from "@/components/employees/tabs/EmployeeDocumentsTab";
+import { ArrowLeft, UserPlus } from "lucide-react";
 
 const AddEmployee = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  
-  const [formData, setFormData] = useState<Partial<Employee>>({
-    firstname: "",
-    lastname: "",
-    email: "",
-    phonenumber: undefined,
-    jobtitle: "",
-    department: "",
-    employmentstatus: "Active",
-    employmenttype: "",
-    gender: "",
-    dateofbirth: "",
-    address: "",
-    city: "",
-    state: "",
-    country: "",
-    postalcode: "",
-    monthlysalary: 0,
-    bloodgroup: "",
-    fathersname: "",
-    maritalstatus: "",
-    disabilitystatus: "",
-    nationality: "",
-    worklocation: "",
-    leavebalance: 0,
-    employeepassword: "",
-    customerid: "" // Initialize as required field
+  const [isLoading, setIsLoading] = useState(false);
+  const [employeeData, setEmployeeData] = useState<Partial<Employee>>({
+    customerid: 'default-customer-id',
+    employmentstatus: 'Active',
+    employmenttype: 'Full-time',
+    gender: 'Male',
+    maritalstatus: 'Single',
+    disabilitystatus: 'No Disability',
   });
 
-  const handleInputChange = (field: keyof Employee, value: string | number) => {
-    setFormData(prev => ({
+  const handleInputChange = (field: keyof Employee, value: any) => {
+    setEmployeeData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.firstname || !formData.lastname || !formData.email) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields (First Name, Last Name, Email)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    
+  const handleSubmit = async () => {
     try {
-      // Convert phonenumber from string to number if it's a string
-      const employeeData: Omit<Employee, 'employeeid'> = {
-        ...formData,
-        customerid: formData.customerid || 'default-customer', // Ensure customerid is provided
-        phonenumber: typeof formData.phonenumber === 'string' && formData.phonenumber 
-          ? parseInt(formData.phonenumber.replace(/\D/g, '')) 
-          : formData.phonenumber,
-        monthlysalary: typeof formData.monthlysalary === 'string' 
-          ? parseFloat(formData.monthlysalary) 
-          : formData.monthlysalary,
-        leavebalance: typeof formData.leavebalance === 'string' 
-          ? parseInt(formData.leavebalance) 
-          : formData.leavebalance,
-      };
+      setIsLoading(true);
+      
+      // Ensure required fields are present
+      const employeeToCreate = {
+        ...employeeData,
+        customerid: employeeData.customerid || 'default-customer-id',
+        phonenumber: employeeData.phonenumber ? Number(employeeData.phonenumber) : 0,
+        monthlysalary: employeeData.monthlysalary ? Number(employeeData.monthlysalary) : 0,
+        leavebalance: employeeData.leavebalance ? Number(employeeData.leavebalance) : 0,
+      } as Omit<Employee, 'employeeid'>;
 
-      await addEmployee(employeeData);
+      console.log('Creating employee with data:', employeeToCreate);
+      
+      const newEmployee = await createEmployee(employeeToCreate);
       
       toast({
         title: "Success",
-        description: "Employee added successfully!",
+        description: "Employee has been created successfully.",
       });
       
-      navigate("/employees");
+      // Navigate to employee details or back to list
+      if (newEmployee?.employeeid) {
+        navigate(`/employees/${newEmployee.employeeid}`);
+      } else {
+        navigate('/employees');
+      }
     } catch (error) {
-      console.error("Error adding employee:", error);
+      console.error('Error creating employee:', error);
       toast({
         title: "Error",
-        description: "Failed to add employee. Please try again.",
+        description: "Failed to create employee. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex h-full bg-gray-50">
-      <SidebarNav />
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Add New Employee</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Personal Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="firstname">First Name *</Label>
-                    <Input
-                      id="firstname"
-                      type="text"
-                      value={formData.firstname || ""}
-                      onChange={(e) => handleInputChange("firstname", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="lastname">Last Name *</Label>
-                    <Input
-                      id="lastname"
-                      type="text"
-                      value={formData.lastname || ""}
-                      onChange={(e) => handleInputChange("lastname", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email || ""}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phonenumber">Phone Number</Label>
-                    <Input
-                      id="phonenumber"
-                      type="tel"
-                      value={formData.phonenumber?.toString() || ""}
-                      onChange={(e) => handleInputChange("phonenumber", e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Job Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="jobtitle">Job Title</Label>
-                    <Input
-                      id="jobtitle"
-                      type="text"
-                      value={formData.jobtitle || ""}
-                      onChange={(e) => handleInputChange("jobtitle", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="department">Department</Label>
-                    <Input
-                      id="department"
-                      type="text"
-                      value={formData.department || ""}
-                      onChange={(e) => handleInputChange("department", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="employmentstatus">Employment Status</Label>
-                    <Select value={formData.employmentstatus} onValueChange={(value) => handleInputChange("employmentstatus", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                        <SelectItem value="On Leave">On Leave</SelectItem>
-                        <SelectItem value="Terminated">Terminated</SelectItem>
-                        <SelectItem value="Probation">Probation</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="monthlysalary">Monthly Salary</Label>
-                    <Input
-                      id="monthlysalary"
-                      type="number"
-                      value={formData.monthlysalary?.toString() || ""}
-                      onChange={(e) => handleInputChange("monthlysalary", parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-                </div>
-
-                {/* Additional Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="gender">Gender</Label>
-                    <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="dateofbirth">Date of Birth</Label>
-                    <Input
-                      id="dateofbirth"
-                      type="date"
-                      value={formData.dateofbirth || ""}
-                      onChange={(e) => handleInputChange("dateofbirth", e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Address Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <Label htmlFor="address">Address</Label>
-                    <Input
-                      id="address"
-                      type="text"
-                      value={formData.address || ""}
-                      onChange={(e) => handleInputChange("address", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      type="text"
-                      value={formData.city || ""}
-                      onChange={(e) => handleInputChange("city", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="state">State</Label>
-                    <Input
-                      id="state"
-                      type="text"
-                      value={formData.state || ""}
-                      onChange={(e) => handleInputChange("state", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      type="text"
-                      value={formData.country || ""}
-                      onChange={(e) => handleInputChange("country", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="postalcode">Postal Code</Label>
-                    <Input
-                      id="postalcode"
-                      type="text"
-                      value={formData.postalcode || ""}
-                      onChange={(e) => handleInputChange("postalcode", e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-4 pt-6">
-                  <Button type="submit" disabled={loading}>
-                    {loading ? "Adding..." : "Add Employee"}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => navigate("/employees")}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+    <Layout>
+      <div className="container mx-auto py-6 px-4">
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/employees')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Employees
+          </Button>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Add New Employee
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="personal" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="personal">Personal Info</TabsTrigger>
+                <TabsTrigger value="work">Work Details</TabsTrigger>
+                <TabsTrigger value="bank">Bank Details</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="personal">
+                <EmployeePersonalTab 
+                  employee={employeeData}
+                  onUpdate={handleInputChange}
+                  isEditing={true}
+                />
+              </TabsContent>
+
+              <TabsContent value="work">
+                <EmployeeWorkTab 
+                  employee={employeeData}
+                  onUpdate={handleInputChange}
+                  isEditing={true}
+                />
+              </TabsContent>
+
+              <TabsContent value="bank">
+                <EmployeeBankTab 
+                  employeeId={''}
+                  isEditing={true}
+                />
+              </TabsContent>
+
+              <TabsContent value="documents">
+                <EmployeeDocumentsTab 
+                  employeeId={''}
+                  isEditing={true}
+                />
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/employees')}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSubmit}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Creating...' : 'Create Employee'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </Layout>
   );
 };
 

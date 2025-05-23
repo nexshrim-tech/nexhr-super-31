@@ -1,81 +1,71 @@
 
-import React from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Filter } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Search } from "lucide-react";
 
-interface TaskFiltersProps {
-  filterStatus: string;
-  setFilterStatus: (value: string) => void;
-  filterPriority: string;
-  setFilterPriority: (value: string) => void;
+export interface TaskFiltersProps {
   searchTerm: string;
-  setSearchTerm: (value: string) => void;
+  setSearchTerm: (term: string) => void;
+  statusFilter: string;
+  setStatusFilter: (status: string) => void;
+  priorityFilter: string;
+  setPriorityFilter: (priority: string) => void;
+  onCreateTask: () => void;
 }
 
 const TaskFilters: React.FC<TaskFiltersProps> = ({
-  filterStatus,
-  setFilterStatus,
-  filterPriority,
-  setFilterPriority,
   searchTerm,
   setSearchTerm,
+  statusFilter,
+  setStatusFilter,
+  priorityFilter,
+  setPriorityFilter,
+  onCreateTask,
 }) => {
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <Tabs 
-          defaultValue={filterStatus} 
-          onValueChange={(value) => setFilterStatus(value)}
-        >
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="To Do">To Do</TabsTrigger>
-            <TabsTrigger value="In Progress">In Progress</TabsTrigger>
-            <TabsTrigger value="Completed">Completed</TabsTrigger>
-          </TabsList>
-        </Tabs>
+    <div className="flex flex-col sm:flex-row gap-4 p-4">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Search tasks..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
       </div>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="icon" className="h-8 w-8">
-            <Filter className="h-4 w-4" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-56">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Priority</Label>
-              <Select 
-                value={filterPriority} 
-                onValueChange={setFilterPriority}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Search</Label>
-              <Input 
-                placeholder="Search tasks..." 
-                value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+      
+      <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <SelectTrigger className="w-full sm:w-40">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Status</SelectItem>
+          <SelectItem value="Pending">Pending</SelectItem>
+          <SelectItem value="In Progress">In Progress</SelectItem>
+          <SelectItem value="Completed">Completed</SelectItem>
+          <SelectItem value="On Hold">On Hold</SelectItem>
+        </SelectContent>
+      </Select>
+      
+      <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+        <SelectTrigger className="w-full sm:w-40">
+          <SelectValue placeholder="Priority" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Priority</SelectItem>
+          <SelectItem value="Low">Low</SelectItem>
+          <SelectItem value="Medium">Medium</SelectItem>
+          <SelectItem value="High">High</SelectItem>
+          <SelectItem value="Urgent">Urgent</SelectItem>
+        </SelectContent>
+      </Select>
+      
+      <Button onClick={onCreateTask} className="flex items-center gap-2">
+        <Plus className="h-4 w-4" />
+        Add Task
+      </Button>
     </div>
   );
 };

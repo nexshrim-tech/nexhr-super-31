@@ -1,101 +1,75 @@
 
-import React, { useMemo } from "react";
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock, ListTodo } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, Play } from "lucide-react";
 
-interface Task {
-  id: string | number;
-  title?: string;
-  dueDate?: string;
-  due_date?: string;
-  status: string;
-  priority: string;
-  assignedTo?: { name: string; avatar: string } | string;
-  assigned_to?: string | { name: string; avatar: string };
-  comments?: any[];
-  resources?: any[];
+export interface TaskSummaryProps {
+  stats: {
+    total: number;
+    completed: number;
+    pending: number;
+    inProgress: number;
+  };
 }
 
-interface SummaryItemProps {
-  title: string;
-  count: number;
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
-}
-
-interface TaskSummaryProps {
-  tasks?: Task[];
-}
-
-const SummaryItem: React.FC<SummaryItemProps> = ({ title, count, icon, color, bgColor }) => (
-  <div className={`border rounded-lg p-4 transition-all duration-300 hover:shadow-md ${bgColor}`}>
-    <div className="flex items-center justify-between">
-      <div>
-        <div className="text-sm text-gray-600 font-medium mb-1">{title}</div>
-        <div className="text-2xl font-bold">{count}</div>
-      </div>
-      <div className={`h-12 w-12 rounded-full flex items-center justify-center ${color}`}>
-        {icon}
-      </div>
-    </div>
-  </div>
-);
-
-const TaskSummary: React.FC<TaskSummaryProps> = ({ tasks = [] }) => {
-  const taskCounts = useMemo(() => {
-    const total = tasks.length;
-    const completed = tasks.filter(task => task.status === "Completed").length;
-    const inProgress = tasks.filter(task => task.status === "In Progress").length;
-    const toDo = tasks.filter(task => task.status === "To Do").length;
-    
-    return { total, completed, inProgress, toDo };
-  }, [tasks]);
+const TaskSummary: React.FC<TaskSummaryProps> = ({ stats }) => {
+  const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-all duration-300 border-t-4 border-t-indigo-500">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center text-lg font-semibold text-gray-900">
-          Task Summary
-          <Badge variant="outline" className="ml-2 bg-indigo-100 text-indigo-800 px-2">
-            Overview
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Card className="border-t-4 border-t-blue-500">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+          <AlertCircle className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.total}</div>
+          <p className="text-xs text-muted-foreground">
+            {completionRate}% completion rate
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="border-t-4 border-t-green-500">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Completed</CardTitle>
+          <CheckCircle className="h-4 w-4 text-green-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+          <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+            Finished
           </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-4">
-          <SummaryItem 
-            title="Total Tasks" 
-            count={taskCounts.total} 
-            icon={<ListTodo className="h-6 w-6 text-white" />}
-            color="bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-            bgColor="bg-blue-50 border-blue-100"
-          />
-          <SummaryItem 
-            title="Completed" 
-            count={taskCounts.completed} 
-            icon={<Check className="h-6 w-6 text-white" />}
-            color="bg-gradient-to-r from-green-600 to-green-700 text-white"
-            bgColor="bg-green-50 border-green-100"
-          />
-          <SummaryItem 
-            title="In Progress" 
-            count={taskCounts.inProgress} 
-            icon={<Clock className="h-6 w-6 text-white" />}
-            color="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white"
-            bgColor="bg-yellow-50 border-yellow-100"
-          />
-          <SummaryItem 
-            title="To Do" 
-            count={taskCounts.toDo} 
-            icon={<ListTodo className="h-6 w-6 text-white" />}
-            color="bg-gradient-to-r from-purple-600 to-purple-700 text-white"
-            bgColor="bg-purple-50 border-purple-100"
-          />
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <Card className="border-t-4 border-t-yellow-500">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Pending</CardTitle>
+          <Clock className="h-4 w-4 text-yellow-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+          <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700">
+            Waiting
+          </Badge>
+        </CardContent>
+      </Card>
+
+      <Card className="border-t-4 border-t-purple-500">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+          <Play className="h-4 w-4 text-purple-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-purple-600">{stats.inProgress}</div>
+          <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+            Active
+          </Badge>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
