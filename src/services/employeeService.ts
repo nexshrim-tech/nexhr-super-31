@@ -1,8 +1,9 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Employee } from '@/types/employee';
 import { mapEmployeeDBToEmployee, mapEmployeeToDBFormat } from '@/utils/employeeMappers';
 
-export const getEmployees = async (customerId?: number): Promise<Employee[]> => {
+export const getEmployees = async (customerId?: string): Promise<Employee[]> => {
   try {
     let query = supabase.from('employee').select();
     
@@ -24,25 +25,24 @@ export const getEmployees = async (customerId?: number): Promise<Employee[]> => 
   }
 };
 
-export const getEmployeeById = async (id: number): Promise<Employee | null> => {
+export const getEmployeeById = async (id: string): Promise<Employee | null> => {
   try {
-    // Check if this is an admin-added expense (id might be null or 0)
-    if (!id || id === 0) {
+    // Handle special case for admin users
+    if (!id || id === '0' || id === 'admin') {
       return {
-        employeeid: 0,
+        employeeid: '0',
+        customerid: '',
         firstname: 'Admin',
         lastname: 'User',
         email: '',
-        // Include other required fields with default values
         address: '',
         city: '',
         state: '',
         country: '',
-        postalcode: '', // Fixed: Changed 'zipcode' to 'postalcode' to match Employee interface
-        phonenumber: '', // Fixed: Using empty string instead of number
+        postalcode: '',
         jobtitle: '',
         department: '',
-        employmentstatus: 'Active', // Fixed: Using a valid employmentstatus value
+        employmentstatus: 'Active',
         gender: '',
       };
     }
@@ -73,7 +73,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       throw new Error('Employee must have firstname, lastname, and email');
     }
     
-    // Convert the employee data to database format
     const dbEmployee = mapEmployeeToDBFormat(employee);
     console.log('Formatted employee data for database:', dbEmployee);
     
@@ -83,7 +82,7 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
         const { data: customerData } = await supabase
           .from('customer')
           .select('customerid')
-          .eq('customerid', userData.user.id)
+          .eq('customerauthid', userData.user.id)
           .single();
 
         if (customerData?.customerid) {
@@ -92,7 +91,6 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
       }
     }
     
-    // Make sure all fields are included in the insert operation
     const { data, error } = await supabase
       .from('employee')
       .insert(dbEmployee)
@@ -111,15 +109,13 @@ export const addEmployee = async (employee: Omit<Employee, 'employeeid'>): Promi
   }
 };
 
-export const updateEmployee = async (id: number, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
+export const updateEmployee = async (id: string, employee: Omit<Partial<Employee>, 'employeeid'>): Promise<Employee> => {
   try {
     console.log('Updating employee with data:', employee);
     
-    // Convert the employee data to database format
     const dbEmployee = mapEmployeeToDBFormat(employee);
     console.log('Formatted employee data for database update:', dbEmployee);
     
-    // Make sure all fields are included in the update operation
     const { data, error } = await supabase
       .from('employee')
       .update(dbEmployee)
@@ -139,9 +135,8 @@ export const updateEmployee = async (id: number, employee: Omit<Partial<Employee
   }
 };
 
-export const deleteEmployee = async (id: number): Promise<void> => {
+export const deleteEmployee = async (id: string): Promise<void> => {
   try {
-    // Completely delete the employee record from the database
     const { error } = await supabase
       .from('employee')
       .delete()

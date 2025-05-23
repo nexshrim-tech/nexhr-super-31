@@ -1,4 +1,3 @@
-
 import { Employee, EmployeeDB } from "@/types/employee";
 
 export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({

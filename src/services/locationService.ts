@@ -2,9 +2,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface EmployeeLocation {
-  trackid?: number;
-  employeeid: number;
-  customerid: number;
+  track_id: string;
+  employeeid: string;
+  customerid: string;
   latitude: number;
   longitude: number;
   timestamp?: string;
@@ -19,7 +19,14 @@ export const getEmployeeLocations = async (): Promise<EmployeeLocation[]> => {
   try {
     const { data, error } = await supabase
       .from('track')
-      .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+      .select(`
+        track_id,
+        employeeid,
+        customerid,
+        coordinates,
+        timestamp,
+        employee:employee!track_employeeid_fkey(firstname, lastname, jobtitle)
+      `)
       .order('timestamp', { ascending: false });
 
     if (error) {
@@ -27,7 +34,18 @@ export const getEmployeeLocations = async (): Promise<EmployeeLocation[]> => {
       throw error;
     }
 
-    return data || [];
+    // Transform coordinates array to latitude/longitude
+    const transformedData: EmployeeLocation[] = (data || []).map(track => ({
+      track_id: track.track_id,
+      employeeid: track.employeeid,
+      customerid: track.customerid,
+      latitude: track.coordinates?.[0] || 0,
+      longitude: track.coordinates?.[1] || 0,
+      timestamp: track.timestamp || undefined,
+      employee: track.employee || undefined
+    }));
+
+    return transformedData;
   } catch (error) {
     console.error('Error in getEmployeeLocations:', error);
     throw error;
@@ -35,8 +53,8 @@ export const getEmployeeLocations = async (): Promise<EmployeeLocation[]> => {
 };
 
 export const updateEmployeeLocation = async (
-  employeeId: number, 
-  customerId: number, 
+  employeeId: string, 
+  customerId: string, 
   latitude: number, 
   longitude: number
 ): Promise<EmployeeLocation> => {
@@ -44,15 +62,21 @@ export const updateEmployeeLocation = async (
     const newLocation = {
       employeeid: employeeId,
       customerid: customerId,
-      latitude,
-      longitude,
+      coordinates: [latitude, longitude],
       timestamp: new Date().toISOString()
     };
 
     const { data, error } = await supabase
       .from('track')
       .insert(newLocation)
-      .select('*, employee:employeeid(firstname, lastname, jobtitle)')
+      .select(`
+        track_id,
+        employeeid,
+        customerid,
+        coordinates,
+        timestamp,
+        employee:employee!track_employeeid_fkey(firstname, lastname, jobtitle)
+      `)
       .single();
 
     if (error) {
@@ -60,7 +84,15 @@ export const updateEmployeeLocation = async (
       throw error;
     }
 
-    return data;
+    return {
+      track_id: data.track_id,
+      employeeid: data.employeeid,
+      customerid: data.customerid,
+      latitude: data.coordinates?.[0] || 0,
+      longitude: data.coordinates?.[1] || 0,
+      timestamp: data.timestamp || undefined,
+      employee: data.employee || undefined
+    };
   } catch (error) {
     console.error('Error in updateEmployeeLocation:', error);
     throw error;
@@ -69,7 +101,6 @@ export const updateEmployeeLocation = async (
 
 export const enableRealtimeForTrackTable = async (): Promise<void> => {
   try {
-    // Create a channel for realtime updates instead of using the deprecated method
     const channel = supabase
       .channel('track-changes')
       .on('postgres_changes', 

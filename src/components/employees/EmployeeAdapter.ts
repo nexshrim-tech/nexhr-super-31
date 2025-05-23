@@ -1,16 +1,16 @@
 
 import { Employee } from "@/types/employee";
 
-// This adapter function converts the demo data format to match the Employee interface
+// This adapter function converts demo/UI data format to match the Employee interface
 export const adaptEmployeeData = (demoData: any): Employee => {
   return {
-    employeeid: typeof demoData.id === 'string' && demoData.id.startsWith('EMP') 
-      ? parseInt(demoData.id.replace('EMP', '')) || 0 
-      : demoData.employeeid || 0,
+    employeeid: demoData.employeeid || demoData.id || '',
+    customerid: demoData.customerid || '',
+    employeeauthid: demoData.employeeauthid,
     firstname: demoData.name ? demoData.name.split(' ')[0] : demoData.firstname || '',
     lastname: demoData.name ? demoData.name.split(' ')[1] || '' : demoData.lastname || '',
     email: demoData.email || '',
-    phonenumber: demoData.phone || demoData.phonenumber?.toString() || '', 
+    phonenumber: typeof demoData.phone === 'string' ? parseInt(demoData.phone) : demoData.phonenumber,
     jobtitle: demoData.role || demoData.jobtitle || '',
     department: demoData.department || '',
     joiningdate: demoData.joining || demoData.joiningdate || null,
@@ -26,30 +26,29 @@ export const adaptEmployeeData = (demoData: any): Employee => {
     city: demoData.city || '',
     state: demoData.state || '',
     country: demoData.country || '',
-    postalcode: demoData.postalcode || '',
+    postalcode: demoData.postalcode || demoData.zipcode || '',
     bloodgroup: demoData.bloodgroup || '',
-    fathersname: demoData.fathersname || '',
+    fathersname: demoData.fathersname || demoData.fatherName || '',
     maritalstatus: demoData.maritalstatus || '',
-    disabilitystatus: demoData.disabilitystatus || '',
+    disabilitystatus: demoData.disabilitystatus || (demoData.hasDisability ? 'Yes' : 'No'),
     nationality: demoData.nationality || '',
     worklocation: demoData.worklocation || '',
     leavebalance: typeof demoData.leavebalance === 'string' 
       ? parseInt(demoData.leavebalance) 
       : (demoData.leavebalance || 0),
     employeepassword: demoData.employeepassword || '',
-    documentpath: demoData.documentpath || '',
-    customerid: demoData.customerid || ''
+    documentpath: demoData.documentpath || null
   };
 };
 
-// Convert from Employee to UI format
+// Convert from Employee to UI format (for backward compatibility)
 export const adaptToUIFormat = (employee: Employee): any => {
   return {
-    id: `EMP${employee.employeeid.toString().padStart(3, '0')}`,
-    name: `${employee.firstname} ${employee.lastname}`,
+    id: employee.employeeid,
+    name: `${employee.firstname || ''} ${employee.lastname || ''}`.trim(),
     email: employee.email,
-    phone: employee.phonenumber || '',
-    employeeId: employee.employeeid.toString(),
+    phone: employee.phonenumber?.toString() || '',
+    employeeId: employee.employeeid,
     role: employee.jobtitle || '',
     department: employee.department || '',
     dob: employee.dateofbirth || '',
@@ -57,7 +56,7 @@ export const adaptToUIFormat = (employee: Employee): any => {
     address: employee.address || '',
     joining: employee.joiningdate || '',
     status: employee.employmentstatus || 'Active',
-    avatar: employee.profilepicturepath || `${employee.firstname[0]}${employee.lastname[0]}`,
+    avatar: employee.profilepicturepath || `${(employee.firstname || '')[0] || ''}${(employee.lastname || '')[0] || ''}`,
     monthlysalary: employee.monthlysalary || 0,
     employmenttype: employee.employmenttype || '',
     city: employee.city || '',
@@ -72,8 +71,8 @@ export const adaptToUIFormat = (employee: Employee): any => {
     worklocation: employee.worklocation || '',
     leavebalance: employee.leavebalance || 0,
     employeepassword: employee.employeepassword || '',
-    documentpath: employee.documentpath || '',
-    // Default values for UI that might not be in the database
+    documentpath: employee.documentpath || null,
+    // Default values for UI compatibility
     tasks: [],
     assets: [],
     leaves: "0/0",
