@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const ProfileSettings = () => {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, customerId, customerAuthId } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -106,7 +107,7 @@ const ProfileSettings = () => {
 
           <Separator />
           
-          {/* User Role Information - updated to show customerauthid */}
+          {/* User Role Information - updated to show resolved customer info */}
           {profile && (
             <div className="p-4 bg-gray-50 rounded-md">
               <h3 className="font-medium mb-2">Account Information</h3>
@@ -114,10 +115,10 @@ const ProfileSettings = () => {
                 <div className="text-muted-foreground">Role:</div>
                 <div className="font-medium capitalize">{profile.role}</div>
                 
-                {profile.customer_id && (
+                {customerId && (
                   <>
                     <div className="text-muted-foreground">Organization ID:</div>
-                    <div className="font-medium">{profile.customer_id}</div>
+                    <div className="font-medium">{customerId}</div>
                   </>
                 )}
                 

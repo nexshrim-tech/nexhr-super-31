@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from "@/components/ui/layout";
@@ -22,7 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 const AddEmployee = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { profile, customerAuthId } = useAuth();
+  const { profile, customerId, customerAuthId } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [employeeData, setEmployeeData] = useState<Partial<Employee>>({
     employmentstatus: 'Active',
@@ -139,7 +138,7 @@ const AddEmployee = () => {
       const { error } = await supabase.rpc('link_employee_to_profile', {
         auth_user_id: employeeData.employeeauthid,
         employee_uuid: employeeId,
-        customer_uuid: profile?.customer_id || customerAuthId
+        customer_uuid: customerId || customerAuthId
       });
       
       if (error) {
@@ -153,9 +152,8 @@ const AddEmployee = () => {
   };
 
   const validateForm = () => {
-    // Check for required customer ID
-    const finalCustomerId = profile?.customer_id || customerAuthId;
-    if (!finalCustomerId) {
+    // Check for required customer ID - now using customerId from resolved lookup
+    if (!customerId) {
       toast({
         title: "Error",
         description: "Unable to determine customer organization. Please contact support.",
@@ -205,19 +203,15 @@ const AddEmployee = () => {
 
       setIsLoading(true);
       
-      // Ensure we have the customerid from the logged-in user's profile or customerAuthId
-      const finalCustomerId = profile?.customer_id || customerAuthId;
-      
       console.log('Creating employee with data:', employeeData);
       console.log('Customer Auth ID:', customerAuthId);
-      console.log('Profile Customer ID:', profile?.customer_id);
-      console.log('Final Customer ID:', finalCustomerId);
+      console.log('Resolved Customer ID:', customerId);
       console.log('Document paths (JSONB):', employeeData.documentpath);
       console.log('Profile photo path:', employeeData.profilepicturepath);
       
       const employeeToCreate = {
         ...employeeData,
-        customerid: finalCustomerId
+        customerid: customerId
       } as Employee & { customerid: string };
 
       const newEmployee = await createEmployee(employeeToCreate);

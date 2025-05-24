@@ -7,12 +7,11 @@ import { useToast } from '@/hooks/use-toast';
 // Define our user role type to match the database enum
 export type UserRole = 'admin' | 'customer' | 'employee';
 
-// Define our profile type - updated to include customerauthid
+// Define our profile type - updated to remove customer_id
 export interface UserProfile {
   id: string;
   full_name: string | null;
   role: UserRole;
-  customer_id?: string;
   employee_id?: string;
   customerauthid?: string;
   created_at?: string;
@@ -43,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [customerId, setCustomerId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -71,6 +71,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Helper function to get customerid from customer table using customerauthid
+  const fetchCustomerId = async (customerAuthId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('customer')
+        .select('customerid')
+        .eq('customerauthid', customerAuthId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching customer ID:', error);
+        return undefined;
+      }
+
+      return data?.customerid;
+    } catch (error) {
+      console.error('Exception fetching customer ID:', error);
+      return undefined;
+    }
+  };
+
   // Refresh the user profile data
   const refreshProfile = async () => {
     if (!user) return;
@@ -78,6 +99,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const userProfile = await fetchUserProfile(user.id);
       setProfile(userProfile);
+      
+      // If user has customerauthid, fetch the actual customerid
+      if (userProfile?.customerauthid) {
+        const custId = await fetchCustomerId(userProfile.customerauthid);
+        setCustomerId(custId);
+      } else {
+        setCustomerId(undefined);
+      }
     } catch (error) {
       console.error('Error refreshing profile:', error);
     }
@@ -103,6 +132,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const userProfile = await fetchUserProfile(session.user.id);
                 setProfile(userProfile);
                 
+                // If user has customerauthid, fetch the actual customerid
+                if (userProfile?.customerauthid) {
+                  const custId = await fetchCustomerId(userProfile.customerauthid);
+                  setCustomerId(custId);
+                } else {
+                  setCustomerId(undefined);
+                }
+                
                 toast({
                   title: "Signed in successfully",
                   description: `Welcome back, ${userProfile?.full_name || session.user.email}!`,
@@ -111,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } else if (event === 'SIGNED_OUT') {
               console.log("User signed out");
               setProfile(null);
+              setCustomerId(undefined);
               
               toast({
                 title: "Signed out successfully",
@@ -128,6 +166,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           const userProfile = await fetchUserProfile(session.user.id);
           setProfile(userProfile);
+          
+          // If user has customerauthid, fetch the actual customerid
+          if (userProfile?.customerauthid) {
+            const custId = await fetchCustomerId(userProfile.customerauthid);
+            setCustomerId(custId);
+          }
         }
 
         return () => {
@@ -223,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
       setProfile(null);
+      setCustomerId(undefined);
       navigate('/login');
     } catch (error: any) {
       console.error('Error signing out:', error.message);
@@ -236,11 +281,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Role-based helper properties - updated to include customerAuthId
+  // Role-based helper properties - updated to use resolved customerId
   const isAdmin = profile?.role === 'admin';
   const isCustomer = profile?.role === 'customer';
   const isEmployee = profile?.role === 'employee';
-  const customerId = profile?.customer_id;
   const employeeId = profile?.employee_id;
   const customerAuthId = profile?.customerauthid;
 
@@ -252,7 +296,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAdmin,
     isCustomer,
     isEmployee,
-    customerId,
+    customerId, // This now comes from the resolved customer table lookup
     employeeId,
     customerAuthId,
     signIn,
