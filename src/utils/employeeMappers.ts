@@ -11,6 +11,7 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   joiningdate: emp.joiningdate || null,
   profilepicturepath: emp.profilepicturepath || '',
   customerid: emp.customerid,
+  employeeauthid: emp.employeeauthid,
   address: emp.address || '',
   gender: emp.gender || '',
   dateofbirth: emp.dateofbirth || null,
@@ -21,7 +22,7 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   monthlysalary: emp.monthlysalary || 0,
   employmentstatus: emp.employmentstatus || '',
   employmenttype: emp.employmenttype || '',
-  phonenumber: emp.phonenumber ? emp.phonenumber.toString() : '', // Convert number to string
+  phonenumber: emp.phonenumber ? emp.phonenumber.toString() : '',
   bloodgroup: emp.bloodgroup || '',
   fathersname: emp.fathersname || '',
   maritalstatus: emp.maritalstatus || '',
@@ -30,7 +31,7 @@ export const mapEmployeeDBToEmployee = (emp: EmployeeDB): Employee => ({
   worklocation: emp.worklocation || '',
   leavebalance: emp.leavebalance || 0,
   employeepassword: emp.employeepassword || '',
-  documentpath: emp.documentpath || ''
+  documentpath: emp.documentpath || null
 });
 
 export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<string, any> => {
@@ -45,13 +46,14 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
   if (employee.joiningdate !== undefined) dbEmployee.joiningdate = employee.joiningdate;
   if (employee.profilepicturepath !== undefined) dbEmployee.profilepicturepath = employee.profilepicturepath;
   if (employee.customerid !== undefined) dbEmployee.customerid = employee.customerid;
+  if (employee.employeeauthid !== undefined) dbEmployee.employeeauthid = employee.employeeauthid;
   if (employee.address !== undefined) dbEmployee.address = employee.address;
   if (employee.gender !== undefined) dbEmployee.gender = employee.gender;
   if (employee.dateofbirth !== undefined) dbEmployee.dateofbirth = employee.dateofbirth;
   if (employee.city !== undefined) dbEmployee.city = employee.city;
   if (employee.state !== undefined) dbEmployee.state = employee.state;
   if (employee.country !== undefined) dbEmployee.country = employee.country;
-  if (employee.postalcode !== undefined) dbEmployee.zipcode = employee.postalcode; // Map postalcode to zipcode
+  if (employee.postalcode !== undefined) dbEmployee.zipcode = employee.postalcode;
   if (employee.employmentstatus !== undefined) dbEmployee.employmentstatus = employee.employmentstatus;
   if (employee.employmenttype !== undefined) dbEmployee.employmenttype = employee.employmenttype;
   if (employee.bloodgroup !== undefined) dbEmployee.bloodgroup = employee.bloodgroup;
@@ -67,17 +69,21 @@ export const mapEmployeeToDBFormat = (employee: Partial<Employee>): Record<strin
   // Handle monthlysalary
   if (employee.monthlysalary !== undefined) {
     dbEmployee.monthlysalary = typeof employee.monthlysalary === 'string' 
-      ? parseFloat(employee.monthlysalary) 
-      : employee.monthlysalary;
+      ? parseFloat(employee.monthlysalary) || 0
+      : (employee.monthlysalary || 0);
   }
   
   // Handle phonenumber conversion for the database (expects numeric)
   if (employee.phonenumber !== undefined && employee.phonenumber !== null) {
     if (typeof employee.phonenumber === 'string' && employee.phonenumber.trim() !== '') {
-      // Remove non-numeric characters before parsing
+      // Remove non-numeric characters and convert to number
       const cleanedNumber = employee.phonenumber.replace(/\D/g, '');
-      const parsedPhone = cleanedNumber ? parseInt(cleanedNumber, 10) : null;
-      dbEmployee.phonenumber = !isNaN(parsedPhone as number) ? parsedPhone : null;
+      if (cleanedNumber && cleanedNumber.length >= 10) {
+        const parsedPhone = parseInt(cleanedNumber, 10);
+        dbEmployee.phonenumber = !isNaN(parsedPhone) ? parsedPhone : null;
+      } else {
+        dbEmployee.phonenumber = null;
+      }
     } else if (typeof employee.phonenumber === 'number') {
       dbEmployee.phonenumber = employee.phonenumber;
     } else {

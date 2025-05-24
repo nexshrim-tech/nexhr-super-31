@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from "@/components/ui/layout";
@@ -24,7 +25,6 @@ const AddEmployee = () => {
   const { profile, customerAuthId } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [employeeData, setEmployeeData] = useState<Partial<Employee>>({
-    customerid: profile?.customer_id || customerAuthId || 'default-customer-id',
     employmentstatus: 'Active',
     employmenttype: 'Full-time',
     gender: 'Male',
@@ -42,13 +42,64 @@ const AddEmployee = () => {
     }));
   };
 
+  const handleSelectChange = (field: string, value: string) => {
+    if (field === 'department') {
+      handleInputChange('department', value);
+    } else if (field === 'employmentstatus') {
+      handleInputChange('employmentstatus', value);
+    } else if (field === 'employmenttype') {
+      handleInputChange('employmenttype', value);
+    } else if (field === 'gender') {
+      handleInputChange('gender', value);
+    } else if (field === 'bloodgroup') {
+      handleInputChange('bloodgroup', value);
+    } else if (field === 'maritalstatus') {
+      handleInputChange('maritalstatus', value);
+    } else if (field === 'nationality') {
+      handleInputChange('nationality', value);
+    }
+  };
+
+  const handleCheckboxChange = (field: string, checked: boolean) => {
+    if (field === 'hasDisability') {
+      handleInputChange('disabilitystatus', checked ? 'Yes' : 'No');
+    }
+  };
+
+  const handleFormInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    // Handle special field mappings
+    if (name === 'role') {
+      handleInputChange('jobtitle', value);
+    } else if (name === 'employeeId') {
+      handleInputChange('employeeid', value);
+    } else if (name === 'joining') {
+      handleInputChange('joiningdate', value);
+    } else if (name === 'dob') {
+      handleInputChange('dateofbirth', value);
+    } else if (name === 'phone') {
+      handleInputChange('phonenumber', value);
+    } else if (name === 'fatherName') {
+      handleInputChange('fathersname', value);
+    } else if (name === 'postalcode') {
+      handleInputChange('postalcode', value);
+    } else {
+      handleInputChange(name as keyof Employee, value);
+    }
+  };
+
   const handleProfilePhotoUpload = (photoUrl: string) => {
     handleInputChange('profilepicturepath', photoUrl);
   };
 
   const handleDocumentsChange = (documents: Record<string, string>) => {
-    // Store documents as JSONB object
     handleInputChange('documentpath', documents);
+  };
+
+  const handleBankDetailsChange = (bankDetails: any) => {
+    // Bank details would be handled separately if needed
+    console.log('Bank details:', bankDetails);
   };
 
   // Register employee in auth system and link to employee record
@@ -101,16 +152,54 @@ const AddEmployee = () => {
     }
   };
 
+  const validateForm = () => {
+    // Check for required customer ID
+    const finalCustomerId = profile?.customer_id || customerAuthId;
+    if (!finalCustomerId) {
+      toast({
+        title: "Error",
+        description: "Unable to determine customer organization. Please contact support.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check for mandatory documents
+    const documents = employeeData.documentpath as Record<string, string> || {};
+    if (!documents.aadhar || !documents.pan) {
+      toast({
+        title: "Error",
+        description: "Aadhar Card and PAN Card are mandatory documents.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check for required fields
+    if (!employeeData.firstname?.trim()) {
+      toast({
+        title: "Error",
+        description: "First name is required.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!employeeData.lastname?.trim()) {
+      toast({
+        title: "Error",
+        description: "Last name is required.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async () => {
     try {
-      // Validate mandatory documents
-      const documents = employeeData.documentpath as Record<string, string> || {};
-      if (!documents.aadhar || !documents.pan) {
-        toast({
-          title: "Error",
-          description: "Aadhar Card and PAN Card are mandatory documents.",
-          variant: "destructive",
-        });
+      if (!validateForm()) {
         return;
       }
 
@@ -118,19 +207,17 @@ const AddEmployee = () => {
       
       // Ensure we have the customerid from the logged-in user's profile or customerAuthId
       const finalCustomerId = profile?.customer_id || customerAuthId;
-      if (finalCustomerId) {
-        employeeData.customerid = finalCustomerId;
-      }
       
       console.log('Creating employee with data:', employeeData);
       console.log('Customer Auth ID:', customerAuthId);
       console.log('Profile Customer ID:', profile?.customer_id);
+      console.log('Final Customer ID:', finalCustomerId);
       console.log('Document paths (JSONB):', employeeData.documentpath);
       console.log('Profile photo path:', employeeData.profilepicturepath);
       
       const employeeToCreate = {
         ...employeeData,
-        customerid: employeeData.customerid || finalCustomerId
+        customerid: finalCustomerId
       } as Employee & { customerid: string };
 
       const newEmployee = await createEmployee(employeeToCreate);
@@ -237,7 +324,7 @@ const AddEmployee = () => {
               />
             </div>
 
-            {/* Auth Details (New Section) */}
+            {/* Auth Details Section */}
             <div className="mb-6 pb-6 border-b">
               <h3 className="text-lg font-medium mb-4">Authentication Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -287,10 +374,9 @@ const AddEmployee = () => {
                 <EmployeePersonalTab 
                   employee={uiEmployeeData}
                   isEditMode={true}
-                  onInputChange={(e) => {
-                    const { name, value } = e.target;
-                    handleInputChange(name as keyof Employee, value);
-                  }}
+                  onInputChange={handleFormInputChange}
+                  onSelectChange={handleSelectChange}
+                  onCheckboxChange={handleCheckboxChange}
                 />
               </TabsContent>
 
@@ -300,25 +386,8 @@ const AddEmployee = () => {
                   geofencingEnabled={false}
                   onGeofencingToggle={() => {}}
                   isEditMode={true}
-                  onInputChange={(e) => {
-                    const { name, value } = e.target;
-                    if (name === 'role') {
-                      handleInputChange('jobtitle', value);
-                    } else if (name === 'employeeId') {
-                      handleInputChange('employeeid', value);
-                    } else if (name === 'joining') {
-                      handleInputChange('joiningdate', value);
-                    } else {
-                      handleInputChange(name as keyof Employee, value);
-                    }
-                  }}
-                  onSelectChange={(field, value) => {
-                    if (field === 'department') {
-                      handleInputChange('department', value);
-                    } else if (field === 'employmentstatus') {
-                      handleInputChange('employmentstatus', value);
-                    }
-                  }}
+                  onInputChange={handleFormInputChange}
+                  onSelectChange={handleSelectChange}
                 />
               </TabsContent>
 
@@ -326,7 +395,7 @@ const AddEmployee = () => {
                 <EmployeeBankTab 
                   bankDetails={bankDetails}
                   isEditMode={true}
-                  onBankDetailsChange={() => {}}
+                  onBankDetailsChange={handleBankDetailsChange}
                 />
               </TabsContent>
 
