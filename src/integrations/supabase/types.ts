@@ -740,6 +740,7 @@ export type Database = {
         Row: {
           created_at: string | null
           customer_id: string | null
+          customerauthid: string
           employee_id: string | null
           full_name: string | null
           id: string
@@ -749,6 +750,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           customer_id?: string | null
+          customerauthid: string
           employee_id?: string | null
           full_name?: string | null
           id: string
@@ -758,28 +760,14 @@ export type Database = {
         Update: {
           created_at?: string | null
           customer_id?: string | null
+          customerauthid?: string
           employee_id?: string | null
           full_name?: string | null
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customer"
-            referencedColumns: ["customerid"]
-          },
-          {
-            foreignKeyName: "profiles_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employee"
-            referencedColumns: ["employeeid"]
-          },
-        ]
+        Relationships: []
       }
       projectcomment: {
         Row: {
@@ -1202,6 +1190,7 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
           customer_id: string
           employee_id: string
+          customerauthid: string
           created_at: string
           updated_at: string
         }[]

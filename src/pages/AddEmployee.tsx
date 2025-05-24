@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from "@/components/ui/layout";
@@ -22,10 +21,10 @@ import { supabase } from '@/integrations/supabase/client';
 const AddEmployee = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { profile } = useAuth();
+  const { profile, customerAuthId } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [employeeData, setEmployeeData] = useState<Partial<Employee>>({
-    customerid: profile?.customer_id || 'default-customer-id',
+    customerid: profile?.customer_id || customerAuthId || 'default-customer-id',
     employmentstatus: 'Active',
     employmenttype: 'Full-time',
     gender: 'Male',
@@ -89,7 +88,7 @@ const AddEmployee = () => {
       const { error } = await supabase.rpc('link_employee_to_profile', {
         auth_user_id: employeeData.employeeauthid,
         employee_uuid: employeeId,
-        customer_uuid: profile?.customer_id
+        customer_uuid: profile?.customer_id || customerAuthId
       });
       
       if (error) {
@@ -117,18 +116,21 @@ const AddEmployee = () => {
 
       setIsLoading(true);
       
-      // Ensure we have the customerid from the logged-in user's profile
-      if (profile?.customer_id) {
-        employeeData.customerid = profile.customer_id;
+      // Ensure we have the customerid from the logged-in user's profile or customerAuthId
+      const finalCustomerId = profile?.customer_id || customerAuthId;
+      if (finalCustomerId) {
+        employeeData.customerid = finalCustomerId;
       }
       
       console.log('Creating employee with data:', employeeData);
+      console.log('Customer Auth ID:', customerAuthId);
+      console.log('Profile Customer ID:', profile?.customer_id);
       console.log('Document paths (JSONB):', employeeData.documentpath);
       console.log('Profile photo path:', employeeData.profilepicturepath);
       
       const employeeToCreate = {
         ...employeeData,
-        customerid: employeeData.customerid || profile?.customer_id
+        customerid: employeeData.customerid || finalCustomerId
       } as Employee & { customerid: string };
 
       const newEmployee = await createEmployee(employeeToCreate);

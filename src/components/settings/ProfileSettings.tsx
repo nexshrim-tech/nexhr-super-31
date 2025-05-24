@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,7 +106,7 @@ const ProfileSettings = () => {
 
           <Separator />
           
-          {/* User Role Information */}
+          {/* User Role Information - updated to show customerauthid */}
           {profile && (
             <div className="p-4 bg-gray-50 rounded-md">
               <h3 className="font-medium mb-2">Account Information</h3>
@@ -126,6 +125,13 @@ const ProfileSettings = () => {
                   <>
                     <div className="text-muted-foreground">Employee ID:</div>
                     <div className="font-medium">{profile.employee_id}</div>
+                  </>
+                )}
+                
+                {profile.customerauthid && (
+                  <>
+                    <div className="text-muted-foreground">Customer Auth ID:</div>
+                    <div className="font-medium">{profile.customerauthid}</div>
                   </>
                 )}
                 

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,13 +7,14 @@ import { useToast } from '@/hooks/use-toast';
 // Define our user role type to match the database enum
 export type UserRole = 'admin' | 'customer' | 'employee';
 
-// Define our profile type
+// Define our profile type - updated to include customerauthid
 export interface UserProfile {
   id: string;
   full_name: string | null;
   role: UserRole;
   customer_id?: string;
   employee_id?: string;
+  customerauthid?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -29,6 +29,7 @@ interface AuthContextType {
   isEmployee: boolean;
   customerId?: string;
   employeeId?: string;
+  customerAuthId?: string;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
   signOut: () => Promise<void>;
@@ -235,12 +236,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Role-based helper properties
+  // Role-based helper properties - updated to include customerAuthId
   const isAdmin = profile?.role === 'admin';
   const isCustomer = profile?.role === 'customer';
   const isEmployee = profile?.role === 'employee';
   const customerId = profile?.customer_id;
   const employeeId = profile?.employee_id;
+  const customerAuthId = profile?.customerauthid;
 
   const value = {
     user,
@@ -252,6 +254,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isEmployee,
     customerId,
     employeeId,
+    customerAuthId,
     signIn,
     signUp,
     signOut,
