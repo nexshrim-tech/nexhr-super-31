@@ -66,6 +66,7 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
               value={employee.role} 
               onChange={onInputChange} 
               className="mt-1"
+              placeholder="Enter job title/role"
             />
           ) : (
             <p className="text-sm font-medium">{employee.role}</p>
@@ -79,7 +80,7 @@ const EmployeeWorkTab: React.FC<EmployeeWorkTabProps> = ({
               value={employee.employeeId} 
               onChange={onInputChange} 
               className="mt-1"
-              readOnly
+              placeholder="Enter employee ID"
             />
           ) : (
             <p className="text-sm font-medium">{employee.employeeId}</p>

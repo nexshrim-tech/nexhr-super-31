@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from "@/components/ui/layout";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,8 @@ const AddEmployee = () => {
     nationality: '',
     worklocation: '',
     monthlysalary: 0,
-    leavebalance: 0
+    leavebalance: 0,
+    employeeid: '' // Initialize as empty string for user input
   });
   const [employeeEmail, setEmployeeEmail] = useState("");
   const [employeePassword, setEmployeePassword] = useState("");
@@ -102,7 +103,7 @@ const AddEmployee = () => {
       'role': 'jobtitle',
       'jobtitle': 'jobtitle',
       'department': 'department',
-      'employeeId': 'employeeid',
+      'employeeId': 'employeeid', // Map employeeId to employeeid
       'joining': 'joiningdate',
       'joiningdate': 'joiningdate',
       'dob': 'dateofbirth',
@@ -211,12 +212,33 @@ const AddEmployee = () => {
     }
   };
 
+  // Initialize customer inheritance when auth data is available
+  React.useEffect(() => {
+    if (!isLoading && (customerId || customerAuthId)) {
+      const organizationId = customerId || customerAuthId;
+      console.log('Initializing employee with customer data:', {
+        customerId,
+        customerAuthId,
+        organizationId
+      });
+      
+      // Set inherited customer data but don't override if already set
+      setEmployeeData(prev => ({
+        ...prev,
+        customerid: organizationId,
+        // Inherit customerauthid - this links the employee to the customer's auth
+        employeeauthid: prev.employeeauthid || customerAuthId
+      }));
+    }
+  }, [isLoading, customerId, customerAuthId]);
+
   const validateForm = () => {
     console.log('Validating form with:', {
       isLoading,
       customerId,
       customerAuthId,
-      profile: profile?.role
+      profile: profile?.role,
+      employeeId: employeeData.employeeid
     });
 
     // Don't validate while auth is still loading
@@ -235,6 +257,16 @@ const AddEmployee = () => {
       toast({
         title: "Error",
         description: "Unable to determine customer organization. Please contact support.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check for required employee ID
+    if (!employeeData.employeeid?.trim()) {
+      toast({
+        title: "Error",
+        description: "Employee ID is required.",
         variant: "destructive",
       });
       return false;
@@ -362,7 +394,7 @@ const AddEmployee = () => {
     name: `${employeeData.firstname || ''} ${employeeData.lastname || ''}`.trim() || 'New Employee',
     email: employeeData.email || '',
     phone: employeeData.phonenumber || '',
-    employeeId: employeeData.employeeid || '',
+    employeeId: employeeData.employeeid || '', // Use the actual employeeid field
     role: employeeData.jobtitle || '',
     department: employeeData.department || '',
     dob: employeeData.dateofbirth || '',
