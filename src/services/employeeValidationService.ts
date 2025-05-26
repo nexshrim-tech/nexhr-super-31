@@ -37,11 +37,25 @@ export const registerEmployeeAuth = async (email: string, password: string, empl
       throw new Error('Missing required parameters for employee registration');
     }
     
-    // Call the register_employee function - it now properly handles string to UUID conversion
+    // Convert string employee ID to UUID
+    let employeeUuid: string;
+    try {
+      // Validate that the employeeId is a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(employeeId)) {
+        throw new Error('Invalid employee ID format - must be a valid UUID');
+      }
+      employeeUuid = employeeId;
+    } catch (validationError) {
+      console.error('Employee ID validation error:', validationError);
+      throw new Error(`Invalid employee ID format: ${employeeId}`);
+    }
+    
+    // Call the register_employee function with UUID parameter
     const { data, error } = await supabase.rpc('register_employee', {
       p_email: email,
       p_password: password,
-      p_employee_id: employeeId // Pass as string, the function handles UUID conversion
+      p_employee_id: employeeUuid // Pass as UUID string
     });
     
     if (error) {
