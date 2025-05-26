@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from "@/components/ui/layout";
@@ -21,8 +20,8 @@ import { supabase } from '@/integrations/supabase/client';
 const AddEmployee = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { profile, customerId, customerAuthId } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { profile, customerId, customerAuthId, isLoading } = useAuth();
+  const [isCreatingEmployee, setIsCreatingEmployee] = useState(false);
   const [employeeData, setEmployeeData] = useState<Partial<Employee>>({
     employmentstatus: 'Active',
     employmenttype: 'Full-time',
@@ -213,8 +212,26 @@ const AddEmployee = () => {
   };
 
   const validateForm = () => {
-    // Check for required customer ID - now using customerId from resolved lookup
-    if (!customerId) {
+    console.log('Validating form with:', {
+      isLoading,
+      customerId,
+      customerAuthId,
+      profile: profile?.role
+    });
+
+    // Don't validate while auth is still loading
+    if (isLoading) {
+      toast({
+        title: "Loading",
+        description: "Please wait while we load your organization information...",
+      });
+      return false;
+    }
+
+    // Check for required customer organization - use customerId or customerAuthId as fallback
+    const organizationId = customerId || customerAuthId;
+    if (!organizationId) {
+      console.error('Missing organization ID:', { customerId, customerAuthId, profile });
       toast({
         title: "Error",
         description: "Unable to determine customer organization. Please contact support.",
@@ -262,18 +279,20 @@ const AddEmployee = () => {
         return;
       }
 
-      setIsLoading(true);
+      setIsCreatingEmployee(true);
+      
+      // Use customerId or fallback to customerAuthId
+      const organizationId = customerId || customerAuthId;
       
       console.log('Creating employee with data:', employeeData);
-      console.log('Customer Auth ID:', customerAuthId);
-      console.log('Resolved Customer ID:', customerId);
+      console.log('Organization ID:', organizationId);
       console.log('Document paths (JSONB):', employeeData.documentpath);
       console.log('Profile photo path:', employeeData.profilepicturepath);
       console.log('Bank details:', bankDetails);
       
       const employeeToCreate = {
         ...employeeData,
-        customerid: customerId
+        customerid: organizationId
       } as Employee & { customerid: string };
 
       const newEmployee = await createEmployee(employeeToCreate);
@@ -329,7 +348,7 @@ const AddEmployee = () => {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsCreatingEmployee(false);
     }
   };
 
@@ -505,15 +524,15 @@ const AddEmployee = () => {
               <Button 
                 variant="outline" 
                 onClick={handleGoBack}
-                disabled={isLoading || isCreatingAccount}
+                disabled={isCreatingEmployee || isCreatingAccount}
               >
                 Cancel
               </Button>
               <Button 
                 onClick={handleSubmit}
-                disabled={isLoading || isCreatingAccount}
+                disabled={isCreatingEmployee || isCreatingAccount || isLoading}
               >
-                {isLoading || isCreatingAccount ? 'Creating...' : 'Create Employee'}
+                {isCreatingEmployee || isCreatingAccount ? 'Creating...' : 'Create Employee'}
               </Button>
             </div>
           </CardContent>
