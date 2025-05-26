@@ -1,74 +1,85 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Upload } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProfileSettings = () => {
-  const { user, profile, refreshProfile, customerId, customerAuthId } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: profile?.full_name || user?.user_metadata?.full_name || '',
+    full_name: profile?.full_name || '',
     email: user?.email || '',
-    phone: user?.user_metadata?.phone_number || '',
-    company: user?.user_metadata?.company_name || '',
-    position: user?.user_metadata?.role || profile?.role || '',
   });
 
-  // Update form data when profile changes
   useEffect(() => {
-    if (profile || user) {
-      setFormData({
-        fullName: profile?.full_name || user?.user_metadata?.full_name || '',
-        email: user?.email || '',
-        phone: user?.user_metadata?.phone_number || '',
-        company: user?.user_metadata?.company_name || '',
-        position: profile?.role || user?.user_metadata?.role || '',
-      });
-    }
+    setFormData({
+      full_name: profile?.full_name || '',
+      email: user?.email || '',
+    });
   }, [profile, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleSave = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "No user found",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
+    
     try {
-      if (profile?.id) {
-        // Update the profiles table using RPC function
-        const { error } = await supabase.rpc('update_user_profile', {
-          user_id: profile.id,
-          new_full_name: formData.fullName
-        });
-          
-        if (error) throw error;
-        
-        // Refresh the profile data
-        await refreshProfile();
+      // Update profile
+      const { error: profileError } = await supabase.rpc('update_user_profile', {
+        user_id: user.id,
+        new_full_name: formData.full_name
+      });
+
+      if (profileError) {
+        throw profileError;
       }
+
+      // Update email if changed
+      if (formData.email !== user.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: formData.email
+        });
+
+        if (emailError) {
+          throw emailError;
+        }
+      }
+
+      await refreshProfile();
       
       toast({
         title: "Profile updated",
-        description: "Your profile information has been updated successfully.",
+        description: "Your profile has been updated successfully",
       });
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
-        title: "Error",
-        description: error.message || "There was an error updating your profile.",
+        title: "Update failed",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -76,161 +87,67 @@ const ProfileSettings = () => {
     }
   };
 
+  const getInitials = (name: string | null) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>
-            Manage your personal information and account settings
-          </CardDescription>
+          <CardTitle>Profile Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-            <Avatar className="w-20 h-20">
-              <AvatarImage src="" alt="Profile" />
-              <AvatarFallback className="text-lg bg-primary text-primary-foreground">
-                {formData.fullName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+          <div className="flex items-center space-x-4">
+            <Avatar className="h-20 w-20">
+              <AvatarImage src="" alt={profile?.full_name || 'User'} />
+              <AvatarFallback className="text-lg">
+                {getInitials(profile?.full_name)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-medium">Profile Picture</h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                Upload a new avatar. JPG, GIF or PNG. Max 1MB.
+              <h3 className="text-lg font-medium">{profile?.full_name || 'User'}</h3>
+              <p className="text-sm text-muted-foreground capitalize">{profile?.role || 'User'}</p>
+              <p className="text-sm text-muted-foreground">
+                User ID: {profile?.id?.slice(0, 8)}...
               </p>
-              <Button variant="outline" size="sm">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload
-              </Button>
             </div>
           </div>
 
-          <Separator />
-          
-          {/* User Role Information - updated to show resolved customer info */}
-          {profile && (
-            <div className="p-4 bg-gray-50 rounded-md">
-              <h3 className="font-medium mb-2">Account Information</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="text-muted-foreground">Role:</div>
-                <div className="font-medium capitalize">{profile.role}</div>
-                
-                {customerId && (
-                  <>
-                    <div className="text-muted-foreground">Organization ID:</div>
-                    <div className="font-medium">{customerId}</div>
-                  </>
-                )}
-                
-                {profile.employee_id && (
-                  <>
-                    <div className="text-muted-foreground">Employee ID:</div>
-                    <div className="font-medium">{profile.employee_id}</div>
-                  </>
-                )}
-                
-                {profile.customerauthid && (
-                  <>
-                    <div className="text-muted-foreground">Customer Auth ID:</div>
-                    <div className="font-medium">{profile.customerauthid}</div>
-                  </>
-                )}
-                
-                <div className="text-muted-foreground">Account Created:</div>
-                <div className="font-medium">
-                  {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="full_name">Full Name</Label>
+                <Input
+                  id="full_name"
+                  name="full_name"
+                  value={formData.full_name}
+                  onChange={handleInputChange}
+                  placeholder="Enter your full name"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="Enter your email"
+                />
               </div>
             </div>
-          )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                placeholder="Enter your full name"
-              />
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Updating...' : 'Update Profile'}
+              </Button>
             </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter your email"
-                readOnly
-                disabled
-              />
-              <p className="text-xs text-muted-foreground">
-                Email cannot be changed. Contact support for assistance.
-              </p>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                placeholder="Enter your phone number"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="company">Company</Label>
-              <Input
-                id="company"
-                name="company"
-                value={formData.company}
-                onChange={handleInputChange}
-                placeholder="Enter your company"
-                readOnly={profile?.role === 'employee'}
-                disabled={profile?.role === 'employee'}
-              />
-              {profile?.role === 'employee' && (
-                <p className="text-xs text-muted-foreground">
-                  Company information can only be changed by administrators.
-                </p>
-              )}
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="position">Position</Label>
-              <Input
-                id="position"
-                name="position"
-                value={formData.position}
-                onChange={handleInputChange}
-                placeholder="Enter your position"
-                readOnly
-                disabled
-              />
-              <p className="text-xs text-muted-foreground">
-                Your role in the system is managed by administrators.
-              </p>
-            </div>
-          </div>
+          </form>
         </CardContent>
-        <CardFooter className="border-t px-6 py-4">
-          <Button onClick={handleSave} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );

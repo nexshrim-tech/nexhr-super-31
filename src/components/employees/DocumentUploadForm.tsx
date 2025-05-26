@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,6 +58,28 @@ const DocumentUploadForm: React.FC<DocumentUploadFormProps> = ({
   // Additional documents
   const [additionalDocs, setAdditionalDocs] = useState<AdditionalDocument[]>([]);
 
+  // Effect to trigger callback whenever documents change
+  useEffect(() => {
+    const documents: Record<string, string> = {};
+
+    // Add mandatory documents
+    mandatoryDocs.forEach(doc => {
+      if (doc.isUploaded && doc.url) {
+        documents[doc.id] = doc.url;
+      }
+    });
+
+    // Add additional documents
+    additionalDocs.forEach(doc => {
+      if (doc.isUploaded && doc.url && doc.documentName.trim()) {
+        documents[doc.documentName.toLowerCase().replace(/\s+/g, '_')] = doc.url;
+      }
+    });
+
+    console.log('Updating documents callback with:', documents);
+    onDocumentsChange(documents);
+  }, [mandatoryDocs, additionalDocs, onDocumentsChange]);
+
   const uploadFile = async (file: File, folder: string): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${employeeId}/${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
@@ -92,21 +114,23 @@ const DocumentUploadForm: React.FC<DocumentUploadFormProps> = ({
       setUploading(true);
       const url = await uploadFile(file, 'mandatory');
 
-      const updatedDocs = [...mandatoryDocs];
-      updatedDocs[index] = {
-        ...updatedDocs[index],
-        file,
-        url,
-        name: file.name,
-        isUploaded: true
-      };
-      setMandatoryDocs(updatedDocs);
-
-      updateDocumentsCallback();
+      // Update the specific document in the array
+      setMandatoryDocs(prev => {
+        const updated = [...prev];
+        updated[index] = {
+          ...updated[index],
+          file,
+          url,
+          name: file.name,
+          isUploaded: true
+        };
+        console.log('Updated mandatory docs:', updated);
+        return updated;
+      });
 
       toast({
         title: "Success",
-        description: `${updatedDocs[index].documentType} uploaded successfully`,
+        description: `${mandatoryDocs[index].documentType} uploaded successfully`,
       });
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -137,16 +161,17 @@ const DocumentUploadForm: React.FC<DocumentUploadFormProps> = ({
       setUploading(true);
       const url = await uploadFile(file, 'additional');
 
-      const updatedDocs = [...additionalDocs];
-      updatedDocs[index] = {
-        ...updatedDocs[index],
-        file,
-        url,
-        isUploaded: true
-      };
-      setAdditionalDocs(updatedDocs);
-
-      updateDocumentsCallback();
+      setAdditionalDocs(prev => {
+        const updated = [...prev];
+        updated[index] = {
+          ...updated[index],
+          file,
+          url,
+          isUploaded: true
+        };
+        console.log('Updated additional docs:', updated);
+        return updated;
+      });
 
       toast({
         title: "Success",
@@ -165,17 +190,19 @@ const DocumentUploadForm: React.FC<DocumentUploadFormProps> = ({
   };
 
   const handleAdditionalDocumentNameChange = (index: number, name: string) => {
-    const updatedDocs = [...additionalDocs];
-    updatedDocs[index] = {
-      ...updatedDocs[index],
-      documentName: name
-    };
-    setAdditionalDocs(updatedDocs);
+    setAdditionalDocs(prev => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        documentName: name
+      };
+      return updated;
+    });
   };
 
   const addAdditionalDocument = () => {
-    setAdditionalDocs([
-      ...additionalDocs,
+    setAdditionalDocs(prev => [
+      ...prev,
       {
         id: Date.now().toString(),
         file: null,
@@ -186,29 +213,7 @@ const DocumentUploadForm: React.FC<DocumentUploadFormProps> = ({
   };
 
   const removeAdditionalDocument = (index: number) => {
-    const updatedDocs = additionalDocs.filter((_, i) => i !== index);
-    setAdditionalDocs(updatedDocs);
-    updateDocumentsCallback();
-  };
-
-  const updateDocumentsCallback = () => {
-    const documents: Record<string, string> = {};
-
-    // Add mandatory documents
-    mandatoryDocs.forEach(doc => {
-      if (doc.isUploaded && doc.url) {
-        documents[doc.id] = doc.url;
-      }
-    });
-
-    // Add additional documents
-    additionalDocs.forEach(doc => {
-      if (doc.isUploaded && doc.url && doc.documentName.trim()) {
-        documents[doc.documentName.toLowerCase().replace(/\s+/g, '_')] = doc.url;
-      }
-    });
-
-    onDocumentsChange(documents);
+    setAdditionalDocs(prev => prev.filter((_, i) => i !== index));
   };
 
   const isMandatoryComplete = mandatoryDocs.every(doc => doc.isUploaded);
