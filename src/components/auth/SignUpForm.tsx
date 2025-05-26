@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Lock, User, Building2, Phone, AlertCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,7 +22,6 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [companySize, setCompanySize] = useState("");
   const [companyAddress, setCompanyAddress] = useState("");
-  const [activeTab, setActiveTab] = useState<"personal" | "company">("personal");
   const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -72,16 +70,12 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
       if (email && password && name) {
         const userData: Record<string, any> = {
           full_name: name,
-          // Set role based on the active tab
-          role: activeTab === 'company' ? 'customer' : 'employee'
+          role: 'customer', // Only customer signups are allowed
+          company_name: companyName,
+          company_size: companySize,
+          phone_number: phoneNumber,
+          company_address: companyAddress,
         };
-        
-        if (activeTab === 'company') {
-          userData.company_name = companyName;
-          userData.company_size = companySize;
-          userData.phone_number = phoneNumber;
-          userData.company_address = companyAddress;
-        }
         
         console.log("About to sign up with user data:", userData);
         await signUp(email, password, userData);
@@ -114,122 +108,97 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
         </div>
       )}
       
-      <Tabs 
-        value={activeTab} 
-        onValueChange={(v) => setActiveTab(v as "personal" | "company")}
-        className="w-full"
-      >
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="personal" className="text-sm">
-            <User className="h-4 w-4 mr-2" />
-            Personal Account
-          </TabsTrigger>
-          <TabsTrigger value="company" className="text-sm">
-            <Building2 className="h-4 w-4 mr-2" />
-            Company Account
-          </TabsTrigger>
-        </TabsList>
+      <div className="text-center mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+        <div className="flex items-center justify-center mb-2">
+          <Building2 className="h-5 w-5 text-blue-600 mr-2" />
+          <h3 className="text-lg font-semibold text-blue-800">Company Account</h3>
+        </div>
+        <p className="text-sm text-blue-700">
+          Create an account for your organization. Employee accounts are created by company administrators.
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name" className="flex items-center">
+            <User className="h-4 w-4 mr-2 text-gray-500" />
+            Full Name <span className="text-red-500 ml-1">*</span>
+          </Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="John Doe"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+          />
+        </div>
         
-        <TabsContent value="personal" className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="flex items-center">
-              <User className="h-4 w-4 mr-2 text-gray-500" />
-              Full Name <span className="text-red-500 ml-1">*</span>
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="John Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-            />
-          </div>
-        </TabsContent>
+        <div className="space-y-2">
+          <Label htmlFor="companyName" className="flex items-center">
+            <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+            Company Name <span className="text-red-500 ml-1">*</span>
+          </Label>
+          <Input
+            id="companyName"
+            type="text"
+            placeholder="Acme Inc."
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            required
+            className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+          />
+        </div>
         
-        <TabsContent value="company" className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="flex items-center">
-              <User className="h-4 w-4 mr-2 text-gray-500" />
-              Full Name <span className="text-red-500 ml-1">*</span>
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="John Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="companyName" className="flex items-center">
-              <Building2 className="h-4 w-4 mr-2 text-gray-500" />
-              Company Name <span className="text-red-500 ml-1">*</span>
-            </Label>
-            <Input
-              id="companyName"
-              type="text"
-              placeholder="Acme Inc."
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              required={activeTab === 'company'}
-              className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="phoneNumber" className="flex items-center">
-              <Phone className="h-4 w-4 mr-2 text-gray-500" />
-              Phone Number
-            </Label>
-            <Input
-              id="phoneNumber"
-              type="tel"
-              placeholder="+1 (555) 123-4567"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="companySize" className="flex items-center">
-              <Building2 className="h-4 w-4 mr-2 text-gray-500" />
-              Company Size
-            </Label>
-            <Select value={companySize} onValueChange={setCompanySize}>
-              <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
-                <SelectValue placeholder="Select company size" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1-10">1-10 employees</SelectItem>
-                <SelectItem value="11-50">11-50 employees</SelectItem>
-                <SelectItem value="51-200">51-200 employees</SelectItem>
-                <SelectItem value="201-500">201-500 employees</SelectItem>
-                <SelectItem value="501+">501+ employees</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="companyAddress" className="flex items-center">
-              <Building2 className="h-4 w-4 mr-2 text-gray-500" />
-              Company Address
-            </Label>
-            <Textarea
-              id="companyAddress"
-              placeholder="123 Business St, Suite 101, City, State, ZIP"
-              value={companyAddress}
-              onChange={(e) => setCompanyAddress(e.target.value)}
-              className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent resize-none h-20"
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
+        <div className="space-y-2">
+          <Label htmlFor="phoneNumber" className="flex items-center">
+            <Phone className="h-4 w-4 mr-2 text-gray-500" />
+            Phone Number
+          </Label>
+          <Input
+            id="phoneNumber"
+            type="tel"
+            placeholder="+1 (555) 123-4567"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="companySize" className="flex items-center">
+            <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+            Company Size
+          </Label>
+          <Select value={companySize} onValueChange={setCompanySize}>
+            <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent">
+              <SelectValue placeholder="Select company size" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1-10">1-10 employees</SelectItem>
+              <SelectItem value="11-50">11-50 employees</SelectItem>
+              <SelectItem value="51-200">51-200 employees</SelectItem>
+              <SelectItem value="201-500">201-500 employees</SelectItem>
+              <SelectItem value="501+">501+ employees</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="companyAddress" className="flex items-center">
+            <Building2 className="h-4 w-4 mr-2 text-gray-500" />
+            Company Address
+          </Label>
+          <Textarea
+            id="companyAddress"
+            placeholder="123 Business St, Suite 101, City, State, ZIP"
+            value={companyAddress}
+            onChange={(e) => setCompanyAddress(e.target.value)}
+            className="transition-all duration-300 focus:ring-2 focus:ring-nexhr-primary focus:border-transparent resize-none h-20"
+          />
+        </div>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="email" className="flex items-center">
@@ -300,7 +269,7 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
         className="w-full group transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
         disabled={isLoading}
       >
-        {isLoading ? "Processing..." : "Create Account"}
+        {isLoading ? "Processing..." : "Create Company Account"}
       </Button>
 
       <div className="text-center">
@@ -314,6 +283,13 @@ export const SignUpForm = ({ onToggleForm }: SignUpFormProps) => {
           >
             Sign in
           </button>
+        </p>
+      </div>
+      
+      <div className="text-center mt-4 p-3 bg-gray-50 rounded-md">
+        <p className="text-xs text-gray-600">
+          <strong>Looking for an employee account?</strong><br />
+          Employee accounts are created by your company administrator. Please contact them to get access.
         </p>
       </div>
     </form>
