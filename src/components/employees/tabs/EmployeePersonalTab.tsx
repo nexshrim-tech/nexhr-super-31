@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface EmployeePersonalTabProps {
   employee: {
     name: string;
+    firstname?: string;
+    lastname?: string;
     dob: string;
     email: string;
     gender: string;
@@ -19,7 +21,10 @@ interface EmployeePersonalTabProps {
     country?: string;
     postalcode?: string;
     bloodGroup?: string;
+    bloodgroup?: string;
     hasDisability?: boolean;
+    maritalstatus?: string;
+    nationality?: string;
   };
   isEditMode: boolean;
   onInputChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -34,9 +39,39 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
   onSelectChange,
   onCheckboxChange
 }) => {
+  const bloodGroupValue = employee.bloodGroup || employee.bloodgroup || "unknown";
+  
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>First Name</Label>
+          {isEditMode ? (
+            <Input 
+              name="firstname" 
+              value={employee.firstname || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+              placeholder="Enter first name"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.firstname}</p>
+          )}
+        </div>
+        <div>
+          <Label>Last Name</Label>
+          {isEditMode ? (
+            <Input 
+              name="lastname" 
+              value={employee.lastname || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+              placeholder="Enter last name"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.lastname}</p>
+          )}
+        </div>
         <div>
           <Label>Father's Name</Label>
           {isEditMode ? (
@@ -45,22 +80,10 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
               value={employee.fatherName || ""} 
               onChange={onInputChange} 
               className="mt-1"
+              placeholder="Enter father's name"
             />
           ) : (
             <p className="text-sm font-medium">{employee.fatherName}</p>
-          )}
-        </div>
-        <div>
-          <Label>Name</Label>
-          {isEditMode ? (
-            <Input 
-              name="name" 
-              value={employee.name} 
-              onChange={onInputChange} 
-              className="mt-1"
-            />
-          ) : (
-            <p className="text-sm font-medium">{employee.name}</p>
           )}
         </div>
         <div>
@@ -82,12 +105,28 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
           {isEditMode ? (
             <Input 
               name="email" 
+              type="email"
               value={employee.email} 
               onChange={onInputChange} 
               className="mt-1"
+              placeholder="Enter email address"
             />
           ) : (
             <p className="text-sm font-medium">{employee.email}</p>
+          )}
+        </div>
+        <div>
+          <Label>Phone Number</Label>
+          {isEditMode ? (
+            <Input 
+              name="phone" 
+              value={employee.phone} 
+              onChange={onInputChange} 
+              className="mt-1"
+              placeholder="Enter phone number"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.phone}</p>
           )}
         </div>
         <div>
@@ -111,24 +150,11 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
           )}
         </div>
         <div>
-          <Label>Phone Number</Label>
-          {isEditMode ? (
-            <Input 
-              name="phone" 
-              value={employee.phone} 
-              onChange={onInputChange} 
-              className="mt-1"
-            />
-          ) : (
-            <p className="text-sm font-medium">{employee.phone}</p>
-          )}
-        </div>
-        <div>
           <Label>Blood Group</Label>
           {isEditMode ? (
             <Select 
-              value={employee.bloodGroup || "unknown"} 
-              onValueChange={(value) => onSelectChange && onSelectChange("bloodGroup", value)}
+              value={bloodGroupValue} 
+              onValueChange={(value) => onSelectChange && onSelectChange("bloodgroup", value)}
             >
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select blood group" />
@@ -146,7 +172,42 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
               </SelectContent>
             </Select>
           ) : (
-            <p className="text-sm font-medium">{employee.bloodGroup || "Not specified"}</p>
+            <p className="text-sm font-medium">{bloodGroupValue !== "unknown" ? bloodGroupValue : "Not specified"}</p>
+          )}
+        </div>
+        <div>
+          <Label>Marital Status</Label>
+          {isEditMode ? (
+            <Select 
+              value={employee.maritalstatus || "Single"} 
+              onValueChange={(value) => onSelectChange && onSelectChange("maritalstatus", value)}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select marital status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Single">Single</SelectItem>
+                <SelectItem value="Married">Married</SelectItem>
+                <SelectItem value="Divorced">Divorced</SelectItem>
+                <SelectItem value="Widowed">Widowed</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-sm font-medium">{employee.maritalstatus || "Single"}</p>
+          )}
+        </div>
+        <div>
+          <Label>Nationality</Label>
+          {isEditMode ? (
+            <Input 
+              name="nationality" 
+              value={employee.nationality || ""} 
+              onChange={onInputChange} 
+              className="mt-1"
+              placeholder="Enter nationality"
+            />
+          ) : (
+            <p className="text-sm font-medium">{employee.nationality || "Not specified"}</p>
           )}
         </div>
         <div>
@@ -157,6 +218,7 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
               value={employee.address || ""} 
               onChange={onInputChange} 
               className="mt-1"
+              placeholder="Enter address"
             />
           ) : (
             <p className="text-sm font-medium">{employee.address}</p>
@@ -170,6 +232,7 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
               value={employee.city || ""} 
               onChange={onInputChange} 
               className="mt-1"
+              placeholder="Enter city"
             />
           ) : (
             <p className="text-sm font-medium">{employee.city || "Not specified"}</p>
@@ -183,6 +246,7 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
               value={employee.state || ""} 
               onChange={onInputChange} 
               className="mt-1"
+              placeholder="Enter state/province"
             />
           ) : (
             <p className="text-sm font-medium">{employee.state || "Not specified"}</p>
@@ -196,6 +260,7 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
               value={employee.country || ""} 
               onChange={onInputChange} 
               className="mt-1"
+              placeholder="Enter country"
             />
           ) : (
             <p className="text-sm font-medium">{employee.country || "Not specified"}</p>
@@ -209,6 +274,7 @@ const EmployeePersonalTab: React.FC<EmployeePersonalTabProps> = ({
               value={employee.postalcode || ""} 
               onChange={onInputChange} 
               className="mt-1"
+              placeholder="Enter postal code"
             />
           ) : (
             <p className="text-sm font-medium">{employee.postalcode || "Not specified"}</p>

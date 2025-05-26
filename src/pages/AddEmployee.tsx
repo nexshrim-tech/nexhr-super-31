@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from "@/components/ui/layout";
@@ -14,7 +15,6 @@ import EmployeeBankTab from "@/components/employees/tabs/EmployeeBankTab";
 import ProfilePhotoUpload from "@/components/employees/ProfilePhotoUpload";
 import DocumentUploadForm from "@/components/employees/DocumentUploadForm";
 import { ArrowLeft, UserPlus } from "lucide-react";
-import { adaptToUIFormat } from "@/components/employees/EmployeeAdapter";
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,10 +29,34 @@ const AddEmployee = () => {
     gender: 'Male',
     maritalstatus: 'Single',
     disabilitystatus: 'No Disability',
+    firstname: '',
+    lastname: '',
+    email: '',
+    phonenumber: '',
+    jobtitle: '',
+    department: '',
+    dateofbirth: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    postalcode: '',
+    bloodgroup: '',
+    fathersname: '',
+    nationality: '',
+    worklocation: '',
+    monthlysalary: 0,
+    leavebalance: 0
   });
   const [employeeEmail, setEmployeeEmail] = useState("");
   const [employeePassword, setEmployeePassword] = useState("");
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [bankDetails, setBankDetails] = useState({
+    bankName: '',
+    branchName: '',
+    accountNumber: '',
+    ifscCode: '',
+  });
 
   const handleInputChange = (field: keyof Employee, value: any) => {
     setEmployeeData(prev => ({
@@ -42,49 +66,84 @@ const AddEmployee = () => {
   };
 
   const handleSelectChange = (field: string, value: string) => {
-    if (field === 'department') {
-      handleInputChange('department', value);
-    } else if (field === 'employmentstatus') {
-      handleInputChange('employmentstatus', value);
-    } else if (field === 'employmenttype') {
-      handleInputChange('employmenttype', value);
-    } else if (field === 'gender') {
-      handleInputChange('gender', value);
-    } else if (field === 'bloodgroup') {
-      handleInputChange('bloodgroup', value);
-    } else if (field === 'maritalstatus') {
-      handleInputChange('maritalstatus', value);
-    } else if (field === 'nationality') {
-      handleInputChange('nationality', value);
+    // Map all possible select fields to employee data fields
+    const fieldMappings: { [key: string]: keyof Employee } = {
+      'department': 'department',
+      'employmentstatus': 'employmentstatus',
+      'employmenttype': 'employmenttype',
+      'gender': 'gender',
+      'bloodgroup': 'bloodgroup',
+      'bloodGroup': 'bloodgroup', // Handle both camelCase and lowercase
+      'maritalstatus': 'maritalstatus',
+      'nationality': 'nationality'
+    };
+
+    const mappedField = fieldMappings[field];
+    if (mappedField) {
+      handleInputChange(mappedField, value);
     }
   };
 
   const handleCheckboxChange = (field: string, checked: boolean) => {
     if (field === 'hasDisability') {
-      handleInputChange('disabilitystatus', checked ? 'Yes' : 'No');
+      handleInputChange('disabilitystatus', checked ? 'Yes' : 'No Disability');
     }
   };
 
   const handleFormInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Handle special field mappings
-    if (name === 'role') {
-      handleInputChange('jobtitle', value);
-    } else if (name === 'employeeId') {
-      handleInputChange('employeeid', value);
-    } else if (name === 'joining') {
-      handleInputChange('joiningdate', value);
-    } else if (name === 'dob') {
-      handleInputChange('dateofbirth', value);
-    } else if (name === 'phone') {
-      handleInputChange('phonenumber', value);
-    } else if (name === 'fatherName') {
-      handleInputChange('fathersname', value);
-    } else if (name === 'postalcode') {
-      handleInputChange('postalcode', value);
-    } else {
-      handleInputChange(name as keyof Employee, value);
+    // Handle all form field mappings
+    const fieldMappings: { [key: string]: keyof Employee } = {
+      'name': 'firstname', // We'll handle full name specially
+      'firstname': 'firstname',
+      'lastname': 'lastname',
+      'email': 'email',
+      'phone': 'phonenumber',
+      'role': 'jobtitle',
+      'jobtitle': 'jobtitle',
+      'department': 'department',
+      'employeeId': 'employeeid',
+      'joining': 'joiningdate',
+      'joiningdate': 'joiningdate',
+      'dob': 'dateofbirth',
+      'dateofbirth': 'dateofbirth',
+      'fatherName': 'fathersname',
+      'fathersname': 'fathersname',
+      'address': 'address',
+      'city': 'city',
+      'state': 'state',
+      'country': 'country',
+      'postalcode': 'postalcode',
+      'nationality': 'nationality',
+      'worklocation': 'worklocation',
+      'monthlysalary': 'monthlysalary',
+      'leavebalance': 'leavebalance'
+    };
+
+    // Special handling for full name field
+    if (name === 'name') {
+      const nameParts = value.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      setEmployeeData(prev => ({
+        ...prev,
+        firstname: firstName,
+        lastname: lastName
+      }));
+      return;
+    }
+
+    const mappedField = fieldMappings[name];
+    if (mappedField) {
+      // Handle numeric fields
+      if (mappedField === 'monthlysalary' || mappedField === 'leavebalance') {
+        const numericValue = parseFloat(value) || 0;
+        handleInputChange(mappedField, numericValue);
+      } else {
+        handleInputChange(mappedField, value);
+      }
     }
   };
 
@@ -96,9 +155,11 @@ const AddEmployee = () => {
     handleInputChange('documentpath', documents);
   };
 
-  const handleBankDetailsChange = (bankDetails: any) => {
-    // Bank details would be handled separately if needed
-    console.log('Bank details:', bankDetails);
+  const handleBankDetailsChange = (field: string, value: string) => {
+    setBankDetails(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   // Register employee in auth system and link to employee record
@@ -208,6 +269,7 @@ const AddEmployee = () => {
       console.log('Resolved Customer ID:', customerId);
       console.log('Document paths (JSONB):', employeeData.documentpath);
       console.log('Profile photo path:', employeeData.profilepicturepath);
+      console.log('Bank details:', bankDetails);
       
       const employeeToCreate = {
         ...employeeData,
@@ -276,14 +338,47 @@ const AddEmployee = () => {
   };
 
   // Convert employee data to UI format for compatibility with existing components
-  const uiEmployeeData = adaptToUIFormat(employeeData as Employee);
-
-  // Bank details with correct property names
-  const bankDetails = {
-    bankName: '',
-    branchName: '',
-    accountNumber: '',
-    ifscCode: '',
+  const uiEmployeeData = {
+    id: '',
+    name: `${employeeData.firstname || ''} ${employeeData.lastname || ''}`.trim() || 'New Employee',
+    email: employeeData.email || '',
+    phone: employeeData.phonenumber || '',
+    employeeId: employeeData.employeeid || '',
+    role: employeeData.jobtitle || '',
+    department: employeeData.department || '',
+    dob: employeeData.dateofbirth || '',
+    gender: employeeData.gender || 'Male',
+    address: employeeData.address || '',
+    city: employeeData.city || '',
+    state: employeeData.state || '',
+    country: employeeData.country || '',
+    postalcode: employeeData.postalcode || '',
+    joining: employeeData.joiningdate || '',
+    status: employeeData.employmentstatus || 'Active',
+    employmenttype: employeeData.employmenttype || 'Full-time',
+    avatar: employeeData.profilepicturepath || `${(employeeData.firstname || '')[0] || ''}${(employeeData.lastname || '')[0] || ''}`,
+    monthlysalary: employeeData.monthlysalary || 0,
+    bloodgroup: employeeData.bloodgroup || '',
+    bloodGroup: employeeData.bloodgroup || '', // Add both formats for compatibility
+    fatherName: employeeData.fathersname || '',
+    maritalstatus: employeeData.maritalstatus || 'Single',
+    hasDisability: employeeData.disabilitystatus === 'Yes',
+    disabilitystatus: employeeData.disabilitystatus || 'No Disability',
+    nationality: employeeData.nationality || '',
+    worklocation: employeeData.worklocation || '',
+    leavebalance: employeeData.leavebalance || 0,
+    firstname: employeeData.firstname || '',
+    lastname: employeeData.lastname || '',
+    // Default values for UI compatibility
+    tasks: [],
+    assets: [],
+    leaves: "0/0",
+    bankDetails: bankDetails,
+    documents: {
+      aadharCard: "",
+      panCard: ""
+    },
+    geofencingEnabled: false
   };
 
   return (
