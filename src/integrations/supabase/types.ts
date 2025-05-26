@@ -1133,6 +1133,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_employee_id_exists: {
+        Args: { p_customer_id: string; p_employee_id: string }
+        Returns: boolean
+      }
       get_auth_uid: {
         Args: Record<PropertyKey, never>
         Returns: string

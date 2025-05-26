@@ -13,6 +13,7 @@ import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
 import EmployeeBankTab from "@/components/employees/tabs/EmployeeBankTab";
 import ProfilePhotoUpload from "@/components/employees/ProfilePhotoUpload";
 import DocumentUploadForm from "@/components/employees/DocumentUploadForm";
+import EmployeeIdInput from "@/components/employees/EmployeeIdInput";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +23,8 @@ const AddEmployee = () => {
   const { toast } = useToast();
   const { profile, customerId, customerAuthId, isLoading } = useAuth();
   const [isCreatingEmployee, setIsCreatingEmployee] = useState(false);
+  const [isEmployeeIdValid, setIsEmployeeIdValid] = useState(false);
+  
   const [employeeData, setEmployeeData] = useState<Partial<Employee>>({
     employmentstatus: 'Active',
     employmenttype: 'Full-time',
@@ -66,14 +69,13 @@ const AddEmployee = () => {
   };
 
   const handleSelectChange = (field: string, value: string) => {
-    // Map all possible select fields to employee data fields
     const fieldMappings: { [key: string]: keyof Employee } = {
       'department': 'department',
       'employmentstatus': 'employmentstatus',
       'employmenttype': 'employmenttype',
       'gender': 'gender',
       'bloodgroup': 'bloodgroup',
-      'bloodGroup': 'bloodgroup', // Handle both camelCase and lowercase
+      'bloodGroup': 'bloodgroup',
       'maritalstatus': 'maritalstatus',
       'nationality': 'nationality'
     };
@@ -93,9 +95,8 @@ const AddEmployee = () => {
   const handleFormInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Handle all form field mappings
     const fieldMappings: { [key: string]: keyof Employee } = {
-      'name': 'firstname', // We'll handle full name specially
+      'name': 'firstname',
       'firstname': 'firstname',
       'lastname': 'lastname',
       'email': 'email',
@@ -103,7 +104,6 @@ const AddEmployee = () => {
       'role': 'jobtitle',
       'jobtitle': 'jobtitle',
       'department': 'department',
-      'employeeId': 'employeeid', // Map employeeId to employeeid
       'joining': 'joiningdate',
       'joiningdate': 'joiningdate',
       'dob': 'dateofbirth',
@@ -121,7 +121,6 @@ const AddEmployee = () => {
       'leavebalance': 'leavebalance'
     };
 
-    // Special handling for full name field
     if (name === 'name') {
       const nameParts = value.split(' ');
       const firstName = nameParts[0] || '';
@@ -137,7 +136,6 @@ const AddEmployee = () => {
 
     const mappedField = fieldMappings[name];
     if (mappedField) {
-      // Handle numeric fields
       if (mappedField === 'monthlysalary' || mappedField === 'leavebalance') {
         const numericValue = parseFloat(value) || 0;
         handleInputChange(mappedField, numericValue);
@@ -145,6 +143,13 @@ const AddEmployee = () => {
         handleInputChange(mappedField, value);
       }
     }
+  };
+
+  const handleEmployeeIdChange = (newEmployeeId: string) => {
+    setEmployeeData(prev => ({
+      ...prev,
+      employeeid: newEmployeeId
+    }));
   };
 
   const handleProfilePhotoUpload = (photoUrl: string) => {
@@ -162,7 +167,6 @@ const AddEmployee = () => {
     }));
   };
 
-  // Register employee in auth system and link to employee record
   const registerEmployeeUser = async (email: string, password: string, employeeId: string) => {
     if (!email || !password) {
       return null;
@@ -171,7 +175,6 @@ const AddEmployee = () => {
     try {
       setIsCreatingAccount(true);
       
-      // Call the register_employee function
       const { data, error } = await supabase.rpc('register_employee', {
         p_email: email,
         p_password: password,
@@ -192,27 +195,6 @@ const AddEmployee = () => {
     }
   };
 
-  // Link employee to existing auth user using RPC function
-  const linkEmployeeToProfile = async (employeeId: string) => {
-    try {
-      // Update profiles table to link employee_id with auth user using RPC
-      const { error } = await supabase.rpc('link_employee_to_profile', {
-        auth_user_id: employeeData.employeeauthid,
-        employee_uuid: employeeId,
-        customer_uuid: customerId || customerAuthId
-      });
-      
-      if (error) {
-        console.error('Error linking employee to profile:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Error in linkEmployeeToProfile:', error);
-      throw error;
-    }
-  };
-
-  // Initialize customer inheritance when auth data is available
   React.useEffect(() => {
     if (!isLoading && (customerId || customerAuthId)) {
       const organizationId = customerId || customerAuthId;
@@ -222,11 +204,9 @@ const AddEmployee = () => {
         organizationId
       });
       
-      // Set inherited customer data but don't override if already set
       setEmployeeData(prev => ({
         ...prev,
         customerid: organizationId,
-        // Inherit customerauthid - this links the employee to the customer's auth
         employeeauthid: prev.employeeauthid || customerAuthId
       }));
     }
@@ -238,10 +218,10 @@ const AddEmployee = () => {
       customerId,
       customerAuthId,
       profile: profile?.role,
-      employeeId: employeeData.employeeid
+      employeeId: employeeData.employeeid,
+      isEmployeeIdValid
     });
 
-    // Don't validate while auth is still loading
     if (isLoading) {
       toast({
         title: "Loading",
@@ -250,7 +230,6 @@ const AddEmployee = () => {
       return false;
     }
 
-    // Check for required customer organization - use customerId or customerAuthId as fallback
     const organizationId = customerId || customerAuthId;
     if (!organizationId) {
       console.error('Missing organization ID:', { customerId, customerAuthId, profile });
@@ -262,7 +241,6 @@ const AddEmployee = () => {
       return false;
     }
 
-    // Check for required employee ID
     if (!employeeData.employeeid?.trim()) {
       toast({
         title: "Error",
@@ -272,7 +250,15 @@ const AddEmployee = () => {
       return false;
     }
 
-    // Check for mandatory documents
+    if (!isEmployeeIdValid) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid and unique Employee ID.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     const documents = employeeData.documentpath as Record<string, string> || {};
     if (!documents.aadhar || !documents.pan) {
       toast({
@@ -283,7 +269,6 @@ const AddEmployee = () => {
       return false;
     }
 
-    // Check for required fields
     if (!employeeData.firstname?.trim()) {
       toast({
         title: "Error",
@@ -305,6 +290,22 @@ const AddEmployee = () => {
     return true;
   };
 
+  const getErrorMessage = (error: any): string => {
+    if (error.message) {
+      if (error.message.includes('employee_customerid_id_key')) {
+        return 'This Employee ID already exists for your organization. Please use a different Employee ID.';
+      }
+      if (error.message.includes('duplicate key value')) {
+        return 'This employee information conflicts with an existing record. Please check the Employee ID and try again.';
+      }
+      if (error.message.includes('Email') && error.message.includes('already registered')) {
+        return 'This email address is already registered. Please use a different email address.';
+      }
+      return error.message;
+    }
+    return 'An unexpected error occurred. Please try again.';
+  };
+
   const handleSubmit = async () => {
     try {
       if (!validateForm()) {
@@ -313,14 +314,10 @@ const AddEmployee = () => {
 
       setIsCreatingEmployee(true);
       
-      // Use customerId or fallback to customerAuthId
       const organizationId = customerId || customerAuthId;
       
       console.log('Creating employee with data:', employeeData);
       console.log('Organization ID:', organizationId);
-      console.log('Document paths (JSONB):', employeeData.documentpath);
-      console.log('Profile photo path:', employeeData.profilepicturepath);
-      console.log('Bank details:', bankDetails);
       
       const employeeToCreate = {
         ...employeeData,
@@ -329,54 +326,38 @@ const AddEmployee = () => {
 
       const newEmployee = await createEmployee(employeeToCreate);
       
-      // If employee auth credentials are provided, register them
       if (employeeEmail && employeePassword && newEmployee?.employeeid) {
         try {
           await registerEmployeeUser(employeeEmail, employeePassword, newEmployee.employeeid);
           toast({
-            title: "Employee account created",
-            description: `User account for ${employeeEmail} has been created successfully.`,
-          });
-        } catch (error: any) {
-          toast({
-            title: "Warning",
-            description: `Employee record created but failed to register user account: ${error.message}`,
-            variant: "destructive",
-          });
-        }
-      }
-      // If existing auth ID is provided, link it to the employee record
-      else if (employeeData.employeeauthid && newEmployee?.employeeid) {
-        try {
-          await linkEmployeeToProfile(newEmployee.employeeid);
-          toast({
             title: "Success",
-            description: "Employee has been linked to existing user account.",
+            description: `Employee created successfully! User account for ${employeeEmail} has been created and linked to all systems.`,
           });
         } catch (error: any) {
+          console.error('Auth registration error:', error);
           toast({
-            title: "Warning",
-            description: `Employee record created but failed to link to user account: ${error.message}`,
+            title: "Partial Success",
+            description: `Employee record created but failed to register user account: ${getErrorMessage(error)}`,
             variant: "destructive",
           });
         }
+      } else {
+        toast({
+          title: "Success",
+          description: "Employee has been created successfully.",
+        });
       }
-      
-      toast({
-        title: "Success",
-        description: "Employee has been created successfully.",
-      });
       
       if (newEmployee?.employeeid) {
         navigate(`/employee/${newEmployee.employeeid}`);
       } else {
         navigate('/all-employees');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating employee:', error);
       toast({
         title: "Error",
-        description: "Failed to create employee. Please try again.",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {
@@ -388,13 +369,12 @@ const AddEmployee = () => {
     navigate('/all-employees');
   };
 
-  // Convert employee data to UI format for compatibility with existing components
   const uiEmployeeData = {
     id: '',
     name: `${employeeData.firstname || ''} ${employeeData.lastname || ''}`.trim() || 'New Employee',
     email: employeeData.email || '',
     phone: employeeData.phonenumber || '',
-    employeeId: employeeData.employeeid || '', // Use the actual employeeid field
+    employeeId: employeeData.employeeid || '',
     role: employeeData.jobtitle || '',
     department: employeeData.department || '',
     dob: employeeData.dateofbirth || '',
@@ -410,7 +390,7 @@ const AddEmployee = () => {
     avatar: employeeData.profilepicturepath || `${(employeeData.firstname || '')[0] || ''}${(employeeData.lastname || '')[0] || ''}`,
     monthlysalary: employeeData.monthlysalary || 0,
     bloodgroup: employeeData.bloodgroup || '',
-    bloodGroup: employeeData.bloodgroup || '', // Add both formats for compatibility
+    bloodGroup: employeeData.bloodgroup || '',
     fatherName: employeeData.fathersname || '',
     maritalstatus: employeeData.maritalstatus || 'Single',
     hasDisability: employeeData.disabilitystatus === 'Yes',
@@ -420,7 +400,6 @@ const AddEmployee = () => {
     leavebalance: employeeData.leavebalance || 0,
     firstname: employeeData.firstname || '',
     lastname: employeeData.lastname || '',
-    // Default values for UI compatibility
     tasks: [],
     assets: [],
     leaves: "0/0",
@@ -454,7 +433,6 @@ const AddEmployee = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Profile Photo Section */}
             <div className="mb-6 pb-6 border-b">
               <h3 className="text-lg font-medium mb-4">Profile Photo</h3>
               <ProfilePhotoUpload
@@ -464,7 +442,15 @@ const AddEmployee = () => {
               />
             </div>
 
-            {/* Auth Details Section */}
+            <div className="mb-6 pb-6 border-b">
+              <h3 className="text-lg font-medium mb-4">Employee Identification</h3>
+              <EmployeeIdInput
+                value={employeeData.employeeid || ''}
+                onChange={handleEmployeeIdChange}
+                onValidationChange={setIsEmployeeIdValid}
+              />
+            </div>
+
             <div className="mb-6 pb-6 border-b">
               <h3 className="text-lg font-medium mb-4">Authentication Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -562,7 +548,7 @@ const AddEmployee = () => {
               </Button>
               <Button 
                 onClick={handleSubmit}
-                disabled={isCreatingEmployee || isCreatingAccount || isLoading}
+                disabled={isCreatingEmployee || isCreatingAccount || isLoading || !isEmployeeIdValid}
               >
                 {isCreatingEmployee || isCreatingAccount ? 'Creating...' : 'Create Employee'}
               </Button>
