@@ -739,7 +739,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
-          customerauthid: string
+          customerauthid: string | null
           full_name: string | null
           id: string
           role: Database["public"]["Enums"]["user_role"]
@@ -747,7 +747,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          customerauthid: string
+          customerauthid?: string | null
           full_name?: string | null
           id: string
           role: Database["public"]["Enums"]["user_role"]
@@ -755,7 +755,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          customerauthid?: string
+          customerauthid?: string | null
           full_name?: string | null
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
@@ -1182,8 +1182,6 @@ export type Database = {
           id: string
           full_name: string
           role: Database["public"]["Enums"]["user_role"]
-          customer_id: string
-          employee_id: string
           customerauthid: string
           created_at: string
           updated_at: string

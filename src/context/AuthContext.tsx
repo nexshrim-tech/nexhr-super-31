@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,12 +8,11 @@ import { useToast } from '@/hooks/use-toast';
 // Define our user role type to match the database enum
 export type UserRole = 'admin' | 'customer' | 'employee';
 
-// Define our profile type - updated to remove customer_id
+// Define our profile type - updated to remove employee_id since it doesn't exist in the profiles table
 export interface UserProfile {
   id: string;
   full_name: string | null;
   role: UserRole;
-  employee_id?: string;
   customerauthid?: string;
   created_at?: string;
   updated_at?: string;
@@ -285,7 +285,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = profile?.role === 'admin';
   const isCustomer = profile?.role === 'customer';
   const isEmployee = profile?.role === 'employee';
-  const employeeId = profile?.employee_id;
+  const employeeId = undefined; // Remove this since employee_id doesn't exist in profiles
   const customerAuthId = profile?.customerauthid;
 
   const value = {
