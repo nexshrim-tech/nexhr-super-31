@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Employee, EmployeeDB } from '@/types/employee';
 import { mapEmployeeDBToEmployee, mapEmployeeToDBFormat } from '@/utils/employeeMappers';
@@ -78,6 +77,7 @@ export const createEmployee = async (employee: Omit<Employee, 'employeeid'> & { 
       throw error;
     }
 
+    console.log('Employee created in database:', data);
     return mapEmployeeDBToEmployee(data as EmployeeDB);
   } catch (error) {
     console.error('Error in createEmployee:', error);
@@ -122,27 +122,6 @@ export const deleteEmployee = async (id: string): Promise<void> => {
     }
   } catch (error) {
     console.error('Error in deleteEmployee:', error);
-    throw error;
-  }
-};
-
-export const registerEmployeeUser = async (email: string, password: string, employeeId: string): Promise<string | null> => {
-  try {
-    // Call the register_employee function
-    const { data, error } = await supabase.rpc('register_employee', {
-      p_email: email,
-      p_password: password,
-      p_employee_id: employeeId
-    });
-    
-    if (error) {
-      console.error('Error registering employee:', error);
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Error in registerEmployeeUser:', error);
     throw error;
   }
 };

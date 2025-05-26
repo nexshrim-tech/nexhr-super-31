@@ -19,3 +19,27 @@ export const checkEmployeeIdExists = async (customerId: string, employeeId: stri
     return false;
   }
 };
+
+export const registerEmployeeAuth = async (email: string, password: string, employeeId: string): Promise<string | null> => {
+  try {
+    console.log('Registering employee auth with:', { email, employeeId });
+    
+    // Call the register_employee function with proper UUID conversion
+    const { data, error } = await supabase.rpc('register_employee', {
+      p_email: email,
+      p_password: password,
+      p_employee_id: employeeId // Pass as string, the function will handle UUID conversion
+    });
+    
+    if (error) {
+      console.error('Error registering employee:', error);
+      throw new Error(`Failed to register employee: ${error.message}`);
+    }
+    
+    console.log('Employee auth registration successful:', data);
+    return data;
+  } catch (error) {
+    console.error('Exception in registerEmployeeAuth:', error);
+    throw error;
+  }
+};

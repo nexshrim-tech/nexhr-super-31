@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Employee, createEmployee } from "@/services/employeeService";
+import { registerEmployeeAuth } from "@/services/employeeValidationService";
 import EmployeePersonalTab from "@/components/employees/tabs/EmployeePersonalTab";
 import EmployeeWorkTab from "@/components/employees/tabs/EmployeeWorkTab";
 import EmployeeBankTab from "@/components/employees/tabs/EmployeeBankTab";
@@ -324,30 +325,49 @@ const AddEmployee = () => {
         customerid: organizationId
       } as Employee & { customerid: string };
 
+      // Step 1: Create the employee record first
       const newEmployee = await createEmployee(employeeToCreate);
+      console.log('Employee created successfully:', newEmployee);
       
+      // Step 2: If credentials are provided, create auth account
       if (employeeEmail && employeePassword && newEmployee?.employeeid) {
         try {
-          await registerEmployeeUser(employeeEmail, employeePassword, newEmployee.employeeid);
-          toast({
-            title: "Success",
-            description: `Employee created successfully! User account for ${employeeEmail} has been created and linked to all systems.`,
-          });
-        } catch (error: any) {
-          console.error('Auth registration error:', error);
+          console.log('Creating auth account for employee:', newEmployee.employeeid);
+          
+          const authUserId = await registerEmployeeAuth(
+            employeeEmail, 
+            employeePassword, 
+            newEmployee.employeeid
+          );
+          
+          if (authUserId) {
+            console.log('Auth account created successfully:', authUserId);
+            toast({
+              title: "Success",
+              description: `Employee created successfully! User account for ${employeeEmail} has been created and linked to all systems.`,
+            });
+          } else {
+            throw new Error('Failed to create auth account - no user ID returned');
+          }
+        } catch (authError: any) {
+          console.error('Auth registration error:', authError);
+          
+          // Don't delete the employee record, just show a warning
           toast({
             title: "Partial Success",
-            description: `Employee record created but failed to register user account: ${getErrorMessage(error)}`,
+            description: `Employee record created but failed to register user account: ${authError.message}. You can try adding login credentials later.`,
             variant: "destructive",
           });
         }
       } else {
+        console.log('No credentials provided, skipping auth account creation');
         toast({
           title: "Success",
-          description: "Employee has been created successfully.",
+          description: "Employee has been created successfully without login credentials.",
         });
       }
       
+      // Navigate to the employee detail page or back to the list
       if (newEmployee?.employeeid) {
         navigate(`/employee/${newEmployee.employeeid}`);
       } else {
