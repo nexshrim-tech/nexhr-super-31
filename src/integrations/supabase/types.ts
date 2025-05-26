@@ -1208,7 +1208,9 @@ export type Database = {
         Returns: undefined
       }
       register_employee: {
-        Args: { p_email: string; p_password: string; p_employee_id: string }
+        Args:
+          | { p_email: string; p_password: string; p_employee_id: string }
+          | { p_email: string; p_password: string; p_employee_id: string }
         Returns: string
       }
       update_user_profile: {

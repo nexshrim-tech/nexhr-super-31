@@ -38,7 +38,9 @@ const EmployeeIdInput: React.FC<EmployeeIdInputProps> = ({
       return;
     }
 
-    if (!customerId && !customerAuthId) {
+    const organizationId = customerId || customerAuthId;
+    if (!organizationId) {
+      console.error('No organization ID found for validation:', { customerId, customerAuthId });
       setValidationStatus('invalid');
       setValidationMessage('Unable to validate - customer not found');
       onValidationChange(false);
@@ -49,8 +51,8 @@ const EmployeeIdInput: React.FC<EmployeeIdInputProps> = ({
     setValidationStatus('checking');
 
     try {
-      const organizationId = customerId || customerAuthId;
-      const exists = await checkEmployeeIdExists(organizationId!, employeeId);
+      console.log('Validating employee ID:', { organizationId, employeeId });
+      const exists = await checkEmployeeIdExists(organizationId, employeeId);
 
       if (exists) {
         setValidationStatus('invalid');
@@ -62,6 +64,7 @@ const EmployeeIdInput: React.FC<EmployeeIdInputProps> = ({
         onValidationChange(true);
       }
     } catch (error) {
+      console.error('Error validating employee ID:', error);
       setValidationStatus('invalid');
       setValidationMessage('Error validating Employee ID');
       onValidationChange(false);
@@ -74,6 +77,10 @@ const EmployeeIdInput: React.FC<EmployeeIdInputProps> = ({
     const timeoutId = setTimeout(() => {
       if (value.trim()) {
         validateEmployeeId(value);
+      } else {
+        setValidationStatus('idle');
+        setValidationMessage('');
+        onValidationChange(false);
       }
     }, 500);
 
