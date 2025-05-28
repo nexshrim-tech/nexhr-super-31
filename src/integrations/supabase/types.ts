@@ -1145,6 +1145,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_user_customer_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_employee_by_auth_id: {
         Args: { auth_id: string }
         Returns: {
@@ -1193,6 +1197,10 @@ export type Database = {
       }
       is_admin: {
         Args: { user_id: string }
+        Returns: boolean
+      }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_customer: {
