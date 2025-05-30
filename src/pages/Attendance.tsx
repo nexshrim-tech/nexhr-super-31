@@ -4,7 +4,7 @@ import { Layout } from "@/components/ui/layout";
 import { AttendanceRecord } from "@/types/attendance";
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
-import { ChevronLeft, ChevronRight, Calendar, Users, Clock, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Users, Clock, TrendingUp, Table as TableIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,12 +15,14 @@ import { getAttendanceForDate } from "@/services/attendance/attendanceService";
 import AttendanceHeader from "@/components/attendance/AttendanceHeader";
 import AttendanceStats from "@/components/attendance/AttendanceStats";
 import { AttendanceFilters } from "@/components/attendance/AttendanceFilters";
+import AttendanceTable from "@/components/attendance/AttendanceTable";
 
 const AttendancePage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"calendar" | "table">("calendar");
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   
   // Get the current month's date range
@@ -132,6 +134,13 @@ const AttendancePage = () => {
     setSelectedStatus(status === "all" ? "all" : status);
   };
 
+  const handleEditRecord = (record: AttendanceRecord) => {
+    toast({
+      title: "Edit Record",
+      description: "Edit functionality will be implemented",
+    });
+  };
+
   if (employeesLoading || attendanceLoading) {
     return (
       <Layout>
@@ -190,6 +199,7 @@ const AttendancePage = () => {
                       onClick={() => setViewMode("calendar")}
                       className="flex-1 transition-all duration-200"
                     >
+                      <Calendar className="h-4 w-4 mr-1" />
                       Calendar
                     </Button>
                     <Button 
@@ -198,6 +208,7 @@ const AttendancePage = () => {
                       onClick={() => setViewMode("table")}
                       className="flex-1 transition-all duration-200"
                     >
+                      <TableIcon className="h-4 w-4 mr-1" />
                       Table
                     </Button>
                   </div>
@@ -229,38 +240,45 @@ const AttendancePage = () => {
           </div>
 
           <div className="lg:col-span-3">
-            <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-t-lg">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-xl font-bold flex items-center gap-2">
-                    <Users className="h-6 w-6" />
-                    Attendance Calendar
-                  </CardTitle>
-                  <div className="flex items-center gap-4">
-                    <Button 
-                      variant="secondary" 
-                      size="icon" 
-                      onClick={handlePrevMonth}
-                      className="bg-white/20 hover:bg-white/30 border-0 text-white transition-all duration-200"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <h2 className="text-lg font-semibold min-w-[150px] text-center">
-                      {format(currentDate, 'MMMM yyyy')}
-                    </h2>
-                    <Button 
-                      variant="secondary" 
-                      size="icon" 
-                      onClick={handleNextMonth}
-                      className="bg-white/20 hover:bg-white/30 border-0 text-white transition-all duration-200"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+            {viewMode === "table" ? (
+              <AttendanceTable
+                selectedDate={currentDate}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                handleEditRecord={handleEditRecord}
+              />
+            ) : (
+              <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-t-lg">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-xl font-bold flex items-center gap-2">
+                      <Users className="h-6 w-6" />
+                      Attendance Calendar
+                    </CardTitle>
+                    <div className="flex items-center gap-4">
+                      <Button 
+                        variant="secondary" 
+                        size="icon" 
+                        onClick={handlePrevMonth}
+                        className="bg-white/20 hover:bg-white/30 border-0 text-white transition-all duration-200"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <h2 className="text-lg font-semibold min-w-[150px] text-center">
+                        {format(currentDate, 'MMMM yyyy')}
+                      </h2>
+                      <Button 
+                        variant="secondary" 
+                        size="icon" 
+                        onClick={handleNextMonth}
+                        className="bg-white/20 hover:bg-white/30 border-0 text-white transition-all duration-200"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {viewMode === "calendar" ? (
+                </CardHeader>
+                <CardContent className="p-0">
                   <div className="overflow-x-auto">
                     <div className="min-w-[900px] bg-gradient-to-b from-gray-50 to-white">
                       {/* Header row with dates */}
@@ -341,15 +359,9 @@ const AttendancePage = () => {
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-medium mb-2">Table View</h3>
-                    <p>Table view implementation coming soon...</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
