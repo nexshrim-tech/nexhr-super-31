@@ -66,18 +66,18 @@ const AttendancePage = () => {
     if (!status) return <span className="text-gray-300 text-xs">-</span>;
     
     const statusConfig = {
-      present: { class: "bg-green-500 text-white", text: "P" },
-      absent: { class: "bg-red-500 text-white", text: "A" },
-      late: { class: "bg-yellow-500 text-white", text: "L" },
-      "half day": { class: "bg-blue-500 text-white", text: "H" },
-      holiday: { class: "bg-purple-500 text-white", text: "HO" },
+      present: { class: "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-sm", text: "P" },
+      absent: { class: "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm", text: "A" },
+      late: { class: "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-sm", text: "L" },
+      "half day": { class: "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm", text: "H" },
+      holiday: { class: "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-sm", text: "HO" },
     };
     
     const config = statusConfig[status.toLowerCase() as keyof typeof statusConfig] || 
-                  { class: "bg-gray-500 text-white", text: "?" };
+                  { class: "bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-sm", text: "?" };
     
     return (
-      <Badge className={`${config.class} text-xs px-2 py-1 rounded-full min-w-[24px] h-6 flex items-center justify-center`}>
+      <Badge className={`${config.class} text-xs px-2 py-1 rounded-full min-w-[28px] h-7 flex items-center justify-center font-medium transition-all duration-200 hover:scale-105`}>
         {config.text}
       </Badge>
     );
@@ -149,7 +149,7 @@ const AttendancePage = () => {
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 bg-gradient-to-br from-gray-50 to-white min-h-screen">
         <AttendanceHeader 
           handleExportReport={handleExportReport}
           openAddAttendance={openAddAttendance}
@@ -165,14 +165,14 @@ const AttendancePage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
-                  Filters
+                  Filters & Settings
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6 p-6">
                 <AttendanceFilters
                   employees={employees}
                   selectedEmployee={selectedEmployee}
@@ -181,13 +181,14 @@ const AttendancePage = () => {
                   onStatusChange={handleStatusChange}
                 />
                 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">View Mode</label>
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-gray-700">View Mode</label>
                   <div className="flex gap-2">
                     <Button 
                       variant={viewMode === "calendar" ? "default" : "outline"}
                       size="sm"
                       onClick={() => setViewMode("calendar")}
+                      className="flex-1 transition-all duration-200"
                     >
                       Calendar
                     </Button>
@@ -195,30 +196,31 @@ const AttendancePage = () => {
                       variant={viewMode === "table" ? "default" : "outline"}
                       size="sm"
                       onClick={() => setViewMode("table")}
+                      className="flex-1 transition-all duration-200"
                     >
                       Table
                     </Button>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Legend</label>
-                  <div className="space-y-1 text-xs">
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-gray-700">Status Legend</label>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
                     <div className="flex items-center gap-2">
-                      <Badge className="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center">P</Badge>
-                      Present
+                      <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-medium">P</Badge>
+                      <span className="text-gray-600">Present</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge className="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center">A</Badge>
-                      Absent
+                      <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-medium">A</Badge>
+                      <span className="text-gray-600">Absent</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge className="bg-yellow-500 text-white w-6 h-6 rounded-full flex items-center justify-center">L</Badge>
-                      Late
+                      <Badge className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-medium">L</Badge>
+                      <span className="text-gray-600">Late</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center">H</Badge>
-                      Half Day
+                      <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center font-medium">H</Badge>
+                      <span className="text-gray-600">Half Day</span>
                     </div>
                   </div>
                 </div>
@@ -227,97 +229,123 @@ const AttendancePage = () => {
           </div>
 
           <div className="lg:col-span-3">
-            <Card>
-              <CardHeader>
+            <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-t-lg">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-xl font-bold flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Attendance Overview
+                    <Users className="h-6 w-6" />
+                    Attendance Calendar
                   </CardTitle>
                   <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={handlePrevMonth}>
+                    <Button 
+                      variant="secondary" 
+                      size="icon" 
+                      onClick={handlePrevMonth}
+                      className="bg-white/20 hover:bg-white/30 border-0 text-white transition-all duration-200"
+                    >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <h2 className="text-lg font-semibold min-w-[150px] text-center">
                       {format(currentDate, 'MMMM yyyy')}
                     </h2>
-                    <Button variant="outline" size="icon" onClick={handleNextMonth}>
+                    <Button 
+                      variant="secondary" 
+                      size="icon" 
+                      onClick={handleNextMonth}
+                      className="bg-white/20 hover:bg-white/30 border-0 text-white transition-all duration-200"
+                    >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 {viewMode === "calendar" ? (
                   <div className="overflow-x-auto">
-                    <div className="min-w-[900px]">
+                    <div className="min-w-[900px] bg-gradient-to-b from-gray-50 to-white">
                       {/* Header row with dates */}
-                      <div className="grid grid-cols-[200px_repeat(31,_minmax(40px,_1fr))] gap-1 mb-4">
-                        <div className="p-2 font-medium text-sm">Employee</div>
+                      <div className="grid grid-cols-[220px_repeat(31,_minmax(45px,_1fr))] gap-1 mb-2 bg-gradient-to-r from-slate-100 to-gray-100 p-3 sticky top-0 z-10">
+                        <div className="p-3 font-semibold text-sm text-gray-700 bg-white rounded-lg shadow-sm">Employee</div>
                         {daysInMonth.map((date, index) => {
                           const dayName = format(date, 'EEE');
                           const dayNumber = format(date, 'd');
                           const isWeekend = getDay(date) === 0 || getDay(date) === 6;
+                          const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
                           return (
-                            <div key={index} className={`p-1 text-center border-b ${isWeekend ? 'bg-gray-50' : ''}`}>
-                              <div className="text-xs font-medium">{dayNumber}</div>
-                              <div className="text-[10px] text-gray-500">{dayName}</div>
+                            <div key={index} className={`p-2 text-center rounded-lg transition-all duration-200 ${
+                              isToday ? 'bg-gradient-to-b from-blue-500 to-blue-600 text-white shadow-md' :
+                              isWeekend ? 'bg-gradient-to-b from-orange-100 to-orange-200 text-orange-800' : 
+                              'bg-white text-gray-700 shadow-sm hover:shadow-md'
+                            }`}>
+                              <div className="text-sm font-semibold">{dayNumber}</div>
+                              <div className="text-[10px] opacity-80">{dayName}</div>
                             </div>
                           );
                         })}
                       </div>
 
                       {/* Employee rows */}
-                      {filteredEmployees.map((employee) => (
-                        <div key={employee.employeeid} className="grid grid-cols-[200px_repeat(31,_minmax(40px,_1fr))] gap-1 mb-2 border-b border-gray-100 py-2 hover:bg-gray-50">
-                          {/* Employee info */}
-                          <div className="flex items-center gap-2 p-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage 
-                                src={employee.profilepicturepath || ""} 
-                                alt={`${employee.firstname} ${employee.lastname}`} 
-                              />
-                              <AvatarFallback className="text-xs">
-                                {employee.firstname?.[0]}{employee.lastname?.[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0">
-                              <div className="font-medium text-sm truncate">
-                                {employee.firstname} {employee.lastname}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate">
-                                {employee.jobtitle || 'Employee'}
+                      <div className="p-3 space-y-2">
+                        {filteredEmployees.map((employee, empIndex) => (
+                          <div key={employee.employeeid} className={`grid grid-cols-[220px_repeat(31,_minmax(45px,_1fr))] gap-1 p-2 rounded-xl transition-all duration-300 hover:shadow-lg ${
+                            empIndex % 2 === 0 ? 'bg-white' : 'bg-gradient-to-r from-blue-50 to-indigo-50'
+                          } border border-gray-100 hover:border-blue-200`}>
+                            {/* Employee info */}
+                            <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
+                              <Avatar className="h-10 w-10 ring-2 ring-blue-100">
+                                <AvatarImage 
+                                  src={employee.profilepicturepath || ""} 
+                                  alt={`${employee.firstname} ${employee.lastname}`} 
+                                />
+                                <AvatarFallback className="text-sm bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                                  {employee.firstname?.[0]}{employee.lastname?.[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-semibold text-sm text-gray-800 truncate">
+                                  {employee.firstname} {employee.lastname}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate">
+                                  {employee.jobtitle || 'Employee'}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Attendance status for each day */}
-                          {daysInMonth.map((date, dateIndex) => {
-                            const attendance = getAttendanceForEmployeeAndDate(employee.employeeid, date);
-                            const isWeekend = getDay(date) === 0 || getDay(date) === 6;
-                            
-                            return (
-                              <div 
-                                key={dateIndex} 
-                                className={`p-1 flex justify-center items-center ${isWeekend ? 'bg-gray-50' : ''}`}
-                              >
-                                {attendance ? (
-                                  renderAttendanceStatus(attendance.status)
-                                ) : isWeekend ? (
-                                  <span className="text-gray-400 text-xs">-</span>
-                                ) : (
-                                  <span className="text-gray-300 text-xs">-</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
+                            {/* Attendance status for each day */}
+                            {daysInMonth.map((date, dateIndex) => {
+                              const attendance = getAttendanceForEmployeeAndDate(employee.employeeid, date);
+                              const isWeekend = getDay(date) === 0 || getDay(date) === 6;
+                              const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                              
+                              return (
+                                <div 
+                                  key={dateIndex} 
+                                  className={`p-2 flex justify-center items-center rounded-lg transition-all duration-200 ${
+                                    isToday ? 'bg-blue-100 ring-2 ring-blue-300' :
+                                    isWeekend ? 'bg-orange-50' : 
+                                    'hover:bg-gray-50'
+                                  }`}
+                                >
+                                  {attendance ? (
+                                    renderAttendanceStatus(attendance.status)
+                                  ) : isWeekend ? (
+                                    <span className="text-orange-400 text-xs font-medium">—</span>
+                                  ) : (
+                                    <span className="text-gray-300 text-xs">—</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    Table view implementation coming soon...
+                  <div className="text-center py-12 text-gray-500">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium mb-2">Table View</h3>
+                    <p>Table view implementation coming soon...</p>
                   </div>
                 )}
               </CardContent>
