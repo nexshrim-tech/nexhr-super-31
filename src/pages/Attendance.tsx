@@ -12,8 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { getEmployees } from "@/services/employeeService";
 import { getAttendanceForDate } from "@/services/attendance/attendanceService";
-import { AttendanceHeader } from "@/components/attendance/AttendanceHeader";
-import { AttendanceStats } from "@/components/attendance/AttendanceStats";
+import AttendanceHeader from "@/components/attendance/AttendanceHeader";
+import AttendanceStats from "@/components/attendance/AttendanceStats";
 import { AttendanceFilters } from "@/components/attendance/AttendanceFilters";
 
 const AttendancePage = () => {
