@@ -18,8 +18,8 @@ import { AttendanceFilters } from "@/components/attendance/AttendanceFilters";
 
 const AttendancePage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"calendar" | "table">("calendar");
   const { toast } = useToast();
   
@@ -85,7 +85,7 @@ const AttendancePage = () => {
 
   // Filter employees based on selected filters
   const filteredEmployees = employees.filter(employee => {
-    if (selectedEmployee && employee.employeeid !== selectedEmployee) return false;
+    if (selectedEmployee !== "all" && employee.employeeid !== selectedEmployee) return false;
     return true;
   });
 
@@ -122,6 +122,14 @@ const AttendancePage = () => {
       title: "Settings",
       description: "Attendance settings opened",
     });
+  };
+
+  const handleEmployeeChange = (employeeId: string) => {
+    setSelectedEmployee(employeeId === "all" ? "all" : employeeId);
+  };
+
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status === "all" ? "all" : status);
   };
 
   if (employeesLoading || attendanceLoading) {
@@ -169,8 +177,8 @@ const AttendancePage = () => {
                   employees={employees}
                   selectedEmployee={selectedEmployee}
                   selectedStatus={selectedStatus}
-                  onEmployeeChange={setSelectedEmployee}
-                  onStatusChange={setSelectedStatus}
+                  onEmployeeChange={handleEmployeeChange}
+                  onStatusChange={handleStatusChange}
                 />
                 
                 <div className="space-y-2">

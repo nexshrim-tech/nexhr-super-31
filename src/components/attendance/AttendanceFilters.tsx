@@ -22,12 +22,12 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
     <div className="space-y-4">
       <div className="space-y-2">
         <label className="text-sm font-medium">Employee</label>
-        <Select value={selectedEmployee} onValueChange={onEmployeeChange}>
+        <Select value={selectedEmployee || "all"} onValueChange={onEmployeeChange}>
           <SelectTrigger>
             <SelectValue placeholder="All Employees" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Employees</SelectItem>
+            <SelectItem value="all">All Employees</SelectItem>
             {employees.map((employee) => (
               <SelectItem key={employee.employeeid} value={employee.employeeid}>
                 {employee.firstname} {employee.lastname}
@@ -39,12 +39,12 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
 
       <div className="space-y-2">
         <label className="text-sm font-medium">Status</label>
-        <Select value={selectedStatus} onValueChange={onStatusChange}>
+        <Select value={selectedStatus || "all"} onValueChange={onStatusChange}>
           <SelectTrigger>
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Status</SelectItem>
+            <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="present">Present</SelectItem>
             <SelectItem value="absent">Absent</SelectItem>
             <SelectItem value="late">Late</SelectItem>
