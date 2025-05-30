@@ -43,7 +43,7 @@ const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
           >
             <Filter className="h-4 w-4" />
           </Button>
-          <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+          <Select value={departmentFilter || "all"} onValueChange={setDepartmentFilter}>
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="All Departments" />
             </SelectTrigger>
