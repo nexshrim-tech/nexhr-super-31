@@ -22,11 +22,22 @@ const StatCard = ({ title, value, subtext, color }: StatCardProps) => (
 );
 
 interface AttendanceStatsProps {
+  totalEmployees: number;
+  presentToday: number;
+  absentToday: number;
+  lateToday: number;
   isHoliday?: boolean;
   holidayName?: string;
 }
 
-const AttendanceStats = ({ isHoliday, holidayName }: AttendanceStatsProps) => {
+const AttendanceStats = ({ 
+  totalEmployees, 
+  presentToday, 
+  absentToday, 
+  lateToday, 
+  isHoliday, 
+  holidayName 
+}: AttendanceStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
       {isHoliday ? (
@@ -45,26 +56,26 @@ const AttendanceStats = ({ isHoliday, holidayName }: AttendanceStatsProps) => {
         <>
           <StatCard
             title="Present Today"
-            value="24"
-            subtext="Out of 28 employees"
+            value={presentToday}
+            subtext={`Out of ${totalEmployees} employees`}
             color="text-green-600"
           />
           <StatCard
             title="Absent Today"
-            value="2"
-            subtext="7.1% of workforce"
+            value={absentToday}
+            subtext={`${totalEmployees > 0 ? ((absentToday / totalEmployees) * 100).toFixed(1) : 0}% of workforce`}
             color="text-red-600"
           />
           <StatCard
             title="Late Arrivals"
-            value="2"
-            subtext="7.1% of workforce"
+            value={lateToday}
+            subtext={`${totalEmployees > 0 ? ((lateToday / totalEmployees) * 100).toFixed(1) : 0}% of workforce`}
             color="text-yellow-600"
           />
           <StatCard
-            title="Avg. Working Hours"
-            value="8h 15m"
-            subtext="+5% from last week"
+            title="Total Employees"
+            value={totalEmployees}
+            subtext="Active workforce"
           />
         </>
       )}
