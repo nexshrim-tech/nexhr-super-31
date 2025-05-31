@@ -129,6 +129,38 @@ export const createAttendanceRecord = async (attendanceData: {
   notes: string;
 }): Promise<AttendanceRecord> => {
   try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Get the customer ID from the customer table using the user's auth ID
+    const { data: customerData, error: customerError } = await supabase
+      .from('customer')
+      .select('customerid')
+      .eq('customerauthid', user.id)
+      .single();
+
+    if (customerError || !customerData) {
+      console.error('Error fetching customer ID:', customerError);
+      throw new Error('Could not find customer for authenticated user');
+    }
+
+    // Verify that the employee belongs to this customer
+    const { data: employeeData, error: employeeError } = await supabase
+      .from('employee')
+      .select('customerid')
+      .eq('employeeid', attendanceData.employeeId)
+      .single();
+
+    if (employeeError || !employeeData) {
+      console.error('Error fetching employee:', employeeError);
+      throw new Error('Employee not found');
+    }
+
+    if (employeeData.customerid !== customerData.customerid) {
+      throw new Error('Employee does not belong to your organization');
+    }
+
     // Create timestamps from date and times
     const checkInTimestamp = attendanceData.checkIn 
       ? new Date(`${attendanceData.date}T${attendanceData.checkIn}:00.000Z`).toISOString()
@@ -138,13 +170,9 @@ export const createAttendanceRecord = async (attendanceData: {
       ? new Date(`${attendanceData.date}T${attendanceData.checkOut}:00.000Z`).toISOString()
       : null;
 
-    // Get current customer ID (you might need to implement this based on your auth)
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
     const record = {
       employeeid: attendanceData.employeeId,
-      customerid: user.id, // Adjust this based on your customer ID logic
+      customerid: customerData.customerid, // Use the correct customer ID
       checkintimestamp: checkInTimestamp,
       checkouttimestamp: checkOutTimestamp,
       status: attendanceData.status,

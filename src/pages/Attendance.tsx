@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/ui/layout";
 import { AttendanceRecord } from "@/types/attendance";
@@ -21,8 +20,10 @@ import ExportDialog from "@/components/attendance/ExportDialog";
 import AttendanceSettingsDialog from "@/components/attendance/AttendanceSettingsDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateRange } from "react-day-picker";
+import { useAuth } from "@/context/AuthContext";
 
 const AttendancePage = () => {
+  const { customerId } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -54,7 +55,7 @@ const AttendancePage = () => {
   // Get employees
   const { data: employees = [], isLoading: employeesLoading } = useQuery({
     queryKey: ['employees'],
-    queryFn: () => getEmployees(),
+    queryFn: () => getEmployees(customerId),
   });
 
   // Get attendance data for the month
@@ -62,7 +63,7 @@ const AttendancePage = () => {
     queryKey: ['monthly-attendance', format(currentDate, 'yyyy-MM')],
     queryFn: async () => {
       const attendancePromises = daysInMonth.map(day => 
-        getAttendanceForDate(format(day, 'yyyy-MM-dd'))
+        getAttendanceForDate(format(day, 'yyyy-MM-dd'), customerId)
       );
       const results = await Promise.all(attendancePromises);
       return results.flat();
