@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/ui/layout";
 import { AttendanceRecord } from "@/types/attendance";
@@ -522,9 +523,9 @@ const AttendancePage = () => {
         <ExportDialog
           isOpen={isExportDialogOpen}
           onOpenChange={setIsExportDialogOpen}
-          exportDateRange={exportDateRange}
-          setExportDateRange={setExportDateRange}
-          onExportConfirm={handleExportConfirm}
+          dateRange={exportDateRange}
+          setDateRange={setExportDateRange}
+          onExport={handleExportConfirm}
         />
       </div>
     </Layout>
