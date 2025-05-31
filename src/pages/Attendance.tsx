@@ -512,36 +512,20 @@ const AttendancePage = () => {
         />
 
         {/* Settings Dialog */}
-        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Attendance Settings</DialogTitle>
-            </DialogHeader>
-            <AttendanceSettingsDialog onSave={handleSaveSettings} />
-          </DialogContent>
-        </Dialog>
+        <AttendanceSettingsDialog 
+          isOpen={isSettingsOpen}
+          onOpenChange={setIsSettingsOpen}
+          onSave={handleSaveSettings}
+        />
 
         {/* Export Dialog */}
-        <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Export Attendance Report</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Export attendance data for the selected date range as a CSV file.
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleExportConfirm}>
-                  Export CSV
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ExportDialog
+          isOpen={isExportDialogOpen}
+          onOpenChange={setIsExportDialogOpen}
+          exportDateRange={exportDateRange}
+          setExportDateRange={setExportDateRange}
+          onExportConfirm={handleExportConfirm}
+        />
       </div>
     </Layout>
   );
