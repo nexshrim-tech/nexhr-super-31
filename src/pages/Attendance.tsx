@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/ui/layout";
 import { AttendanceRecord } from "@/types/attendance";
 import { useToast } from "@/hooks/use-toast";
@@ -8,15 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getEmployees } from "@/services/employeeService";
-import { getAttendanceForDate } from "@/services/attendance/attendanceService";
+import { getAttendanceForDate, createAttendanceRecord, setupAttendanceSubscription } from "@/services/attendance/attendanceService";
 import AttendanceHeader from "@/components/attendance/AttendanceHeader";
 import AttendanceStats from "@/components/attendance/AttendanceStats";
 import { AttendanceFilters } from "@/components/attendance/AttendanceFilters";
 import AttendanceTable from "@/components/attendance/AttendanceTable";
 import AddAttendanceSheet from "@/components/attendance/AddAttendanceSheet";
-import AttendanceSettings from "@/components/attendance/AttendanceSettings";
+import ExportDialog from "@/components/attendance/ExportDialog";
+import AttendanceSettingsDialog from "@/components/attendance/AttendanceSettingsDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateRange } from "react-day-picker";
 
@@ -42,6 +43,7 @@ const AttendancePage = () => {
     notes: "",
   });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Get the current month's date range
   const monthStart = startOfMonth(currentDate);
@@ -65,6 +67,46 @@ const AttendancePage = () => {
       return results.flat();
     },
   });
+
+  // Set up real-time subscription for attendance changes
+  useEffect(() => {
+    const channel = setupAttendanceSubscription();
+    
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'attendance'
+      },
+      (payload) => {
+        console.log('Attendance data changed:', payload);
+        
+        // Invalidate and refetch attendance data
+        queryClient.invalidateQueries({ queryKey: ['monthly-attendance'] });
+        queryClient.invalidateQueries({ queryKey: ['attendance'] });
+        
+        // Show toast notification
+        if (payload.eventType === 'INSERT') {
+          toast({
+            title: "New Attendance Record",
+            description: "A new attendance record has been added",
+          });
+        } else if (payload.eventType === 'UPDATE') {
+          toast({
+            title: "Attendance Updated",
+            description: "An attendance record has been updated",
+          });
+        }
+      }
+    );
+
+    channel.subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [queryClient, toast]);
 
   const handlePrevMonth = () => {
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -176,23 +218,36 @@ const AttendancePage = () => {
     setIsAddAttendanceOpen(true);
   };
 
-  const handleAddAttendance = () => {
-    // Add attendance logic here
-    console.log("Adding attendance:", newAttendanceData);
-    setIsAddAttendanceOpen(false);
-    setNewAttendanceData({
-      employeeId: "",
-      date: format(new Date(), "yyyy-MM-dd"),
-      checkIn: "",
-      checkOut: "",
-      status: "",
-      notes: "",
-    });
-    toast({
-      title: "Attendance Added",
-      description: "New attendance record has been created",
-    });
-    refetch();
+  const handleAddAttendance = async () => {
+    try {
+      console.log("Adding attendance:", newAttendanceData);
+      
+      await createAttendanceRecord(newAttendanceData);
+      
+      setIsAddAttendanceOpen(false);
+      setNewAttendanceData({
+        employeeId: "",
+        date: format(new Date(), "yyyy-MM-dd"),
+        checkIn: "",
+        checkOut: "",
+        status: "",
+        notes: "",
+      });
+      
+      toast({
+        title: "Attendance Added",
+        description: "New attendance record has been created",
+      });
+      
+      // The real-time subscription will automatically update the data
+    } catch (error) {
+      console.error("Error adding attendance:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add attendance record",
+        variant: "destructive",
+      });
+    }
   };
 
   const openSettings = () => {
@@ -462,7 +517,7 @@ const AttendancePage = () => {
             <DialogHeader>
               <DialogTitle>Attendance Settings</DialogTitle>
             </DialogHeader>
-            <AttendanceSettings onSave={handleSaveSettings} />
+            <AttendanceSettingsDialog onSave={handleSaveSettings} />
           </DialogContent>
         </Dialog>
 

@@ -120,8 +120,37 @@ export const setupAttendanceSubscription = () => {
   return supabase.channel('attendance-changes');
 };
 
-export const createAttendanceRecord = async (record: Omit<AttendanceRecord, 'date' | 'checkintime' | 'checkouttime'>): Promise<AttendanceRecord> => {
+export const createAttendanceRecord = async (attendanceData: {
+  employeeId: string;
+  date: string;
+  checkIn: string;
+  checkOut: string;
+  status: string;
+  notes: string;
+}): Promise<AttendanceRecord> => {
   try {
+    // Create timestamps from date and times
+    const checkInTimestamp = attendanceData.checkIn 
+      ? new Date(`${attendanceData.date}T${attendanceData.checkIn}:00.000Z`).toISOString()
+      : null;
+    
+    const checkOutTimestamp = attendanceData.checkOut 
+      ? new Date(`${attendanceData.date}T${attendanceData.checkOut}:00.000Z`).toISOString()
+      : null;
+
+    // Get current customer ID (you might need to implement this based on your auth)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const record = {
+      employeeid: attendanceData.employeeId,
+      customerid: user.id, // Adjust this based on your customer ID logic
+      checkintimestamp: checkInTimestamp,
+      checkouttimestamp: checkOutTimestamp,
+      status: attendanceData.status,
+      selfieimagepath: null
+    };
+
     const { data, error } = await supabase
       .from('attendance')
       .insert(record)
