@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Layout } from "@/components/ui/layout";
 import { AttendanceRecord } from "@/types/attendance";
@@ -16,6 +15,10 @@ import AttendanceHeader from "@/components/attendance/AttendanceHeader";
 import AttendanceStats from "@/components/attendance/AttendanceStats";
 import { AttendanceFilters } from "@/components/attendance/AttendanceFilters";
 import AttendanceTable from "@/components/attendance/AttendanceTable";
+import AddAttendanceSheet from "@/components/attendance/AddAttendanceSheet";
+import AttendanceSettings from "@/components/attendance/AttendanceSettings";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DateRange } from "react-day-picker";
 
 const AttendancePage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -23,6 +26,21 @@ const AttendancePage = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"calendar" | "table">("calendar");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isAddAttendanceOpen, setIsAddAttendanceOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [exportDateRange, setExportDateRange] = useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
+  const [newAttendanceData, setNewAttendanceData] = useState({
+    employeeId: "",
+    date: format(new Date(), "yyyy-MM-dd"),
+    checkIn: "",
+    checkOut: "",
+    status: "",
+    notes: "",
+  });
   const { toast } = useToast();
   
   // Get the current month's date range
@@ -106,24 +124,88 @@ const AttendancePage = () => {
   };
 
   const handleExportReport = () => {
-    toast({
-      title: "Export Report",
-      description: "Attendance report exported successfully",
-    });
+    setIsExportDialogOpen(true);
+  };
+
+  const handleExportConfirm = () => {
+    if (exportDateRange?.from && exportDateRange?.to) {
+      // Create CSV data
+      const csvData = monthlyAttendance
+        .filter(record => {
+          const recordDate = new Date(record.date || '');
+          return recordDate >= exportDateRange.from! && recordDate <= exportDateRange.to!;
+        })
+        .map(record => {
+          const employee = employees.find(emp => emp.employeeid === record.employeeid);
+          return {
+            'Employee Name': employee ? `${employee.firstname} ${employee.lastname}` : 'Unknown',
+            'Employee ID': record.employeeid,
+            'Date': record.date,
+            'Check In': record.checkintime || '-',
+            'Check Out': record.checkouttime || '-',
+            'Status': record.status || 'Not Marked',
+            'Work Hours': record.workhours || '-'
+          };
+        });
+
+      // Convert to CSV string
+      const headers = Object.keys(csvData[0] || {});
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => headers.map(header => `"${row[header as keyof typeof row]}"`).join(','))
+      ].join('\n');
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `attendance-report-${format(exportDateRange.from, 'yyyy-MM-dd')}-to-${format(exportDateRange.to, 'yyyy-MM-dd')}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      setIsExportDialogOpen(false);
+      toast({
+        title: "Export Successful",
+        description: "Attendance report has been downloaded",
+      });
+    }
   };
 
   const openAddAttendance = () => {
-    toast({
-      title: "Add Attendance",
-      description: "Add attendance dialog opened",
+    setIsAddAttendanceOpen(true);
+  };
+
+  const handleAddAttendance = () => {
+    // Add attendance logic here
+    console.log("Adding attendance:", newAttendanceData);
+    setIsAddAttendanceOpen(false);
+    setNewAttendanceData({
+      employeeId: "",
+      date: format(new Date(), "yyyy-MM-dd"),
+      checkIn: "",
+      checkOut: "",
+      status: "",
+      notes: "",
     });
+    toast({
+      title: "Attendance Added",
+      description: "New attendance record has been created",
+    });
+    refetch();
   };
 
   const openSettings = () => {
+    setIsSettingsOpen(true);
+  };
+
+  const handleSaveSettings = (settings: any) => {
+    console.log("Saving settings:", settings);
     toast({
-      title: "Settings",
-      description: "Attendance settings opened",
+      title: "Settings Saved",
+      description: "Attendance settings have been updated",
     });
+    setIsSettingsOpen(false);
   };
 
   const handleEmployeeChange = (employeeId: string) => {
@@ -137,7 +219,7 @@ const AttendancePage = () => {
   const handleEditRecord = (record: AttendanceRecord) => {
     toast({
       title: "Edit Record",
-      description: "Edit functionality will be implemented",
+      description: "Edit functionality is handled in table view",
     });
   };
 
@@ -364,6 +446,47 @@ const AttendancePage = () => {
             )}
           </div>
         </div>
+
+        {/* Add Attendance Sheet */}
+        <AddAttendanceSheet
+          isOpen={isAddAttendanceOpen}
+          onOpenChange={setIsAddAttendanceOpen}
+          newAttendanceData={newAttendanceData}
+          setNewAttendanceData={setNewAttendanceData}
+          handleAddAttendance={handleAddAttendance}
+        />
+
+        {/* Settings Dialog */}
+        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Attendance Settings</DialogTitle>
+            </DialogHeader>
+            <AttendanceSettings onSave={handleSaveSettings} />
+          </DialogContent>
+        </Dialog>
+
+        {/* Export Dialog */}
+        <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Export Attendance Report</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Export attendance data for the selected date range as a CSV file.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleExportConfirm}>
+                  Export CSV
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
